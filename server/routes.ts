@@ -123,6 +123,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patient = await storage.createPatient(patientData);
       res.json(patient);
     } catch (error) {
+      console.error("Patient creation error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(400).json({ message: "Failed to create patient" });
     }
   });
@@ -155,6 +159,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doctor = await storage.createDoctor(doctorData);
       res.json(doctor);
     } catch (error) {
+      console.error("Doctor creation error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(400).json({ message: "Failed to create doctor" });
     }
   });

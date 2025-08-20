@@ -328,10 +328,10 @@ export class SqliteStorage implements IStorage {
 
   async createUser(user: InsertUser): Promise<User> {
     const hashedPassword = await this.hashPassword(user.password);
-    const [created] = db.insert(schema.users).values({
+    const created = db.insert(schema.users).values({
       ...user,
       password: hashedPassword,
-    }).returning();
+    }).returning().get();
     return created;
   }
 
@@ -346,7 +346,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
-    const [created] = db.insert(schema.doctors).values(doctor).returning();
+    const created = db.insert(schema.doctors).values(doctor).returning().get();
     return created;
   }
 
@@ -359,19 +359,19 @@ export class SqliteStorage implements IStorage {
   }
 
   async updateDoctor(id: string, doctor: Partial<InsertDoctor>): Promise<Doctor | undefined> {
-    const [updated] = db.update(schema.doctors)
+    const updated = db.update(schema.doctors)
       .set({ ...doctor, updatedAt: new Date().toISOString() })
       .where(eq(schema.doctors.id, id))
-      .returning();
+      .returning().get();
     return updated;
   }
 
   async createPatient(patient: InsertPatient): Promise<Patient> {
     const patientId = this.generatePatientId();
-    const [created] = db.insert(schema.patients).values({
+    const created = db.insert(schema.patients).values({
       ...patient,
       patientId,
-    }).returning();
+    }).returning().get();
     return created;
   }
 
@@ -399,19 +399,19 @@ export class SqliteStorage implements IStorage {
   }
 
   async updatePatient(id: string, patient: Partial<InsertPatient>): Promise<Patient | undefined> {
-    const [updated] = db.update(schema.patients)
+    const updated = db.update(schema.patients)
       .set({ ...patient, updatedAt: new Date().toISOString() })
       .where(eq(schema.patients.id, id))
-      .returning();
+      .returning().get();
     return updated;
   }
 
   async createPatientVisit(visit: InsertPatientVisit): Promise<PatientVisit> {
     const visitId = this.generateVisitId();
-    const [created] = db.insert(schema.patientVisits).values({
+    const created = db.insert(schema.patientVisits).values({
       ...visit,
       visitId,
-    }).returning();
+    }).returning().get();
     return created;
   }
 
@@ -432,7 +432,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async createService(service: InsertService): Promise<Service> {
-    const [created] = db.insert(schema.services).values(service).returning();
+    const created = db.insert(schema.services).values(service).returning().get();
     return created;
   }
 
@@ -463,10 +463,10 @@ export class SqliteStorage implements IStorage {
     const billNumber = this.generateBillNumber();
     
     return db.transaction((tx) => {
-      const [created] = tx.insert(schema.bills).values({
+      const created = tx.insert(schema.bills).values({
         ...bill,
         billNumber,
-      }).returning();
+      }).returning().get();
 
       const billItems = items.map(item => ({
         ...item,
@@ -508,10 +508,10 @@ export class SqliteStorage implements IStorage {
 
   async createPathologyTest(test: InsertPathologyTest): Promise<PathologyTest> {
     const testId = this.generateTestId();
-    const [created] = db.insert(schema.pathologyTests).values({
+    const created = db.insert(schema.pathologyTests).values({
       ...test,
       testId,
-    }).returning();
+    }).returning().get();
     return created;
   }
 
@@ -529,10 +529,10 @@ export class SqliteStorage implements IStorage {
   }
 
   async updatePathologyTest(id: string, test: Partial<InsertPathologyTest>): Promise<PathologyTest | undefined> {
-    const [updated] = db.update(schema.pathologyTests)
+    const updated = db.update(schema.pathologyTests)
       .set({ ...test, updatedAt: new Date().toISOString() })
       .where(eq(schema.pathologyTests.id, id))
-      .returning();
+      .returning().get();
     return updated;
   }
 
