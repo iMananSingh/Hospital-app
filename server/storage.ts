@@ -19,143 +19,258 @@ const sqlite = new Database(dbPath);
 export const db = drizzle(sqlite, { schema });
 
 // Initialize database with tables
-try {
-  // Create tables if they don't exist
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      username TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      full_name TEXT NOT NULL,
-      role TEXT NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+async function initializeDatabase() {
+  try {
+    // Create tables if they don't exist
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS doctors (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      user_id TEXT REFERENCES users(id),
-      name TEXT NOT NULL,
-      specialization TEXT NOT NULL,
-      qualification TEXT NOT NULL,
-      consultation_fee REAL NOT NULL,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS doctors (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        user_id TEXT REFERENCES users(id),
+        name TEXT NOT NULL,
+        specialization TEXT NOT NULL,
+        qualification TEXT NOT NULL,
+        consultation_fee REAL NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS patients (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      patient_id TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      age INTEGER NOT NULL,
-      gender TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      address TEXT,
-      email TEXT,
-      emergency_contact TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS patients (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        patient_id TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        age INTEGER NOT NULL,
+        gender TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        address TEXT,
+        email TEXT,
+        emergency_contact TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS patient_visits (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      visit_id TEXT NOT NULL UNIQUE,
-      patient_id TEXT NOT NULL REFERENCES patients(id),
-      doctor_id TEXT NOT NULL REFERENCES doctors(id),
-      visit_type TEXT NOT NULL,
-      visit_date TEXT NOT NULL,
-      symptoms TEXT,
-      diagnosis TEXT,
-      prescription TEXT,
-      status TEXT NOT NULL DEFAULT 'active',
-      admission_date TEXT,
-      discharge_date TEXT,
-      room_number TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS patient_visits (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        visit_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        doctor_id TEXT NOT NULL REFERENCES doctors(id),
+        visit_type TEXT NOT NULL,
+        visit_date TEXT NOT NULL,
+        symptoms TEXT,
+        diagnosis TEXT,
+        prescription TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        admission_date TEXT,
+        discharge_date TEXT,
+        room_number TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS services (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      price REAL NOT NULL,
-      description TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS services (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        price REAL NOT NULL,
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS bills (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      bill_number TEXT NOT NULL UNIQUE,
-      patient_id TEXT NOT NULL REFERENCES patients(id),
-      visit_id TEXT REFERENCES patient_visits(id),
-      subtotal REAL NOT NULL,
-      tax_amount REAL NOT NULL,
-      discount_amount REAL NOT NULL DEFAULT 0,
-      total_amount REAL NOT NULL,
-      payment_method TEXT NOT NULL,
-      payment_status TEXT NOT NULL DEFAULT 'pending',
-      paid_amount REAL NOT NULL DEFAULT 0,
-      created_by TEXT NOT NULL REFERENCES users(id),
-      bill_date TEXT NOT NULL,
-      due_date TEXT,
-      notes TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS bills (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        bill_number TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        visit_id TEXT REFERENCES patient_visits(id),
+        subtotal REAL NOT NULL,
+        tax_amount REAL NOT NULL,
+        discount_amount REAL NOT NULL DEFAULT 0,
+        total_amount REAL NOT NULL,
+        payment_method TEXT NOT NULL,
+        payment_status TEXT NOT NULL DEFAULT 'pending',
+        paid_amount REAL NOT NULL DEFAULT 0,
+        created_by TEXT NOT NULL REFERENCES users(id),
+        bill_date TEXT NOT NULL,
+        due_date TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS bill_items (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      bill_id TEXT NOT NULL REFERENCES bills(id),
-      service_id TEXT NOT NULL REFERENCES services(id),
-      quantity INTEGER NOT NULL DEFAULT 1,
-      unit_price REAL NOT NULL,
-      total_price REAL NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS bill_items (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        bill_id TEXT NOT NULL REFERENCES bills(id),
+        service_id TEXT NOT NULL REFERENCES services(id),
+        quantity INTEGER NOT NULL DEFAULT 1,
+        unit_price REAL NOT NULL,
+        total_price REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS pathology_tests (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      test_id TEXT NOT NULL UNIQUE,
-      patient_id TEXT NOT NULL REFERENCES patients(id),
-      visit_id TEXT REFERENCES patient_visits(id),
-      doctor_id TEXT NOT NULL REFERENCES doctors(id),
-      test_name TEXT NOT NULL,
-      test_category TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'ordered',
-      ordered_date TEXT NOT NULL,
-      collected_date TEXT,
-      report_date TEXT,
-      results TEXT,
-      normal_range TEXT,
-      remarks TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      CREATE TABLE IF NOT EXISTS pathology_tests (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        test_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        visit_id TEXT REFERENCES patient_visits(id),
+        doctor_id TEXT NOT NULL REFERENCES doctors(id),
+        test_name TEXT NOT NULL,
+        test_category TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'ordered',
+        ordered_date TEXT NOT NULL,
+        collected_date TEXT,
+        report_date TEXT,
+        results TEXT,
+        normal_range TEXT,
+        remarks TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
 
-    CREATE TABLE IF NOT EXISTS audit_log (
-      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      user_id TEXT NOT NULL REFERENCES users(id),
-      action TEXT NOT NULL,
-      table_name TEXT NOT NULL,
-      record_id TEXT NOT NULL,
-      old_values TEXT,
-      new_values TEXT,
-      ip_address TEXT,
-      user_agent TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-  `);
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        action TEXT NOT NULL,
+        table_name TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        old_values TEXT,
+        new_values TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
 
-  console.log("Database initialized successfully");
-} catch (error) {
-  console.error("Database initialization error:", error);
+    // Create demo users if they don't exist
+    const existingAdmin = db.select().from(schema.users).where(eq(schema.users.username, 'admin')).get();
+    if (!existingAdmin) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      
+      // Create demo users
+      const demoUsers = [
+        {
+          id: 'admin-user-id',
+          username: 'admin',
+          password: hashedPassword,
+          fullName: 'System Administrator',
+          role: 'admin',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'doctor-user-id',
+          username: 'doctor',
+          password: await bcrypt.hash('doctor123', 10),
+          fullName: 'Dr. John Smith',
+          role: 'doctor',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'billing-user-id',
+          username: 'billing',
+          password: await bcrypt.hash('billing123', 10),
+          fullName: 'Billing Staff',
+          role: 'billing_staff',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'reception-user-id',
+          username: 'reception',
+          password: await bcrypt.hash('reception123', 10),
+          fullName: 'Reception Staff',
+          role: 'receptionist',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+
+      // Insert demo users
+      for (const user of demoUsers) {
+        db.insert(schema.users).values(user).run();
+      }
+
+      // Create demo services
+      const demoServices = [
+        {
+          id: 'service-consultation',
+          name: 'General Consultation',
+          category: 'consultation',
+          price: 500,
+          description: 'General medical consultation',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'service-blood-test',
+          name: 'Complete Blood Count',
+          category: 'pathology',
+          price: 300,
+          description: 'CBC blood test',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'service-xray',
+          name: 'X-Ray Chest',
+          category: 'radiology',
+          price: 800,
+          description: 'Chest X-Ray examination',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+
+      for (const service of demoServices) {
+        db.insert(schema.services).values(service).run();
+      }
+
+      // Create demo doctor
+      const demoDoctor = {
+        id: 'doctor-profile-id',
+        userId: 'doctor-user-id',
+        name: 'Dr. John Smith',
+        specialization: 'General Medicine',
+        qualification: 'MBBS, MD',
+        consultationFee: 500,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      db.insert(schema.doctors).values(demoDoctor).run();
+
+      console.log("Demo users and data created successfully");
+    }
+
+    console.log("Database initialized successfully");
+  } catch (error) {
+    console.error("Database initialization error:", error);
+  }
 }
+
+// Initialize the database
+initializeDatabase();
 
 export interface IStorage {
   // User management
