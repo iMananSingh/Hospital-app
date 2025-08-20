@@ -235,7 +235,9 @@ async function createDemoData() {
 }
 
 // Initialize the database
-initializeDatabase();
+initializeDatabase().then(() => {
+  createDemoData();
+});
 
 export interface IStorage {
   // User management

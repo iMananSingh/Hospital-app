@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TestTube, Eye, Edit, Search, Plus, FileText } from "lucide-react";
+import { TestTube, Eye, Search, Plus, ShoppingCart } from "lucide-react";
 import { insertPathologyTestSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -24,10 +24,20 @@ export default function Pathology() {
   const [selectedTest, setSelectedTest] = useState<PathologyTest | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const { toast } = useToast();
 
   const { data: pathologyTests, isLoading } = useQuery({
     queryKey: ["/api/pathology"],
+  });
+
+  const { data: testCatalog } = useQuery({
+    queryKey: ["/api/pathology/catalog"],
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ["/api/pathology/catalog/categories"],
   });
 
   const { data: patients } = useQuery({
@@ -58,6 +68,7 @@ export default function Pathology() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
       setIsNewTestOpen(false);
+      setSelectedCatalogTests([]);
       form.reset();
       toast({
         title: "Test ordered successfully",
@@ -86,7 +97,24 @@ export default function Pathology() {
   });
 
   const onSubmit = (data: any) => {
-    createTestMutation.mutate(data);
+    if (selectedCatalogTests.length === 0) {
+      toast({
+        title: "No tests selected",
+        description: "Please select at least one test from the catalog.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create test orders for each selected test
+    selectedCatalogTests.forEach(test => {
+      createTestMutation.mutate({
+        ...data,
+        testName: test.test_name,
+        testCategory: test.category,
+        price: test.price,
+      });
+    });
   };
 
   const filteredTests = pathologyTests?.filter((test: PathologyTest) => {
@@ -94,6 +122,12 @@ export default function Pathology() {
                          test.testId.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || test.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }) || [];
+
+  const filteredCatalog = testCatalog?.filter((test: any) => {
+    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
+    const matchesSearch = test.test_name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
   }) || [];
 
   const getStatusColor = (status: string) => {
@@ -130,16 +164,18 @@ export default function Pathology() {
     return doctor?.name || "Unknown Doctor";
   };
 
-  const testCategories = [
-    "Blood Test",
-    "Urine Test", 
-    "Stool Test",
-    "Biochemistry",
-    "Microbiology",
-    "Pathology",
-    "Radiology",
-    "Cardiology"
-  ];
+  const toggleTestSelection = (test: any) => {
+    const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+    if (isSelected) {
+      setSelectedCatalogTests(prev => prev.filter(t => t.test_name !== test.test_name));
+    } else {
+      setSelectedCatalogTests(prev => [...prev, test]);
+    }
+  };
+
+  const getTotalPrice = () => {
+    return selectedCatalogTests.reduce((total, test) => total + test.price, 0);
+  };
 
   return (
     <div className="space-y-6">
@@ -193,26 +229,22 @@ export default function Pathology() {
                   </div>
                 ) : filteredTests.length === 0 ? (
                   <div className="text-center py-8">
-                    <TestTube className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No pathology tests found</p>
-                    <Button 
-                      onClick={() => setIsNewTestOpen(true)}
-                      className="mt-4"
-                      data-testid="button-first-test"
-                    >
-                      Order your first test
-                    </Button>
+                    <TestTube className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No tests found</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      No pathology tests match your current search criteria.
+                    </p>
                   </div>
                 ) : (
-                  <Table data-testid="pathology-tests-table">
+                  <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Test ID</TableHead>
-                        <TableHead>Test Name</TableHead>
                         <TableHead>Patient</TableHead>
-                        <TableHead>Doctor</TableHead>
+                        <TableHead>Test Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Ordered Date</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Date Ordered</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -220,51 +252,26 @@ export default function Pathology() {
                     <TableBody>
                       {filteredTests.map((test: PathologyTest) => (
                         <TableRow key={test.id} data-testid={`test-row-${test.id}`}>
-                          <TableCell className="font-medium" data-testid={`test-id-${test.id}`}>
-                            {test.testId}
-                          </TableCell>
-                          <TableCell data-testid={`test-name-${test.id}`}>
-                            {test.testName}
-                          </TableCell>
-                          <TableCell data-testid={`test-patient-${test.id}`}>
-                            {getPatientName(test.patientId)}
-                          </TableCell>
-                          <TableCell data-testid={`test-doctor-${test.id}`}>
-                            {getDoctorName(test.doctorId)}
-                          </TableCell>
-                          <TableCell data-testid={`test-category-${test.id}`}>
-                            {test.testCategory}
-                          </TableCell>
-                          <TableCell data-testid={`test-ordered-${test.id}`}>
-                            {formatDate(test.orderedDate)}
-                          </TableCell>
+                          <TableCell className="font-medium">{test.testId}</TableCell>
+                          <TableCell>{getPatientName(test.patientId)}</TableCell>
+                          <TableCell>{test.testName}</TableCell>
+                          <TableCell>{test.testCategory}</TableCell>
+                          <TableCell>{getDoctorName(test.doctorId)}</TableCell>
+                          <TableCell>{formatDate(test.orderedDate)}</TableCell>
                           <TableCell>
-                            <Badge 
-                              variant="secondary" 
-                              className={getStatusColor(test.status)}
-                              data-testid={`test-status-${test.id}`}
-                            >
+                            <Badge className={getStatusColor(test.status)} variant="secondary">
                               {test.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => setSelectedTest(test)}
-                                data-testid={`button-view-${test.id}`}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                data-testid={`button-edit-${test.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedTest(test)}
+                              data-testid={`view-test-${test.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -279,39 +286,10 @@ export default function Pathology() {
             <Card>
               <CardHeader>
                 <CardTitle>Pending Tests</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Tests that require attention (ordered, collected, processing)
-                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredTests
-                    .filter(test => ["ordered", "collected", "processing"].includes(test.status))
-                    .map((test: PathologyTest) => (
-                      <div 
-                        key={test.id} 
-                        className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                        data-testid={`pending-test-${test.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{test.testName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {test.testId} • {getPatientName(test.patientId)}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <Badge className={getStatusColor(test.status)}>
-                              {test.status}
-                            </Badge>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {formatDate(test.orderedDate)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  }
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Pending tests will be displayed here</p>
                 </div>
               </CardContent>
             </Card>
@@ -321,40 +299,10 @@ export default function Pathology() {
             <Card>
               <CardHeader>
                 <CardTitle>Completed Tests</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Tests with results available
-                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredTests
-                    .filter(test => test.status === "completed")
-                    .map((test: PathologyTest) => (
-                      <div 
-                        key={test.id} 
-                        className="p-4 border rounded-lg"
-                        data-testid={`completed-test-${test.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{test.testName}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {test.testId} • {getPatientName(test.patientId)}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className="bg-green-100 text-green-800">
-                              Completed
-                            </Badge>
-                            <Button size="sm" data-testid={`view-report-${test.id}`}>
-                              <FileText className="w-4 h-4 mr-2" />
-                              View Report
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  }
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Completed tests will be displayed here</p>
                 </div>
               </CardContent>
             </Card>
@@ -362,19 +310,22 @@ export default function Pathology() {
         </Tabs>
       </div>
 
-      {/* New Test Order Dialog */}
+      {/* Order New Test Dialog */}
       <Dialog open={isNewTestOpen} onOpenChange={setIsNewTestOpen}>
-        <DialogContent className="max-w-2xl" data-testid="new-test-dialog">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Order Pathology Test</DialogTitle>
+            <DialogTitle>Order Pathology Tests</DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
-                <Select onValueChange={(value) => form.setValue("patientId", value)}>
-                  <SelectTrigger data-testid="select-patient">
+                <Select 
+                  onValueChange={(value) => form.setValue("patientId", value)}
+                  data-testid="select-patient"
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select patient" />
                   </SelectTrigger>
                   <SelectContent>
@@ -385,172 +336,170 @@ export default function Pathology() {
                     ))}
                   </SelectContent>
                 </Select>
-                {form.formState.errors.patientId && (
-                  <p className="text-sm text-destructive">{form.formState.errors.patientId.message}</p>
-                )}
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="doctorId">Ordering Doctor *</Label>
-                <Select onValueChange={(value) => form.setValue("doctorId", value)}>
-                  <SelectTrigger data-testid="select-doctor">
+                <Label htmlFor="doctorId">Doctor *</Label>
+                <Select 
+                  onValueChange={(value) => form.setValue("doctorId", value)}
+                  data-testid="select-doctor"
+                >
+                  <SelectTrigger>
                     <SelectValue placeholder="Select doctor" />
                   </SelectTrigger>
                   <SelectContent>
                     {doctors?.map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name} ({doctor.specialization})
+                        {doctor.name} - {doctor.specialization}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {form.formState.errors.doctorId && (
-                  <p className="text-sm text-destructive">{form.formState.errors.doctorId.message}</p>
-                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="testName">Test Name *</Label>
-                <Input
-                  id="testName"
-                  {...form.register("testName")}
-                  placeholder="e.g., Complete Blood Count"
-                  data-testid="input-test-name"
-                />
-                {form.formState.errors.testName && (
-                  <p className="text-sm text-destructive">{form.formState.errors.testName.message}</p>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Select Tests from Catalog</Label>
+                <div className="flex items-center space-x-2">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories?.map((category: string) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="testCategory">Category *</Label>
-                <Select onValueChange={(value) => form.setValue("testCategory", value)}>
-                  <SelectTrigger data-testid="select-test-category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {testCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
+
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">Select</TableHead>
+                      <TableHead>Test Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price (₹)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCatalog?.map((test: any, index: number) => {
+                      const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+                      return (
+                        <TableRow 
+                          key={`${test.category}-${test.test_name}-${index}`}
+                          className={isSelected ? "bg-blue-50" : ""}
+                        >
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleTestSelection(test)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{test.test_name}</TableCell>
+                          <TableCell>{test.category}</TableCell>
+                          <TableCell>₹{test.price}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedCatalogTests.length > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Tests ({selectedCatalogTests.length})</h4>
+                  <div className="space-y-1">
+                    {selectedCatalogTests.map((test, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{test.test_name}</span>
+                        <span>₹{test.price}</span>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.testCategory && (
-                  <p className="text-sm text-destructive">{form.formState.errors.testCategory.message}</p>
-                )}
-              </div>
+                  </div>
+                  <div className="border-t border-blue-200 mt-2 pt-2 font-medium text-blue-900">
+                    Total: ₹{getTotalPrice()}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="orderedDate">Order Date *</Label>
-              <Input
-                id="orderedDate"
-                type="date"
-                {...form.register("orderedDate")}
-                data-testid="input-order-date"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="remarks">Clinical Notes / Remarks</Label>
+              <Label htmlFor="remarks">Remarks</Label>
               <Textarea
-                id="remarks"
                 {...form.register("remarks")}
-                placeholder="Enter any clinical notes or special instructions"
-                rows={3}
+                placeholder="Enter any additional remarks or instructions"
                 data-testid="input-remarks"
               />
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="flex justify-end space-x-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsNewTestOpen(false)}
-                data-testid="button-cancel-test"
+                data-testid="button-cancel"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={createTestMutation.isPending}
-                className="bg-medical-blue hover:bg-medical-blue/90"
-                data-testid="button-order-test"
+                disabled={createTestMutation.isPending || selectedCatalogTests.length === 0}
+                data-testid="button-order-tests"
               >
-                {createTestMutation.isPending ? "Ordering..." : "Order Test"}
+                {createTestMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Test Details Dialog */}
+      {/* View Test Details Dialog */}
       {selectedTest && (
         <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
-          <DialogContent className="max-w-2xl" data-testid="test-details-dialog">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Test Details - {selectedTest.testId}</DialogTitle>
             </DialogHeader>
-            
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm text-muted-foreground">Test Name</Label>
-                  <p className="font-medium" data-testid="detail-test-name">{selectedTest.testName}</p>
+                  <Label className="text-sm font-medium">Patient</Label>
+                  <p className="text-sm text-muted-foreground">{getPatientName(selectedTest.patientId)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm text-muted-foreground">Category</Label>
-                  <p className="font-medium" data-testid="detail-test-category">{selectedTest.testCategory}</p>
+                  <Label className="text-sm font-medium">Doctor</Label>
+                  <p className="text-sm text-muted-foreground">{getDoctorName(selectedTest.doctorId)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Test Name</Label>
+                  <p className="text-sm text-muted-foreground">{selectedTest.testName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Category</Label>
+                  <p className="text-sm text-muted-foreground">{selectedTest.testCategory}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge className={getStatusColor(selectedTest.status)} variant="secondary">
+                    {selectedTest.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Date Ordered</Label>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedTest.orderedDate)}</p>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Patient</Label>
-                  <p className="font-medium" data-testid="detail-patient-name">{getPatientName(selectedTest.patientId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Ordering Doctor</Label>
-                  <p className="font-medium" data-testid="detail-doctor-name">{getDoctorName(selectedTest.doctorId)}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Ordered Date</Label>
-                  <p className="font-medium" data-testid="detail-ordered-date">{formatDate(selectedTest.orderedDate)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Collected Date</Label>
-                  <p className="font-medium" data-testid="detail-collected-date">{formatDate(selectedTest.collectedDate || '')}</p>
-                </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Report Date</Label>
-                  <p className="font-medium" data-testid="detail-report-date">{formatDate(selectedTest.reportDate || '')}</p>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm text-muted-foreground">Status</Label>
-                <Badge className={getStatusColor(selectedTest.status)} data-testid="detail-status">
-                  {selectedTest.status}
-                </Badge>
-              </div>
-
               {selectedTest.remarks && (
                 <div>
-                  <Label className="text-sm text-muted-foreground">Clinical Notes</Label>
-                  <p className="font-medium" data-testid="detail-remarks">{selectedTest.remarks}</p>
-                </div>
-              )}
-
-              {selectedTest.results && (
-                <div>
-                  <Label className="text-sm text-muted-foreground">Results</Label>
-                  <p className="font-medium" data-testid="detail-results">{selectedTest.results}</p>
+                  <Label className="text-sm font-medium">Remarks</Label>
+                  <p className="text-sm text-muted-foreground">{selectedTest.remarks}</p>
                 </div>
               )}
             </div>

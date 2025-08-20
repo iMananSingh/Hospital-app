@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema } from "@shared/schema";
+import { getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, PathologyTestCatalog } from "./pathology-catalog";
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -251,6 +252,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...bill, items });
     } catch (error) {
       res.status(500).json({ message: "Failed to get bill" });
+    }
+  });
+
+  // Pathology Test Catalog routes
+  app.get("/api/pathology/catalog", authenticateToken, async (req, res) => {
+    try {
+      const tests = getAllPathologyTests();
+      res.json(tests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get pathology catalog" });
+    }
+  });
+
+  app.get("/api/pathology/catalog/categories", authenticateToken, async (req, res) => {
+    try {
+      const categories = getCategories();
+      res.json(categories);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get pathology categories" });
+    }
+  });
+
+  app.get("/api/pathology/catalog/category/:categoryName", authenticateToken, async (req, res) => {
+    try {
+      const tests = getTestsByCategory(req.params.categoryName);
+      res.json(tests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get tests for category" });
     }
   });
 
