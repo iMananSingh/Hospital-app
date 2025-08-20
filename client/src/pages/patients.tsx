@@ -1,0 +1,321 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import TopBar from "@/components/layout/topbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { UserPlus, Edit, Eye } from "lucide-react";
+import { insertPatientSchema } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { Patient } from "@shared/schema";
+
+export default function Patients() {
+  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  const { data: patients, isLoading } = useQuery({
+    queryKey: ["/api/patients"],
+  });
+
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: any) => {
+      const response = await fetch("/api/patients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(patientData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create patient");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      setIsNewPatientOpen(false);
+      form.reset();
+      toast({
+        title: "Patient created successfully",
+        description: "The patient has been registered in the system.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error creating patient",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const form = useForm({
+    resolver: zodResolver(insertPatientSchema),
+    defaultValues: {
+      name: "",
+      age: 0,
+      gender: "",
+      phone: "",
+      address: "",
+      email: "",
+      emergencyContact: "",
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    createPatientMutation.mutate(data);
+  };
+
+  const filteredPatients = patients?.filter((patient: Patient) =>
+    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.phone.includes(searchQuery)
+  ) || [];
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <TopBar 
+        title="Patient Registration"
+        searchPlaceholder="Search patients by name, ID, or phone..."
+        onSearch={setSearchQuery}
+        onNewAction={() => setIsNewPatientOpen(true)}
+        newActionLabel="New Patient"
+      />
+      
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>All Patients</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Total: {filteredPatients.length} patients
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Loading patients...</p>
+              </div>
+            ) : filteredPatients.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No patients found</p>
+                <Button 
+                  onClick={() => setIsNewPatientOpen(true)}
+                  className="mt-4"
+                  data-testid="button-first-patient"
+                >
+                  Register your first patient
+                </Button>
+              </div>
+            ) : (
+              <Table data-testid="patients-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Age/Gender</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Registered</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPatients.map((patient: Patient) => (
+                    <TableRow key={patient.id} data-testid={`patient-row-${patient.id}`}>
+                      <TableCell className="font-medium" data-testid={`patient-id-${patient.id}`}>
+                        {patient.patientId}
+                      </TableCell>
+                      <TableCell data-testid={`patient-name-${patient.id}`}>
+                        {patient.name}
+                      </TableCell>
+                      <TableCell data-testid={`patient-age-gender-${patient.id}`}>
+                        {patient.age}y, {patient.gender}
+                      </TableCell>
+                      <TableCell data-testid={`patient-phone-${patient.id}`}>
+                        {patient.phone}
+                      </TableCell>
+                      <TableCell data-testid={`patient-registered-${patient.id}`}>
+                        {formatDate(patient.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={patient.isActive ? "default" : "secondary"}
+                          data-testid={`patient-status-${patient.id}`}
+                        >
+                          {patient.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            data-testid={`button-view-${patient.id}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            data-testid={`button-edit-${patient.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New Patient Dialog */}
+      <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
+        <DialogContent className="max-w-2xl" data-testid="new-patient-dialog">
+          <DialogHeader>
+            <DialogTitle>Register New Patient</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  {...form.register("name")}
+                  placeholder="Enter patient's full name"
+                  data-testid="input-patient-name"
+                />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  {...form.register("age", { valueAsNumber: true })}
+                  placeholder="Enter age"
+                  data-testid="input-patient-age"
+                />
+                {form.formState.errors.age && (
+                  <p className="text-sm text-destructive">{form.formState.errors.age.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender *</Label>
+                <Select onValueChange={(value) => form.setValue("gender", value)}>
+                  <SelectTrigger data-testid="select-patient-gender">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.gender && (
+                  <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  {...form.register("phone")}
+                  placeholder="+91 XXXXX XXXXX"
+                  data-testid="input-patient-phone"
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                {...form.register("email")}
+                placeholder="patient@example.com"
+                data-testid="input-patient-email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                {...form.register("address")}
+                placeholder="Enter complete address"
+                rows={3}
+                data-testid="input-patient-address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input
+                id="emergencyContact"
+                {...form.register("emergencyContact")}
+                placeholder="+91 XXXXX XXXXX"
+                data-testid="input-patient-emergency"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsNewPatientOpen(false)}
+                data-testid="button-cancel-patient"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createPatientMutation.isPending}
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-save-patient"
+              >
+                {createPatientMutation.isPending ? "Saving..." : "Register Patient"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

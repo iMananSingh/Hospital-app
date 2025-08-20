@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(212 25% 16%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(212 25% 16%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(212 25% 16%);
+  --primary: hsl(208 88% 42%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(210 8% 95%);
+  --secondary-foreground: hsl(212 25% 16%);
+  --muted: hsl(0 0% 97%);
+  --muted-foreground: hsl(210 8% 46%);
+  --accent: hsl(210 8% 95%);
+  --accent-foreground: hsl(208 88% 42%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(210 20% 90%);
+  --input: hsl(210 20% 95%);
+  --ring: hsl(208 88% 42%);
+  --chart-1: hsl(208 88% 42%);
+  --chart-2: hsl(155 100% 26%);
+  --chart-3: hsl(30 95% 54%);
+  --chart-4: hsl(147 62% 34%);
+  --chart-5: hsl(341 75% 51%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(212 25% 16%);
+  --sidebar-primary: hsl(208 88% 42%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 8% 95%);
+  --sidebar-accent-foreground: hsl(208 88% 42%);
+  --sidebar-border: hsl(210 20% 90%);
+  --sidebar-ring: hsl(208 88% 42%);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+  
+  /* Hospital-specific colors */
+  --medical-blue: hsl(208 88% 42%);
+  --healthcare-green: hsl(155 62% 34%);
+  --alert-orange: hsl(14 95% 60%);
+  --light-gray: hsl(210 20% 98%);
+  --surface: hsl(0 0% 100%);
+  --text-dark: hsl(212 25% 16%);
+  --text-muted: hsl(210 8% 46%);
+}
+
+.dark {
+  --background: hsl(222 84% 5%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(222 84% 5%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222 84% 5%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(208 88% 52%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(217 33% 17%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217 33% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(217 33% 17%);
+  --accent-foreground: hsl(208 88% 52%);
+  --destructive: hsl(0 62% 30%);
+  --destructive-foreground: hsl(0 85% 97%);
+  --border: hsl(217 33% 17%);
+  --input: hsl(217 33% 17%);
+  --ring: hsl(208 88% 52%);
+  --chart-1: hsl(208 88% 52%);
+  --chart-2: hsl(155 100% 36%);
+  --chart-3: hsl(30 95% 64%);
+  --chart-4: hsl(147 62% 44%);
+  --chart-5: hsl(341 75% 61%);
+  --sidebar: hsl(222 84% 5%);
+  --sidebar-foreground: hsl(210 40% 98%);
+  --sidebar-primary: hsl(208 88% 52%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(217 33% 17%);
+  --sidebar-accent-foreground: hsl(208 88% 52%);
+  --sidebar-border: hsl(217 33% 17%);
+  --sidebar-ring: hsl(208 88% 52%);
+  
+  /* Hospital-specific dark colors */
+  --medical-blue: hsl(208 88% 52%);
+  --healthcare-green: hsl(155 62% 44%);
+  --alert-orange: hsl(14 95% 70%);
+  --light-gray: hsl(217 33% 12%);
+  --surface: hsl(222 84% 5%);
+  --text-dark: hsl(210 40% 98%);
+  --text-muted: hsl(215 20% 65%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer utilities {
+  .medical-blue {
+    color: var(--medical-blue);
+  }
+  
+  .bg-medical-blue {
+    background-color: var(--medical-blue);
+  }
+  
+  .healthcare-green {
+    color: var(--healthcare-green);
+  }
+  
+  .bg-healthcare-green {
+    background-color: var(--healthcare-green);
+  }
+  
+  .alert-orange {
+    color: var(--alert-orange);
+  }
+  
+  .bg-alert-orange {
+    background-color: var(--alert-orange);
+  }
+  
+  .text-medical-blue {
+    color: var(--medical-blue);
+  }
+  
+  .text-healthcare-green {
+    color: var(--healthcare-green);
+  }
+  
+  .text-alert-orange {
+    color: var(--alert-orange);
+  }
+}
