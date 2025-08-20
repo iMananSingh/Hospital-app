@@ -6,7 +6,8 @@ import type {
   User, InsertUser, Doctor, InsertDoctor, Patient, InsertPatient,
   PatientVisit, InsertPatientVisit, Service, InsertService,
   Bill, InsertBill, BillItem, InsertBillItem,
-  PathologyTest, InsertPathologyTest, AuditLog, InsertAuditLog
+  PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest, 
+  AuditLog, InsertAuditLog
 } from "@shared/schema";
 import { eq, desc, and, like, count, sum } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -278,11 +279,13 @@ export interface IStorage {
   getBillItems(billId: string): Promise<BillItem[]>;
   getBillsWithPatients(): Promise<any[]>;
 
-  // Pathology
-  createPathologyTest(test: InsertPathologyTest): Promise<PathologyTest>;
-  getPathologyTests(): Promise<PathologyTest[]>;
-  getPathologyTestsByPatient(patientId: string): Promise<PathologyTest[]>;
-  updatePathologyTest(id: string, test: Partial<InsertPathologyTest>): Promise<PathologyTest | undefined>;
+  // Pathology order and test management
+  createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder>;
+  getPathologyOrders(): Promise<any[]>;
+  getPathologyOrderById(id: string): Promise<any>;
+  getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]>;
+  updatePathologyOrderStatus(id: string, status: string): Promise<PathologyOrder | undefined>;
+  updatePathologyTestStatus(id: string, status: string, results?: string): Promise<PathologyTest | undefined>;
 
   // Dashboard stats
   getDashboardStats(): Promise<any>;
@@ -314,9 +317,9 @@ export class SqliteStorage implements IStorage {
     return `BILL-${year}-${count.toString().padStart(4, '0')}`;
   }
 
-  private generateTestId(): string {
+  private generateOrderId(): string {
     const year = new Date().getFullYear();
-    const count = db.select().from(schema.pathologyTests).all().length + 1;
+    const count = db.select().from(schema.pathologyOrders).all().length + 1;
     return `LAB-${year}-${count.toString().padStart(3, '0')}`;
   }
 
@@ -508,31 +511,75 @@ export class SqliteStorage implements IStorage {
     .all();
   }
 
-  async createPathologyTest(test: InsertPathologyTest): Promise<PathologyTest> {
-    const testId = this.generateTestId();
-    const created = db.insert(schema.pathologyTests).values({
-      ...test,
-      testId,
-    }).returning().get();
-    return created;
+  async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
+    const orderId = this.generateOrderId();
+    const totalPrice = tests.reduce((total, test) => total + test.price, 0);
+    
+    return db.transaction((tx) => {
+      const created = tx.insert(schema.pathologyOrders).values({
+        ...orderData,
+        orderId,
+        totalPrice,
+      }).returning().get();
+
+      tests.forEach(test => {
+        tx.insert(schema.pathologyTests).values({
+          ...test,
+          orderId: created.id,
+        });
+      });
+      
+      return created;
+    });
   }
 
-  async getPathologyTests(): Promise<PathologyTest[]> {
-    return db.select().from(schema.pathologyTests)
-      .orderBy(desc(schema.pathologyTests.createdAt))
+  async getPathologyOrders(): Promise<any[]> {
+    return db.select({
+      order: schema.pathologyOrders,
+      patient: schema.patients,
+      doctor: schema.doctors,
+    })
+    .from(schema.pathologyOrders)
+    .leftJoin(schema.patients, eq(schema.pathologyOrders.patientId, schema.patients.id))
+    .leftJoin(schema.doctors, eq(schema.pathologyOrders.doctorId, schema.doctors.id))
+    .orderBy(desc(schema.pathologyOrders.createdAt))
+    .all();
+  }
+
+  async getPathologyOrderById(id: string): Promise<any> {
+    const order = db.select().from(schema.pathologyOrders).where(eq(schema.pathologyOrders.id, id)).get();
+    if (!order) return null;
+
+    const tests = db.select().from(schema.pathologyTests).where(eq(schema.pathologyTests.orderId, id)).all();
+    const patient = db.select().from(schema.patients).where(eq(schema.patients.id, order.patientId)).get();
+    const doctor = order.doctorId ? db.select().from(schema.doctors).where(eq(schema.doctors.id, order.doctorId)).get() : null;
+
+    return {
+      order,
+      tests,
+      patient,
+      doctor,
+    };
+  }
+
+  async getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]> {
+    return db.select().from(schema.pathologyOrders)
+      .where(eq(schema.pathologyOrders.patientId, patientId))
+      .orderBy(desc(schema.pathologyOrders.createdAt))
       .all();
   }
 
-  async getPathologyTestsByPatient(patientId: string): Promise<PathologyTest[]> {
-    return db.select().from(schema.pathologyTests)
-      .where(eq(schema.pathologyTests.patientId, patientId))
-      .orderBy(desc(schema.pathologyTests.createdAt))
-      .all();
+  async updatePathologyOrderStatus(id: string, status: string): Promise<PathologyOrder | undefined> {
+    const updated = db.update(schema.pathologyOrders)
+      .set({ status, updatedAt: new Date().toISOString() })
+      .where(eq(schema.pathologyOrders.id, id))
+      .returning().get();
+    return updated;
   }
 
-  async updatePathologyTest(id: string, test: Partial<InsertPathologyTest>): Promise<PathologyTest | undefined> {
+  async updatePathologyTestStatus(id: string, status: string, results?: string): Promise<PathologyTest | undefined> {
     const updated = db.update(schema.pathologyTests)
-      .set({ ...test, updatedAt: new Date().toISOString() })
+      .set({ status, results, updatedAt: new Date().toISOString() })
       .where(eq(schema.pathologyTests.id, id))
       .returning().get();
     return updated;
@@ -566,11 +613,11 @@ export class SqliteStorage implements IStorage {
 
     // Completed lab tests today
     const todayLabs = db.select({ count: count() })
-      .from(schema.pathologyTests)
+      .from(schema.pathologyOrders)
       .where(
         and(
-          eq(schema.pathologyTests.status, 'completed'),
-          eq(schema.pathologyTests.reportDate, today)
+          eq(schema.pathologyOrders.status, 'completed'),
+          eq(schema.pathologyOrders.reportDate, today)
         )
       )
       .get();

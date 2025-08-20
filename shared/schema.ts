@@ -107,22 +107,33 @@ export const billItems = sqliteTable("bill_items", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Pathology tests
-export const pathologyTests = sqliteTable("pathology_tests", {
+// Pathology orders (one order can have multiple tests)
+export const pathologyOrders = sqliteTable("pathology_orders", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  testId: text("test_id").notNull().unique(), // LAB-2024-001 format
+  orderId: text("order_id").notNull().unique(), // LAB-2024-001 format
   patientId: text("patient_id").notNull().references(() => patients.id),
   visitId: text("visit_id").references(() => patientVisits.id),
-  doctorId: text("doctor_id").notNull().references(() => doctors.id),
-  testName: text("test_name").notNull(),
-  testCategory: text("test_category").notNull(),
+  doctorId: text("doctor_id").references(() => doctors.id), // Optional for external patients
   status: text("status").notNull().default("ordered"), // ordered, collected, processing, completed
   orderedDate: text("ordered_date").notNull(),
   collectedDate: text("collected_date"),
   reportDate: text("report_date"),
+  remarks: text("remarks"),
+  totalPrice: real("total_price").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Individual pathology tests within an order
+export const pathologyTests = sqliteTable("pathology_tests", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  orderId: text("order_id").notNull().references(() => pathologyOrders.id),
+  testName: text("test_name").notNull(),
+  testCategory: text("test_category").notNull(),
+  status: text("status").notNull().default("ordered"), // ordered, collected, processing, completed
   results: text("results"),
   normalRange: text("normal_range"),
-  remarks: text("remarks"),
+  price: real("price").notNull(),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
@@ -186,9 +197,15 @@ export const insertBillItemSchema = createInsertSchema(billItems).omit({
   createdAt: true,
 });
 
+export const insertPathologyOrderSchema = createInsertSchema(pathologyOrders).omit({
+  id: true,
+  orderId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit({
   id: true,
-  testId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -213,6 +230,8 @@ export type Bill = typeof bills.$inferSelect;
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type BillItem = typeof billItems.$inferSelect;
 export type InsertBillItem = z.infer<typeof insertBillItemSchema>;
+export type PathologyOrder = typeof pathologyOrders.$inferSelect;
+export type InsertPathologyOrder = z.infer<typeof insertPathologyOrderSchema>;
 export type PathologyTest = typeof pathologyTests.$inferSelect;
 export type InsertPathologyTest = z.infer<typeof insertPathologyTestSchema>;
 export type AuditLog = typeof auditLog.$inferSelect;

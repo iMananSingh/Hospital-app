@@ -286,29 +286,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pathology routes
   app.get("/api/pathology", authenticateToken, async (req, res) => {
     try {
-      const tests = await storage.getPathologyTests();
-      res.json(tests);
+      const orders = await storage.getPathologyOrders();
+      res.json(orders);
     } catch (error) {
-      res.status(500).json({ message: "Failed to get pathology tests" });
+      res.status(500).json({ message: "Failed to get pathology orders" });
     }
   });
 
   app.post("/api/pathology", authenticateToken, async (req, res) => {
     try {
-      const testData = insertPathologyTestSchema.parse(req.body);
-      const test = await storage.createPathologyTest(testData);
-      res.json(test);
+      const { orderData, tests } = req.body;
+      const order = await storage.createPathologyOrder(orderData, tests);
+      res.json(order);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create pathology test" });
+      res.status(400).json({ message: "Failed to create pathology order" });
+    }
+  });
+
+  app.get("/api/pathology/:id", authenticateToken, async (req, res) => {
+    try {
+      const orderDetails = await storage.getPathologyOrderById(req.params.id);
+      if (!orderDetails) {
+        return res.status(404).json({ message: "Pathology order not found" });
+      }
+      res.json(orderDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get pathology order details" });
     }
   });
 
   app.get("/api/pathology/patient/:patientId", authenticateToken, async (req, res) => {
     try {
-      const tests = await storage.getPathologyTestsByPatient(req.params.patientId);
-      res.json(tests);
+      const orders = await storage.getPathologyOrdersByPatient(req.params.patientId);
+      res.json(orders);
     } catch (error) {
-      res.status(500).json({ message: "Failed to get patient pathology tests" });
+      res.status(500).json({ message: "Failed to get patient pathology orders" });
+    }
+  });
+
+  app.patch("/api/pathology/:id/status", authenticateToken, async (req, res) => {
+    try {
+      const { status } = req.body;
+      const updated = await storage.updatePathologyOrderStatus(req.params.id, status);
+      if (!updated) {
+        return res.status(404).json({ message: "Pathology order not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update pathology order status" });
+    }
+  });
+
+  app.patch("/api/pathology/test/:id/status", authenticateToken, async (req, res) => {
+    try {
+      const { status, results } = req.body;
+      const updated = await storage.updatePathologyTestStatus(req.params.id, status, results);
+      if (!updated) {
+        return res.status(404).json({ message: "Pathology test not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update pathology test status" });
     }
   });
 

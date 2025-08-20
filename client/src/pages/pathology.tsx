@@ -14,21 +14,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TestTube, Eye, Search, Plus, ShoppingCart } from "lucide-react";
-import { insertPathologyTestSchema } from "@shared/schema";
+import { insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PathologyTest, Patient, Doctor } from "@shared/schema";
+import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
 
 export default function Pathology() {
   const [isNewTestOpen, setIsNewTestOpen] = useState(false);
-  const [selectedTest, setSelectedTest] = useState<PathologyTest | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const { toast } = useToast();
 
-  const { data: pathologyTests, isLoading } = useQuery({
+  const { data: pathologyOrders, isLoading } = useQuery({
     queryKey: ["/api/pathology"],
   });
 
@@ -48,19 +48,19 @@ export default function Pathology() {
     queryKey: ["/api/doctors"],
   });
 
-  const createTestMutation = useMutation({
-    mutationFn: async (testData: any) => {
+  const createOrderMutation = useMutation({
+    mutationFn: async (data: any) => {
       const response = await fetch("/api/pathology", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(testData),
+        body: JSON.stringify(data),
       });
       
       if (!response.ok) {
-        throw new Error("Failed to create pathology test");
+        throw new Error("Failed to create pathology order");
       }
       
       return response.json();
@@ -71,13 +71,13 @@ export default function Pathology() {
       setSelectedCatalogTests([]);
       form.reset();
       toast({
-        title: "Test ordered successfully",
-        description: "The pathology test has been ordered.",
+        title: "Order placed successfully",
+        description: "The pathology order has been placed.",
       });
     },
     onError: () => {
       toast({
-        title: "Error ordering test",
+        title: "Error placing order",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -85,12 +85,10 @@ export default function Pathology() {
   });
 
   const form = useForm({
-    resolver: zodResolver(insertPathologyTestSchema),
+    resolver: zodResolver(insertPathologyOrderSchema),
     defaultValues: {
       patientId: "",
       doctorId: "",
-      testName: "",
-      testCategory: "",
       orderedDate: new Date().toISOString().split('T')[0],
       remarks: "",
     },
@@ -106,21 +104,30 @@ export default function Pathology() {
       return;
     }
 
-    // Create test orders for each selected test
-    selectedCatalogTests.forEach(test => {
-      createTestMutation.mutate({
-        ...data,
-        testName: test.test_name,
-        testCategory: test.category,
-        price: test.price,
-      });
-    });
+    // Create single order with multiple tests
+    const orderData = {
+      patientId: data.patientId,
+      doctorId: data.doctorId || null, // Make doctor optional
+      orderedDate: data.orderedDate,
+      remarks: data.remarks,
+    };
+
+    const tests = selectedCatalogTests.map(test => ({
+      testName: test.test_name,
+      testCategory: test.category,
+      price: test.price,
+    }));
+
+    createOrderMutation.mutate({ orderData, tests });
   };
 
-  const filteredTests = pathologyTests?.filter((test: PathologyTest) => {
-    const matchesSearch = test.testName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         test.testId.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || test.status === statusFilter;
+  const filteredOrders = pathologyOrders?.filter((orderData: any) => {
+    const order = orderData.order;
+    const patient = orderData.patient;
+    const matchesSearch = order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) || [];
 
@@ -159,7 +166,8 @@ export default function Pathology() {
     return patient?.name || "Unknown Patient";
   };
 
-  const getDoctorName = (doctorId: string) => {
+  const getDoctorName = (doctorId: string | null) => {
+    if (!doctorId) return "External Patient";
     const doctor = doctors?.find((d: Doctor) => d.id === doctorId);
     return doctor?.name || "Unknown Doctor";
   };
@@ -200,9 +208,9 @@ export default function Pathology() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>All Pathology Tests</CardTitle>
+                    <CardTitle>All Pathology Orders</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Total: {filteredTests.length} tests
+                      Total: {filteredOrders.length} orders
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -227,54 +235,59 @@ export default function Pathology() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
                     <p className="text-sm text-muted-foreground mt-2">Loading tests...</p>
                   </div>
-                ) : filteredTests.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                   <div className="text-center py-8">
                     <TestTube className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No tests found</h3>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      No pathology tests match your current search criteria.
+                      No pathology orders match your current search criteria.
                     </p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Test ID</TableHead>
+                        <TableHead>Order ID</TableHead>
                         <TableHead>Patient</TableHead>
-                        <TableHead>Test Name</TableHead>
-                        <TableHead>Category</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>Date Ordered</TableHead>
+                        <TableHead>Tests Count</TableHead>
+                        <TableHead>Total Price</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredTests.map((test: PathologyTest) => (
-                        <TableRow key={test.id} data-testid={`test-row-${test.id}`}>
-                          <TableCell className="font-medium">{test.testId}</TableCell>
-                          <TableCell>{getPatientName(test.patientId)}</TableCell>
-                          <TableCell>{test.testName}</TableCell>
-                          <TableCell>{test.testCategory}</TableCell>
-                          <TableCell>{getDoctorName(test.doctorId)}</TableCell>
-                          <TableCell>{formatDate(test.orderedDate)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(test.status)} variant="secondary">
-                              {test.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedTest(test)}
-                              data-testid={`view-test-${test.id}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredOrders.map((orderData: any) => {
+                        const order = orderData.order;
+                        const patient = orderData.patient;
+                        const doctor = orderData.doctor;
+                        return (
+                          <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
+                            <TableCell className="font-medium">{order.orderId}</TableCell>
+                            <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
+                            <TableCell>{doctor?.name || "External Patient"}</TableCell>
+                            <TableCell>{formatDate(order.orderedDate)}</TableCell>
+                            <TableCell>Loading...</TableCell>
+                            <TableCell>₹{order.totalPrice}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(order.status)} variant="secondary">
+                                {order.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedOrder(order)}
+                                data-testid={`view-order-${order.id}`}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -339,15 +352,16 @@ export default function Pathology() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="doctorId">Doctor *</Label>
+                <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
                 <Select 
                   onValueChange={(value) => form.setValue("doctorId", value)}
                   data-testid="select-doctor"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select doctor" />
+                    <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">External Patient (No Doctor)</SelectItem>
                     {doctors?.map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
@@ -450,58 +464,77 @@ export default function Pathology() {
               </Button>
               <Button
                 type="submit"
-                disabled={createTestMutation.isPending || selectedCatalogTests.length === 0}
+                disabled={createOrderMutation.isPending || selectedCatalogTests.length === 0}
                 data-testid="button-order-tests"
               >
-                {createTestMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
+                {createOrderMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* View Test Details Dialog */}
-      {selectedTest && (
-        <Dialog open={!!selectedTest} onOpenChange={() => setSelectedTest(null)}>
-          <DialogContent>
+      {/* View Order Details Dialog */}
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Test Details - {selectedTest.testId}</DialogTitle>
+              <DialogTitle>Order Details - {selectedOrder.orderId}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Patient</Label>
-                  <p className="text-sm text-muted-foreground">{getPatientName(selectedTest.patientId)}</p>
+                  <p className="text-sm text-muted-foreground">{getPatientName(selectedOrder.patientId)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Doctor</Label>
-                  <p className="text-sm text-muted-foreground">{getDoctorName(selectedTest.doctorId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Test Name</Label>
-                  <p className="text-sm text-muted-foreground">{selectedTest.testName}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Category</Label>
-                  <p className="text-sm text-muted-foreground">{selectedTest.testCategory}</p>
+                  <p className="text-sm text-muted-foreground">{getDoctorName(selectedOrder.doctorId)}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={getStatusColor(selectedTest.status)} variant="secondary">
-                    {selectedTest.status}
+                  <Badge className={getStatusColor(selectedOrder.status)} variant="secondary">
+                    {selectedOrder.status}
                   </Badge>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Date Ordered</Label>
-                  <p className="text-sm text-muted-foreground">{formatDate(selectedTest.orderedDate)}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.orderedDate)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Total Price</Label>
+                  <p className="text-sm text-muted-foreground">₹{selectedOrder.totalPrice}</p>
                 </div>
               </div>
-              {selectedTest.remarks && (
+              {selectedOrder.remarks && (
                 <div>
                   <Label className="text-sm font-medium">Remarks</Label>
-                  <p className="text-sm text-muted-foreground">{selectedTest.remarks}</p>
+                  <p className="text-sm text-muted-foreground">{selectedOrder.remarks}</p>
                 </div>
               )}
+              
+              <div className="mt-6">
+                <Label className="text-sm font-medium">Tests in this Order</Label>
+                <div className="mt-2 border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Test Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Price (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          Loading test details...
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
