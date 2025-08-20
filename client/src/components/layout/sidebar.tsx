@@ -56,19 +56,19 @@ export default function Sidebar() {
             (item.href !== "/" && location.startsWith(item.href));
           
           return (
-            <Link key={item.name} href={item.href}>
-              <a
-                className={cn(
-                  "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
-                  isActive
-                    ? "bg-medical-blue text-white"
-                    : "text-text-muted hover:bg-muted hover:text-text-dark"
-                )}
-                data-testid={`nav-${item.href === "/" ? "dashboard" : item.href.substring(1)}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </a>
+            <Link 
+              key={item.name} 
+              href={item.href}
+              className={cn(
+                "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
+                isActive
+                  ? "bg-medical-blue text-white"
+                  : "text-text-muted hover:bg-muted hover:text-text-dark"
+              )}
+              data-testid={`nav-${item.href === "/" ? "dashboard" : item.href.substring(1)}`}
+            >
+              <item.icon className="w-5 h-5" />
+              <span>{item.name}</span>
             </Link>
           );
         })}

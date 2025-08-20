@@ -153,100 +153,68 @@ async function initializeDatabase() {
       );
     `);
 
-    // Create demo users if they don't exist
-    const existingAdmin = db.select().from(schema.users).where(eq(schema.users.username, 'admin')).get();
-    if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      // Create demo users
-      const demoUsers = [
-        {
-          id: 'admin-user-id',
-          username: 'admin',
+    // Always ensure demo users and data exist on every restart
+    await createDemoData();
+
+    console.log("Database initialized successfully");
+  } catch (error) {
+    console.error("Database initialization error:", error);
+  }
+}
+
+// Demo data creation function
+async function createDemoData() {
+  try {
+    // Check and create demo users
+    const demoUserData = [
+      { username: 'admin', password: 'admin123', fullName: 'System Administrator', role: 'admin', id: 'admin-user-id' },
+      { username: 'doctor', password: 'doctor123', fullName: 'Dr. John Smith', role: 'doctor', id: 'doctor-user-id' },
+      { username: 'billing', password: 'billing123', fullName: 'Billing Staff', role: 'billing_staff', id: 'billing-user-id' },
+      { username: 'reception', password: 'reception123', fullName: 'Reception Staff', role: 'receptionist', id: 'reception-user-id' }
+    ];
+
+    for (const userData of demoUserData) {
+      const existing = db.select().from(schema.users).where(eq(schema.users.username, userData.username)).get();
+      if (!existing) {
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        db.insert(schema.users).values({
+          id: userData.id,
+          username: userData.username,
           password: hashedPassword,
-          fullName: 'System Administrator',
-          role: 'admin',
+          fullName: userData.fullName,
+          role: userData.role,
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'doctor-user-id',
-          username: 'doctor',
-          password: await bcrypt.hash('doctor123', 10),
-          fullName: 'Dr. John Smith',
-          role: 'doctor',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'billing-user-id',
-          username: 'billing',
-          password: await bcrypt.hash('billing123', 10),
-          fullName: 'Billing Staff',
-          role: 'billing_staff',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'reception-user-id',
-          username: 'reception',
-          password: await bcrypt.hash('reception123', 10),
-          fullName: 'Reception Staff',
-          role: 'receptionist',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
-
-      // Insert demo users
-      for (const user of demoUsers) {
-        db.insert(schema.users).values(user).run();
+        }).run();
+        console.log(`Created demo user: ${userData.username}`);
       }
+    }
 
-      // Create demo services
-      const demoServices = [
-        {
-          id: 'service-consultation',
-          name: 'General Consultation',
-          category: 'consultation',
-          price: 500,
-          description: 'General medical consultation',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'service-blood-test',
-          name: 'Complete Blood Count',
-          category: 'pathology',
-          price: 300,
-          description: 'CBC blood test',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: 'service-xray',
-          name: 'X-Ray Chest',
-          category: 'radiology',
-          price: 800,
-          description: 'Chest X-Ray examination',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ];
+    // Check and create demo services
+    const demoServiceData = [
+      { id: 'service-consultation', name: 'General Consultation', category: 'consultation', price: 500, description: 'General medical consultation' },
+      { id: 'service-blood-test', name: 'Complete Blood Count', category: 'pathology', price: 300, description: 'CBC blood test' },
+      { id: 'service-xray', name: 'X-Ray Chest', category: 'radiology', price: 800, description: 'Chest X-Ray examination' }
+    ];
 
-      for (const service of demoServices) {
-        db.insert(schema.services).values(service).run();
+    for (const serviceData of demoServiceData) {
+      const existing = db.select().from(schema.services).where(eq(schema.services.id, serviceData.id)).get();
+      if (!existing) {
+        db.insert(schema.services).values({
+          ...serviceData,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }).run();
+        console.log(`Created demo service: ${serviceData.name}`);
       }
+    }
 
-      // Create demo doctor
-      const demoDoctor = {
+    // Check and create demo doctor profile
+    const existingDoctor = db.select().from(schema.doctors).where(eq(schema.doctors.id, 'doctor-profile-id')).get();
+    if (!existingDoctor) {
+      db.insert(schema.doctors).values({
         id: 'doctor-profile-id',
         userId: 'doctor-user-id',
         name: 'Dr. John Smith',
@@ -256,16 +224,13 @@ async function initializeDatabase() {
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      };
-
-      db.insert(schema.doctors).values(demoDoctor).run();
-
-      console.log("Demo users and data created successfully");
+      }).run();
+      console.log("Created demo doctor profile");
     }
 
-    console.log("Database initialized successfully");
+    console.log("Demo data verification completed");
   } catch (error) {
-    console.error("Database initialization error:", error);
+    console.error("Error creating demo data:", error);
   }
 }
 
