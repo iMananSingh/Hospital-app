@@ -107,7 +107,7 @@ export default function Pathology() {
     // Create single order with multiple tests
     const orderData = {
       patientId: data.patientId,
-      doctorId: data.doctorId || null, // Make doctor optional
+      doctorId: data.doctorId === "external" ? null : data.doctorId, // Make doctor optional
       orderedDate: data.orderedDate,
       remarks: data.remarks,
     };
@@ -121,21 +121,22 @@ export default function Pathology() {
     createOrderMutation.mutate({ orderData, tests });
   };
 
-  const filteredOrders = pathologyOrders?.filter((orderData: any) => {
+  const filteredOrders = (pathologyOrders || []).filter((orderData: any) => {
+    if (!orderData?.order) return false;
     const order = orderData.order;
     const patient = orderData.patient;
-    const matchesSearch = order.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }) || [];
+  });
 
-  const filteredCatalog = testCatalog?.filter((test: any) => {
+  const filteredCatalog = (testCatalog || []).filter((test: any) => {
     const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
-    const matchesSearch = test.test_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = test.test_name?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
-  }) || [];
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -162,13 +163,13 @@ export default function Pathology() {
   };
 
   const getPatientName = (patientId: string) => {
-    const patient = patients?.find((p: Patient) => p.id === patientId);
+    const patient = (patients || []).find((p: Patient) => p.id === patientId);
     return patient?.name || "Unknown Patient";
   };
 
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
-    const doctor = doctors?.find((d: Doctor) => d.id === doctorId);
+    const doctor = (doctors || []).find((d: Doctor) => d.id === doctorId);
     return doctor?.name || "Unknown Doctor";
   };
 
@@ -342,7 +343,7 @@ export default function Pathology() {
                     <SelectValue placeholder="Select patient" />
                   </SelectTrigger>
                   <SelectContent>
-                    {patients?.map((patient: Patient) => (
+                    {(patients || []).map((patient: Patient) => (
                       <SelectItem key={patient.id} value={patient.id}>
                         {patient.name} ({patient.patientId})
                       </SelectItem>
@@ -361,8 +362,8 @@ export default function Pathology() {
                     <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">External Patient (No Doctor)</SelectItem>
-                    {doctors?.map((doctor: Doctor) => (
+                    <SelectItem value="external">External Patient (No Doctor)</SelectItem>
+                    {(doctors || []).map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
                       </SelectItem>
@@ -382,7 +383,7 @@ export default function Pathology() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
-                      {categories?.map((category: string) => (
+                      {(categories || []).map((category: string) => (
                         <SelectItem key={category} value={category}>{category}</SelectItem>
                       ))}
                     </SelectContent>
@@ -401,7 +402,7 @@ export default function Pathology() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCatalog?.map((test: any, index: number) => {
+                    {filteredCatalog.map((test: any, index: number) => {
                       const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
                       return (
                         <TableRow 

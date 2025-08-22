@@ -121,21 +121,31 @@ async function initializeDatabase() {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
-      CREATE TABLE IF NOT EXISTS pathology_tests (
+      CREATE TABLE IF NOT EXISTS pathology_orders (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        test_id TEXT NOT NULL UNIQUE,
+        order_id TEXT NOT NULL UNIQUE,
         patient_id TEXT NOT NULL REFERENCES patients(id),
         visit_id TEXT REFERENCES patient_visits(id),
-        doctor_id TEXT NOT NULL REFERENCES doctors(id),
-        test_name TEXT NOT NULL,
-        test_category TEXT NOT NULL,
+        doctor_id TEXT REFERENCES doctors(id),
         status TEXT NOT NULL DEFAULT 'ordered',
         ordered_date TEXT NOT NULL,
         collected_date TEXT,
         report_date TEXT,
+        remarks TEXT,
+        total_price REAL NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS pathology_tests (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT NOT NULL REFERENCES pathology_orders(id),
+        test_name TEXT NOT NULL,
+        test_category TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'ordered',
         results TEXT,
         normal_range TEXT,
-        remarks TEXT,
+        price REAL NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
