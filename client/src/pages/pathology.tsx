@@ -155,11 +155,12 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Order Details - {order.orderId}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        
+        <div className="flex-1 overflow-y-auto space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-medium">Patient</Label>
@@ -191,22 +192,22 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
             </div>
           )}
           
-          <div className="mt-6">
-            <Label className="text-sm font-medium">Tests in this Order</Label>
-            <div className="mt-2 border rounded-lg">
+          <div className="mt-6 flex-1">
+            <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+            <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
-                    <TableHead>Test Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Price (₹)</TableHead>
+                    <TableHead className="bg-background">Test Name</TableHead>
+                    <TableHead className="bg-background">Category</TableHead>
+                    <TableHead className="bg-background">Status</TableHead>
+                    <TableHead className="bg-background">Price (₹)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {orderDetails?.tests ? (
-                    orderDetails.tests.map((test: any) => (
-                      <TableRow key={test.id}>
+                    orderDetails.tests.map((test: any, index: number) => (
+                      <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
                         <TableCell className="font-medium">{test.testName}</TableCell>
                         <TableCell>{test.testCategory}</TableCell>
                         <TableCell>
@@ -219,7 +220,7 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         Loading test details...
                       </TableCell>
                     </TableRow>
