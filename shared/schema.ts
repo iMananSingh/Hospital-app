@@ -149,6 +149,7 @@ export const patientServices = sqliteTable("patient_services", {
   serviceName: text("service_name").notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
   scheduledDate: text("scheduled_date").notNull(),
+  scheduledTime: text("scheduled_time").notNull().default("09:00"),
   completedDate: text("completed_date"),
   notes: text("notes"),
   price: real("price").notNull().default(0),
@@ -172,6 +173,7 @@ export const admissions = sqliteTable("admissions", {
   notes: text("notes"),
   dailyCost: real("daily_cost").notNull().default(0),
   totalCost: real("total_cost").notNull().default(0),
+  initialDeposit: real("initial_deposit").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
@@ -260,6 +262,8 @@ export const insertAdmissionSchema = createInsertSchema(admissions).omit({
   updatedAt: true,
 }).extend({
   patientId: z.string().min(1, "Patient is required"),
+  doctorId: z.string().min(1, "Doctor is required"),
+  wardType: z.string().min(1, "Ward type is required"),
   admissionDate: z.string().min(1, "Admission date is required"),
   reason: z.string().min(1, "Reason for admission is required"),
   dailyCost: z.number().min(0, "Daily cost must be non-negative"),

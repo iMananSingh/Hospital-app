@@ -161,6 +161,7 @@ async function initializeDatabase() {
         service_name TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'scheduled',
         scheduled_date TEXT NOT NULL,
+        scheduled_time TEXT NOT NULL DEFAULT '09:00',
         completed_date TEXT,
         notes TEXT,
         price REAL NOT NULL DEFAULT 0,
@@ -183,6 +184,7 @@ async function initializeDatabase() {
         notes TEXT,
         daily_cost REAL NOT NULL DEFAULT 0,
         total_cost REAL NOT NULL DEFAULT 0,
+        initial_deposit REAL NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );

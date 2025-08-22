@@ -108,7 +108,7 @@ export default function PatientDetail() {
   });
 
   // Fetch doctors for service assignment
-  const { data: doctors = [] } = useQuery({
+  const { data: doctors = [] } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
   });
 
@@ -119,6 +119,7 @@ export default function PatientDetail() {
       serviceType: "",
       serviceName: "",
       scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledTime: "09:00", // Default to 9 AM
       doctorId: "",
       notes: "",
       price: 0,
@@ -223,7 +224,7 @@ export default function PatientDetail() {
         return;
       }
       
-      const selectedDoctor = doctors?.find((d: any) => d.id === data.doctorId);
+      const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
       const consultationFee = selectedDoctor?.consultationFee || 0;
       
       serviceData = {
@@ -801,9 +802,9 @@ export default function PatientDetail() {
                           <p className="text-sm text-muted-foreground">
                             {event.description}
                           </p>
-                          {event.extraInfo && (
+                          {(event as any).extraInfo && (
                             <p className="text-sm text-green-600">
-                              {event.extraInfo}
+                              {(event as any).extraInfo}
                             </p>
                           )}
                         </div>
@@ -870,7 +871,7 @@ export default function PatientDetail() {
                 <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
                 {(() => {
                   const selectedDoctorId = serviceForm.watch("doctorId");
-                  const selectedDoctor = doctors?.find((d: any) => d.id === selectedDoctorId);
+                  const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
                   const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
                   
                   return (
@@ -896,7 +897,7 @@ export default function PatientDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {selectedServiceType !== "opd" && <SelectItem value="none">No doctor assigned</SelectItem>}
-                    {(doctors || []).map((doctor: Doctor) => (
+                    {doctors.map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
                       </SelectItem>
@@ -916,7 +917,18 @@ export default function PatientDetail() {
                 />
               </div>
 
-              {selectedServiceType !== "opd" && (
+              <div className="space-y-2">
+                <Label>Scheduled Time *</Label>
+                <Input
+                  type="time"
+                  {...serviceForm.register("scheduledTime")}
+                  data-testid="input-service-time"
+                />
+              </div>
+            </div>
+
+            {selectedServiceType !== "opd" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Price (₹)</Label>
                   <Input
@@ -925,8 +937,8 @@ export default function PatientDetail() {
                     data-testid="input-service-price"
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Notes</Label>
@@ -944,6 +956,7 @@ export default function PatientDetail() {
                 onClick={() => {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
+                  serviceForm.reset();
                 }}
                 data-testid="button-cancel-service"
               >
@@ -986,7 +999,7 @@ export default function PatientDetail() {
                     <SelectValue placeholder="Select attending doctor" />
                   </SelectTrigger>
                   <SelectContent>
-                    {(doctors || []).map((doctor: Doctor) => (
+                    {doctors.map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
                       </SelectItem>
