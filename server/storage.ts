@@ -522,21 +522,26 @@ export class SqliteStorage implements IStorage {
   }
 
   async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
-    const orderId = this.generateOrderId();
+    const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
     
     return db.transaction((tx) => {
+      // Insert the order first
       const created = tx.insert(schema.pathologyOrders).values({
         ...orderData,
-        orderId,
+        orderId: generatedOrderId,
         totalPrice,
       }).returning().get();
 
+      // Insert all tests for this order
       tests.forEach(test => {
         tx.insert(schema.pathologyTests).values({
-          ...test,
-          orderId: created.id,
-        });
+          testName: test.testName,
+          testCategory: test.testCategory,
+          price: test.price,
+          orderId: created.id, // Use the actual database ID, not the generated order ID
+          status: 'ordered',
+        }).run();
       });
       
       return created;

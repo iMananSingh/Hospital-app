@@ -19,6 +19,135 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
 
+// Order Details Dialog Component
+function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => void }) {
+  const { data: orderDetails } = useQuery({
+    queryKey: ["/api/pathology", order.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/pathology/${order.id}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch order details");
+      return response.json();
+    },
+  });
+
+  const getPatientName = (patientId: string) => {
+    return orderDetails?.patient?.name || "Unknown Patient";
+  };
+
+  const getDoctorName = (doctorId: string | null) => {
+    if (!doctorId) return "External Patient";
+    return orderDetails?.doctor?.name || "Unknown Doctor";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'collected':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'ordered':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Order Details - {order.orderId}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Patient</Label>
+              <p className="text-sm text-muted-foreground">{getPatientName(order.patientId)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Doctor</Label>
+              <p className="text-sm text-muted-foreground">{getDoctorName(order.doctorId)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Status</Label>
+              <Badge className={getStatusColor(order.status)} variant="secondary">
+                {order.status}
+              </Badge>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Date Ordered</Label>
+              <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Total Price</Label>
+              <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
+            </div>
+          </div>
+          {order.remarks && (
+            <div>
+              <Label className="text-sm font-medium">Remarks</Label>
+              <p className="text-sm text-muted-foreground">{order.remarks}</p>
+            </div>
+          )}
+          
+          <div className="mt-6">
+            <Label className="text-sm font-medium">Tests in this Order</Label>
+            <div className="mt-2 border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Test Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Price (₹)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orderDetails?.tests ? (
+                    orderDetails.tests.map((test: any) => (
+                      <TableRow key={test.id}>
+                        <TableCell className="font-medium">{test.testName}</TableCell>
+                        <TableCell>{test.testCategory}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(test.status)} variant="secondary">
+                            {test.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>₹{test.price}</TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        Loading test details...
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Pathology() {
   const [isNewTestOpen, setIsNewTestOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -273,7 +402,7 @@ export default function Pathology() {
                             <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
                             <TableCell>{doctor?.name || "External Patient"}</TableCell>
                             <TableCell>{formatDate(order.orderedDate)}</TableCell>
-                            <TableCell>Loading...</TableCell>
+                            <TableCell>Multiple Tests</TableCell>
                             <TableCell>₹{order.totalPrice}</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(order.status)} variant="secondary">
@@ -480,70 +609,7 @@ export default function Pathology() {
       </Dialog>
 
       {/* View Order Details Dialog */}
-      {selectedOrder && (
-        <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Order Details - {selectedOrder.orderId}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Patient</Label>
-                  <p className="text-sm text-muted-foreground">{getPatientName(selectedOrder.patientId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Doctor</Label>
-                  <p className="text-sm text-muted-foreground">{getDoctorName(selectedOrder.doctorId)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={getStatusColor(selectedOrder.status)} variant="secondary">
-                    {selectedOrder.status}
-                  </Badge>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Date Ordered</Label>
-                  <p className="text-sm text-muted-foreground">{formatDate(selectedOrder.orderedDate)}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Total Price</Label>
-                  <p className="text-sm text-muted-foreground">₹{selectedOrder.totalPrice}</p>
-                </div>
-              </div>
-              {selectedOrder.remarks && (
-                <div>
-                  <Label className="text-sm font-medium">Remarks</Label>
-                  <p className="text-sm text-muted-foreground">{selectedOrder.remarks}</p>
-                </div>
-              )}
-              
-              <div className="mt-6">
-                <Label className="text-sm font-medium">Tests in this Order</Label>
-                <div className="mt-2 border rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Test Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Price (₹)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                          Loading test details...
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      {selectedOrder && <OrderDetailsDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
     </div>
   );
 }
