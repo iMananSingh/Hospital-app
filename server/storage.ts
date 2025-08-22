@@ -7,6 +7,7 @@ import type {
   PatientVisit, InsertPatientVisit, Service, InsertService,
   Bill, InsertBill, BillItem, InsertBillItem,
   PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest, 
+  PatientService, InsertPatientService, Admission, InsertAdmission,
   AuditLog, InsertAuditLog
 } from "@shared/schema";
 import { eq, desc, and, like, count, sum } from "drizzle-orm";
@@ -146,6 +147,42 @@ async function initializeDatabase() {
         results TEXT,
         normal_range TEXT,
         price REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS patient_services (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        service_id TEXT NOT NULL,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        visit_id TEXT REFERENCES patient_visits(id),
+        doctor_id TEXT REFERENCES doctors(id),
+        service_type TEXT NOT NULL,
+        service_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        scheduled_date TEXT NOT NULL,
+        completed_date TEXT,
+        notes TEXT,
+        price REAL NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS admissions (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        admission_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        doctor_id TEXT REFERENCES doctors(id),
+        room_number TEXT,
+        ward_type TEXT,
+        admission_date TEXT NOT NULL,
+        discharge_date TEXT,
+        status TEXT NOT NULL DEFAULT 'admitted',
+        reason TEXT NOT NULL,
+        diagnosis TEXT,
+        notes TEXT,
+        daily_cost REAL NOT NULL DEFAULT 0,
+        total_cost REAL NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -297,6 +334,18 @@ export interface IStorage {
   updatePathologyOrderStatus(id: string, status: string): Promise<PathologyOrder | undefined>;
   updatePathologyTestStatus(id: string, status: string, results?: string): Promise<PathologyTest | undefined>;
 
+  // Patient Services
+  createPatientService(service: InsertPatientService): Promise<PatientService>;
+  getPatientServices(patientId?: string): Promise<PatientService[]>;
+  getPatientServiceById(id: string): Promise<PatientService | undefined>;
+  updatePatientService(id: string, service: Partial<InsertPatientService>): Promise<PatientService | undefined>;
+
+  // Patient Admissions
+  createAdmission(admission: InsertAdmission): Promise<Admission>;
+  getAdmissions(patientId?: string): Promise<Admission[]>;
+  getAdmissionById(id: string): Promise<Admission | undefined>;
+  updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission | undefined>;
+
   // Dashboard stats
   getDashboardStats(): Promise<any>;
 
@@ -331,6 +380,12 @@ export class SqliteStorage implements IStorage {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.pathologyOrders).all().length + 1;
     return `LAB-${year}-${count.toString().padStart(3, '0')}`;
+  }
+
+  private generateAdmissionId(): string {
+    const year = new Date().getFullYear();
+    const count = db.select().from(schema.admissions).all().length + 1;
+    return `ADM-${year}-${count.toString().padStart(3, '0')}`;
   }
 
   async hashPassword(password: string): Promise<string> {
@@ -643,6 +698,76 @@ export class SqliteStorage implements IStorage {
       opdPatients: todayOPD?.count || 0,
       labTests: todayLabs?.count || 0,
     };
+  }
+
+  async createPatientService(service: InsertPatientService): Promise<PatientService> {
+    const serviceId = `SRV-${Date.now()}`;
+    const created = db.insert(schema.patientServices).values({
+      ...service,
+      serviceId,
+    }).returning().get();
+    return created;
+  }
+
+  async getPatientServices(patientId?: string): Promise<PatientService[]> {
+    if (patientId) {
+      return db.select().from(schema.patientServices)
+        .where(eq(schema.patientServices.patientId, patientId))
+        .orderBy(desc(schema.patientServices.scheduledDate))
+        .all();
+    }
+    return db.select().from(schema.patientServices)
+      .orderBy(desc(schema.patientServices.createdAt))
+      .all();
+  }
+
+  async getPatientServiceById(id: string): Promise<PatientService | undefined> {
+    return db.select().from(schema.patientServices)
+      .where(eq(schema.patientServices.id, id))
+      .get();
+  }
+
+  async updatePatientService(id: string, service: Partial<InsertPatientService>): Promise<PatientService | undefined> {
+    const updated = db.update(schema.patientServices)
+      .set({ ...service, updatedAt: new Date().toISOString() })
+      .where(eq(schema.patientServices.id, id))
+      .returning().get();
+    return updated;
+  }
+
+  async createAdmission(admission: InsertAdmission): Promise<Admission> {
+    const admissionId = this.generateAdmissionId();
+    const created = db.insert(schema.admissions).values({
+      ...admission,
+      admissionId,
+    }).returning().get();
+    return created;
+  }
+
+  async getAdmissions(patientId?: string): Promise<Admission[]> {
+    if (patientId) {
+      return db.select().from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
+    }
+    return db.select().from(schema.admissions)
+      .orderBy(desc(schema.admissions.createdAt))
+      .all();
+  }
+
+  async getAdmissionById(id: string): Promise<Admission | undefined> {
+    return db.select().from(schema.admissions)
+      .where(eq(schema.admissions.id, id))
+      .get();
+  }
+
+  async updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission | undefined> {
+    const updated = db.update(schema.admissions)
+      .set({ ...admission, updatedAt: new Date().toISOString() })
+      .where(eq(schema.admissions.id, id))
+      .returning().get();
+    return updated;
   }
 
   async logAction(log: InsertAuditLog): Promise<void> {

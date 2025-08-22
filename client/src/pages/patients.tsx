@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
@@ -19,12 +20,16 @@ import { useToast } from "@/hooks/use-toast";
 import type { Patient } from "@shared/schema";
 
 export default function Patients() {
+  const [, navigate] = useLocation();
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: patients, isLoading } = useQuery({
     queryKey: ["/api/patients"],
+    initialData: [],
   });
 
   const createPatientMutation = useMutation({
@@ -79,11 +84,11 @@ export default function Patients() {
     createPatientMutation.mutate(data);
   };
 
-  const filteredPatients = patients?.filter((patient: Patient) =>
+  const filteredPatients = (patients || []).filter((patient: Patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.phone.includes(searchQuery)
-  ) || [];
+  );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -172,6 +177,7 @@ export default function Patients() {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={() => navigate(`/patients/${patient.id}`)}
                             data-testid={`button-view-${patient.id}`}
                           >
                             <Eye className="w-4 h-4" />
@@ -179,6 +185,10 @@ export default function Patients() {
                           <Button 
                             variant="ghost" 
                             size="sm"
+                            onClick={() => {
+                              setSelectedPatient(patient);
+                              setIsEditPatientOpen(true);
+                            }}
                             data-testid={`button-edit-${patient.id}`}
                           >
                             <Edit className="w-4 h-4" />
@@ -314,6 +324,42 @@ export default function Patients() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Patient Dialog */}
+      <Dialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen}>
+        <DialogContent className="max-w-2xl" data-testid="edit-patient-dialog">
+          <DialogHeader>
+            <DialogTitle>Edit Patient: {selectedPatient?.name}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Patient editing functionality is available in the patient detail page.
+              <br />
+              Click "View Patient Details" to access the full patient profile and management options.
+            </p>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditPatientOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedPatient) {
+                  navigate(`/patients/${selectedPatient.id}`);
+                  setIsEditPatientOpen(false);
+                }
+              }}
+            >
+              View Patient Details
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -138,6 +138,44 @@ export const pathologyTests = sqliteTable("pathology_tests", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Patient Services (OPD, Lab tests, X-ray, ECG, etc.)
+export const patientServices = sqliteTable("patient_services", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  serviceId: text("service_id").notNull(),
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  visitId: text("visit_id").references(() => patientVisits.id),
+  doctorId: text("doctor_id").references(() => doctors.id),
+  serviceType: text("service_type").notNull(), // opd, labtest, xray, ecg, consultation, emergency
+  serviceName: text("service_name").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  scheduledDate: text("scheduled_date").notNull(),
+  completedDate: text("completed_date"),
+  notes: text("notes"),
+  price: real("price").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Patient Admissions
+export const admissions = sqliteTable("admissions", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  admissionId: text("admission_id").notNull().unique(),
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  doctorId: text("doctor_id").references(() => doctors.id),
+  roomNumber: text("room_number"),
+  wardType: text("ward_type"), // general, private, icu, emergency
+  admissionDate: text("admission_date").notNull(),
+  dischargeDate: text("discharge_date"),
+  status: text("status").notNull().default("admitted"), // admitted, discharged, transferred
+  reason: text("reason").notNull(),
+  diagnosis: text("diagnosis"),
+  notes: text("notes"),
+  dailyCost: real("daily_cost").notNull().default(0),
+  totalCost: real("total_cost").notNull().default(0),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Audit log for tracking all changes
 export const auditLog = sqliteTable("audit_log", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -204,6 +242,19 @@ export const insertPathologyOrderSchema = createInsertSchema(pathologyOrders).om
   updatedAt: true,
 });
 
+export const insertPatientServiceSchema = createInsertSchema(patientServices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAdmissionSchema = createInsertSchema(admissions).omit({
+  id: true,
+  admissionId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit({
   id: true,
   createdAt: true,
@@ -236,3 +287,7 @@ export type PathologyTest = typeof pathologyTests.$inferSelect;
 export type InsertPathologyTest = z.infer<typeof insertPathologyTestSchema>;
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type PatientService = typeof patientServices.$inferSelect;
+export type InsertPatientService = z.infer<typeof insertPatientServiceSchema>;
+export type Admission = typeof admissions.$inferSelect;
+export type InsertAdmission = z.infer<typeof insertAdmissionSchema>;

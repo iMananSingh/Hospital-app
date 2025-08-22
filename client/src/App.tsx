@@ -8,6 +8,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Billing from "@/pages/billing";
 import Patients from "@/pages/patients";
+import PatientDetail from "@/pages/patient-detail";
 import Pathology from "@/pages/pathology";
 import Doctors from "@/pages/doctors";
 import Settings from "@/pages/settings";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/billing" component={() => <ProtectedRoute component={Billing} />} />
       <Route path="/patients" component={() => <ProtectedRoute component={Patients} />} />
+      <Route path="/patients/:id" component={() => <ProtectedRoute component={PatientDetail} />} />
       <Route path="/pathology" component={() => <ProtectedRoute component={Pathology} />} />
       <Route path="/doctors" component={() => <ProtectedRoute component={Doctors} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />

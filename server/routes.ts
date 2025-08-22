@@ -310,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const order = await storage.createPathologyOrder(processedOrderData, tests);
       res.json(order);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating pathology order:", error);
       res.status(400).json({ message: "Failed to create pathology order", error: error.message });
     }
@@ -334,6 +334,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(orders);
     } catch (error) {
       res.status(500).json({ message: "Failed to get patient pathology orders" });
+    }
+  });
+
+  // Patient Services Routes
+  app.get("/api/patient-services", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.query;
+      const services = await storage.getPatientServices(patientId as string);
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching patient services:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/patient-services", authenticateToken, async (req, res) => {
+    try {
+      const service = await storage.createPatientService(req.body);
+      res.json(service);
+    } catch (error) {
+      console.error("Error creating patient service:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/patient-services/:id", authenticateToken, async (req, res) => {
+    try {
+      const service = await storage.updatePatientService(req.params.id, req.body);
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating patient service:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Patient Admissions Routes
+  app.get("/api/admissions", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.query;
+      const admissions = await storage.getAdmissions(patientId as string);
+      res.json(admissions);
+    } catch (error) {
+      console.error("Error fetching admissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admissions", authenticateToken, async (req, res) => {
+    try {
+      const admission = await storage.createAdmission(req.body);
+      res.json(admission);
+    } catch (error) {
+      console.error("Error creating admission:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/admissions/:id", authenticateToken, async (req, res) => {
+    try {
+      const admission = await storage.updateAdmission(req.params.id, req.body);
+      res.json(admission);
+    } catch (error) {
+      console.error("Error updating admission:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get individual patient details
+  app.get("/api/patients/:id", authenticateToken, async (req, res) => {
+    try {
+      const patient = await storage.getPatientById(req.params.id);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+      res.json(patient);
+    } catch (error) {
+      console.error("Error fetching patient:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 
