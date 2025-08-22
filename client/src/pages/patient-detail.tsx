@@ -1032,7 +1032,7 @@ export default function PatientDetail() {
               <div className="space-y-2">
                 <Label>Room Number</Label>
                 <Input
-                  {...admissionForm.register("roomNumber")}
+                  {...roomUpdateForm.register("roomNumber")}
                   placeholder="e.g., 101, A-204"
                   data-testid="input-room-number"
                 />

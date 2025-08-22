@@ -11,6 +11,7 @@ import Patients from "@/pages/patients";
 import PatientDetail from "@/pages/patient-detail";
 import Pathology from "@/pages/pathology";
 import Doctors from "@/pages/doctors";
+import OpdList from "@/pages/opd-list";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/patients/:id" component={() => <ProtectedRoute component={PatientDetail} />} />
       <Route path="/pathology" component={() => <ProtectedRoute component={Pathology} />} />
       <Route path="/doctors" component={() => <ProtectedRoute component={Doctors} />} />
+      <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />
     </Switch>

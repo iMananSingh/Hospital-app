@@ -41,7 +41,7 @@ export default function Dashboard() {
       />
       
       <div className="p-6 space-y-6">
-        <StatsCards stats={stats || { todayRevenue: 0, pendingBills: 0, opdPatients: 0, labTests: 0 }} />
+        <StatsCards stats={stats ?? { todayRevenue: 0, pendingBills: 0, opdPatients: 0, labTests: 0 }} />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>

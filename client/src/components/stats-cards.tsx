@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Clock, Users, Microscope } from "lucide-react";
+import { Link } from "wouter";
 
 interface StatsCardsProps {
   stats: {
@@ -48,7 +49,9 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Users,
       bgColor: "bg-medical-blue/10",
       iconColor: "text-medical-blue",
-      testId: "stat-opd"
+      testId: "stat-opd",
+      clickable: true,
+      linkTo: "/opd-list"
     },
     {
       title: "Lab Tests",
@@ -64,32 +67,44 @@ export default function StatsCards({ stats }: StatsCardsProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      {statsData.map((stat) => (
-        <Card key={stat.title} className="shadow-sm" data-testid={stat.testId}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-text-muted text-sm font-medium">{stat.title}</p>
-                <p className="text-2xl font-bold text-text-dark mt-1" data-testid={`${stat.testId}-value`}>
-                  {stat.value}
-                </p>
-                <p className={`text-sm font-medium mt-2 ${
-                  stat.changeType === "positive" ? "text-healthcare-green" :
-                  stat.changeType === "warning" ? "text-alert-orange" :
-                  "text-medical-blue"
-                }`}>
-                  {stat.changeType === "positive" && <TrendingUp className="w-3 h-3 inline mr-1" />}
-                  {stat.changeType === "warning" && <Clock className="w-3 h-3 inline mr-1" />}
-                  {stat.change}
-                </p>
+      {statsData.map((stat) => {
+        const CardWrapper = (stat as any).clickable ? 
+          ({ children, ...props }: any) => (
+            <Link href={(stat as any).linkTo}>
+              <Card {...props} className={`shadow-sm cursor-pointer hover:shadow-md transition-shadow ${props.className || ''}`}>
+                {children}
+              </Card>
+            </Link>
+          ) : 
+          ({ children, ...props }: any) => <Card {...props}>{children}</Card>;
+
+        return (
+          <CardWrapper key={stat.title} data-testid={stat.testId}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-text-muted text-sm font-medium">{stat.title}</p>
+                  <p className="text-2xl font-bold text-text-dark mt-1" data-testid={`${stat.testId}-value`}>
+                    {stat.value}
+                  </p>
+                  <p className={`text-sm font-medium mt-2 ${
+                    stat.changeType === "positive" ? "text-healthcare-green" :
+                    stat.changeType === "warning" ? "text-alert-orange" :
+                    "text-medical-blue"
+                  }`}>
+                    {stat.changeType === "positive" && <TrendingUp className="w-3 h-3 inline mr-1" />}
+                    {stat.changeType === "warning" && <Clock className="w-3 h-3 inline mr-1" />}
+                    {stat.change}
+                  </p>
+                </div>
+                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                  <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
+                </div>
               </div>
-              <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </CardWrapper>
+        );
+      })}
     </div>
   );
 }

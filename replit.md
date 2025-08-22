@@ -10,6 +10,17 @@ The application features a modern, responsive user interface built with React an
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### OPD Management System Enhancements (August 2025)
+- **Dynamic OPD consultation fees**: Implemented automatic fee calculation based on selected doctor with ₹0 default when no doctor selected
+- **Time-based scheduling**: Added HTML5 time input field with native clock popup interface for precise appointment scheduling  
+- **Doctor-segregated OPD listings**: Created dedicated /opd-list page that groups OPD appointments by doctor with filtering capabilities
+- **Clickable dashboard statistics**: Made OPD patient count on dashboard clickable to navigate to doctor-segregated OPD page
+- **Real-time dashboard updates**: Dashboard OPD count now reflects actual scheduled appointments and updates when new patients are added
+- **Enhanced form validation**: OPD scheduling requires mandatory doctor selection with proper error handling
+- **Database schema improvements**: Added scheduledTime field to patient_services table and initialDeposit to admissions table
+
 ## System Architecture
 
 ### Frontend Architecture
