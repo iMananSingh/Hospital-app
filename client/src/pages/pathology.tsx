@@ -50,6 +50,7 @@ export default function Pathology() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
+      console.log("Sending order data:", data);
       const response = await fetch("/api/pathology", {
         method: "POST",
         headers: {
@@ -60,7 +61,9 @@ export default function Pathology() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to create pathology order");
+        const errorData = await response.text();
+        console.error("Order creation failed:", errorData);
+        throw new Error(`Failed to create pathology order: ${errorData}`);
       }
       
       return response.json();
@@ -75,10 +78,11 @@ export default function Pathology() {
         description: "The pathology order has been placed.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Order mutation error:", error);
       toast({
         title: "Error placing order",
-        description: "Please try again.",
+        description: `Please try again. ${error.message}`,
         variant: "destructive",
       });
     },

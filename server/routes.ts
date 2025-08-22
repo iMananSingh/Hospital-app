@@ -295,11 +295,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pathology", authenticateToken, async (req, res) => {
     try {
+      console.log("Received pathology order request:", JSON.stringify(req.body, null, 2));
       const { orderData, tests } = req.body;
+      
+      if (!orderData || !tests) {
+        return res.status(400).json({ message: "Missing orderData or tests" });
+      }
+      
       const order = await storage.createPathologyOrder(orderData, tests);
       res.json(order);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create pathology order" });
+      console.error("Error creating pathology order:", error);
+      res.status(400).json({ message: "Failed to create pathology order", error: error.message });
     }
   });
 
