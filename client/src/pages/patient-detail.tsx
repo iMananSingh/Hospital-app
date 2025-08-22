@@ -500,10 +500,13 @@ export default function PatientDetail() {
                 onClick={() => {
                   console.log("=== SCHEDULE OPD CLICKED ===");
                   
-                  // Set current date and time when opening the dialog
+                  // Set current LOCAL date and time when opening the dialog
                   const now = new Date();
-                  const currentDate = now.toISOString().split('T')[0];
-                  const currentTime = now.toTimeString().slice(0, 5);
+                  const currentDate = now.getFullYear() + '-' + 
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(now.getDate()).padStart(2, '0');
+                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
+                    String(now.getMinutes()).padStart(2, '0');
                   
                   setSelectedServiceType("opd");
                   serviceForm.setValue("serviceType", "opd");
@@ -549,10 +552,13 @@ export default function PatientDetail() {
                 <CardTitle>Service History</CardTitle>
                 <Button
                   onClick={() => {
-                    // Set current date and time when opening any service dialog
+                    // Set current LOCAL date and time when opening any service dialog
                     const now = new Date();
-                    const currentDate = now.toISOString().split('T')[0];
-                    const currentTime = now.toTimeString().slice(0, 5);
+                    const currentDate = now.getFullYear() + '-' + 
+                      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(now.getDate()).padStart(2, '0');
+                    const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
+                      String(now.getMinutes()).padStart(2, '0');
                     
                     serviceForm.setValue("scheduledDate", currentDate);
                     serviceForm.setValue("scheduledTime", currentTime);
