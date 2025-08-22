@@ -155,13 +155,13 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col p-6">
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Order Details - {order.orderId}</DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex-1 flex flex-col space-y-4 px-6 pb-6">
+          <div className="grid grid-cols-2 gap-4 flex-shrink-0">
             <div>
               <Label className="text-sm font-medium">Patient</Label>
               <p className="text-sm text-muted-foreground">{getPatientName(order.patientId)}</p>
@@ -186,47 +186,49 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
             </div>
           </div>
           {order.remarks && (
-            <div>
+            <div className="flex-shrink-0">
               <Label className="text-sm font-medium">Remarks</Label>
               <p className="text-sm text-muted-foreground">{order.remarks}</p>
             </div>
           )}
           
-          <div className="mt-6 flex-1">
-            <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
-            <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
-                  <TableRow>
-                    <TableHead className="bg-background">Test Name</TableHead>
-                    <TableHead className="bg-background">Category</TableHead>
-                    <TableHead className="bg-background">Status</TableHead>
-                    <TableHead className="bg-background">Price (₹)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderDetails?.tests ? (
-                    orderDetails.tests.map((test: any, index: number) => (
-                      <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
-                        <TableCell className="font-medium">{test.testName}</TableCell>
-                        <TableCell>{test.testCategory}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(test.status)} variant="secondary">
-                            {test.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₹{test.price}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
+          <div className="flex-1 flex flex-col min-h-0">
+            <Label className="text-sm font-medium flex-shrink-0 mb-2">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+            <div className="border rounded-lg flex-1 overflow-hidden">
+              <div className="max-h-full overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Loading test details...
-                      </TableCell>
+                      <TableHead className="bg-background">Test Name</TableHead>
+                      <TableHead className="bg-background">Category</TableHead>
+                      <TableHead className="bg-background">Status</TableHead>
+                      <TableHead className="bg-background">Price (₹)</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {orderDetails?.tests ? (
+                      orderDetails.tests.map((test: any, index: number) => (
+                        <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
+                          <TableCell className="font-medium">{test.testName}</TableCell>
+                          <TableCell>{test.testCategory}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(test.status)} variant="secondary">
+                              {test.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>₹{test.price}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          Loading test details...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         </div>
