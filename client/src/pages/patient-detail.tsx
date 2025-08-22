@@ -114,10 +114,7 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
-    resolver: zodResolver(insertPatientServiceSchema.extend({
-      scheduledTime: z.string().min(1, "Scheduled time is required"),
-      doctorId: z.string().optional(),
-    })),
+    mode: "onChange",
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
@@ -215,14 +212,30 @@ export default function PatientDetail() {
   });
 
   const onServiceSubmit = (data: any) => {
+    console.log("=== FORM SUBMISSION DEBUG ===");
     console.log("Form submitted with data:", data);
     console.log("Selected service type:", selectedServiceType);
+    console.log("Form errors:", serviceForm.formState.errors);
+    console.log("Form is valid:", serviceForm.formState.isValid);
+    console.log("Doctors available:", doctors);
+    
+    // Check if form has validation errors
+    if (Object.keys(serviceForm.formState.errors).length > 0) {
+      console.error("Form has validation errors:", serviceForm.formState.errors);
+      toast({
+        title: "Form Validation Error",
+        description: "Please fix the form errors before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
     
     let serviceData;
     
     if (selectedServiceType === "opd") {
       // For OPD, validate doctor selection and use doctor's consultation fee
       if (!data.doctorId || data.doctorId === "none") {
+        console.error("Doctor not selected for OPD");
         toast({
           title: "Doctor Required",
           description: "Please select a consulting doctor for OPD consultation",
@@ -251,8 +264,20 @@ export default function PatientDetail() {
       };
     }
     
-    console.log("Submitting service data:", serviceData);
-    createServiceMutation.mutate(serviceData);
+    console.log("Final service data to submit:", serviceData);
+    console.log("About to call mutation...");
+    
+    try {
+      createServiceMutation.mutate(serviceData);
+      console.log("Mutation called successfully");
+    } catch (error) {
+      console.error("Error calling mutation:", error);
+      toast({
+        title: "Submission Error",
+        description: "Failed to submit form. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const onAdmissionSubmit = (data: any) => {
@@ -473,7 +498,11 @@ export default function PatientDetail() {
             <div className="flex flex-wrap gap-3">
               <Button 
                 onClick={() => {
+                  console.log("=== SCHEDULE OPD CLICKED ===");
                   setSelectedServiceType("opd");
+                  serviceForm.setValue("serviceType", "opd");
+                  serviceForm.setValue("serviceName", "OPD Consultation");
+                  console.log("Set service type to OPD and opening dialog");
                   setIsServiceDialogOpen(true);
                 }}
                 className="flex items-center gap-2"
@@ -974,6 +1003,36 @@ export default function PatientDetail() {
                 type="submit"
                 disabled={createServiceMutation.isPending}
                 data-testid="button-schedule-service"
+                onClick={(e) => {
+                  console.log("=== BUTTON CLICKED ===");
+                  console.log("Event:", e);
+                  console.log("Form valid:", serviceForm.formState.isValid);
+                  console.log("Form errors:", serviceForm.formState.errors);
+                  console.log("Selected service type:", selectedServiceType);
+                  console.log("Form values:", serviceForm.getValues());
+                  
+                  // If it's an OPD service but no service type is selected, set it
+                  if (!selectedServiceType) {
+                    console.log("No service type selected, checking service buttons...");
+                  }
+                  
+                  // Prevent default and handle manually if needed
+                  if (!selectedServiceType || selectedServiceType !== "opd") {
+                    e.preventDefault();
+                    console.log("Preventing default submission due to missing service type");
+                    
+                    // Set service type to OPD and try to submit
+                    setSelectedServiceType("opd");
+                    serviceForm.setValue("serviceType", "opd");
+                    
+                    // Manually trigger submission after setting values
+                    setTimeout(() => {
+                      const formData = serviceForm.getValues();
+                      console.log("Manually triggering submission with data:", formData);
+                      onServiceSubmit(formData);
+                    }, 100);
+                  }
+                }}
               >
                 {createServiceMutation.isPending 
                   ? "Scheduling..." 
