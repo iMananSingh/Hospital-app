@@ -155,78 +155,80 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader>
           <DialogTitle>Order Details - {order.orderId}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 px-6 pb-6">
-          <div className="grid grid-cols-2 gap-4 flex-shrink-0">
-            <div>
-              <Label className="text-sm font-medium">Patient</Label>
-              <p className="text-sm text-muted-foreground">{getPatientName(order.patientId)}</p>
+        <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+          <div className="space-y-4 px-6 pb-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Patient</Label>
+                <p className="text-sm text-muted-foreground">{getPatientName(order.patientId)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Doctor</Label>
+                <p className="text-sm text-muted-foreground">{getDoctorName(order.doctorId)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Status</Label>
+                <Badge className={getStatusColor(order.status)} variant="secondary">
+                  {order.status}
+                </Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Date Ordered</Label>
+                <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Total Price</Label>
+                <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
+              </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium">Doctor</Label>
-              <p className="text-sm text-muted-foreground">{getDoctorName(order.doctorId)}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Status</Label>
-              <Badge className={getStatusColor(order.status)} variant="secondary">
-                {order.status}
-              </Badge>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Date Ordered</Label>
-              <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Total Price</Label>
-              <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
-            </div>
-          </div>
-          {order.remarks && (
-            <div className="flex-shrink-0">
-              <Label className="text-sm font-medium">Remarks</Label>
-              <p className="text-sm text-muted-foreground">{order.remarks}</p>
-            </div>
-          )}
-          
-          <div className="mt-6">
-            <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
-            <div className="mt-2 border rounded-lg max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
-                  <TableRow>
-                    <TableHead className="bg-background">Test Name</TableHead>
-                    <TableHead className="bg-background">Category</TableHead>
-                    <TableHead className="bg-background">Status</TableHead>
-                    <TableHead className="bg-background">Price (₹)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderDetails?.tests ? (
-                    orderDetails.tests.map((test: any, index: number) => (
-                      <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
-                        <TableCell className="font-medium">{test.testName}</TableCell>
-                        <TableCell>{test.testCategory}</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(test.status)} variant="secondary">
-                            {test.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₹{test.price}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
+            {order.remarks && (
+              <div>
+                <Label className="text-sm font-medium">Remarks</Label>
+                <p className="text-sm text-muted-foreground">{order.remarks}</p>
+              </div>
+            )}
+            
+            <div className="mt-6">
+              <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+              <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Loading test details...
-                      </TableCell>
+                      <TableHead className="bg-background">Test Name</TableHead>
+                      <TableHead className="bg-background">Category</TableHead>
+                      <TableHead className="bg-background">Status</TableHead>
+                      <TableHead className="bg-background">Price (₹)</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {orderDetails?.tests ? (
+                      orderDetails.tests.map((test: any, index: number) => (
+                        <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
+                          <TableCell className="font-medium">{test.testName}</TableCell>
+                          <TableCell>{test.testCategory}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(test.status)} variant="secondary">
+                              {test.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>₹{test.price}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          Loading test details...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         </div>
