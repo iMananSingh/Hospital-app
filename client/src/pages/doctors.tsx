@@ -20,6 +20,7 @@ import type { Doctor } from "@shared/schema";
 
 export default function Doctors() {
   const [isNewDoctorOpen, setIsNewDoctorOpen] = useState(false);
+  const [isEditDoctorOpen, setIsEditDoctorOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
@@ -63,7 +64,54 @@ export default function Doctors() {
     },
   });
 
+  const updateDoctorMutation = useMutation({
+    mutationFn: async ({ id, doctorData }: { id: string; doctorData: any }) => {
+      const response = await fetch(`/api/doctors/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(doctorData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update doctor");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      setIsEditDoctorOpen(false);
+      setSelectedDoctor(null);
+      editForm.reset();
+      toast({
+        title: "Doctor updated successfully",
+        description: "The doctor profile has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error updating doctor",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
+    resolver: zodResolver(insertDoctorSchema),
+    defaultValues: {
+      name: "",
+      specialization: "",
+      qualification: "",
+      consultationFee: 0,
+      userId: undefined,
+    },
+  });
+
+  const editForm = useForm({
     resolver: zodResolver(insertDoctorSchema),
     defaultValues: {
       name: "",
@@ -76,6 +124,24 @@ export default function Doctors() {
 
   const onSubmit = (data: any) => {
     createDoctorMutation.mutate(data);
+  };
+
+  const onEditSubmit = (data: any) => {
+    if (selectedDoctor) {
+      updateDoctorMutation.mutate({ id: selectedDoctor.id, doctorData: data });
+    }
+  };
+
+  const handleEditDoctor = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    editForm.reset({
+      name: doctor.name,
+      specialization: doctor.specialization,
+      qualification: doctor.qualification,
+      consultationFee: doctor.consultationFee,
+      userId: doctor.userId,
+    });
+    setIsEditDoctorOpen(true);
   };
 
   const filteredDoctors = doctors?.filter((doctor: Doctor) =>
@@ -232,6 +298,7 @@ export default function Doctors() {
                               variant="ghost" 
                               size="sm"
                               className="flex-1"
+                              onClick={() => handleEditDoctor(doctor)}
                               data-testid={`button-edit-${doctor.id}`}
                             >
                               <Edit className="w-4 h-4 mr-1" />
@@ -502,6 +569,102 @@ export default function Doctors() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Doctor Dialog */}
+      <Dialog open={isEditDoctorOpen} onOpenChange={setIsEditDoctorOpen}>
+        <DialogContent className="max-w-2xl" data-testid="edit-doctor-dialog">
+          <DialogHeader>
+            <DialogTitle>Edit Doctor Profile</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name *</Label>
+                <Input
+                  id="edit-name"
+                  {...editForm.register("name")}
+                  placeholder="Dr. John Doe"
+                  data-testid="input-edit-doctor-name"
+                />
+                {editForm.formState.errors.name && (
+                  <p className="text-sm text-destructive">{editForm.formState.errors.name.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-specialization">Specialization *</Label>
+                <Select 
+                  value={editForm.watch("specialization")}
+                  onValueChange={(value) => editForm.setValue("specialization", value)}
+                >
+                  <SelectTrigger data-testid="select-edit-specialization">
+                    <SelectValue placeholder="Select specialization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specializations.map((spec) => (
+                      <SelectItem key={spec} value={spec}>
+                        {spec}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editForm.formState.errors.specialization && (
+                  <p className="text-sm text-destructive">{editForm.formState.errors.specialization.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-qualification">Qualification *</Label>
+                <Input
+                  id="edit-qualification"
+                  {...editForm.register("qualification")}
+                  placeholder="MBBS, MD, MS etc."
+                  data-testid="input-edit-qualification"
+                />
+                {editForm.formState.errors.qualification && (
+                  <p className="text-sm text-destructive">{editForm.formState.errors.qualification.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-consultationFee">Consultation Fee (₹) *</Label>
+                <Input
+                  id="edit-consultationFee"
+                  type="number"
+                  {...editForm.register("consultationFee", { valueAsNumber: true })}
+                  placeholder="500"
+                  data-testid="input-edit-consultation-fee"
+                />
+                {editForm.formState.errors.consultationFee && (
+                  <p className="text-sm text-destructive">{editForm.formState.errors.consultationFee.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDoctorOpen(false)}
+                data-testid="button-cancel-edit-doctor"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateDoctorMutation.isPending}
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-save-edit-doctor"
+              >
+                {updateDoctorMutation.isPending ? "Updating..." : "Update Doctor"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -213,13 +213,16 @@ export default function PatientDetail() {
     let serviceData;
     
     if (selectedServiceType === "opd") {
-      // For OPD, use predefined values
+      // For OPD, use doctor's consultation fee
+      const selectedDoctor = doctors?.find((d: any) => d.id === data.doctorId);
+      const consultationFee = selectedDoctor?.consultationFee || 500;
+      
       serviceData = {
         ...data,
         serviceId: `SRV-${Date.now()}`,
         serviceName: "OPD Consultation",
         serviceType: "opd",
-        price: 500, // Default OPD price
+        price: consultationFee,
         // Convert "none" back to empty string for the API
         doctorId: data.doctorId === "none" ? "" : data.doctorId,
       };
@@ -857,7 +860,18 @@ export default function PatientDetail() {
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
-                <p className="text-sm text-blue-600">Consultation fee: ₹500</p>
+                {(() => {
+                  const selectedDoctorId = serviceForm.watch("doctorId");
+                  const selectedDoctor = doctors?.find((d: any) => d.id === selectedDoctorId);
+                  const consultationFee = selectedDoctor?.consultationFee || 500;
+                  
+                  return (
+                    <p className="text-sm text-blue-600">
+                      Consultation fee: ₹{consultationFee}
+                      {!selectedDoctorId && <span className="text-blue-500 ml-1">(Select doctor to see fee)</span>}
+                    </p>
+                  );
+                })()}
               </div>
             )}
 

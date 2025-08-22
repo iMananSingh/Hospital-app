@@ -168,6 +168,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/doctors/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const doctorData = insertDoctorSchema.parse(req.body);
+      const doctor = await storage.updateDoctor(id, doctorData);
+      res.json(doctor);
+    } catch (error) {
+      console.error("Doctor update error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(400).json({ message: "Failed to update doctor" });
+    }
+  });
+
   app.get("/api/doctors/:id", authenticateToken, async (req, res) => {
     try {
       const doctor = await storage.getDoctorById(req.params.id);

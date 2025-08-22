@@ -420,6 +420,14 @@ export class SqliteStorage implements IStorage {
     return created;
   }
 
+  async updateDoctor(id: string, data: InsertDoctor): Promise<Doctor> {
+    return db.update(schema.doctors)
+      .set({ ...data, updatedAt: new Date().toISOString() })
+      .where(eq(schema.doctors.id, id))
+      .returning()
+      .get() as Doctor;
+  }
+
   async getDoctors(): Promise<Doctor[]> {
     return db.select().from(schema.doctors).where(eq(schema.doctors.isActive, true)).all();
   }
