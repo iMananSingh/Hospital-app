@@ -208,6 +208,11 @@ export const insertPatientSchema = createInsertSchema(patients).omit({
   patientId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Name is required"),
+  age: z.number().min(1, "Age must be greater than 0").max(150, "Invalid age"),
+  gender: z.string().min(1, "Gender is required"),
+  phone: z.string().min(1, "Phone number is required"),
 });
 
 export const insertPatientVisitSchema = createInsertSchema(patientVisits).omit({

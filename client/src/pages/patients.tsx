@@ -27,9 +27,8 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: patients, isLoading } = useQuery({
+  const { data: patients = [], isLoading } = useQuery({
     queryKey: ["/api/patients"],
-    initialData: [],
   });
 
   const createPatientMutation = useMutation({
@@ -52,7 +51,15 @@ export default function Patients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       setIsNewPatientOpen(false);
-      form.reset();
+      form.reset({
+        name: "",
+        age: 0,
+        gender: "",
+        phone: "",
+        address: "",
+        email: "",
+        emergencyContact: "",
+      });
       toast({
         title: "Patient created successfully",
         description: "The patient has been registered in the system.",
@@ -78,13 +85,35 @@ export default function Patients() {
       email: "",
       emergencyContact: "",
     },
+    mode: "onChange",
   });
 
   const onSubmit = (data: any) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Validate required fields explicitly
+    if (!data.name?.trim()) {
+      form.setError("name", { message: "Name is required" });
+      return;
+    }
+    if (!data.age || data.age <= 0) {
+      form.setError("age", { message: "Valid age is required" });
+      return;
+    }
+    if (!data.gender?.trim()) {
+      form.setError("gender", { message: "Gender is required" });
+      return;
+    }
+    if (!data.phone?.trim()) {
+      form.setError("phone", { message: "Phone number is required" });
+      return;
+    }
+    
     createPatientMutation.mutate(data);
   };
 
-  const filteredPatients = (patients || []).filter((patient: Patient) =>
+  const filteredPatients = patients.filter((patient: Patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.phone.includes(searchQuery)
@@ -244,7 +273,10 @@ export default function Patients() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender *</Label>
-                <Select onValueChange={(value) => form.setValue("gender", value)}>
+                <Select 
+                  value={form.watch("gender")}
+                  onValueChange={(value) => form.setValue("gender", value, { shouldValidate: true })}
+                >
                   <SelectTrigger data-testid="select-patient-gender">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
@@ -316,7 +348,7 @@ export default function Patients() {
               </Button>
               <Button
                 type="submit"
-                disabled={createPatientMutation.isPending}
+                disabled={createPatientMutation.isPending || !form.formState.isValid}
                 className="bg-medical-blue hover:bg-medical-blue/90"
                 data-testid="button-save-patient"
               >
