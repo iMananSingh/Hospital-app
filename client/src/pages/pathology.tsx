@@ -31,11 +31,13 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
   const [searchValue, setSearchValue] = useState("");
 
   const filteredPatients = (patients || []).filter((patient: any) => {
-    const searchLower = searchValue.toLowerCase();
+    if (!searchValue.trim()) return true; // Show all patients when no search
+    const searchLower = searchValue.toLowerCase().trim();
     return (
       patient.name?.toLowerCase().includes(searchLower) ||
       patient.patientId?.toLowerCase().includes(searchLower) ||
-      patient.phone?.includes(searchValue)
+      patient.phone?.includes(searchValue.trim()) ||
+      patient.email?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -60,26 +62,27 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder="Type to search patients..." 
             value={searchValue}
             onValueChange={setSearchValue}
             data-testid="input-search-patient"
           />
-          <CommandList>
+          <CommandList className="max-h-[300px] overflow-y-auto">
             <CommandEmpty>No patients found.</CommandEmpty>
             <CommandGroup>
               {filteredPatients.map((patient: any) => (
                 <CommandItem
                   key={patient.id}
-                  value={patient.id}
+                  value={patient.name}
                   onSelect={() => {
                     onValueChange(patient.id);
                     setOpen(false);
                     setSearchValue("");
                   }}
                   data-testid={`option-patient-${patient.id}`}
+                  className="cursor-pointer"
                 >
                   <Check
                     className={`mr-2 h-4 w-4 ${
