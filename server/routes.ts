@@ -302,7 +302,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing orderData or tests" });
       }
       
-      const order = await storage.createPathologyOrder(orderData, tests);
+      // Ensure doctorId is null if empty string or "external"
+      const processedOrderData = {
+        ...orderData,
+        doctorId: orderData.doctorId === "" || orderData.doctorId === "external" ? null : orderData.doctorId
+      };
+      
+      const order = await storage.createPathologyOrder(processedOrderData, tests);
       res.json(order);
     } catch (error) {
       console.error("Error creating pathology order:", error);

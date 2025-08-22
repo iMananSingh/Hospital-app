@@ -240,7 +240,7 @@ export default function Pathology() {
     // Create single order with multiple tests
     const orderData = {
       patientId: data.patientId,
-      doctorId: data.doctorId === "external" ? null : data.doctorId, // Make doctor optional
+      doctorId: data.doctorId === "external" || data.doctorId === "" ? null : data.doctorId, // Make doctor optional
       orderedDate: data.orderedDate,
       remarks: data.remarks,
     };
