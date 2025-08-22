@@ -293,6 +293,7 @@ export default function Pathology() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/pathology/patient", preSelectedPatientId] });
       setIsNewTestOpen(false);
       setSelectedCatalogTests([]);
       form.reset();
@@ -300,6 +301,13 @@ export default function Pathology() {
         title: "Order placed successfully",
         description: "The pathology order has been placed.",
       });
+      
+      // Redirect back to patient page if came from there
+      if (preSelectedPatientId) {
+        setTimeout(() => {
+          window.location.href = `/patients/${preSelectedPatientId}#pathology`;
+        }, 500);
+      }
     },
     onError: (error) => {
       console.error("Order mutation error:", error);

@@ -89,7 +89,7 @@ export default function PatientDetail() {
   });
 
   // Fetch pathology orders for this patient
-  const { data: pathologyOrders } = useQuery({
+  const { data: pathologyOrders = [] } = useQuery({
     queryKey: ["/api/pathology/patient", patientId],
     queryFn: async () => {
       const response = await fetch(`/api/pathology/patient/${patientId}`, {
@@ -100,6 +100,7 @@ export default function PatientDetail() {
       if (!response.ok) throw new Error("Failed to fetch pathology orders");
       return response.json();
     },
+    refetchInterval: 5000, // Refetch every 5 seconds to get latest orders
   });
 
   // Fetch doctors for service assignment
@@ -359,18 +360,7 @@ export default function PatientDetail() {
                 <Bed className="h-4 w-4" />
                 Admit Patient
               </Button>
-              <Button 
-                onClick={() => {
-                  setSelectedServiceType("labtest");
-                  setIsServiceDialogOpen(true);
-                }}
-                variant="outline"
-                className="flex items-center gap-2"
-                data-testid="button-order-lab"
-              >
-                <TestTube className="h-4 w-4" />
-                Order Lab Test
-              </Button>
+
               <Button 
                 onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
                 variant="outline"
@@ -385,7 +375,7 @@ export default function PatientDetail() {
         </Card>
 
         {/* Patient History Tabs */}
-        <Tabs defaultValue="services" className="space-y-4">
+        <Tabs defaultValue={window.location.hash === '#pathology' ? 'pathology' : 'services'} className="space-y-4">
           <TabsList>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="admissions">Admissions</TabsTrigger>
@@ -565,14 +555,98 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 border-l-4 border-blue-500 bg-blue-50">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Patient Registered</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(patient.createdAt)}</p>
+                  {/* Registration Event */}
+                  <div className="flex items-start gap-3 p-3 border rounded-lg">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full mt-1" />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">Patient Registered</p>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(patient.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Patient ID: {patient.patientId}
+                      </p>
                     </div>
                   </div>
-                  {/* Add more timeline items based on services, admissions, etc. */}
+
+                  {/* Services Timeline */}
+                  {services && services.length > 0 && services.map((service: any) => (
+                    <div key={service.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{service.serviceName}</p>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(service.scheduledDate).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          Status: {service.status}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Admissions Timeline */}
+                  {admissions && admissions.length > 0 && admissions.map((admission: any) => (
+                    <div key={admission.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">Patient Admission</p>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(admission.admissionDate).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Reason: {admission.reason} • Ward: {admission.wardType}
+                        </p>
+                        {admission.dischargeDate && (
+                          <p className="text-sm text-green-600">
+                            Discharged: {new Date(admission.dischargeDate).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Pathology Orders Timeline */}
+                  {pathologyOrders && pathologyOrders.length > 0 && pathologyOrders.map((orderData: any) => {
+                    const order = orderData.order || orderData;
+                    if (!order || !order.orderId) return null;
+                    
+                    return (
+                      <div key={order.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">Pathology Order: {order.orderId}</p>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(order.orderedDate).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Status: {order.status} • Tests: {orderData.tests ? orderData.tests.length : 0}
+                          </p>
+                          {order.completedDate && (
+                            <p className="text-sm text-green-600">
+                              Completed: {new Date(order.completedDate).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {(!services || services.length === 0) && 
+                   (!admissions || admissions.length === 0) && 
+                   (!pathologyOrders || pathologyOrders.length === 0) && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <p>Patient timeline will show services, admissions, and pathology orders as they are added.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
