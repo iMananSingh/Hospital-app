@@ -119,8 +119,8 @@ export default function PatientDetail() {
       patientId: patientId || "",
       serviceType: "",
       serviceName: "",
-      scheduledDate: new Date().toISOString().split('T')[0],
-      scheduledTime: new Date().toTimeString().slice(0, 5), // Current time in HH:MM format
+      scheduledDate: "", // Will be set dynamically when dialog opens
+      scheduledTime: "", // Will be set dynamically when dialog opens
       doctorId: "",
       notes: "",
       price: 0,
