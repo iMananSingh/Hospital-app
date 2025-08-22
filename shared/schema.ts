@@ -253,6 +253,12 @@ export const insertPatientServiceSchema = createInsertSchema(patientServices).om
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  patientId: z.string().min(1, "Patient ID is required"),
+  serviceType: z.string().min(1, "Service type is required"),
+  serviceName: z.string().min(1, "Service name is required"),
+  scheduledDate: z.string().min(1, "Scheduled date is required"),
+  scheduledTime: z.string().min(1, "Scheduled time is required"),
 });
 
 export const insertAdmissionSchema = createInsertSchema(admissions).omit({

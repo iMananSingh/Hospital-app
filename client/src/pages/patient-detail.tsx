@@ -113,9 +113,12 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
-    resolver: zodResolver(insertPatientServiceSchema),
+    resolver: zodResolver(insertPatientServiceSchema.extend({
+      scheduledTime: z.string().min(1, "Scheduled time is required"),
+      doctorId: z.string().optional(),
+    })),
     defaultValues: {
-      patientId: patientId,
+      patientId: patientId || "",
       serviceType: "",
       serviceName: "",
       scheduledDate: new Date().toISOString().split('T')[0],
@@ -211,6 +214,9 @@ export default function PatientDetail() {
   });
 
   const onServiceSubmit = (data: any) => {
+    console.log("Form submitted with data:", data);
+    console.log("Selected service type:", selectedServiceType);
+    
     let serviceData;
     
     if (selectedServiceType === "opd") {
@@ -244,6 +250,7 @@ export default function PatientDetail() {
       };
     }
     
+    console.log("Submitting service data:", serviceData);
     createServiceMutation.mutate(serviceData);
   };
 
