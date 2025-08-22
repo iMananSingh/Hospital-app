@@ -75,7 +75,7 @@ export default function PatientDetail() {
   });
 
   // Fetch patient admissions history
-  const { data: admissions } = useQuery({
+  const { data: admissions = [] } = useQuery({
     queryKey: ["/api/admissions", patientId],
     queryFn: async () => {
       const response = await fetch(`/api/admissions?patientId=${patientId}`, {
@@ -103,7 +103,7 @@ export default function PatientDetail() {
   });
 
   // Fetch doctors for service assignment
-  const { data: doctors } = useQuery({
+  const { data: doctors = [] } = useQuery({
     queryKey: ["/api/doctors"],
   });
 
@@ -200,6 +200,8 @@ export default function PatientDetail() {
     const serviceData = {
       ...data,
       serviceId: `SRV-${Date.now()}`,
+      // Convert "none" back to empty string for the API
+      doctorId: data.doctorId === "none" ? "" : data.doctorId,
     };
     createServiceMutation.mutate(serviceData);
   };
@@ -249,7 +251,6 @@ export default function PatientDetail() {
     <div className="space-y-6">
       <TopBar 
         title={`Patient: ${patient.name}`}
-        onBack={() => navigate("/patients")}
       />
       
       <div className="p-6">
@@ -282,6 +283,13 @@ export default function PatientDetail() {
               
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Gender</p>
+                    <p className="font-medium capitalize">{patient.gender}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">Phone</p>
@@ -303,6 +311,13 @@ export default function PatientDetail() {
                   <div>
                     <p className="text-sm text-muted-foreground">Patient ID</p>
                     <p className="font-medium">{patient.patientId}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Emergency Contact</p>
+                    <p className="font-medium">{patient.emergencyContact || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -357,13 +372,13 @@ export default function PatientDetail() {
                 Order Lab Test
               </Button>
               <Button 
-                onClick={() => navigate("/pathology")}
+                onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
                 variant="outline"
                 className="flex items-center gap-2"
                 data-testid="button-pathology-tests"
               >
                 <TestTube className="h-4 w-4" />
-                View Pathology Tests
+                Order Pathology Tests
               </Button>
             </div>
           </CardContent>
@@ -505,7 +520,10 @@ export default function PatientDetail() {
                     </TableHeader>
                     <TableBody>
                       {pathologyOrders.map((orderData: any) => {
-                        const order = orderData.order;
+                        // Handle both direct order objects and nested order structure
+                        const order = orderData.order || orderData;
+                        if (!order || !order.orderId) return null;
+                        
                         return (
                           <TableRow key={order.id}>
                             <TableCell className="font-medium">{order.orderId}</TableCell>
@@ -515,7 +533,7 @@ export default function PatientDetail() {
                                 {order.status}
                               </Badge>
                             </TableCell>
-                            <TableCell>₹{order.totalPrice}</TableCell>
+                            <TableCell>₹{order.totalPrice || 0}</TableCell>
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -612,7 +630,7 @@ export default function PatientDetail() {
                     <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No doctor assigned</SelectItem>
+                    <SelectItem value="none">No doctor assigned</SelectItem>
                     {(doctors || []).map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}

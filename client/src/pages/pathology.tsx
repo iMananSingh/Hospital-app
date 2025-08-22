@@ -238,7 +238,12 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 }
 
 export default function Pathology() {
-  const [isNewTestOpen, setIsNewTestOpen] = useState(false);
+  // Get URL parameters for pre-selected patient
+  const urlParams = new URLSearchParams(window.location.search);
+  const preSelectedPatientId = urlParams.get('patientId');
+  const preSelectedPatientName = urlParams.get('patientName');
+
+  const [isNewTestOpen, setIsNewTestOpen] = useState(!!preSelectedPatientId);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -309,7 +314,7 @@ export default function Pathology() {
   const form = useForm({
     resolver: zodResolver(insertPathologyOrderSchema),
     defaultValues: {
-      patientId: "",
+      patientId: preSelectedPatientId || "",
       doctorId: "",
       orderedDate: new Date().toISOString().split('T')[0],
       remarks: "",

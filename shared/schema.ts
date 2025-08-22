@@ -258,6 +258,11 @@ export const insertAdmissionSchema = createInsertSchema(admissions).omit({
   admissionId: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  patientId: z.string().min(1, "Patient is required"),
+  admissionDate: z.string().min(1, "Admission date is required"),
+  reason: z.string().min(1, "Reason for admission is required"),
+  dailyCost: z.number().min(0, "Daily cost must be non-negative"),
 });
 
 export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit({
