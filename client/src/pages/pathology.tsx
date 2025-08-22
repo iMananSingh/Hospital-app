@@ -194,8 +194,8 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
           
           <div className="flex-1 flex flex-col min-h-0">
             <Label className="text-sm font-medium flex-shrink-0 mb-2">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
-            <div className="border rounded-lg flex-1 overflow-hidden">
-              <div className="max-h-full overflow-y-auto">
+            <div className="border rounded-lg flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto min-h-0">
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
                     <TableRow>
