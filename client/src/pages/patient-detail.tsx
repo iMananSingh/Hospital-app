@@ -557,25 +557,32 @@ export default function PatientDetail() {
                         <TableHead>Type</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>Scheduled Date</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead>Price</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {services.map((service: any) => (
-                        <TableRow key={service.id}>
-                          <TableCell className="font-medium">{service.serviceName}</TableCell>
-                          <TableCell>{service.serviceType}</TableCell>
-                          <TableCell>{service.doctor?.name || "N/A"}</TableCell>
-                          <TableCell>{formatDate(service.scheduledDate)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(service.status)} variant="secondary">
-                              {service.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>₹{service.price}</TableCell>
-                        </TableRow>
-                      ))}
+                      {services.map((service: any) => {
+                        // Find doctor name from doctors array using doctorId
+                        const doctor = doctors.find((d: Doctor) => d.id === service.doctorId);
+                        const doctorName = doctor ? doctor.name : (service.doctorId ? "Unknown Doctor" : "No Doctor Assigned");
+                        
+                        return (
+                          <TableRow key={service.id}>
+                            <TableCell className="font-medium">{service.serviceName}</TableCell>
+                            <TableCell className="capitalize">{service.serviceType}</TableCell>
+                            <TableCell>{doctorName}</TableCell>
+                            <TableCell>
+                              {formatDate(service.scheduledDate)}
+                              {service.scheduledTime && (
+                                <span className="text-muted-foreground ml-2">
+                                  at {service.scheduledTime}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>₹{service.price}</TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 ) : (
