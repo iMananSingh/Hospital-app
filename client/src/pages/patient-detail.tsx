@@ -120,7 +120,7 @@ export default function PatientDetail() {
       serviceType: "",
       serviceName: "",
       scheduledDate: new Date().toISOString().split('T')[0],
-      scheduledTime: "09:00", // Default to 9 AM
+      scheduledTime: new Date().toTimeString().slice(0, 5), // Current time in HH:MM format
       doctorId: "",
       notes: "",
       price: 0,
@@ -499,10 +499,19 @@ export default function PatientDetail() {
               <Button 
                 onClick={() => {
                   console.log("=== SCHEDULE OPD CLICKED ===");
+                  
+                  // Set current date and time when opening the dialog
+                  const now = new Date();
+                  const currentDate = now.toISOString().split('T')[0];
+                  const currentTime = now.toTimeString().slice(0, 5);
+                  
                   setSelectedServiceType("opd");
                   serviceForm.setValue("serviceType", "opd");
                   serviceForm.setValue("serviceName", "OPD Consultation");
-                  console.log("Set service type to OPD and opening dialog");
+                  serviceForm.setValue("scheduledDate", currentDate);
+                  serviceForm.setValue("scheduledTime", currentTime);
+                  
+                  console.log(`Set current date/time: ${currentDate} ${currentTime}`);
                   setIsServiceDialogOpen(true);
                 }}
                 className="flex items-center gap-2"
@@ -539,7 +548,17 @@ export default function PatientDetail() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Service History</CardTitle>
                 <Button
-                  onClick={() => setIsServiceDialogOpen(true)}
+                  onClick={() => {
+                    // Set current date and time when opening any service dialog
+                    const now = new Date();
+                    const currentDate = now.toISOString().split('T')[0];
+                    const currentTime = now.toTimeString().slice(0, 5);
+                    
+                    serviceForm.setValue("scheduledDate", currentDate);
+                    serviceForm.setValue("scheduledTime", currentTime);
+                    
+                    setIsServiceDialogOpen(true);
+                  }}
                   size="sm"
                   className="flex items-center gap-2"
                   data-testid="button-add-service"
