@@ -210,16 +210,45 @@ export default function PatientDetail() {
   });
 
   const onServiceSubmit = (data: any) => {
-    const serviceData = {
-      ...data,
-      serviceId: `SRV-${Date.now()}`,
-      // Convert "none" back to empty string for the API
-      doctorId: data.doctorId === "none" ? "" : data.doctorId,
-    };
+    let serviceData;
+    
+    if (selectedServiceType === "opd") {
+      // For OPD, use predefined values
+      serviceData = {
+        ...data,
+        serviceId: `SRV-${Date.now()}`,
+        serviceName: "OPD Consultation",
+        serviceType: "opd",
+        price: 500, // Default OPD price
+        // Convert "none" back to empty string for the API
+        doctorId: data.doctorId === "none" ? "" : data.doctorId,
+      };
+    } else {
+      serviceData = {
+        ...data,
+        serviceId: `SRV-${Date.now()}`,
+        // Convert "none" back to empty string for the API
+        doctorId: data.doctorId === "none" ? "" : data.doctorId,
+      };
+    }
+    
     createServiceMutation.mutate(serviceData);
   };
 
   const onAdmissionSubmit = (data: any) => {
+    // Validate required fields
+    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'reason', 'dailyCost'];
+    const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const admissionData = {
       ...data,
       admissionId: `ADM-${Date.now()}`,
@@ -433,52 +462,6 @@ export default function PatientDetail() {
                 <Stethoscope className="h-4 w-4" />
                 Schedule OPD
               </Button>
-              {(() => {
-                // Check if patient is currently admitted
-                const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                
-                if (currentAdmission) {
-                  return (
-                    <div className="flex gap-2">
-                      <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        Admitted - Room {currentAdmission.roomNumber}
-                      </div>
-                      <Button 
-                        onClick={() => setIsDischargeDialogOpen(true)}
-                        variant="outline"
-                        className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                        data-testid="button-discharge-patient"
-                      >
-                        <Minus className="h-4 w-4" />
-                        Discharge Patient
-                      </Button>
-                      <Button 
-                        onClick={() => setIsRoomUpdateDialogOpen(true)}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                        data-testid="button-update-room"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Update Room
-                      </Button>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <Button 
-                      onClick={() => setIsAdmissionDialogOpen(true)}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                      data-testid="button-admit-patient"
-                    >
-                      <Bed className="h-4 w-4" />
-                      Admit Patient
-                    </Button>
-                  );
-                }
-              })()}
 
               <Button 
                 onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
@@ -559,15 +542,55 @@ export default function PatientDetail() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Admission History</CardTitle>
-                <Button
-                  onClick={() => setIsAdmissionDialogOpen(true)}
-                  size="sm"
-                  className="flex items-center gap-2"
-                  data-testid="button-add-admission"
-                >
-                  <Plus className="h-4 w-4" />
-                  New Admission
-                </Button>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    // Check if patient is currently admitted
+                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    
+                    if (currentAdmission) {
+                      return (
+                        <>
+                          <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
+                            <div className="w-2 h-2 bg-green-500 rounded-full" />
+                            Admitted - Room {currentAdmission.roomNumber}
+                          </div>
+                          <Button 
+                            onClick={() => setIsDischargeDialogOpen(true)}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                            data-testid="button-discharge-patient"
+                          >
+                            <Minus className="h-4 w-4" />
+                            Discharge Patient
+                          </Button>
+                          <Button 
+                            onClick={() => setIsRoomUpdateDialogOpen(true)}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                            data-testid="button-update-room"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Update Room
+                          </Button>
+                        </>
+                      );
+                    } else {
+                      return (
+                        <Button
+                          onClick={() => setIsAdmissionDialogOpen(true)}
+                          size="sm"
+                          className="flex items-center gap-2"
+                          data-testid="button-add-admission"
+                        >
+                          <Plus className="h-4 w-4" />
+                          New Admission
+                        </Button>
+                      );
+                    }
+                  })()}
+                </div>
               </CardHeader>
               <CardContent>
                 {admissions && admissions.length > 0 ? (
@@ -592,7 +615,16 @@ export default function PatientDetail() {
                           <TableCell>{formatDate(admission.admissionDate)}</TableCell>
                           <TableCell>{formatDate(admission.dischargeDate)}</TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(admission.status)} variant="secondary">
+                            <Badge 
+                              className={
+                                admission.status === 'admitted' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : admission.status === 'discharged'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              } 
+                              variant="secondary"
+                            >
                               {admission.status}
                             </Badge>
                           </TableCell>
@@ -735,7 +767,7 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Sort events chronologically (earliest first)
+                    // Sort events chronologically (latest first, most recent at bottom means earliest at top)
                     timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                     
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
@@ -782,43 +814,56 @@ export default function PatientDetail() {
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Schedule Patient Service</DialogTitle>
+            <DialogTitle>
+              {selectedServiceType === "opd" ? "Schedule OPD Consultation" : "Schedule Patient Service"}
+            </DialogTitle>
           </DialogHeader>
           
           <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
+            {selectedServiceType !== "opd" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Service Type *</Label>
+                  <Select 
+                    value={serviceForm.watch("serviceType")}
+                    onValueChange={(value) => {
+                      serviceForm.setValue("serviceType", value);
+                      const serviceType = serviceTypes.find(s => s.value === value);
+                      if (serviceType) {
+                        serviceForm.setValue("serviceName", serviceType.name);
+                        serviceForm.setValue("price", serviceType.price);
+                      }
+                    }}
+                    data-testid="select-service-type"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceTypes.map((service) => (
+                        <SelectItem key={service.value} value={service.value}>
+                          <div className="flex items-center gap-2">
+                            <service.icon className="h-4 w-4" />
+                            {service.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {selectedServiceType === "opd" && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
+                <p className="text-sm text-blue-600">Consultation fee: ₹500</p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Service Type *</Label>
-                <Select 
-                  value={serviceForm.watch("serviceType")}
-                  onValueChange={(value) => {
-                    serviceForm.setValue("serviceType", value);
-                    const serviceType = serviceTypes.find(s => s.value === value);
-                    if (serviceType) {
-                      serviceForm.setValue("serviceName", serviceType.name);
-                      serviceForm.setValue("price", serviceType.price);
-                    }
-                  }}
-                  data-testid="select-service-type"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select service type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceTypes.map((service) => (
-                      <SelectItem key={service.value} value={service.value}>
-                        <div className="flex items-center gap-2">
-                          <service.icon className="h-4 w-4" />
-                          {service.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Doctor</Label>
+                <Label>{selectedServiceType === "opd" ? "Consulting Doctor" : "Doctor"}</Label>
                 <Select 
                   value={serviceForm.watch("doctorId")}
                   onValueChange={(value) => serviceForm.setValue("doctorId", value)}
@@ -849,14 +894,16 @@ export default function PatientDetail() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Price (₹)</Label>
-                <Input
-                  type="number"
-                  {...serviceForm.register("price", { valueAsNumber: true })}
-                  data-testid="input-service-price"
-                />
-              </div>
+              {selectedServiceType !== "opd" && (
+                <div className="space-y-2">
+                  <Label>Price (₹)</Label>
+                  <Input
+                    type="number"
+                    {...serviceForm.register("price", { valueAsNumber: true })}
+                    data-testid="input-service-price"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -872,7 +919,10 @@ export default function PatientDetail() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsServiceDialogOpen(false)}
+                onClick={() => {
+                  setIsServiceDialogOpen(false);
+                  setSelectedServiceType("");
+                }}
                 data-testid="button-cancel-service"
               >
                 Cancel
@@ -882,7 +932,12 @@ export default function PatientDetail() {
                 disabled={createServiceMutation.isPending}
                 data-testid="button-schedule-service"
               >
-                {createServiceMutation.isPending ? "Scheduling..." : "Schedule Service"}
+                {createServiceMutation.isPending 
+                  ? "Scheduling..." 
+                  : selectedServiceType === "opd" 
+                    ? "Schedule OPD" 
+                    : "Schedule Service"
+                }
               </Button>
             </div>
           </form>
@@ -967,14 +1022,7 @@ export default function PatientDetail() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Diagnosis</Label>
-              <Textarea
-                {...admissionForm.register("diagnosis")}
-                placeholder="Initial diagnosis..."
-                data-testid="textarea-diagnosis"
-              />
-            </div>
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
