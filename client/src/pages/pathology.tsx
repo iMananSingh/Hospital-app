@@ -13,11 +13,94 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TestTube, Eye, Search, Plus, ShoppingCart } from "lucide-react";
+import { TestTube, Eye, Search, Plus, ShoppingCart, Check, ChevronsUpDown } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
+
+// Patient Search Combobox Component
+function PatientSearchCombobox({ value, onValueChange, patients }: {
+  value: string;
+  onValueChange: (value: string) => void;
+  patients: any[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+
+  const filteredPatients = (patients || []).filter((patient: any) => {
+    const searchLower = searchValue.toLowerCase();
+    return (
+      patient.name?.toLowerCase().includes(searchLower) ||
+      patient.patientId?.toLowerCase().includes(searchLower) ||
+      patient.phone?.includes(searchValue)
+    );
+  });
+
+  const selectedPatient = patients?.find((patient: any) => patient.id === value);
+
+  const formatPatientDisplay = (patient: any) => {
+    return `${patient.name}, ${patient.age} ${patient.gender} (${patient.patientId})`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between text-left font-normal"
+          data-testid="button-select-patient"
+        >
+          {selectedPatient ? formatPatientDisplay(selectedPatient) : "Search and select patient..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+        <Command>
+          <CommandInput 
+            placeholder="Type to search patients..." 
+            value={searchValue}
+            onValueChange={setSearchValue}
+            data-testid="input-search-patient"
+          />
+          <CommandList>
+            <CommandEmpty>No patients found.</CommandEmpty>
+            <CommandGroup>
+              {filteredPatients.map((patient: any) => (
+                <CommandItem
+                  key={patient.id}
+                  value={patient.id}
+                  onSelect={() => {
+                    onValueChange(patient.id);
+                    setOpen(false);
+                    setSearchValue("");
+                  }}
+                  data-testid={`option-patient-${patient.id}`}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      value === patient.id ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{patient.name}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {patient.age} years, {patient.gender} • {patient.patientId}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // Order Details Dialog Component
 function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => void }) {
@@ -468,21 +551,14 @@ export default function Pathology() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
-                <Select 
+                <PatientSearchCombobox
+                  value={form.watch("patientId")}
                   onValueChange={(value) => form.setValue("patientId", value)}
-                  data-testid="select-patient"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select patient" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(patients || []).map((patient: Patient) => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {patient.name} ({patient.patientId})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  patients={patients || []}
+                />
+                {form.formState.errors.patientId && (
+                  <p className="text-sm text-red-500">{form.formState.errors.patientId.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
