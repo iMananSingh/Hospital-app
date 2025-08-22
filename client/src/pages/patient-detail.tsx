@@ -213,9 +213,18 @@ export default function PatientDetail() {
     let serviceData;
     
     if (selectedServiceType === "opd") {
-      // For OPD, use doctor's consultation fee
+      // For OPD, validate doctor selection and use doctor's consultation fee
+      if (!data.doctorId || data.doctorId === "none") {
+        toast({
+          title: "Doctor Required",
+          description: "Please select a consulting doctor for OPD consultation",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const selectedDoctor = doctors?.find((d: any) => d.id === data.doctorId);
-      const consultationFee = selectedDoctor?.consultationFee || 500;
+      const consultationFee = selectedDoctor?.consultationFee || 0;
       
       serviceData = {
         ...data,
@@ -223,8 +232,7 @@ export default function PatientDetail() {
         serviceName: "OPD Consultation",
         serviceType: "opd",
         price: consultationFee,
-        // Convert "none" back to empty string for the API
-        doctorId: data.doctorId === "none" ? "" : data.doctorId,
+        doctorId: data.doctorId,
       };
     } else {
       serviceData = {
@@ -863,12 +871,12 @@ export default function PatientDetail() {
                 {(() => {
                   const selectedDoctorId = serviceForm.watch("doctorId");
                   const selectedDoctor = doctors?.find((d: any) => d.id === selectedDoctorId);
-                  const consultationFee = selectedDoctor?.consultationFee || 500;
+                  const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
                   
                   return (
                     <p className="text-sm text-blue-600">
                       Consultation fee: ₹{consultationFee}
-                      {!selectedDoctorId && <span className="text-blue-500 ml-1">(Select doctor to see fee)</span>}
+                      {(!selectedDoctorId || selectedDoctorId === "none") && <span className="text-blue-500 ml-1">(Select doctor to see fee)</span>}
                     </p>
                   );
                 })()}
@@ -877,17 +885,17 @@ export default function PatientDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{selectedServiceType === "opd" ? "Consulting Doctor" : "Doctor"}</Label>
+                <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Doctor"}</Label>
                 <Select 
                   value={serviceForm.watch("doctorId")}
                   onValueChange={(value) => serviceForm.setValue("doctorId", value)}
                   data-testid="select-service-doctor"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select doctor (optional)" />
+                    <SelectValue placeholder={selectedServiceType === "opd" ? "Select consulting doctor (required)" : "Select doctor (optional)"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No doctor assigned</SelectItem>
+                    {selectedServiceType !== "opd" && <SelectItem value="none">No doctor assigned</SelectItem>}
                     {(doctors || []).map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
