@@ -34,6 +34,7 @@ import {
   Edit
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
+import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Patient, PatientService, Admission, Doctor } from "@shared/schema";
