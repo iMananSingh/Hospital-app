@@ -27,7 +27,7 @@ export default function Patients() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: patients = [], isLoading } = useQuery({
+  const { data: patients = [], isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 

@@ -51,7 +51,7 @@ export default function PatientDetail() {
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
 
   // Fetch patient details
-  const { data: patient } = useQuery({
+  const { data: patient } = useQuery<Patient>({
     queryKey: ["/api/patients", patientId],
     queryFn: async () => {
       const response = await fetch(`/api/patients/${patientId}`, {
@@ -65,7 +65,7 @@ export default function PatientDetail() {
   });
 
   // Fetch patient services history
-  const { data: services } = useQuery({
+  const { data: services } = useQuery<PatientService[]>({
     queryKey: ["/api/patient-services", patientId],
     queryFn: async () => {
       const response = await fetch(`/api/patient-services?patientId=${patientId}`, {
