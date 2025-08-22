@@ -263,6 +263,7 @@ export const insertAdmissionSchema = createInsertSchema(admissions).omit({
   admissionDate: z.string().min(1, "Admission date is required"),
   reason: z.string().min(1, "Reason for admission is required"),
   dailyCost: z.number().min(0, "Daily cost must be non-negative"),
+  initialDeposit: z.number().min(0, "Initial deposit must be non-negative").optional(),
 });
 
 export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit({

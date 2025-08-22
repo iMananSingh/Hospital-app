@@ -401,6 +401,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/admissions/:id", authenticateToken, async (req, res) => {
+    try {
+      const admission = await storage.updateAdmission(req.params.id, req.body);
+      res.json(admission);
+    } catch (error) {
+      console.error("Error updating admission:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get individual patient details
   app.get("/api/patients/:id", authenticateToken, async (req, res) => {
     try {

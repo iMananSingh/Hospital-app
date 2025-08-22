@@ -29,7 +29,9 @@ import {
   ClipboardList,
   Plus,
   Eye,
-  Clock
+  Clock,
+  Minus,
+  Edit
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -44,6 +46,8 @@ export default function PatientDetail() {
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
+  const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
+  const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
 
   // Fetch patient details
@@ -132,6 +136,14 @@ export default function PatientDetail() {
       diagnosis: "",
       notes: "",
       dailyCost: 0,
+      initialDeposit: 0,
+    },
+  });
+
+  const roomUpdateForm = useForm({
+    defaultValues: {
+      roomNumber: "",
+      wardType: "",
     },
   });
 
@@ -208,7 +220,77 @@ export default function PatientDetail() {
   };
 
   const onAdmissionSubmit = (data: any) => {
-    createAdmissionMutation.mutate(data);
+    const admissionData = {
+      ...data,
+      admissionId: `ADM-${Date.now()}`,
+    };
+    createAdmissionMutation.mutate(admissionData);
+  };
+
+  const dischargePatientMutation = useMutation({
+    mutationFn: async (admissionId: string) => {
+      const response = await fetch(`/api/admissions/${admissionId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ 
+          status: "discharged",
+          dischargeDate: new Date().toISOString() 
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to discharge patient");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      setIsDischargeDialogOpen(false);
+      toast({
+        title: "Patient discharged successfully",
+        description: "The patient has been discharged.",
+      });
+    },
+  });
+
+  const updateRoomMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+      if (!currentAdmission) throw new Error("No active admission found");
+      
+      const response = await fetch(`/api/admissions/${currentAdmission.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) throw new Error("Failed to update room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      setIsRoomUpdateDialogOpen(false);
+      roomUpdateForm.reset();
+      toast({
+        title: "Room updated successfully",
+        description: "Patient room information has been updated.",
+      });
+    },
+  });
+
+  const onDischargePatient = () => {
+    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+    if (currentAdmission) {
+      dischargePatientMutation.mutate(currentAdmission.id);
+    }
+  };
+
+  const onRoomUpdate = (data: any) => {
+    updateRoomMutation.mutate(data);
   };
 
   const getStatusColor = (status: string) => {
@@ -351,15 +433,52 @@ export default function PatientDetail() {
                 <Stethoscope className="h-4 w-4" />
                 Schedule OPD
               </Button>
-              <Button 
-                onClick={() => setIsAdmissionDialogOpen(true)}
-                variant="outline"
-                className="flex items-center gap-2"
-                data-testid="button-admit-patient"
-              >
-                <Bed className="h-4 w-4" />
-                Admit Patient
-              </Button>
+              {(() => {
+                // Check if patient is currently admitted
+                const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                
+                if (currentAdmission) {
+                  return (
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        Admitted - Room {currentAdmission.roomNumber}
+                      </div>
+                      <Button 
+                        onClick={() => setIsDischargeDialogOpen(true)}
+                        variant="outline"
+                        className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                        data-testid="button-discharge-patient"
+                      >
+                        <Minus className="h-4 w-4" />
+                        Discharge Patient
+                      </Button>
+                      <Button 
+                        onClick={() => setIsRoomUpdateDialogOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        data-testid="button-update-room"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Update Room
+                      </Button>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <Button 
+                      onClick={() => setIsAdmissionDialogOpen(true)}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      data-testid="button-admit-patient"
+                    >
+                      <Bed className="h-4 w-4" />
+                      Admit Patient
+                    </Button>
+                  );
+                }
+              })()}
 
               <Button 
                 onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
@@ -555,98 +674,103 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Registration Event */}
-                  <div className="flex items-start gap-3 p-3 border rounded-lg">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">Patient Registered</p>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(patient.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Patient ID: {patient.patientId}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Services Timeline */}
-                  {services && services.length > 0 && services.map((service: any) => (
-                    <div key={service.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="w-3 h-3 bg-green-500 rounded-full mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{service.serviceName}</p>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(service.scheduledDate).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground capitalize">
-                          Status: {service.status}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Admissions Timeline */}
-                  {admissions && admissions.length > 0 && admissions.map((admission: any) => (
-                    <div key={admission.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="w-3 h-3 bg-orange-500 rounded-full mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">Patient Admission</p>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(admission.admissionDate).toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Reason: {admission.reason} • Ward: {admission.wardType}
-                        </p>
-                        {admission.dischargeDate && (
-                          <p className="text-sm text-green-600">
-                            Discharged: {new Date(admission.dischargeDate).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Pathology Orders Timeline */}
-                  {pathologyOrders && pathologyOrders.length > 0 && pathologyOrders.map((orderData: any) => {
-                    const order = orderData.order || orderData;
-                    if (!order || !order.orderId) return null;
+                  {(() => {
+                    // Create timeline events array
+                    const timelineEvents = [];
                     
-                    return (
-                      <div key={order.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full mt-1" />
+                    // Add registration event
+                    timelineEvents.push({
+                      id: 'registration',
+                      type: 'registration',
+                      title: 'Patient Registered',
+                      date: patient.createdAt,
+                      description: `Patient ID: ${patient.patientId}`,
+                      color: 'bg-blue-500'
+                    });
+                    
+                    // Add services
+                    if (services && services.length > 0) {
+                      services.forEach((service: any) => {
+                        timelineEvents.push({
+                          id: service.id,
+                          type: 'service',
+                          title: service.serviceName,
+                          date: service.scheduledDate,
+                          description: `Status: ${service.status}`,
+                          color: 'bg-green-500'
+                        });
+                      });
+                    }
+                    
+                    // Add admissions
+                    if (admissions && admissions.length > 0) {
+                      admissions.forEach((admission: any) => {
+                        timelineEvents.push({
+                          id: admission.id,
+                          type: 'admission',
+                          title: 'Patient Admission',
+                          date: admission.admissionDate,
+                          description: `Reason: ${admission.reason} • Ward: ${admission.wardType}`,
+                          color: 'bg-orange-500',
+                          extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString()}` : null
+                        });
+                      });
+                    }
+                    
+                    // Add pathology orders
+                    if (pathologyOrders && pathologyOrders.length > 0) {
+                      pathologyOrders.forEach((orderData: any) => {
+                        const order = orderData.order || orderData;
+                        if (order && order.orderId) {
+                          timelineEvents.push({
+                            id: order.id,
+                            type: 'pathology',
+                            title: `Pathology Order: ${order.orderId}`,
+                            date: order.orderedDate,
+                            description: `Status: ${order.status} • Tests: ${orderData.tests ? orderData.tests.length : 0}`,
+                            color: 'bg-purple-500',
+                            extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString()}` : null
+                          });
+                        }
+                      });
+                    }
+                    
+                    // Sort events chronologically (earliest first)
+                    timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    
+                    return timelineEvents.length > 0 ? timelineEvents.map((event) => (
+                      <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
-                            <p className="font-medium">Pathology Order: {order.orderId}</p>
+                            <p className="font-medium">{event.title}</p>
                             <span className="text-sm text-muted-foreground">
-                              {new Date(order.orderedDate).toLocaleString()}
+                              {new Date(event.date).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              })}
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Status: {order.status} • Tests: {orderData.tests ? orderData.tests.length : 0}
+                            {event.description}
                           </p>
-                          {order.completedDate && (
+                          {event.extraInfo && (
                             <p className="text-sm text-green-600">
-                              Completed: {new Date(order.completedDate).toLocaleString()}
+                              {event.extraInfo}
                             </p>
                           )}
                         </div>
                       </div>
+                    )) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        <p>Patient timeline will show services, admissions, and pathology orders as they are added.</p>
+                      </div>
                     );
-                  })}
-
-                  {(!services || services.length === 0) && 
-                   (!admissions || admissions.length === 0) && 
-                   (!pathologyOrders || pathologyOrders.length === 0) && (
-                    <div className="text-center text-muted-foreground py-8">
-                      <p>Patient timeline will show services, admissions, and pathology orders as they are added.</p>
-                    </div>
-                  )}
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -864,13 +988,23 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  {...admissionForm.register("notes")}
-                  placeholder="Additional notes..."
-                  data-testid="textarea-admission-notes"
+                <Label>Initial Deposit (₹)</Label>
+                <Input
+                  type="number"
+                  {...admissionForm.register("initialDeposit", { valueAsNumber: true })}
+                  placeholder="Initial deposit amount"
+                  data-testid="input-initial-deposit"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea
+                {...admissionForm.register("notes")}
+                placeholder="Additional notes..."
+                data-testid="textarea-admission-notes"
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
@@ -888,6 +1022,107 @@ export default function PatientDetail() {
                 data-testid="button-admit"
               >
                 {createAdmissionMutation.isPending ? "Admitting..." : "Admit Patient"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discharge Dialog */}
+      <Dialog open={isDischargeDialogOpen} onOpenChange={setIsDischargeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discharge Patient</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Are you sure you want to discharge this patient? This action will mark the admission as completed and set the discharge date to now.
+            </p>
+            
+            {(() => {
+              const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+              if (currentAdmission) {
+                return (
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-sm"><strong>Room:</strong> {currentAdmission.roomNumber}</p>
+                    <p className="text-sm"><strong>Ward Type:</strong> {currentAdmission.wardType}</p>
+                    <p className="text-sm"><strong>Admission Date:</strong> {formatDate(currentAdmission.admissionDate)}</p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDischargeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={onDischargePatient}
+              disabled={dischargePatientMutation.isPending}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {dischargePatientMutation.isPending ? "Discharging..." : "Discharge Patient"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Room Update Dialog */}
+      <Dialog open={isRoomUpdateDialogOpen} onOpenChange={setIsRoomUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Room Assignment</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={roomUpdateForm.handleSubmit(onRoomUpdate)} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Ward Type *</Label>
+              <Select 
+                value={roomUpdateForm.watch("wardType")}
+                onValueChange={(value) => roomUpdateForm.setValue("wardType", value)}
+                data-testid="select-update-ward-type"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select ward type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Ward</SelectItem>
+                  <SelectItem value="private">Private Room</SelectItem>
+                  <SelectItem value="icu">ICU</SelectItem>
+                  <SelectItem value="emergency">Emergency</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Room Number</Label>
+              <Input
+                {...roomUpdateForm.register("roomNumber")}
+                placeholder="e.g., 101, A-204"
+                data-testid="input-update-room-number"
+              />
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsRoomUpdateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateRoomMutation.isPending}
+              >
+                {updateRoomMutation.isPending ? "Updating..." : "Update Room"}
               </Button>
             </div>
           </form>
