@@ -133,7 +133,7 @@ export default function PatientDetail() {
       patientId: patientId,
       doctorId: "",
       wardType: "",
-      admissionDate: new Date().toISOString().split('T')[0],
+      admissionDate: "", // Will be set dynamically when dialog opens
       reason: "",
       diagnosis: "",
       notes: "",
@@ -384,10 +384,18 @@ export default function PatientDetail() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    
+    // Handle different date formats and ensure local timezone
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) return "N/A";
+    
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "short",
+      month: "short", 
       day: "numeric",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
   };
 
@@ -660,7 +668,16 @@ export default function PatientDetail() {
                     } else {
                       return (
                         <Button
-                          onClick={() => setIsAdmissionDialogOpen(true)}
+                          onClick={() => {
+                            // Set current LOCAL date when opening admission dialog  
+                            const now = new Date();
+                            const currentDate = now.getFullYear() + '-' + 
+                              String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(now.getDate()).padStart(2, '0');
+                            
+                            admissionForm.setValue("admissionDate", currentDate);
+                            setIsAdmissionDialogOpen(true);
+                          }}
                           size="sm"
                           className="flex items-center gap-2"
                           data-testid="button-add-admission"
@@ -804,11 +821,16 @@ export default function PatientDetail() {
                     // Add services
                     if (services && services.length > 0) {
                       services.forEach((service: any) => {
+                        // Combine scheduled date and time for timeline
+                        const scheduledDateTime = service.scheduledTime 
+                          ? `${service.scheduledDate}T${service.scheduledTime}:00`
+                          : service.scheduledDate;
+                        
                         timelineEvents.push({
                           id: service.id,
                           type: 'service',
                           title: service.serviceName,
-                          date: service.scheduledDate,
+                          date: scheduledDateTime,
                           description: `Status: ${service.status}`,
                           color: 'bg-green-500'
                         });
@@ -825,7 +847,15 @@ export default function PatientDetail() {
                           date: admission.admissionDate,
                           description: `Reason: ${admission.reason} • Ward: ${admission.wardType}`,
                           color: 'bg-orange-500',
-                          extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString()}` : null
+                          extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                          })}` : null
                         });
                       });
                     }
@@ -842,7 +872,15 @@ export default function PatientDetail() {
                             date: order.orderedDate,
                             description: `Status: ${order.status} • Tests: ${orderData.tests ? orderData.tests.length : 0}`,
                             color: 'bg-purple-500',
-                            extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString()}` : null
+                            extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                            })}` : null
                           });
                         }
                       });
@@ -864,7 +902,8 @@ export default function PatientDetail() {
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
-                                hour12: true
+                                hour12: true,
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
                               })}
                             </span>
                           </div>
