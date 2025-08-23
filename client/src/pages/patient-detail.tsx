@@ -896,15 +896,27 @@ export default function PatientDetail() {
                           <div className="flex items-center justify-between">
                             <p className="font-medium">{event.title}</p>
                             <span className="text-sm text-muted-foreground">
-                              {new Date(event.date).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true,
-                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                              })}
+                              {(() => {
+                                // Handle UTC timestamps from database properly
+                                let date = new Date(event.date);
+                                
+                                // If the date string doesn't include timezone info (from SQLite),
+                                // it needs to be treated as UTC
+                                if (typeof event.date === 'string' && !event.date.includes('T') && !event.date.includes('Z')) {
+                                  // SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
+                                  date = new Date(event.date + 'Z'); // Add Z to indicate UTC
+                                }
+                                
+                                return date.toLocaleString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                });
+                              })()}
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground">
