@@ -194,7 +194,8 @@ async function initializeDatabase() {
         name TEXT NOT NULL UNIQUE,
         category TEXT NOT NULL,
         daily_cost REAL NOT NULL DEFAULT 0,
-        description TEXT,
+        total_beds INTEGER NOT NULL DEFAULT 0,
+        occupied_beds INTEGER NOT NULL DEFAULT 0,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -725,6 +726,24 @@ export class SqliteStorage implements IStorage {
       ...admission,
       admissionId,
     }).returning().get();
+    
+    // Increment occupied beds for the room type
+    if (admission.wardType) {
+      const roomType = db.select().from(schema.roomTypes)
+        .where(eq(schema.roomTypes.name, admission.wardType))
+        .get();
+      
+      if (roomType) {
+        db.update(schema.roomTypes)
+          .set({ 
+            occupiedBeds: (roomType.occupiedBeds || 0) + 1,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(schema.roomTypes.id, roomType.id))
+          .run();
+      }
+    }
+    
     return created;
   }
 
@@ -747,10 +766,36 @@ export class SqliteStorage implements IStorage {
   }
 
   async updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission | undefined> {
+    // Get the current admission to check for status changes
+    const currentAdmission = db.select().from(schema.admissions)
+      .where(eq(schema.admissions.id, id))
+      .get();
+    
     const updated = db.update(schema.admissions)
       .set({ ...admission, updatedAt: new Date().toISOString() })
       .where(eq(schema.admissions.id, id))
       .returning().get();
+    
+    // Handle bed count changes when status changes
+    if (currentAdmission && admission.status === 'discharged' && currentAdmission.status === 'admitted') {
+      // Patient is being discharged - decrement occupied beds
+      if (currentAdmission.wardType) {
+        const roomType = db.select().from(schema.roomTypes)
+          .where(eq(schema.roomTypes.name, currentAdmission.wardType))
+          .get();
+        
+        if (roomType && roomType.occupiedBeds > 0) {
+          db.update(schema.roomTypes)
+            .set({ 
+              occupiedBeds: roomType.occupiedBeds - 1,
+              updatedAt: new Date().toISOString()
+            })
+            .where(eq(schema.roomTypes.id, roomType.id))
+            .run();
+        }
+      }
+    }
+    
     return updated;
   }
 

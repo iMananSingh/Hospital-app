@@ -113,6 +113,11 @@ export default function PatientDetail() {
     queryKey: ["/api/doctors"],
   });
 
+  // Fetch room types for admission form
+  const { data: roomTypes = [] } = useQuery<any[]>({
+    queryKey: ["/api/room-types"],
+  });
+
   const serviceForm = useForm({
     mode: "onChange",
     defaultValues: {
@@ -757,14 +762,7 @@ export default function PatientDetail() {
                           }</TableCell>
                           <TableCell>{
                             (() => {
-                              const wardTypes = {
-                                'general': 'General Ward',
-                                'private': 'Private Room', 
-                                'icu': 'ICU',
-                                'emergency': 'Emergency'
-                              } as const;
-                              
-                              const wardDisplay = wardTypes[admission.wardType as keyof typeof wardTypes] || admission.wardType;
+                              const wardDisplay = admission.wardType;
                               
                               return admission.roomNumber 
                                 ? `${wardDisplay} (${admission.roomNumber})`
@@ -932,14 +930,7 @@ export default function PatientDetail() {
                             // Find doctor name and format ward type
                             const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
                             const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                            const wardTypes = {
-                              'general': 'General Ward',
-                              'private': 'Private Room', 
-                              'icu': 'ICU',
-                              'emergency': 'Emergency'
-                            } as const;
-                            
-                            const wardDisplay = wardTypes[admission.wardType as keyof typeof wardTypes] || admission.wardType;
+                            const wardDisplay = admission.wardType;
                             
                             const parts = [];
                             if (admission.reason) parts.push(`Reason: ${admission.reason}`);
@@ -1270,10 +1261,11 @@ export default function PatientDetail() {
                     <SelectValue placeholder="Select ward type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="general">General Ward</SelectItem>
-                    <SelectItem value="private">Private Room</SelectItem>
-                    <SelectItem value="icu">ICU</SelectItem>
-                    <SelectItem value="emergency">Emergency</SelectItem>
+                    {roomTypes.map((roomType: any) => (
+                      <SelectItem key={roomType.id} value={roomType.name}>
+                        {roomType.name} ({roomType.category}) - ₹{roomType.dailyCost}/day
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1427,10 +1419,11 @@ export default function PatientDetail() {
                   <SelectValue placeholder="Select ward type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">General Ward</SelectItem>
-                  <SelectItem value="private">Private Room</SelectItem>
-                  <SelectItem value="icu">ICU</SelectItem>
-                  <SelectItem value="emergency">Emergency</SelectItem>
+                  {roomTypes.map((roomType: any) => (
+                    <SelectItem key={roomType.id} value={roomType.name}>
+                      {roomType.name} ({roomType.category}) - ₹{roomType.dailyCost}/day
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

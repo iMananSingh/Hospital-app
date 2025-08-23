@@ -196,9 +196,10 @@ export const auditLog = sqliteTable("audit_log", {
 export const roomTypes = sqliteTable("room_types", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull().unique(), // "General Ward", "Private Room", "ICU", "Emergency"
-  category: text("category").notNull(), // "ward", "icu", "emergency", "ot"
+  category: text("category").notNull(), // "ward", "icu", "emergency", "ot", "room"
   dailyCost: real("daily_cost").notNull().default(0),
-  description: text("description"),
+  totalBeds: integer("total_beds").notNull().default(0),
+  occupiedBeds: integer("occupied_beds").notNull().default(0),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),

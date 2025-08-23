@@ -62,7 +62,7 @@ export default function ServiceManagement() {
       name: "",
       category: "",
       dailyCost: 0,
-      description: "",
+      totalBeds: 0,
       isActive: true,
     },
   });
@@ -205,7 +205,7 @@ export default function ServiceManagement() {
         name: roomType.name,
         category: roomType.category,
         dailyCost: roomType.dailyCost,
-        description: roomType.description || "",
+        totalBeds: roomType.totalBeds || 0,
         isActive: roomType.isActive,
       });
     } else {
@@ -507,8 +507,8 @@ export default function ServiceManagement() {
                         <TableHead>Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Daily Cost</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Total Beds</TableHead>
+                        <TableHead>Occupied Beds</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -525,15 +525,8 @@ export default function ServiceManagement() {
                             </Badge>
                           </TableCell>
                           <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
-                          <TableCell>{roomType.description || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge 
-                              className={roomType.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} 
-                              variant="secondary"
-                            >
-                              {roomType.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
+                          <TableCell>{roomType.totalBeds || 0}</TableCell>
+                          <TableCell>{roomType.occupiedBeds || 0}</TableCell>
                           <TableCell>
                             <Button
                               onClick={() => openRoomTypeDialog(roomType)}
@@ -776,11 +769,12 @@ export default function ServiceManagement() {
               </div>
 
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea
-                  {...roomTypeForm.register("description")}
-                  placeholder="Optional description of the room type"
-                  data-testid="textarea-description"
+                <Label>Total Beds *</Label>
+                <Input
+                  type="number"
+                  {...roomTypeForm.register("totalBeds", { valueAsNumber: true })}
+                  placeholder="Enter total number of beds"
+                  data-testid="input-total-beds"
                 />
               </div>
 
