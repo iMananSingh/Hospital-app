@@ -189,6 +189,31 @@ async function initializeDatabase() {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS room_types (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        name TEXT NOT NULL UNIQUE,
+        category TEXT NOT NULL,
+        daily_cost REAL NOT NULL DEFAULT 0,
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS rooms (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        room_number TEXT NOT NULL UNIQUE,
+        room_type_id TEXT NOT NULL REFERENCES room_types(id),
+        floor TEXT,
+        building TEXT,
+        capacity INTEGER NOT NULL DEFAULT 1,
+        is_occupied INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS audit_log (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         user_id TEXT NOT NULL REFERENCES users(id),
