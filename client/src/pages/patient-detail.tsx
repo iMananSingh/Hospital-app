@@ -1188,6 +1188,8 @@ export default function PatientDetail() {
                       if (selectedService) {
                         serviceForm.setValue("serviceName", selectedService.name);
                         serviceForm.setValue("price", selectedService.price || 0);
+                        // Clear the error when a valid service is selected
+                        serviceForm.clearErrors("serviceType");
                       }
                     }}
                     data-testid="select-service-name"
@@ -1235,7 +1237,13 @@ export default function PatientDetail() {
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
                   value={serviceForm.watch("doctorId")}
-                  onValueChange={(value) => serviceForm.setValue("doctorId", value)}
+                  onValueChange={(value) => {
+                    serviceForm.setValue("doctorId", value);
+                    // Clear the error when a valid doctor is selected
+                    if (value && value !== "none") {
+                      serviceForm.clearErrors("doctorId");
+                    }
+                  }}
                   data-testid="select-service-doctor"
                 >
                   <SelectTrigger>
@@ -1291,10 +1299,14 @@ export default function PatientDetail() {
             {selectedServiceType !== "opd" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Price (₹)</Label>
+                  <Label>Price (₹) *</Label>
                   <Input
                     type="number"
-                    {...serviceForm.register("price", { valueAsNumber: true })}
+                    {...serviceForm.register("price", { 
+                      valueAsNumber: true, 
+                      required: "Price is required",
+                      min: { value: 0, message: "Price must be at least 0" }
+                    })}
                     data-testid="input-service-price"
                     readOnly={(() => {
                       const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
@@ -1305,6 +1317,11 @@ export default function PatientDetail() {
                       return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
                     })()}
                   />
+                  {serviceForm.formState.errors.price && (
+                    <p className="text-sm text-red-600">
+                      {serviceForm.formState.errors.price.message}
+                    </p>
+                  )}
                 </div>
               </div>
             )}

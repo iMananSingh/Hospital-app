@@ -40,6 +40,7 @@ export default function ServiceManagement() {
   const [editingRoomType, setEditingRoomType] = useState<RoomType | null>(null);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [serviceDoctors, setServiceDoctors] = useState<{id: string, share: number}[]>([]);
 
   // Fetch room types
   const { data: roomTypes = [] } = useQuery<RoomType[]>({
@@ -54,6 +55,11 @@ export default function ServiceManagement() {
   // Fetch services
   const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
+  });
+
+  // Fetch doctors for service assignment
+  const { data: doctors = [] } = useQuery<any[]>({
+    queryKey: ["/api/doctors"],
   });
 
   const roomTypeForm = useForm({
@@ -86,6 +92,7 @@ export default function ServiceManagement() {
       price: 0,
       description: "",
       isActive: true,
+      doctors: [],
     },
   });
 
@@ -206,7 +213,8 @@ export default function ServiceManagement() {
     const serviceData = {
       ...data,
       category: activeTab,
-      price: activeTab === 'misc' && (!data.price || data.price === '') ? 0 : data.price
+      price: activeTab === 'misc' && (!data.price || data.price === '') ? 0 : data.price,
+      doctors: serviceDoctors.filter(d => d.id && d.id !== "")
     };
     createServiceMutation.mutate(serviceData);
   };
@@ -257,7 +265,9 @@ export default function ServiceManagement() {
         price: service.price,
         description: service.description || "",
         isActive: service.isActive,
+        doctors: [],
       });
+      setServiceDoctors([]);
     } else {
       setEditingService(null);
       serviceForm.reset({
@@ -266,9 +276,25 @@ export default function ServiceManagement() {
         price: 0,
         description: "",
         isActive: true,
+        doctors: [],
       });
+      setServiceDoctors([]);
     }
     setIsServiceDialogOpen(true);
+  };
+
+  const addDoctorToService = () => {
+    setServiceDoctors(prev => [...prev, { id: "", share: 0 }]);
+  };
+
+  const removeDoctorFromService = (index: number) => {
+    setServiceDoctors(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDoctorShare = (index: number, field: "id" | "share", value: string | number) => {
+    setServiceDoctors(prev => prev.map((doctor, i) => 
+      i === index ? { ...doctor, [field]: value } : doctor
+    ));
   };
 
   const getCategoryIcon = (category: string) => {
@@ -866,6 +892,102 @@ export default function ServiceManagement() {
                   placeholder="Optional description of the service"
                   data-testid="textarea-service-description"
                 />
+              </div>
+
+              {/* Doctor Assignment Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Doctor Assignment (Optional)</Label>
+                  {serviceDoctors.length === 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addDoctorToService}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Doctor
+                    </Button>
+                  )}
+                </div>
+
+                {serviceDoctors.map((doctor, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+                        <div className="space-y-2">
+                          <Label>Doctor {index + 1}</Label>
+                          <Select
+                            value={doctor.id}
+                            onValueChange={(value) => updateDoctorShare(index, "id", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select doctor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {doctors.map((doc: any) => (
+                                <SelectItem key={doc.id} value={doc.id}>
+                                  {doc.name} - {doc.specialization}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {serviceDoctors.length > 1 && (
+                          <div className="space-y-2">
+                            <Label>Share (₹)</Label>
+                            <Input
+                              type="number"
+                              value={doctor.share || ""}
+                              onChange={(e) => updateDoctorShare(index, "share", parseFloat(e.target.value) || 0)}
+                              placeholder="Doctor's share amount"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeDoctorFromService(index)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {index === serviceDoctors.length - 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addDoctorToService}
+                        className="flex items-center gap-2 mt-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Another Doctor
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                {serviceDoctors.length > 1 && (
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium">Cost Distribution</p>
+                    <p className="text-sm text-blue-600">
+                      Total service price: ₹{serviceForm.watch("price") || 0}
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Total doctor shares: ₹{serviceDoctors.reduce((sum, doc) => sum + (doc.share || 0), 0)}
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Hospital share: ₹{Math.max(0, (serviceForm.watch("price") || 0) - serviceDoctors.reduce((sum, doc) => sum + (doc.share || 0), 0))}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
