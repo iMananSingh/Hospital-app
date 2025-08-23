@@ -286,24 +286,7 @@ async function createDemoData() {
     }
 
     // Check and create demo services
-    const demoServiceData = [
-      { id: 'service-consultation', name: 'General Consultation', category: 'consultation', price: 500, description: 'General medical consultation' },
-      { id: 'service-blood-test', name: 'Complete Blood Count', category: 'pathology', price: 300, description: 'CBC blood test' },
-      { id: 'service-xray', name: 'X-Ray Chest', category: 'radiology', price: 800, description: 'Chest X-Ray examination' }
-    ];
-
-    for (const serviceData of demoServiceData) {
-      const existing = db.select().from(schema.services).where(eq(schema.services.id, serviceData.id)).get();
-      if (!existing) {
-        db.insert(schema.services).values({
-          ...serviceData,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }).run();
-        console.log(`Created demo service: ${serviceData.name}`);
-      }
-    }
+    // Demo services removed - only use services created through the service management system
 
     // Check and create demo doctor profile
     const existingDoctor = db.select().from(schema.doctors).where(eq(schema.doctors.id, 'doctor-profile-id')).get();
