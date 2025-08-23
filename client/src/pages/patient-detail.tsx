@@ -458,14 +458,6 @@ export default function PatientDetail() {
     return allServices.filter(s => s.category === category && s.isActive);
   };
 
-  const serviceTypes = [
-    { value: "opd", name: "OPD Consultation", icon: Stethoscope, price: 500 },
-    { value: "labtest", name: "Laboratory Test", icon: TestTube, price: 0 },
-    { value: "xray", name: "X-Ray", icon: X, price: 800 },
-    { value: "ecg", name: "ECG", icon: Heart, price: 300 },
-    { value: "consultation", name: "Doctor Consultation", icon: Stethoscope, price: 1000 },
-    { value: "emergency", name: "Emergency Care", icon: ClipboardList, price: 2000 },
-  ];
 
   if (!patient) {
     return <div className="flex items-center justify-center h-64">Loading patient details...</div>;
@@ -1196,13 +1188,6 @@ export default function PatientDetail() {
                       if (selectedService) {
                         serviceForm.setValue("serviceName", selectedService.name);
                         serviceForm.setValue("price", selectedService.price || 0);
-                      } else {
-                        // Check legacy service types
-                        const legacyService = serviceTypes.find(s => s.value === value);
-                        if (legacyService) {
-                          serviceForm.setValue("serviceName", legacyService.name);
-                          serviceForm.setValue("price", legacyService.price || 0);
-                        }
                       }
                     }}
                     data-testid="select-service-name"
@@ -1214,15 +1199,6 @@ export default function PatientDetail() {
                       {getFilteredServices(selectedServiceCategory).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name}
-                        </SelectItem>
-                      ))}
-                      {/* Fallback to legacy service types if no services from API */}
-                      {(!allServices || allServices.length === 0) && serviceTypes.map((service) => (
-                        <SelectItem key={service.value} value={service.value}>
-                          <div className="flex items-center gap-2">
-                            <service.icon className="h-4 w-4" />
-                            {service.name}
-                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
