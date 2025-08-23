@@ -251,11 +251,11 @@ export default function Pathology() {
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const { toast } = useToast();
 
-  const { data: pathologyOrders, isLoading } = useQuery({
+  const { data: pathologyOrders = [], isLoading } = useQuery({
     queryKey: ["/api/pathology"],
   });
 
-  const { data: testCatalog } = useQuery({
+  const { data: testCatalog = [] } = useQuery({
     queryKey: ["/api/pathology/catalog"],
   });
 
@@ -263,7 +263,7 @@ export default function Pathology() {
     queryKey: ["/api/pathology/catalog/categories"],
   });
 
-  const { data: patients } = useQuery({
+  const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients"],
   });
 
@@ -324,7 +324,13 @@ export default function Pathology() {
     defaultValues: {
       patientId: preSelectedPatientId || "",
       doctorId: "",
-      orderedDate: new Date().toISOString().split('T')[0],
+      orderedDate: (() => {
+        // Use local timezone for pathology order date
+        const now = new Date();
+        return now.getFullYear() + '-' + 
+          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+          String(now.getDate()).padStart(2, '0');
+      })(),
       remarks: "",
     },
   });

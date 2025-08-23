@@ -869,7 +869,7 @@ export default function PatientDetail() {
                             id: order.id,
                             type: 'pathology',
                             title: `Pathology Order: ${order.orderId}`,
-                            date: order.orderedDate,
+                            date: order.createdAt || order.orderedDate, // Use createdAt for accurate timestamp, fallback to orderedDate
                             description: `Status: ${order.status} • Tests: ${orderData.tests ? orderData.tests.length : 0}`,
                             color: 'bg-purple-500',
                             extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
