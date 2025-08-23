@@ -281,8 +281,8 @@ export default function PatientDetail() {
   };
 
   const onAdmissionSubmit = (data: any) => {
-    // Validate required fields
-    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'reason', 'dailyCost'];
+    // Validate required fields (reason is now optional)
+    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'dailyCost'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
     
     if (missingFields.length > 0) {
@@ -541,6 +541,46 @@ export default function PatientDetail() {
                 <TestTube className="h-4 w-4" />
                 Order Pathology Tests
               </Button>
+
+              {/* Admission/Discharge Button */}
+              {(() => {
+                const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                
+                if (currentAdmission) {
+                  // Patient is admitted - show discharge button
+                  return (
+                    <Button 
+                      onClick={() => setIsDischargeDialogOpen(true)}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      data-testid="button-discharge-patient"
+                    >
+                      <Bed className="h-4 w-4" />
+                      Discharge Patient
+                    </Button>
+                  );
+                } else {
+                  // Patient is not admitted - show admit button
+                  return (
+                    <Button 
+                      onClick={() => {
+                        // Set current LOCAL date when opening admission dialog
+                        const now = new Date();
+                        const currentDate = now.getFullYear() + '-' + 
+                          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(now.getDate()).padStart(2, '0');
+                        
+                        admissionForm.setValue("admissionDate", currentDate);
+                        setIsAdmissionDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="button-admit-patient"
+                    >
+                      <Bed className="h-4 w-4" />
+                      Admit Patient
+                    </Button>
+                  );
+                }
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -708,8 +748,26 @@ export default function PatientDetail() {
                       {admissions.map((admission: any) => (
                         <TableRow key={admission.id}>
                           <TableCell className="font-medium">{admission.admissionId}</TableCell>
-                          <TableCell>{admission.doctor?.name || "N/A"}</TableCell>
-                          <TableCell>{admission.wardType} - {admission.roomNumber}</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                              return doctor ? doctor.name : "No Doctor Assigned";
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const wardDisplay = {
+                                'general': 'General Ward',
+                                'private': 'Private Room', 
+                                'icu': 'ICU',
+                                'emergency': 'Emergency'
+                              }[admission.wardType] || admission.wardType;
+                              
+                              return admission.roomNumber 
+                                ? `${wardDisplay} (${admission.roomNumber})`
+                                : wardDisplay;
+                            })()
+                          }</TableCell>
                           <TableCell>{formatDate(admission.admissionDate)}</TableCell>
                           <TableCell>{formatDate(admission.dischargeDate)}</TableCell>
                           <TableCell>
@@ -726,7 +784,18 @@ export default function PatientDetail() {
                               {admission.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>₹{admission.totalCost}</TableCell>
+                          <TableCell>{
+                            (() => {
+                              // Calculate total cost based on days admitted and daily cost
+                              const admissionDate = new Date(admission.admissionDate);
+                              const dischargeDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+                              const daysDiff = Math.ceil((dischargeDate.getTime() - admissionDate.getTime()) / (1000 * 60 * 60 * 24));
+                              const totalDays = Math.max(1, daysDiff); // Minimum 1 day
+                              const calculatedTotal = totalDays * (admission.dailyCost || 0) + (admission.initialDeposit || 0);
+                              
+                              return `₹${calculatedTotal.toLocaleString()}`;
+                            })()
+                          }</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -844,8 +913,24 @@ export default function PatientDetail() {
                           id: admission.id,
                           type: 'admission',
                           title: 'Patient Admission',
-                          date: admission.admissionDate,
-                          description: `Reason: ${admission.reason} • Ward: ${admission.wardType}`,
+                          date: admission.createdAt || admission.admissionDate, // Use createdAt for accurate timestamp
+                          description: (() => {
+                            // Find doctor name and format ward type
+                            const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                            const doctorName = doctor ? doctor.name : "No Doctor Assigned";
+                            const wardDisplay = {
+                              'general': 'General Ward',
+                              'private': 'Private Room', 
+                              'icu': 'ICU',
+                              'emergency': 'Emergency'
+                            }[admission.wardType] || admission.wardType;
+                            
+                            const parts = [];
+                            if (admission.reason) parts.push(`Reason: ${admission.reason}`);
+                            parts.push(`Doctor: ${doctorName}`);
+                            parts.push(`Ward: ${wardDisplay}`);
+                            return parts.join(' • ');
+                          })(),
                           color: 'bg-orange-500',
                           extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString('en-US', {
                             year: 'numeric',
@@ -1199,7 +1284,7 @@ export default function PatientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label>Reason for Admission *</Label>
+              <Label>Reason for Admission</Label>
               <Input
                 {...admissionForm.register("reason")}
                 placeholder="Brief reason for admission"
