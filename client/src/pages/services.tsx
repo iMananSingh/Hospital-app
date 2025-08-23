@@ -268,6 +268,8 @@ export default function ServiceManagement() {
         return <AlertTriangle className="h-4 w-4" />;
       case 'ot':
         return <Building2 className="h-4 w-4" />;
+      case 'room':
+        return <Bed className="h-4 w-4" />;
       default:
         return <Bed className="h-4 w-4" />;
     }
@@ -283,6 +285,8 @@ export default function ServiceManagement() {
         return 'bg-orange-100 text-orange-800';
       case 'ot':
         return 'bg-purple-100 text-purple-800';
+      case 'room':
+        return 'bg-green-100 text-green-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -755,6 +759,7 @@ export default function ServiceManagement() {
                       <SelectItem value="icu">ICU</SelectItem>
                       <SelectItem value="emergency">Emergency</SelectItem>
                       <SelectItem value="ot">Operation Theater</SelectItem>
+                      <SelectItem value="room">Room</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
