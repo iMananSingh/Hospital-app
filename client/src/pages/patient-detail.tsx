@@ -1226,14 +1226,14 @@ export default function PatientDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Doctor"}</Label>
+                <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
                   value={serviceForm.watch("doctorId")}
                   onValueChange={(value) => serviceForm.setValue("doctorId", value)}
                   data-testid="select-service-doctor"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={selectedServiceType === "opd" ? "Select consulting doctor (required)" : "Select doctor (optional)"} />
+                    <SelectValue placeholder={selectedServiceType === "opd" ? "Select consulting doctor (required)" : "Select doctor (required)"} />
                   </SelectTrigger>
                   <SelectContent>
                     {selectedServiceType !== "opd" && <SelectItem value="none">No doctor assigned</SelectItem>}
