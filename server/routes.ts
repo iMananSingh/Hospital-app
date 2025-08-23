@@ -228,6 +228,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/services/:id", authenticateToken, async (req, res) => {
+    try {
+      const deleted = await storage.deleteService(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      res.json({ message: "Service deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete service" });
+    }
+  });
+
   // Bill routes
   app.get("/api/bills", authenticateToken, async (req, res) => {
     try {

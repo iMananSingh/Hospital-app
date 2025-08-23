@@ -347,6 +347,7 @@ export interface IStorage {
   getServices(): Promise<Service[]>;
   getServiceById(id: string): Promise<Service | undefined>;
   searchServices(query: string): Promise<Service[]>;
+  deleteService(id: string): Promise<boolean>;
 
   // Billing
   createBill(bill: InsertBill, items: InsertBillItem[]): Promise<Bill>;
@@ -558,6 +559,11 @@ export class SqliteStorage implements IStorage {
       )
       .limit(20)
       .all();
+  }
+
+  async deleteService(id: string): Promise<boolean> {
+    const result = db.delete(schema.services).where(eq(schema.services.id, id)).run();
+    return result.changes > 0;
   }
 
   async createBill(bill: InsertBill, items: InsertBillItem[]): Promise<Bill> {
