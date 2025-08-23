@@ -236,16 +236,16 @@ export default function PatientDetail() {
     console.log("=== FORM SUBMISSION DEBUG ===");
     console.log("Form submitted with data:", data);
     console.log("Selected service type:", selectedServiceType);
+    console.log("Selected service category:", selectedServiceCategory);
     console.log("Form errors:", serviceForm.formState.errors);
     console.log("Form is valid:", serviceForm.formState.isValid);
     console.log("Doctors available:", doctors);
     
-    // Check if form has validation errors
-    if (Object.keys(serviceForm.formState.errors).length > 0) {
-      console.error("Form has validation errors:", serviceForm.formState.errors);
+    // Basic validation for required fields
+    if (!data.scheduledDate || !data.scheduledTime) {
       toast({
-        title: "Form Validation Error",
-        description: "Please fix the form errors before submitting",
+        title: "Missing Required Fields",
+        description: "Please fill in the scheduled date and time",
         variant: "destructive",
       });
       return;
@@ -277,6 +277,16 @@ export default function PatientDetail() {
         doctorId: data.doctorId,
       };
     } else {
+      // For general services, validate service selection
+      if (!data.serviceType || !data.serviceName) {
+        toast({
+          title: "Service Required",
+          description: "Please select a service",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       serviceData = {
         ...data,
         serviceId: `SRV-${Date.now()}`,
@@ -554,10 +564,17 @@ export default function PatientDetail() {
                     String(now.getMinutes()).padStart(2, '0');
                   
                   setSelectedServiceType("opd");
-                  serviceForm.setValue("serviceType", "opd");
-                  serviceForm.setValue("serviceName", "OPD Consultation");
-                  serviceForm.setValue("scheduledDate", currentDate);
-                  serviceForm.setValue("scheduledTime", currentTime);
+                  setSelectedServiceCategory("");
+                  serviceForm.reset({
+                    patientId: patientId || "",
+                    serviceType: "opd",
+                    serviceName: "OPD Consultation",
+                    scheduledDate: currentDate,
+                    scheduledTime: currentTime,
+                    doctorId: "",
+                    notes: "",
+                    price: 0,
+                  });
                   
                   console.log(`Set current date/time: ${currentDate} ${currentTime}`);
                   setIsServiceDialogOpen(true);
@@ -592,8 +609,17 @@ export default function PatientDetail() {
                   // Reset service type and category for general service
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
-                  serviceForm.setValue("scheduledDate", currentDate);
-                  serviceForm.setValue("scheduledTime", currentTime);
+                  // Reset form completely first
+                  serviceForm.reset({
+                    patientId: patientId || "",
+                    serviceType: "",
+                    serviceName: "",
+                    scheduledDate: currentDate,
+                    scheduledTime: currentTime,
+                    doctorId: "",
+                    notes: "",
+                    price: 0,
+                  });
                   
                   setIsServiceDialogOpen(true);
                 }}
@@ -674,8 +700,17 @@ export default function PatientDetail() {
                     // Reset service type and category
                     setSelectedServiceType("");
                     setSelectedServiceCategory("");
-                    serviceForm.setValue("scheduledDate", currentDate);
-                    serviceForm.setValue("scheduledTime", currentTime);
+                    // Reset form completely first
+                    serviceForm.reset({
+                      patientId: patientId || "",
+                      serviceType: "",
+                      serviceName: "",
+                      scheduledDate: currentDate,
+                      scheduledTime: currentTime,
+                      doctorId: "",
+                      notes: "",
+                      price: 0,
+                    });
                     
                     setIsServiceDialogOpen(true);
                   }}
@@ -1143,10 +1178,19 @@ export default function PatientDetail() {
                     value={serviceForm.watch("serviceType")}
                     onValueChange={(value) => {
                       serviceForm.setValue("serviceType", value);
+                      
+                      // Check if it's from API services or legacy services
                       const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === value);
                       if (selectedService) {
                         serviceForm.setValue("serviceName", selectedService.name);
                         serviceForm.setValue("price", selectedService.price || 0);
+                      } else {
+                        // Check legacy service types
+                        const legacyService = serviceTypes.find(s => s.value === value);
+                        if (legacyService) {
+                          serviceForm.setValue("serviceName", legacyService.name);
+                          serviceForm.setValue("price", legacyService.price || 0);
+                        }
                       }
                     }}
                     data-testid="select-service-name"
