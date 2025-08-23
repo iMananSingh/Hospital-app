@@ -192,6 +192,32 @@ export const auditLog = sqliteTable("audit_log", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Room/Service Management
+export const roomTypes = sqliteTable("room_types", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  name: text("name").notNull().unique(), // "General Ward", "Private Room", "ICU", "Emergency"
+  category: text("category").notNull(), // "ward", "icu", "emergency", "ot"
+  dailyCost: real("daily_cost").notNull().default(0),
+  description: text("description"),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+export const rooms = sqliteTable("rooms", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  roomNumber: text("room_number").notNull().unique(),
+  roomTypeId: text("room_type_id").notNull().references(() => roomTypes.id),
+  floor: text("floor"),
+  building: text("building"),
+  capacity: integer("capacity").notNull().default(1),
+  isOccupied: integer("is_occupied", { mode: "boolean" }).notNull().default(false),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -287,6 +313,18 @@ export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
   createdAt: true,
 });
 
+export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoomSchema = createInsertSchema(rooms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -312,3 +350,7 @@ export type PatientService = typeof patientServices.$inferSelect;
 export type InsertPatientService = z.infer<typeof insertPatientServiceSchema>;
 export type Admission = typeof admissions.$inferSelect;
 export type InsertAdmission = z.infer<typeof insertAdmissionSchema>;
+export type RoomType = typeof roomTypes.$inferSelect;
+export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
+export type Room = typeof rooms.$inferSelect;
+export type InsertRoom = z.infer<typeof insertRoomSchema>;

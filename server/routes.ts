@@ -466,6 +466,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Room Type Management Routes
+  app.get("/api/room-types", authenticateToken, async (req, res) => {
+    try {
+      const roomTypes = await storage.getAllRoomTypes();
+      res.json(roomTypes);
+    } catch (error) {
+      console.error("Error fetching room types:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/room-types", authenticateToken, async (req, res) => {
+    try {
+      const roomType = await storage.createRoomType(req.body);
+      res.status(201).json(roomType);
+    } catch (error) {
+      console.error("Error creating room type:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/room-types/:id", authenticateToken, async (req, res) => {
+    try {
+      const updated = await storage.updateRoomType(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Room type not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating room type:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/room-types/:id", authenticateToken, async (req, res) => {
+    try {
+      await storage.deleteRoomType(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting room type:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Room Management Routes
+  app.get("/api/rooms", authenticateToken, async (req, res) => {
+    try {
+      const rooms = await storage.getAllRooms();
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/rooms", authenticateToken, async (req, res) => {
+    try {
+      const room = await storage.createRoom(req.body);
+      res.status(201).json(room);
+    } catch (error) {
+      console.error("Error creating room:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.put("/api/rooms/:id", authenticateToken, async (req, res) => {
+    try {
+      const updated = await storage.updateRoom(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating room:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/rooms/:id", authenticateToken, async (req, res) => {
+    try {
+      await storage.deleteRoom(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/rooms/by-type/:roomTypeId", authenticateToken, async (req, res) => {
+    try {
+      const rooms = await storage.getRoomsByType(req.params.roomTypeId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching rooms by type:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/rooms/:id/occupancy", authenticateToken, async (req, res) => {
+    try {
+      const { isOccupied } = req.body;
+      const updated = await storage.updateRoomOccupancy(req.params.id, isOccupied);
+      if (!updated) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating room occupancy:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

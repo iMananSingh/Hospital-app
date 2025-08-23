@@ -775,6 +775,62 @@ export class SqliteStorage implements IStorage {
       };
     }
   }
+
+  // Room Type Management
+  async getAllRoomTypes(): Promise<any[]> {
+    return db.select().from(schema.roomTypes).orderBy(schema.roomTypes.name).all();
+  }
+
+  async createRoomType(data: any): Promise<any> {
+    return db.insert(schema.roomTypes).values(data).returning().get();
+  }
+
+  async updateRoomType(id: string, data: any): Promise<any> {
+    return db.update(schema.roomTypes)
+      .set({ ...data, updatedAt: new Date().toISOString() })
+      .where(eq(schema.roomTypes.id, id))
+      .returning()
+      .get();
+  }
+
+  async deleteRoomType(id: string): Promise<void> {
+    await db.delete(schema.roomTypes).where(eq(schema.roomTypes.id, id)).run();
+  }
+
+  // Room Management  
+  async getAllRooms(): Promise<any[]> {
+    return db.select().from(schema.rooms).orderBy(schema.rooms.roomNumber).all();
+  }
+
+  async createRoom(data: any): Promise<any> {
+    return db.insert(schema.rooms).values(data).returning().get();
+  }
+
+  async updateRoom(id: string, data: any): Promise<any> {
+    return db.update(schema.rooms)
+      .set({ ...data, updatedAt: new Date().toISOString() })
+      .where(eq(schema.rooms.id, id))
+      .returning()
+      .get();
+  }
+
+  async deleteRoom(id: string): Promise<void> {
+    await db.delete(schema.rooms).where(eq(schema.rooms.id, id)).run();
+  }
+
+  async getRoomsByType(roomTypeId: string): Promise<any[]> {
+    return db.select().from(schema.rooms)
+      .where(eq(schema.rooms.roomTypeId, roomTypeId))
+      .all();
+  }
+
+  async updateRoomOccupancy(roomId: string, isOccupied: boolean): Promise<any> {
+    return db.update(schema.rooms)
+      .set({ isOccupied, updatedAt: new Date().toISOString() })
+      .where(eq(schema.rooms.id, roomId))
+      .returning()
+      .get();
+  }
 }
 
 export const storage = new SqliteStorage();
