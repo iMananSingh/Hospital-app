@@ -25,14 +25,13 @@ import {
   X, 
   Heart, 
   Bed,
-  FileText,
   ClipboardList,
   Plus,
   Eye,
   Clock,
   Minus,
   Edit,
-  Truck
+  Settings
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { z } from "zod";
@@ -447,8 +446,7 @@ export default function PatientDetail() {
     { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
     { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
     { key: 'operations', label: 'Surgical Operations', icon: X },
-    { key: 'ambulance', label: 'Ambulance Services', icon: Truck },
-    { key: 'mlc', label: 'MLC Services', icon: FileText }
+    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
   ];
 
   // Filter services by category

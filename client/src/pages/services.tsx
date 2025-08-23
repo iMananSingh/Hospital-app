@@ -25,8 +25,7 @@ import {
   Stethoscope,
   Syringe,
   Scissors,
-  Truck,
-  FileText
+  Settings
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -203,7 +202,13 @@ export default function ServiceManagement() {
   };
 
   const onServiceSubmit = (data: any) => {
-    createServiceMutation.mutate({ ...data, category: activeTab });
+    // For misc services, allow price to be 0 if not provided
+    const serviceData = {
+      ...data,
+      category: activeTab,
+      price: activeTab === 'misc' && (!data.price || data.price === '') ? 0 : data.price
+    };
+    createServiceMutation.mutate(serviceData);
   };
 
   const openRoomTypeDialog = (roomType?: RoomType) => {
@@ -308,10 +313,8 @@ export default function ServiceManagement() {
         return <Stethoscope className="h-4 w-4" />;
       case 'operations':
         return <Scissors className="h-4 w-4" />;
-      case 'ambulance':
-        return <Truck className="h-4 w-4" />;
-      case 'mlc':
-        return <FileText className="h-4 w-4" />;
+      case 'misc':
+        return <Settings className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
     }
@@ -325,10 +328,8 @@ export default function ServiceManagement() {
         return 'bg-green-100 text-green-800';
       case 'operations':
         return 'bg-indigo-100 text-indigo-800';
-      case 'ambulance':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'mlc':
-        return 'bg-gray-100 text-gray-800';
+      case 'misc':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-blue-100 text-blue-800';
     }
@@ -344,10 +345,8 @@ export default function ServiceManagement() {
         return <Stethoscope className="h-4 w-4" />;
       case 'operations':
         return <Scissors className="h-4 w-4" />;
-      case 'ambulance':
-        return <Truck className="h-4 w-4" />;
-      case 'mlc':
-        return <FileText className="h-4 w-4" />;
+      case 'misc':
+        return <Settings className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
     }
@@ -358,8 +357,7 @@ export default function ServiceManagement() {
     { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
     { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
     { key: 'operations', label: 'Surgical Operations', icon: Scissors },
-    { key: 'ambulance', label: 'Ambulance Services', icon: Truck },
-    { key: 'mlc', label: 'MLC Services', icon: FileText }
+    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
   ];
 
   const filteredServices = services.filter(service => service.category === activeTab);
@@ -592,7 +590,12 @@ export default function ServiceManagement() {
                     {filteredServices.map((service) => (
                       <TableRow key={service.id}>
                         <TableCell className="font-medium">{service.name}</TableCell>
-                        <TableCell>₹{service.price.toLocaleString()}</TableCell>
+                        <TableCell>
+                          {service.category === 'misc' && service.price === 0 
+                            ? <Badge variant="outline" className="text-purple-700 border-purple-300">Variable</Badge>
+                            : `₹${service.price.toLocaleString()}`
+                          }
+                        </TableCell>
                         <TableCell>{service.description || "N/A"}</TableCell>
                         <TableCell>
                           <Badge 
@@ -837,19 +840,22 @@ export default function ServiceManagement() {
                   <Label>Service Name *</Label>
                   <Input
                     {...serviceForm.register("name")}
-                    placeholder={`e.g., ${activeTab === 'diagnostics' ? 'ECG' : activeTab === 'procedures' ? 'Dressing' : activeTab === 'operations' ? 'Appendectomy' : activeTab === 'ambulance' ? 'Emergency Transport' : 'MLC Report'}`}
+                    placeholder={`e.g., ${activeTab === 'diagnostics' ? 'ECG' : activeTab === 'procedures' ? 'Dressing' : activeTab === 'operations' ? 'Appendectomy' : activeTab === 'misc' ? 'Ambulance Service' : 'Service Name'}`}
                     data-testid="input-service-name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
+                  <Label>Price (₹) {activeTab === 'misc' ? '(Optional - Variable Pricing)' : '*'}</Label>
                   <Input
                     type="number"
                     {...serviceForm.register("price", { valueAsNumber: true })}
-                    placeholder="Enter price"
+                    placeholder={activeTab === 'misc' ? 'Leave blank for variable pricing' : 'Enter price'}
                     data-testid="input-service-price"
                   />
+                  {activeTab === 'misc' && (
+                    <p className="text-sm text-gray-500">For misc services, price can be entered when adding to patient</p>
+                  )}
                 </div>
               </div>
 
