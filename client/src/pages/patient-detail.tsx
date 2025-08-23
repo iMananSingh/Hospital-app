@@ -454,7 +454,7 @@ export default function PatientDetail() {
   // Filter services by category
   const getFilteredServices = (category: string) => {
     if (!allServices) return [];
-    if (!category) return allServices.filter(s => s.isActive);
+    if (!category || category === "all") return allServices.filter(s => s.isActive);
     return allServices.filter(s => s.category === category && s.isActive);
   };
 
@@ -1157,9 +1157,9 @@ export default function PatientDetail() {
                 <div className="space-y-2">
                   <Label>Service Category</Label>
                   <Select 
-                    value={selectedServiceCategory}
+                    value={selectedServiceCategory || "all"}
                     onValueChange={(value) => {
-                      setSelectedServiceCategory(value);
+                      setSelectedServiceCategory(value === "all" ? "" : value);
                       // Reset service selection when category changes
                       serviceForm.setValue("serviceType", "");
                       serviceForm.setValue("serviceName", "");
@@ -1171,7 +1171,7 @@ export default function PatientDetail() {
                       <SelectValue placeholder="Select service category (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
                       {serviceCategories.map((category) => (
                         <SelectItem key={category.key} value={category.key}>
                           <div className="flex items-center gap-2">
