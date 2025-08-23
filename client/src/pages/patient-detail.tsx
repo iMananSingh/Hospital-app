@@ -185,11 +185,23 @@ export default function PatientDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsServiceDialogOpen(false);
-      serviceForm.reset();
+      setSelectedServiceType("");
+      setSelectedServiceCategory("");
+      serviceForm.reset({
+        patientId: patientId || "",
+        serviceType: "",
+        serviceName: "",
+        scheduledDate: "",
+        scheduledTime: "",
+        doctorId: "",
+        notes: "",
+        price: 0,
+      });
       toast({
         title: "Service scheduled successfully",
-        description: "The patient service has been scheduled.",
+        description: "The service has been added to the patient's schedule.",
       });
     },
     onError: () => {
@@ -1318,7 +1330,16 @@ export default function PatientDetail() {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
-                  serviceForm.reset();
+                  serviceForm.reset({
+                    patientId: patientId || "",
+                    serviceType: "",
+                    serviceName: "",
+                    scheduledDate: "",
+                    scheduledTime: "",
+                    doctorId: "",
+                    notes: "",
+                    price: 0,
+                  });
                 }}
                 data-testid="button-cancel-service"
               >
@@ -1328,36 +1349,6 @@ export default function PatientDetail() {
                 type="submit"
                 disabled={createServiceMutation.isPending}
                 data-testid="button-schedule-service"
-                onClick={(e) => {
-                  console.log("=== BUTTON CLICKED ===");
-                  console.log("Event:", e);
-                  console.log("Form valid:", serviceForm.formState.isValid);
-                  console.log("Form errors:", serviceForm.formState.errors);
-                  console.log("Selected service type:", selectedServiceType);
-                  console.log("Form values:", serviceForm.getValues());
-                  
-                  // If it's an OPD service but no service type is selected, set it
-                  if (!selectedServiceType) {
-                    console.log("No service type selected, checking service buttons...");
-                  }
-                  
-                  // Prevent default and handle manually if needed
-                  if (!selectedServiceType || selectedServiceType !== "opd") {
-                    e.preventDefault();
-                    console.log("Preventing default submission due to missing service type");
-                    
-                    // Set service type to OPD and try to submit
-                    setSelectedServiceType("opd");
-                    serviceForm.setValue("serviceType", "opd");
-                    
-                    // Manually trigger submission after setting values
-                    setTimeout(() => {
-                      const formData = serviceForm.getValues();
-                      console.log("Manually triggering submission with data:", formData);
-                      onServiceSubmit(formData);
-                    }, 100);
-                  }
-                }}
               >
                 {createServiceMutation.isPending 
                   ? "Scheduling..." 
