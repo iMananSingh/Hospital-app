@@ -253,30 +253,41 @@ export default function PatientDetail() {
     console.log("Form is valid:", serviceForm.formState.isValid);
     console.log("Doctors available:", doctors);
     
-    // Basic validation for required fields
-    if (!data.scheduledDate || !data.scheduledTime) {
-      toast({
-        title: "Missing Required Fields",
-        description: "Please fill in the scheduled date and time",
-        variant: "destructive",
+    // Custom validation for Select fields that aren't properly registered
+    let hasErrors = false;
+    
+    // Validate doctor selection
+    if (!data.doctorId || data.doctorId === "none") {
+      serviceForm.setError("doctorId", { 
+        type: "required", 
+        message: selectedServiceType === "opd" ? "Doctor Required - please select a consulting doctor" : "Doctor Required - please select a doctor" 
       });
+      hasErrors = true;
+    } else {
+      serviceForm.clearErrors("doctorId");
+    }
+    
+    // For non-OPD services, validate service selection
+    if (selectedServiceType !== "opd") {
+      if (!data.serviceType || !data.serviceName) {
+        serviceForm.setError("serviceType", { 
+          type: "required", 
+          message: "Service Required - please select a service" 
+        });
+        hasErrors = true;
+      } else {
+        serviceForm.clearErrors("serviceType");
+      }
+    }
+    
+    // If there are validation errors, don't submit
+    if (hasErrors) {
       return;
     }
     
     let serviceData;
     
     if (selectedServiceType === "opd") {
-      // For OPD, validate doctor selection and use doctor's consultation fee
-      if (!data.doctorId || data.doctorId === "none") {
-        console.error("Doctor not selected for OPD");
-        toast({
-          title: "Doctor Required",
-          description: "Please select a consulting doctor for OPD consultation",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
       const consultationFee = selectedDoctor?.consultationFee || 0;
       
@@ -289,16 +300,6 @@ export default function PatientDetail() {
         doctorId: data.doctorId,
       };
     } else {
-      // For general services, validate service selection
-      if (!data.serviceType || !data.serviceName) {
-        toast({
-          title: "Service Required",
-          description: "Please select a service",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       serviceData = {
         ...data,
         serviceId: `SRV-${Date.now()}`,
@@ -1202,6 +1203,11 @@ export default function PatientDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {serviceForm.formState.errors.serviceType && (
+                    <p className="text-sm text-red-600">
+                      {serviceForm.formState.errors.serviceType.message}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -1244,6 +1250,11 @@ export default function PatientDetail() {
                     ))}
                   </SelectContent>
                 </Select>
+                {serviceForm.formState.errors.doctorId && (
+                  <p className="text-sm text-red-600">
+                    {serviceForm.formState.errors.doctorId.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1252,18 +1263,28 @@ export default function PatientDetail() {
                 <Label>Scheduled Date *</Label>
                 <Input
                   type="date"
-                  {...serviceForm.register("scheduledDate")}
+                  {...serviceForm.register("scheduledDate", { required: "Scheduled date is required" })}
                   data-testid="input-service-date"
                 />
+                {serviceForm.formState.errors.scheduledDate && (
+                  <p className="text-sm text-red-600">
+                    {serviceForm.formState.errors.scheduledDate.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label>Scheduled Time *</Label>
                 <Input
                   type="time"
-                  {...serviceForm.register("scheduledTime")}
+                  {...serviceForm.register("scheduledTime", { required: "Scheduled time is required" })}
                   data-testid="input-service-time"
                 />
+                {serviceForm.formState.errors.scheduledTime && (
+                  <p className="text-sm text-red-600">
+                    {serviceForm.formState.errors.scheduledTime.message}
+                  </p>
+                )}
               </div>
             </div>
 
