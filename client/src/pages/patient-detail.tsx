@@ -579,6 +579,32 @@ export default function PatientDetail() {
                 Order Pathology Tests
               </Button>
 
+              <Button 
+                onClick={() => {
+                  // Set current LOCAL date and time when opening service dialog
+                  const now = new Date();
+                  const currentDate = now.getFullYear() + '-' + 
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(now.getDate()).padStart(2, '0');
+                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
+                    String(now.getMinutes()).padStart(2, '0');
+                  
+                  // Reset service type and category for general service
+                  setSelectedServiceType("");
+                  setSelectedServiceCategory("");
+                  serviceForm.setValue("scheduledDate", currentDate);
+                  serviceForm.setValue("scheduledTime", currentTime);
+                  
+                  setIsServiceDialogOpen(true);
+                }}
+                variant="outline"
+                className="flex items-center gap-2"
+                data-testid="button-add-medical-service"
+              >
+                <Plus className="h-4 w-4" />
+                Add Service
+              </Button>
+
               {/* Admission/Discharge Button */}
               {(() => {
                 const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
@@ -645,6 +671,9 @@ export default function PatientDetail() {
                     const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
                       String(now.getMinutes()).padStart(2, '0');
                     
+                    // Reset service type and category
+                    setSelectedServiceType("");
+                    setSelectedServiceCategory("");
                     serviceForm.setValue("scheduledDate", currentDate);
                     serviceForm.setValue("scheduledTime", currentTime);
                     
