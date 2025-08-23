@@ -128,7 +128,7 @@ export default function PatientDetail() {
   });
 
   const admissionForm = useForm({
-    resolver: zodResolver(insertAdmissionSchema),
+    // Remove zodResolver to handle validation manually since reason is now optional
     defaultValues: {
       patientId: patientId,
       doctorId: "",
@@ -741,7 +741,8 @@ export default function PatientDetail() {
                         <TableHead>Admission Date</TableHead>
                         <TableHead>Discharge Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Total Cost</TableHead>
+                        <TableHead>Days</TableHead>
+                        <TableHead>Total Room Cost</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -756,12 +757,14 @@ export default function PatientDetail() {
                           }</TableCell>
                           <TableCell>{
                             (() => {
-                              const wardDisplay = {
+                              const wardTypes = {
                                 'general': 'General Ward',
                                 'private': 'Private Room', 
                                 'icu': 'ICU',
                                 'emergency': 'Emergency'
-                              }[admission.wardType] || admission.wardType;
+                              } as const;
+                              
+                              const wardDisplay = wardTypes[admission.wardType as keyof typeof wardTypes] || admission.wardType;
                               
                               return admission.roomNumber 
                                 ? `${wardDisplay} (${admission.roomNumber})`
@@ -786,14 +789,25 @@ export default function PatientDetail() {
                           </TableCell>
                           <TableCell>{
                             (() => {
-                              // Calculate total cost based on days admitted and daily cost
+                              // Calculate days admitted
                               const admissionDate = new Date(admission.admissionDate);
                               const dischargeDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
                               const daysDiff = Math.ceil((dischargeDate.getTime() - admissionDate.getTime()) / (1000 * 60 * 60 * 24));
                               const totalDays = Math.max(1, daysDiff); // Minimum 1 day
-                              const calculatedTotal = totalDays * (admission.dailyCost || 0) + (admission.initialDeposit || 0);
                               
-                              return `₹${calculatedTotal.toLocaleString()}`;
+                              return totalDays;
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            (() => {
+                              // Calculate total room cost (only daily charges, no initial deposit)
+                              const admissionDate = new Date(admission.admissionDate);
+                              const dischargeDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+                              const daysDiff = Math.ceil((dischargeDate.getTime() - admissionDate.getTime()) / (1000 * 60 * 60 * 24));
+                              const totalDays = Math.max(1, daysDiff); // Minimum 1 day
+                              const totalRoomCost = totalDays * (admission.dailyCost || 0);
+                              
+                              return `₹${totalRoomCost.toLocaleString()}`;
                             })()
                           }</TableCell>
                         </TableRow>
@@ -918,12 +932,14 @@ export default function PatientDetail() {
                             // Find doctor name and format ward type
                             const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
                             const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                            const wardDisplay = {
+                            const wardTypes = {
                               'general': 'General Ward',
                               'private': 'Private Room', 
                               'icu': 'ICU',
                               'emergency': 'Emergency'
-                            }[admission.wardType] || admission.wardType;
+                            } as const;
+                            
+                            const wardDisplay = wardTypes[admission.wardType as keyof typeof wardTypes] || admission.wardType;
                             
                             const parts = [];
                             if (admission.reason) parts.push(`Reason: ${admission.reason}`);
