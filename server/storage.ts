@@ -229,6 +229,24 @@ async function initializeDatabase() {
       );
     `);
 
+    // Migrate existing tables to add new columns if they don't exist
+    try {
+      // Add total_beds and occupied_beds columns to room_types table if they don't exist
+      db.$client.exec(`
+        ALTER TABLE room_types ADD COLUMN total_beds INTEGER DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+    
+    try {
+      db.$client.exec(`
+        ALTER TABLE room_types ADD COLUMN occupied_beds INTEGER DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
     // Always ensure demo users and data exist on every restart
     await createDemoData();
 

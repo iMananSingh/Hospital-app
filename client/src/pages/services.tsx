@@ -480,13 +480,8 @@ export default function ServiceManagement() {
 
         {/* Content based on active tab */}
         {activeTab === 'rooms' ? (
-          <Tabs defaultValue="room-types" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="room-types">Room Types</TabsTrigger>
-              <TabsTrigger value="rooms">Rooms</TabsTrigger>
-            </TabsList>
+          <div className="space-y-4">
 
-          <TabsContent value="room-types">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Room Types</CardTitle>
@@ -556,94 +551,7 @@ export default function ServiceManagement() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="rooms">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Rooms</CardTitle>
-                <Button
-                  onClick={() => openRoomDialog()}
-                  className="flex items-center gap-2"
-                  data-testid="button-add-room"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Room
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {rooms.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Room Number</TableHead>
-                        <TableHead>Room Type</TableHead>
-                        <TableHead>Floor</TableHead>
-                        <TableHead>Building</TableHead>
-                        <TableHead>Capacity</TableHead>
-                        <TableHead>Occupancy</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rooms.map((room) => {
-                        const roomType = roomTypes.find(rt => rt.id === room.roomTypeId);
-                        return (
-                          <TableRow key={room.id}>
-                            <TableCell className="font-medium">{room.roomNumber}</TableCell>
-                            <TableCell>{roomType?.name || "Unknown"}</TableCell>
-                            <TableCell>{room.floor || "N/A"}</TableCell>
-                            <TableCell>{room.building || "N/A"}</TableCell>
-                            <TableCell>{room.capacity}</TableCell>
-                            <TableCell>
-                              <Badge 
-                                className={room.isOccupied ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} 
-                                variant="secondary"
-                              >
-                                {room.isOccupied ? 'Occupied' : 'Available'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge 
-                                className={room.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} 
-                                variant="secondary"
-                              >
-                                {room.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                onClick={() => openRoomDialog(room)}
-                                size="sm"
-                                variant="outline"
-                                className="mr-2"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No rooms defined yet</p>
-                    <Button
-                      onClick={() => openRoomDialog()}
-                      className="mt-4"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Room
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
         ) : (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
