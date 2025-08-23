@@ -31,7 +31,8 @@ import {
   Eye,
   Clock,
   Minus,
-  Edit
+  Edit,
+  Truck
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { z } from "zod";
@@ -50,6 +51,7 @@ export default function PatientDetail() {
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
 
   // Fetch patient details
   const { data: patient } = useQuery<Patient>({
@@ -75,6 +77,20 @@ export default function PatientDetail() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch patient services");
+      return response.json();
+    },
+  });
+
+  // Fetch all services for service selection
+  const { data: allServices } = useQuery<any[]>({
+    queryKey: ["/api/services"],
+    queryFn: async () => {
+      const response = await fetch("/api/services", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch services");
       return response.json();
     },
   });
@@ -402,6 +418,22 @@ export default function PatientDetail() {
       day: "numeric",
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
+  };
+
+  // Service categories mapping (matching service management)
+  const serviceCategories = [
+    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
+    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
+    { key: 'operations', label: 'Surgical Operations', icon: X },
+    { key: 'ambulance', label: 'Ambulance Services', icon: Truck },
+    { key: 'mlc', label: 'MLC Services', icon: FileText }
+  ];
+
+  // Filter services by category
+  const getFilteredServices = (category: string) => {
+    if (!allServices) return [];
+    if (!category) return allServices.filter(s => s.isActive);
+    return allServices.filter(s => s.category === category && s.isActive);
   };
 
   const serviceTypes = [
@@ -1047,24 +1079,60 @@ export default function PatientDetail() {
             {selectedServiceType !== "opd" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Service Type *</Label>
+                  <Label>Service Category</Label>
+                  <Select 
+                    value={selectedServiceCategory}
+                    onValueChange={(value) => {
+                      setSelectedServiceCategory(value);
+                      // Reset service selection when category changes
+                      serviceForm.setValue("serviceType", "");
+                      serviceForm.setValue("serviceName", "");
+                      serviceForm.setValue("price", 0);
+                    }}
+                    data-testid="select-service-category"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service category (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Categories</SelectItem>
+                      {serviceCategories.map((category) => (
+                        <SelectItem key={category.key} value={category.key}>
+                          <div className="flex items-center gap-2">
+                            <category.icon className="h-4 w-4" />
+                            {category.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Service Name *</Label>
                   <Select 
                     value={serviceForm.watch("serviceType")}
                     onValueChange={(value) => {
                       serviceForm.setValue("serviceType", value);
-                      const serviceType = serviceTypes.find(s => s.value === value);
-                      if (serviceType) {
-                        serviceForm.setValue("serviceName", serviceType.name);
-                        serviceForm.setValue("price", serviceType.price);
+                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === value);
+                      if (selectedService) {
+                        serviceForm.setValue("serviceName", selectedService.name);
+                        serviceForm.setValue("price", selectedService.price || 0);
                       }
                     }}
-                    data-testid="select-service-type"
+                    data-testid="select-service-name"
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
+                      <SelectValue placeholder="Select service" />
                     </SelectTrigger>
                     <SelectContent>
-                      {serviceTypes.map((service) => (
+                      {getFilteredServices(selectedServiceCategory).map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
+                      {/* Fallback to legacy service types if no services from API */}
+                      {(!allServices || allServices.length === 0) && serviceTypes.map((service) => (
                         <SelectItem key={service.value} value={service.value}>
                           <div className="flex items-center gap-2">
                             <service.icon className="h-4 w-4" />
@@ -1147,6 +1215,14 @@ export default function PatientDetail() {
                     type="number"
                     {...serviceForm.register("price", { valueAsNumber: true })}
                     data-testid="input-service-price"
+                    readOnly={(() => {
+                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
+                      return selectedService && selectedService.price > 0;
+                    })()}
+                    className={(() => {
+                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
+                      return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
+                    })()}
                   />
                 </div>
               </div>
@@ -1168,6 +1244,7 @@ export default function PatientDetail() {
                 onClick={() => {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
+                  setSelectedServiceCategory("");
                   serviceForm.reset();
                 }}
                 data-testid="button-cancel-service"
@@ -1251,19 +1328,26 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label>Ward Type *</Label>
+                <Label>Ward/Room Type *</Label>
                 <Select 
                   value={admissionForm.watch("wardType")}
-                  onValueChange={(value) => admissionForm.setValue("wardType", value)}
+                  onValueChange={(value) => {
+                    admissionForm.setValue("wardType", value);
+                    // Auto-set daily cost based on selected room type
+                    const selectedRoomType = roomTypes.find((rt: any) => rt.name === value);
+                    if (selectedRoomType) {
+                      admissionForm.setValue("dailyCost", selectedRoomType.dailyCost);
+                    }
+                  }}
                   data-testid="select-ward-type"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select ward type" />
+                    <SelectValue placeholder="Select ward/room type" />
                   </SelectTrigger>
                   <SelectContent>
                     {roomTypes.map((roomType: any) => (
                       <SelectItem key={roomType.id} value={roomType.name}>
-                        {roomType.name} ({roomType.category}) - ₹{roomType.dailyCost}/day
+                        {roomType.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1310,6 +1394,8 @@ export default function PatientDetail() {
                   {...admissionForm.register("dailyCost", { valueAsNumber: true })}
                   placeholder="Daily ward cost"
                   data-testid="input-daily-cost"
+                  readOnly={!!admissionForm.watch("wardType")}
+                  className={admissionForm.watch("wardType") ? "bg-gray-50" : ""}
                 />
               </div>
 
