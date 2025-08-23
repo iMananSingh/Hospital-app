@@ -92,31 +92,39 @@ export default function ServiceManagement() {
 
   const createRoomTypeMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("/api/room-types", {
-        method: "POST",
+      const isEditing = editingRoomType !== null;
+      const url = isEditing ? `/api/room-types/${editingRoomType.id}` : "/api/room-types";
+      const method = isEditing ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to create room type");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} room type: ${errorText}`);
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/room-types"] });
       setIsRoomTypeDialogOpen(false);
       roomTypeForm.reset();
+      const wasEditing = editingRoomType !== null;
       setEditingRoomType(null);
       toast({
         title: "Success",
-        description: "Room type saved successfully",
+        description: `Room type ${wasEditing ? 'updated' : 'created'} successfully`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to save room type",
+        description: error.message || "Failed to save room type",
         variant: "destructive",
       });
     },
