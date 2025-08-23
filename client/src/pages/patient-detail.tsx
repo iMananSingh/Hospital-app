@@ -25,6 +25,7 @@ import {
   X, 
   Heart, 
   Bed,
+  FileText,
   ClipboardList,
   Plus,
   Eye,
