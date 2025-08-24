@@ -351,7 +351,16 @@ export default function ServiceManagement() {
       });
     } else {
       setEditingRoom(null);
-      roomForm.reset();
+      roomForm.reset({
+        roomNumber: "",
+        roomTypeId: selectedRoomTypeId || "",
+        floor: "",
+        building: "",
+        capacity: 1,
+        isOccupied: false,
+        isActive: true,
+        notes: "",
+      });
     }
     setIsRoomDialogOpen(true);
   };
@@ -678,77 +687,47 @@ export default function ServiceManagement() {
                       : rooms;
                     
                     return filteredRooms.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Room Number</TableHead>
-                            <TableHead>Room Type</TableHead>
-                            <TableHead>Floor</TableHead>
-                            <TableHead>Building</TableHead>
-                            <TableHead>Capacity</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRooms.map((room) => (
-                            <TableRow key={room.id}>
-                              <TableCell className="font-medium">{room.roomNumber}</TableCell>
-                              <TableCell>
-                                {roomTypes.find(rt => rt.id === room.roomTypeId)?.name || 'Unknown'}
-                              </TableCell>
-                              <TableCell>{room.floor || 'N/A'}</TableCell>
-                              <TableCell>{room.building || 'N/A'}</TableCell>
-                              <TableCell>{room.capacity}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Badge 
-                                    className={room.isOccupied ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} 
-                                    variant="secondary"
-                                  >
-                                    {room.isOccupied ? 'Occupied' : 'Available'}
-                                  </Badge>
-                                  <Badge 
-                                    className={room.isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'} 
-                                    variant="secondary"
-                                  >
-                                    {room.isActive ? 'Active' : 'Inactive'}
-                                  </Badge>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => openRoomDialog(room)}
-                                    size="sm"
-                                    variant="outline"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => {
-                                      if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
-                                        deleteRoomMutation.mutate(room.id);
-                                      }
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    disabled={deleteRoomMutation.isPending}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <div className="grid grid-cols-6 gap-4">
+                        {filteredRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
+                            style={{ aspectRatio: '3/1' }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium text-sm text-gray-900">
+                                {room.roomNumber}
+                              </span>
+                              <div className="flex gap-1 mt-1">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  room.isOccupied ? 'bg-red-500' : 'bg-green-500'
+                                }`} title={room.isOccupied ? 'Occupied' : 'Available'}></div>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  room.isActive ? 'bg-blue-500' : 'bg-gray-400'
+                                }`} title={room.isActive ? 'Active' : 'Inactive'}></div>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
+                                  deleteRoomMutation.mutate(room.id);
+                                }
+                              }}
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0"
+                              disabled={deleteRoomMutation.isPending}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     ) : (
                       <div className="text-center py-8">
                         <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">
-                          {selectedRoomTypeId ? `No rooms of this type defined yet` : `No individual rooms defined yet`}
+                          {selectedRoomTypeId ? `No ${roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name} rooms defined yet` : `No individual rooms defined yet`}
                         </p>
                         <Button
                           onClick={() => openRoomDialog()}
@@ -951,74 +930,39 @@ export default function ServiceManagement() {
             </DialogHeader>
             
             <form onSubmit={roomForm.handleSubmit(onRoomSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Room Number *</Label>
-                  <Input
-                    {...roomForm.register("roomNumber")}
-                    placeholder="e.g., 101, A-204"
-                    data-testid="input-room-number"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Room Type *</Label>
-                  <Select
-                    value={roomForm.watch("roomTypeId")}
-                    onValueChange={(value) => roomForm.setValue("roomTypeId", value)}
-                    data-testid="select-room-type"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select room type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roomTypes.map((roomType) => (
-                        <SelectItem key={roomType.id} value={roomType.id}>
-                          {roomType.name} - ₹{roomType.dailyCost}/day
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Floor</Label>
-                  <Input
-                    {...roomForm.register("floor")}
-                    placeholder="e.g., Ground, 1st"
-                    data-testid="input-floor"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Building</Label>
-                  <Input
-                    {...roomForm.register("building")}
-                    placeholder="e.g., Main, Block A"
-                    data-testid="input-building"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Capacity *</Label>
-                  <Input
-                    type="number"
-                    {...roomForm.register("capacity", { valueAsNumber: true })}
-                    placeholder="Number of beds"
-                    data-testid="input-capacity"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Room Number *</Label>
+                <Input
+                  {...roomForm.register("roomNumber")}
+                  placeholder="e.g., GW-1, ICU-1, PR-1, AR-1"
+                  data-testid="input-room-number"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  {...roomForm.register("notes")}
-                  placeholder="Optional notes about the room"
-                  data-testid="textarea-notes"
-                />
+                <Label>Room Type *</Label>
+                <Select
+                  value={roomForm.watch("roomTypeId")}
+                  onValueChange={(value) => roomForm.setValue("roomTypeId", value)}
+                  disabled={!!selectedRoomTypeId && !editingRoom}
+                  data-testid="select-room-type"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomTypes.map((roomType) => (
+                      <SelectItem key={roomType.id} value={roomType.id}>
+                        {roomType.name} - ₹{roomType.dailyCost}/day
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedRoomTypeId && !editingRoom && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Auto-selected: {roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name}
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
