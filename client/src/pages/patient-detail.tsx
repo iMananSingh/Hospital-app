@@ -267,7 +267,7 @@ export default function PatientDetail() {
       serviceForm.clearErrors("doctorId");
     }
     
-    // For non-OPD services, validate service selection
+    // For non-OPD services, validate service selection and price
     if (selectedServiceType !== "opd") {
       if (!data.serviceType || !data.serviceName) {
         serviceForm.setError("serviceType", { 
@@ -277,6 +277,17 @@ export default function PatientDetail() {
         hasErrors = true;
       } else {
         serviceForm.clearErrors("serviceType");
+      }
+
+      // Validate price field for non-OPD services
+      if (!data.price || data.price <= 0) {
+        serviceForm.setError("price", { 
+          type: "required", 
+          message: "Price is required and must be greater than 0" 
+        });
+        hasErrors = true;
+      } else {
+        serviceForm.clearErrors("price");
       }
     }
     
