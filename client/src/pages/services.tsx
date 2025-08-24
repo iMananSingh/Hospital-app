@@ -236,6 +236,60 @@ export default function ServiceManagement() {
     },
   });
 
+  const deleteRoomTypeMutation = useMutation({
+    mutationFn: async (roomTypeId: string) => {
+      const response = await fetch(`/api/room-types/${roomTypeId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to delete room type");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/room-types"] });
+      toast({
+        title: "Success",
+        description: "Room type deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete room type",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: string) => {
+      const response = await fetch(`/api/rooms/${roomId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to delete room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      toast({
+        title: "Success",
+        description: "Room deleted successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete room",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onRoomTypeSubmit = (data: any) => {
     createRoomTypeMutation.mutate(data);
   };
@@ -250,7 +304,7 @@ export default function ServiceManagement() {
       ...data,
       category: activeTab,
       price: activeTab === 'misc' && (!data.price || data.price === '') ? 0 : data.price,
-      doctors: serviceDoctors.filter(d => d.id && d.id !== "")
+      // Remove doctors field from service data as it's not part of the service schema
     };
     createServiceMutation.mutate(serviceData);
   };
@@ -591,14 +645,28 @@ export default function ServiceManagement() {
                           <TableCell>{roomType.totalBeds || 0}</TableCell>
                           <TableCell>{roomType.occupiedBeds || 0}</TableCell>
                           <TableCell>
-                            <Button
-                              onClick={() => openRoomTypeDialog(roomType)}
-                              size="sm"
-                              variant="outline"
-                              className="mr-2"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => openRoomTypeDialog(roomType)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete "${roomType.name}"? This action cannot be undone.`)) {
+                                    deleteRoomTypeMutation.mutate(roomType.id);
+                                  }
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                disabled={deleteRoomTypeMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -614,6 +682,102 @@ export default function ServiceManagement() {
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add First Room Type
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Individual Rooms</CardTitle>
+                <Button
+                  onClick={() => openRoomDialog()}
+                  className="flex items-center gap-2"
+                  data-testid="button-add-room"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Room
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {rooms.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Room Number</TableHead>
+                        <TableHead>Room Type</TableHead>
+                        <TableHead>Floor</TableHead>
+                        <TableHead>Building</TableHead>
+                        <TableHead>Capacity</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rooms.map((room) => (
+                        <TableRow key={room.id}>
+                          <TableCell className="font-medium">{room.roomNumber}</TableCell>
+                          <TableCell>
+                            {roomTypes.find(rt => rt.id === room.roomTypeId)?.name || 'Unknown'}
+                          </TableCell>
+                          <TableCell>{room.floor || 'N/A'}</TableCell>
+                          <TableCell>{room.building || 'N/A'}</TableCell>
+                          <TableCell>{room.capacity}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Badge 
+                                className={room.isOccupied ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} 
+                                variant="secondary"
+                              >
+                                {room.isOccupied ? 'Occupied' : 'Available'}
+                              </Badge>
+                              <Badge 
+                                className={room.isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'} 
+                                variant="secondary"
+                              >
+                                {room.isActive ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => openRoomDialog(room)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
+                                    deleteRoomMutation.mutate(room.id);
+                                  }
+                                }}
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                disabled={deleteRoomMutation.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No individual rooms defined yet</p>
+                    <Button
+                      onClick={() => openRoomDialog()}
+                      className="mt-4"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Room
                     </Button>
                   </div>
                 )}
@@ -714,7 +878,7 @@ export default function ServiceManagement() {
 
         {/* Room Type Dialog */}
         <Dialog open={isRoomTypeDialogOpen} onOpenChange={setIsRoomTypeDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingRoomType ? 'Edit Room Type' : 'Add Room Type'}
@@ -799,7 +963,7 @@ export default function ServiceManagement() {
 
         {/* Room Dialog */}
         <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingRoom ? 'Edit Room' : 'Add Room'}
@@ -903,7 +1067,7 @@ export default function ServiceManagement() {
 
         {/* Service Dialog */}
         <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingService ? 'Edit Service' : `Add ${serviceCategories.find(cat => cat.key === activeTab)?.label} Service`}
