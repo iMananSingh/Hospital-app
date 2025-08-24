@@ -834,31 +834,37 @@ export class SqliteStorage implements IStorage {
           )
         ).all();
 
-      // Get total revenue for today (you can expand this based on your billing system)
-      const todayRevenue = 0; // Placeholder - implement based on your billing logic
+      // Get inpatients count (currently admitted)
+      const inpatients = db.select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.status, 'admitted'))
+        .all().length;
       
-      // Get pending bills count
-      const pendingBills = 0; // Placeholder - implement based on your billing logic
-      
-      // Get lab tests count
+      // Get lab tests count for today
       const labTests = db.select()
         .from(schema.pathologyOrders)
         .where(eq(schema.pathologyOrders.orderedDate, today))
         .all().length;
 
+      // Get diagnostics count (pathology tests completed today)
+      const diagnostics = db.select()
+        .from(schema.pathologyTests)
+        .where(eq(schema.pathologyTests.status, 'completed'))
+        .all().length;
+
       return {
-        todayRevenue,
-        pendingBills,
         opdPatients: opdPatients.length,
-        labTests
+        inpatients,
+        labTests,
+        diagnostics
       };
     } catch (error) {
       console.error('Dashboard stats error:', error);
       return {
-        todayRevenue: 0,
-        pendingBills: 0,
         opdPatients: 0,
-        labTests: 0
+        inpatients: 0,
+        labTests: 0,
+        diagnostics: 0
       };
     }
   }

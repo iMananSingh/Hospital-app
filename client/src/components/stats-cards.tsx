@@ -1,46 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Clock, Users, Microscope } from "lucide-react";
+import { Users, Bed, Microscope, Stethoscope } from "lucide-react";
 import { Link } from "wouter";
 
 interface StatsCardsProps {
   stats: {
-    todayRevenue: number;
-    pendingBills: number;
     opdPatients: number;
+    inpatients: number;
     labTests: number;
+    diagnostics: number;
   };
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const statsData = [
-    {
-      title: "Today's Revenue",
-      value: formatCurrency(stats.todayRevenue),
-      change: "+12.5%",
-      changeType: "positive" as const,
-      icon: TrendingUp,
-      bgColor: "bg-healthcare-green/10",
-      iconColor: "text-healthcare-green",
-      testId: "stat-revenue"
-    },
-    {
-      title: "Pending Bills",
-      value: stats.pendingBills.toString(),
-      change: "Requires attention",
-      changeType: "warning" as const,
-      icon: Clock,
-      bgColor: "bg-alert-orange/10",
-      iconColor: "text-alert-orange",
-      testId: "stat-pending"
-    },
     {
       title: "OPD Patients",
       value: stats.opdPatients.toString(),
@@ -54,14 +26,40 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       linkTo: "/opd-list"
     },
     {
+      title: "In-patients",
+      value: stats.inpatients.toString(),
+      change: "Currently admitted",
+      changeType: "neutral" as const,
+      icon: Bed,
+      bgColor: "bg-healthcare-green/10",
+      iconColor: "text-healthcare-green",
+      testId: "stat-inpatients",
+      clickable: true,
+      linkTo: "/admissions"
+    },
+    {
       title: "Lab Tests",
       value: stats.labTests.toString(),
-      change: "Completed",
+      change: "Today",
       changeType: "positive" as const,
       icon: Microscope,
       bgColor: "bg-purple-500/10",
       iconColor: "text-purple-500",
-      testId: "stat-labs"
+      testId: "stat-labs",
+      clickable: true,
+      linkTo: "/pathology"
+    },
+    {
+      title: "Diagnostics",
+      value: stats.diagnostics.toString(),
+      change: "Completed",
+      changeType: "positive" as const,
+      icon: Stethoscope,
+      bgColor: "bg-orange-500/10",
+      iconColor: "text-orange-500",
+      testId: "stat-diagnostics",
+      clickable: true,
+      linkTo: "/pathology"
     },
   ];
 
@@ -89,11 +87,8 @@ export default function StatsCards({ stats }: StatsCardsProps) {
                   </p>
                   <p className={`text-sm font-medium mt-2 ${
                     stat.changeType === "positive" ? "text-healthcare-green" :
-                    stat.changeType === "warning" ? "text-alert-orange" :
                     "text-medical-blue"
                   }`}>
-                    {stat.changeType === "positive" && <TrendingUp className="w-3 h-3 inline mr-1" />}
-                    {stat.changeType === "warning" && <Clock className="w-3 h-3 inline mr-1" />}
                     {stat.change}
                   </p>
                 </div>
