@@ -228,6 +228,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/services/:id", authenticateToken, async (req, res) => {
+    try {
+      const serviceData = insertServiceSchema.parse(req.body);
+      const service = await storage.updateService(req.params.id, serviceData);
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update service" });
+    }
+  });
+
   app.delete("/api/services/:id", authenticateToken, async (req, res) => {
     try {
       const deleted = await storage.deleteService(req.params.id);

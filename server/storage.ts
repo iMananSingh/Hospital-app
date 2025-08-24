@@ -347,6 +347,7 @@ export interface IStorage {
   getServices(): Promise<Service[]>;
   getServiceById(id: string): Promise<Service | undefined>;
   searchServices(query: string): Promise<Service[]>;
+  updateService(id: string, service: InsertService): Promise<Service | undefined>;
   deleteService(id: string): Promise<boolean>;
 
   // Billing
@@ -559,6 +560,15 @@ export class SqliteStorage implements IStorage {
       )
       .limit(20)
       .all();
+  }
+
+  async updateService(id: string, service: InsertService): Promise<Service | undefined> {
+    const updated = db.update(schema.services)
+      .set(service)
+      .where(eq(schema.services.id, id))
+      .returning()
+      .get();
+    return updated;
   }
 
   async deleteService(id: string): Promise<boolean> {

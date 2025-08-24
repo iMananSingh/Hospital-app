@@ -170,31 +170,67 @@ export default function ServiceManagement() {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch("/api/services", {
-        method: "POST",
+      const isEditing = editingService !== null;
+      const url = isEditing ? `/api/services/${editingService.id}` : "/api/services";
+      const method = isEditing ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to create service");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} service: ${errorText}`);
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       setIsServiceDialogOpen(false);
       serviceForm.reset();
+      const wasEditing = editingService !== null;
       setEditingService(null);
+      setServiceDoctors([]);
       toast({
         title: "Success",
-        description: "Service saved successfully",
+        description: `Service ${wasEditing ? 'updated' : 'created'} successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save service",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteServiceMutation = useMutation({
+    mutationFn: async (serviceId: string) => {
+      const response = await fetch(`/api/services/${serviceId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to delete service");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      toast({
+        title: "Success",
+        description: "Service deleted successfully",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to save service",
+        description: "Failed to delete service",
         variant: "destructive",
       });
     },
@@ -632,14 +668,28 @@ export default function ServiceManagement() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            onClick={() => openServiceDialog(service)}
-                            size="sm"
-                            variant="outline"
-                            className="mr-2"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => openServiceDialog(service)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete "${service.name}"? This action cannot be undone.`)) {
+                                  deleteServiceMutation.mutate(service.id);
+                                }
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={deleteServiceMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
