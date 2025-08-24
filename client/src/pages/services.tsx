@@ -34,6 +34,8 @@ import type { RoomType, Room, Service } from "@shared/schema";
 export default function ServiceManagement() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("rooms");
+  const [roomsSubTab, setRoomsSubTab] = useState("room-types");
+  const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string>("");
   const [isRoomTypeDialogOpen, setIsRoomTypeDialogOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -299,11 +301,11 @@ export default function ServiceManagement() {
   };
 
   const onServiceSubmit = (data: any) => {
-    // For misc services, allow price to be 0 if not provided
+    // For non-rooms services, allow price to be 0 if not provided
     const serviceData = {
       ...data,
       category: activeTab,
-      price: activeTab === 'misc' && (!data.price || data.price === '') ? 0 : data.price,
+      price: activeTab !== 'rooms' && (!data.price || data.price === '') ? 0 : data.price,
       // Remove doctors field from service data as it's not part of the service schema
     };
     createServiceMutation.mutate(serviceData);
@@ -509,280 +511,234 @@ export default function ServiceManagement() {
           </div>
         </div>
 
-        {/* Statistics Cards - Dynamic based on active tab */}
-        {activeTab === 'rooms' ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Building2 className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Room Types</p>
-                    <p className="text-2xl font-bold text-gray-900">{roomTypes.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Bed className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Rooms</p>
-                    <p className="text-2xl font-bold text-gray-900">{rooms.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Activity className="h-8 w-8 text-red-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Occupied Rooms</p>
-                    <p className="text-2xl font-bold text-gray-900">{occupiedRooms}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Home className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Available Rooms</p>
-                    <p className="text-2xl font-bold text-gray-900">{availableRooms}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  {getServiceCategoryIcon(activeTab)}
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Services</p>
-                    <p className="text-2xl font-bold text-gray-900">{filteredServices.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Activity className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Active Services</p>
-                    <p className="text-2xl font-bold text-gray-900">{filteredServices.filter(s => s.isActive).length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <AlertTriangle className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Inactive Services</p>
-                    <p className="text-2xl font-bold text-gray-900">{filteredServices.filter(s => !s.isActive).length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Content based on active tab */}
         {activeTab === 'rooms' ? (
           <div className="space-y-4">
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Room Types</CardTitle>
+            {/* Rooms Navigation */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <Button
+                onClick={() => {setRoomsSubTab("room-types"); setSelectedRoomTypeId("");}}
+                variant={roomsSubTab === "room-types" ? "default" : "outline"}
+                className="flex items-center gap-2"
+              >
+                <Building2 className="h-4 w-4" />
+                Room Types
+              </Button>
+              <Button
+                onClick={() => {setRoomsSubTab("rooms"); setSelectedRoomTypeId("");}}
+                variant={roomsSubTab === "rooms" ? "default" : "outline"}
+                className="flex items-center gap-2"
+              >
+                <Bed className="h-4 w-4" />
+                All Rooms
+              </Button>
+              {roomTypes.map((roomType) => (
                 <Button
-                  onClick={() => openRoomTypeDialog()}
+                  key={roomType.id}
+                  onClick={() => {setRoomsSubTab("rooms"); setSelectedRoomTypeId(roomType.id);}}
+                  variant={selectedRoomTypeId === roomType.id ? "default" : "outline"}
                   className="flex items-center gap-2"
-                  data-testid="button-add-room-type"
                 >
-                  <Plus className="h-4 w-4" />
-                  Add Room Type
+                  {getCategoryIcon(roomType.category)}
+                  {roomType.name}
                 </Button>
-              </CardHeader>
-              <CardContent>
-                {roomTypes.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Daily Cost</TableHead>
-                        <TableHead>Total Beds</TableHead>
-                        <TableHead>Occupied Beds</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {roomTypes.map((roomType) => (
-                        <TableRow key={roomType.id}>
-                          <TableCell className="font-medium">{roomType.name}</TableCell>
-                          <TableCell>
-                            <Badge className={getCategoryColor(roomType.category)} variant="secondary">
-                              <div className="flex items-center gap-1">
-                                {getCategoryIcon(roomType.category)}
-                                {roomType.category}
+              ))}
+            </div>
+
+            {/* Room Types Section */}
+            {roomsSubTab === "room-types" && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Room Types</CardTitle>
+                  <Button
+                    onClick={() => openRoomTypeDialog()}
+                    className="flex items-center gap-2"
+                    data-testid="button-add-room-type"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Room Type
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {roomTypes.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Daily Cost</TableHead>
+                          <TableHead>Total Beds</TableHead>
+                          <TableHead>Occupied Beds</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {roomTypes.map((roomType) => (
+                          <TableRow key={roomType.id}>
+                            <TableCell className="font-medium">{roomType.name}</TableCell>
+                            <TableCell>
+                              <Badge className={getCategoryColor(roomType.category)} variant="secondary">
+                                <div className="flex items-center gap-1">
+                                  {getCategoryIcon(roomType.category)}
+                                  {roomType.category}
+                                </div>
+                              </Badge>
+                            </TableCell>
+                            <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
+                            <TableCell>{roomType.totalBeds || 0}</TableCell>
+                            <TableCell>{roomType.occupiedBeds || 0}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => openRoomTypeDialog(roomType)}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete "${roomType.name}"? This action cannot be undone.`)) {
+                                      deleteRoomTypeMutation.mutate(roomType.id);
+                                    }
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  disabled={deleteRoomTypeMutation.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
-                            </Badge>
-                          </TableCell>
-                          <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
-                          <TableCell>{roomType.totalBeds || 0}</TableCell>
-                          <TableCell>{roomType.occupiedBeds || 0}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => openRoomTypeDialog(roomType)}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => {
-                                  if (confirm(`Are you sure you want to delete "${roomType.name}"? This action cannot be undone.`)) {
-                                    deleteRoomTypeMutation.mutate(roomType.id);
-                                  }
-                                }}
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                disabled={deleteRoomTypeMutation.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No room types defined yet</p>
-                    <Button
-                      onClick={() => openRoomTypeDialog()}
-                      className="mt-4"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Room Type
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No room types defined yet</p>
+                      <Button
+                        onClick={() => openRoomTypeDialog()}
+                        className="mt-4"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add First Room Type
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Individual Rooms</CardTitle>
-                <Button
-                  onClick={() => openRoomDialog()}
-                  className="flex items-center gap-2"
-                  data-testid="button-add-room"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Room
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {rooms.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Room Number</TableHead>
-                        <TableHead>Room Type</TableHead>
-                        <TableHead>Floor</TableHead>
-                        <TableHead>Building</TableHead>
-                        <TableHead>Capacity</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rooms.map((room) => (
-                        <TableRow key={room.id}>
-                          <TableCell className="font-medium">{room.roomNumber}</TableCell>
-                          <TableCell>
-                            {roomTypes.find(rt => rt.id === room.roomTypeId)?.name || 'Unknown'}
-                          </TableCell>
-                          <TableCell>{room.floor || 'N/A'}</TableCell>
-                          <TableCell>{room.building || 'N/A'}</TableCell>
-                          <TableCell>{room.capacity}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Badge 
-                                className={room.isOccupied ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} 
-                                variant="secondary"
-                              >
-                                {room.isOccupied ? 'Occupied' : 'Available'}
-                              </Badge>
-                              <Badge 
-                                className={room.isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'} 
-                                variant="secondary"
-                              >
-                                {room.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => openRoomDialog(room)}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => {
-                                  if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
-                                    deleteRoomMutation.mutate(room.id);
-                                  }
-                                }}
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                disabled={deleteRoomMutation.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No individual rooms defined yet</p>
-                    <Button
-                      onClick={() => openRoomDialog()}
-                      className="mt-4"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Room
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Rooms Section */}
+            {roomsSubTab === "rooms" && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Individual Rooms {selectedRoomTypeId && `- ${roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name}`}</CardTitle>
+                  <Button
+                    onClick={() => openRoomDialog()}
+                    className="flex items-center gap-2"
+                    data-testid="button-add-room"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Room
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const filteredRooms = selectedRoomTypeId 
+                      ? rooms.filter(room => room.roomTypeId === selectedRoomTypeId)
+                      : rooms;
+                    
+                    return filteredRooms.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Room Number</TableHead>
+                            <TableHead>Room Type</TableHead>
+                            <TableHead>Floor</TableHead>
+                            <TableHead>Building</TableHead>
+                            <TableHead>Capacity</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRooms.map((room) => (
+                            <TableRow key={room.id}>
+                              <TableCell className="font-medium">{room.roomNumber}</TableCell>
+                              <TableCell>
+                                {roomTypes.find(rt => rt.id === room.roomTypeId)?.name || 'Unknown'}
+                              </TableCell>
+                              <TableCell>{room.floor || 'N/A'}</TableCell>
+                              <TableCell>{room.building || 'N/A'}</TableCell>
+                              <TableCell>{room.capacity}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Badge 
+                                    className={room.isOccupied ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'} 
+                                    variant="secondary"
+                                  >
+                                    {room.isOccupied ? 'Occupied' : 'Available'}
+                                  </Badge>
+                                  <Badge 
+                                    className={room.isActive ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'} 
+                                    variant="secondary"
+                                  >
+                                    {room.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => openRoomDialog(room)}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
+                                        deleteRoomMutation.mutate(room.id);
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    disabled={deleteRoomMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">
+                          {selectedRoomTypeId ? `No rooms of this type defined yet` : `No individual rooms defined yet`}
+                        </p>
+                        <Button
+                          onClick={() => openRoomDialog()}
+                          className="mt-4"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Room
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+            )}
           </div>
         ) : (
           <Card>
@@ -817,7 +773,7 @@ export default function ServiceManagement() {
                       <TableRow key={service.id}>
                         <TableCell className="font-medium">{service.name}</TableCell>
                         <TableCell>
-                          {service.category === 'misc' && service.price === 0 
+                          {(service.category !== 'rooms' && service.price === 0) 
                             ? <Badge variant="outline" className="text-purple-700 border-purple-300">Variable</Badge>
                             : `₹${service.price.toLocaleString()}`
                           }
@@ -1086,15 +1042,15 @@ export default function ServiceManagement() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Price (₹) {activeTab === 'misc' ? '(Optional - Variable Pricing)' : '*'}</Label>
+                  <Label>Price (₹) {activeTab !== 'rooms' ? '(Optional - Variable Pricing)' : '*'}</Label>
                   <Input
                     type="number"
                     {...serviceForm.register("price", { valueAsNumber: true })}
-                    placeholder={activeTab === 'misc' ? 'Leave blank for variable pricing' : 'Enter price'}
+                    placeholder={activeTab !== 'rooms' ? 'Leave blank for variable pricing' : 'Enter price'}
                     data-testid="input-service-price"
                   />
-                  {activeTab === 'misc' && (
-                    <p className="text-sm text-gray-500">For misc services, price can be entered when adding to patient</p>
+                  {activeTab !== 'rooms' && (
+                    <p className="text-sm text-gray-500">Price can be entered when adding to patient if left blank</p>
                   )}
                 </div>
               </div>
