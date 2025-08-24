@@ -174,6 +174,7 @@ export const admissions = sqliteTable("admissions", {
   dailyCost: real("daily_cost").notNull().default(0),
   totalCost: real("total_cost").notNull().default(0),
   initialDeposit: real("initial_deposit").notNull().default(0),
+  additionalPayments: real("additional_payments").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });

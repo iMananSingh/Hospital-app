@@ -50,6 +50,8 @@ export default function PatientDetail() {
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
 
@@ -417,6 +419,46 @@ export default function PatientDetail() {
     },
   });
 
+  const addPaymentMutation = useMutation({
+    mutationFn: async (data: { admissionId: string, amount: number }) => {
+      const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
+      if (!admission) throw new Error("Admission not found");
+      
+      const currentAdditionalPayments = admission.additionalPayments || 0;
+      const newTotal = currentAdditionalPayments + data.amount;
+      
+      const response = await fetch(`/api/admissions/${data.admissionId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ 
+          additionalPayments: newTotal
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to add payment");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      setIsPaymentDialogOpen(false);
+      setPaymentAmount(0);
+      toast({
+        title: "Payment added successfully",
+        description: "The payment has been recorded.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error adding payment",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onDischargePatient = () => {
     const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
     if (currentAdmission) {
@@ -496,80 +538,55 @@ export default function PatientDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium">{patient.name}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Age</p>
-                    <p className="font-medium">{patient.age} years</p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-medium">{patient.name}</p>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Gender</p>
-                    <p className="font-medium capitalize">{patient.gender}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium">{patient.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{patient.email || "N/A"}</p>
-                  </div>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Age</p>
+                <p className="font-medium">{patient.age} years</p>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Patient ID</p>
-                    <p className="font-medium">{patient.patientId}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Emergency Contact</p>
-                    <p className="font-medium">{patient.emergencyContact || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Address</p>
-                    <p className="font-medium">{patient.address || "N/A"}</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-muted-foreground">Room No</p>
-                    <p className="font-medium">
-                      {(() => {
-                        const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                        return currentAdmission?.roomNumber || "N/A";
-                      })()}
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Gender</p>
+                <p className="font-medium capitalize">{patient.gender}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <p className="font-medium">{patient.phone}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Patient ID</p>
+                <p className="font-medium">{patient.patientId}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Emergency Contact</p>
+                <p className="font-medium">{patient.emergencyContact || "N/A"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{patient.email || "N/A"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Address</p>
+                <p className="font-medium">{patient.address || "N/A"}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Room No</p>
+                <p className="font-medium">
+                  {(() => {
+                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    return currentAdmission?.roomNumber || "N/A";
+                  })()}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -721,16 +738,16 @@ export default function PatientDetail() {
                 <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
                 <p className="text-2xl font-bold text-blue-700">
                   ₹{(() => {
-                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
                     let totalCharges = 0;
+                    const allAdmissions = admissions || [];
                     
-                    // Add daily room charges if admitted
-                    if (currentAdmission) {
-                      const admissionDate = new Date(currentAdmission.admissionDate);
-                      const today = new Date();
-                      const daysDiff = Math.max(1, Math.ceil((today.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
-                      totalCharges += (currentAdmission.dailyCost || 0) * daysDiff;
-                    }
+                    // Add room charges from all admissions
+                    allAdmissions.forEach((admission: any) => {
+                      const admissionDate = new Date(admission.admissionDate);
+                      const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+                      const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+                      totalCharges += (admission.dailyCost || 0) * daysDiff;
+                    });
                     
                     // Add service charges
                     if (services) {
@@ -743,12 +760,27 @@ export default function PatientDetail() {
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Paid</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm text-muted-foreground">Paid</p>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setPaymentAmount(0);
+                      setIsPaymentDialogOpen(true);
+                    }}
+                    className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
                 <p className="text-2xl font-bold text-green-700">
                   ₹{(() => {
-                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                    const initialDeposit = currentAdmission?.initialDeposit || 0;
-                    return initialDeposit.toLocaleString();
+                    // Get all admissions for this patient (including discharged ones)
+                    const allAdmissions = admissions || [];
+                    const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
+                      return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
+                    }, 0);
+                    return totalPaid.toLocaleString();
                   })()}
                 </p>
               </div>
@@ -757,23 +789,27 @@ export default function PatientDetail() {
                 <p className="text-sm text-muted-foreground mb-1">Balance</p>
                 <p className="text-2xl font-bold text-orange-700">
                   ₹{(() => {
-                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
                     let totalCharges = 0;
+                    const allAdmissions = admissions || [];
                     
-                    // Calculate total charges
-                    if (currentAdmission) {
-                      const admissionDate = new Date(currentAdmission.admissionDate);
-                      const today = new Date();
-                      const daysDiff = Math.max(1, Math.ceil((today.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
-                      totalCharges += (currentAdmission.dailyCost || 0) * daysDiff;
-                    }
+                    // Calculate total charges from all admissions
+                    allAdmissions.forEach((admission: any) => {
+                      const admissionDate = new Date(admission.admissionDate);
+                      const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+                      const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+                      totalCharges += (admission.dailyCost || 0) * daysDiff;
+                    });
                     
                     if (services) {
                       totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
                     }
                     
-                    const paid = currentAdmission?.initialDeposit || 0;
-                    const balance = totalCharges - paid;
+                    // Calculate total paid from all admissions
+                    const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
+                      return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
+                    }, 0);
+                    
+                    const balance = totalCharges - totalPaid;
                     
                     return balance.toLocaleString();
                   })()}
@@ -1137,10 +1173,20 @@ export default function PatientDetail() {
                             const doctorName = doctor ? doctor.name : "No Doctor Assigned";
                             const wardDisplay = admission.wardType;
                             
+                            // Add time formatting
+                            const admissionDate = new Date(admission.admissionDate);
+                            const admissionTime = admissionDate.toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            });
+                            
                             const parts = [];
                             if (admission.reason) parts.push(`Reason: ${admission.reason}`);
                             parts.push(`Doctor: ${doctorName}`);
                             parts.push(`Ward: ${wardDisplay}`);
+                            parts.push(`Room: ${admission.roomNumber || 'N/A'}`);
+                            parts.push(`Time: ${admissionTime}`);
                             return parts.join(' • ');
                           })(),
                           color: 'bg-orange-500',
@@ -1183,8 +1229,8 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Sort events chronologically (latest first, most recent at bottom means earliest at top)
-                    timelineEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                    // Sort events chronologically (most recent first)
+                    timelineEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                     
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
                       <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -1755,6 +1801,92 @@ export default function PatientDetail() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Payment</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Payment Amount *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  placeholder="Enter payment amount"
+                  data-testid="input-payment-amount"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <Select defaultValue="cash">
+                  <SelectTrigger data-testid="select-payment-method">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {admissions && admissions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Add Payment To</Label>
+                  <Select defaultValue={admissions.find((adm: any) => adm.status === 'admitted')?.id || admissions[0]?.id}>
+                    <SelectTrigger data-testid="select-admission">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {admissions.map((admission: any) => (
+                        <SelectItem key={admission.id} value={admission.id}>
+                          {admission.status === 'admitted' ? 'Current Admission' : 
+                           `Discharged - ${formatDate(admission.dischargeDate || admission.admissionDate)}`}
+                          {' '}(Room {admission.roomNumber})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPaymentDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
+                if (selectedAdmissionId && paymentAmount > 0) {
+                  addPaymentMutation.mutate({ 
+                    admissionId: selectedAdmissionId, 
+                    amount: paymentAmount 
+                  });
+                }
+              }}
+              disabled={addPaymentMutation.isPending || paymentAmount <= 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {addPaymentMutation.isPending ? "Adding Payment..." : "Add Payment"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
