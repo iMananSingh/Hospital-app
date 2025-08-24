@@ -134,6 +134,11 @@ export default function PatientDetail() {
     queryKey: ["/api/room-types"],
   });
 
+  // Fetch rooms for admission form
+  const { data: rooms = [] } = useQuery<any[]>({
+    queryKey: ["/api/rooms"],
+  });
+
   const serviceForm = useForm({
     mode: "onChange",
     defaultValues: {
@@ -154,6 +159,7 @@ export default function PatientDetail() {
       patientId: patientId,
       doctorId: "",
       wardType: "",
+      roomNumber: "",
       admissionDate: "", // Will be set dynamically when dialog opens
       reason: "",
       diagnosis: "",
@@ -553,6 +559,16 @@ export default function PatientDetail() {
                     <p className="text-sm text-muted-foreground">Address</p>
                     <p className="font-medium">{patient.address || "N/A"}</p>
                   </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">Room No</p>
+                    <p className="font-medium">
+                      {(() => {
+                        const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                        return currentAdmission?.roomNumber || "N/A";
+                      })()}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -685,6 +701,84 @@ export default function PatientDetail() {
                   );
                 }
               })()}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Financial Monitoring */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              Financial Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  ₹{(() => {
+                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    let totalCharges = 0;
+                    
+                    // Add daily room charges if admitted
+                    if (currentAdmission) {
+                      const admissionDate = new Date(currentAdmission.admissionDate);
+                      const today = new Date();
+                      const daysDiff = Math.max(1, Math.ceil((today.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+                      totalCharges += (currentAdmission.dailyCost || 0) * daysDiff;
+                    }
+                    
+                    // Add service charges
+                    if (services) {
+                      totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
+                    }
+                    
+                    return totalCharges.toLocaleString();
+                  })()}
+                </p>
+              </div>
+              
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Paid</p>
+                <p className="text-2xl font-bold text-green-700">
+                  ₹{(() => {
+                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    const initialDeposit = currentAdmission?.initialDeposit || 0;
+                    return initialDeposit.toLocaleString();
+                  })()}
+                </p>
+              </div>
+              
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Balance</p>
+                <p className="text-2xl font-bold text-orange-700">
+                  ₹{(() => {
+                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    let totalCharges = 0;
+                    
+                    // Calculate total charges
+                    if (currentAdmission) {
+                      const admissionDate = new Date(currentAdmission.admissionDate);
+                      const today = new Date();
+                      const daysDiff = Math.max(1, Math.ceil((today.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+                      totalCharges += (currentAdmission.dailyCost || 0) * daysDiff;
+                    }
+                    
+                    if (services) {
+                      totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
+                    }
+                    
+                    const paid = currentAdmission?.initialDeposit || 0;
+                    const balance = totalCharges - paid;
+                    
+                    return balance.toLocaleString();
+                  })()}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1421,6 +1515,7 @@ export default function PatientDetail() {
                   value={admissionForm.watch("wardType")}
                   onValueChange={(value) => {
                     admissionForm.setValue("wardType", value);
+                    admissionForm.setValue("roomNumber", ""); // Clear room selection when ward type changes
                     // Auto-set daily cost based on selected room type
                     const selectedRoomType = roomTypes.find((rt: any) => rt.name === value);
                     if (selectedRoomType) {
@@ -1445,12 +1540,45 @@ export default function PatientDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Room Number</Label>
-                <Input
-                  {...roomUpdateForm.register("roomNumber")}
-                  placeholder="e.g., 101, A-204"
-                  data-testid="input-room-number"
-                />
+                <Label>Room Number *</Label>
+                <Select
+                  value={admissionForm.watch("roomNumber")}
+                  onValueChange={(value) => admissionForm.setValue("roomNumber", value)}
+                  disabled={!admissionForm.watch("wardType")}
+                  data-testid="select-room-number"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={admissionForm.watch("wardType") ? "Select available room" : "Select ward type first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const selectedWardType = admissionForm.watch("wardType");
+                      const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
+                      
+                      if (!selectedRoomType) return null;
+                      
+                      const availableRooms = rooms.filter((room: any) => 
+                        room.roomTypeId === selectedRoomType.id && 
+                        !room.isOccupied && 
+                        room.isActive
+                      );
+                      
+                      if (availableRooms.length === 0) {
+                        return (
+                          <SelectItem value="" disabled>
+                            No available rooms in {selectedWardType}
+                          </SelectItem>
+                        );
+                      }
+                      
+                      return availableRooms.map((room: any) => (
+                        <SelectItem key={room.id} value={room.roomNumber}>
+                          {room.roomNumber}
+                        </SelectItem>
+                      ));
+                    })()}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

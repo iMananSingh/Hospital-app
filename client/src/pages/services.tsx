@@ -281,20 +281,28 @@ export default function ServiceManagement() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      if (!response.ok) throw new Error("Failed to delete room");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete room: ${errorText}`);
+      }
+      // For 204 responses, there might not be JSON content
+      if (response.status === 204) {
+        return { success: true };
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/room-types"] });
       toast({
         title: "Success",
         description: "Room deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to delete room",
+        description: error.message || "Failed to delete room",
         variant: "destructive",
       });
     },
@@ -694,18 +702,10 @@ export default function ServiceManagement() {
                             className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
                             style={{ aspectRatio: '3/1' }}
                           >
-                            <div className="flex flex-col">
+                            <div className="flex flex-col justify-center">
                               <span className="font-medium text-sm text-gray-900">
                                 {room.roomNumber}
                               </span>
-                              <div className="flex gap-1 mt-1">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  room.isOccupied ? 'bg-red-500' : 'bg-green-500'
-                                }`} title={room.isOccupied ? 'Occupied' : 'Available'}></div>
-                                <div className={`w-2 h-2 rounded-full ${
-                                  room.isActive ? 'bg-blue-500' : 'bg-gray-400'
-                                }`} title={room.isActive ? 'Active' : 'Inactive'}></div>
-                              </div>
                             </div>
                             <Button
                               onClick={() => {
