@@ -246,20 +246,28 @@ export default function ServiceManagement() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      if (!response.ok) throw new Error("Failed to delete room type");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete room type: ${errorText}`);
+      }
+      // For 204 responses, there might not be JSON content
+      if (response.status === 204) {
+        return { success: true };
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/room-types"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
       toast({
         title: "Success",
         description: "Room type deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to delete room type",
+        description: error.message || "Failed to delete room type",
         variant: "destructive",
       });
     },
@@ -515,7 +523,7 @@ export default function ServiceManagement() {
         {/* Content based on active tab */}
         {activeTab === 'rooms' ? (
           <div className="space-y-4">
-            {/* Rooms Navigation */}
+            {/* Main Rooms Navigation */}
             <div className="flex flex-wrap gap-2 mb-6">
               <Button
                 onClick={() => {setRoomsSubTab("room-types"); setSelectedRoomTypeId("");}}
@@ -533,17 +541,6 @@ export default function ServiceManagement() {
                 <Bed className="h-4 w-4" />
                 All Rooms
               </Button>
-              {roomTypes.map((roomType) => (
-                <Button
-                  key={roomType.id}
-                  onClick={() => {setRoomsSubTab("rooms"); setSelectedRoomTypeId(roomType.id);}}
-                  variant={selectedRoomTypeId === roomType.id ? "default" : "outline"}
-                  className="flex items-center gap-2"
-                >
-                  {getCategoryIcon(roomType.category)}
-                  {roomType.name}
-                </Button>
-              ))}
             </div>
 
             {/* Room Types Section */}
@@ -647,6 +644,33 @@ export default function ServiceManagement() {
                     Add Room
                   </Button>
                 </CardHeader>
+                
+                {/* Sub-navigation for Rooms */}
+                <div className="px-6 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => setSelectedRoomTypeId("")}
+                      variant={selectedRoomTypeId === "" ? "default" : "outline"}
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Bed className="h-4 w-4" />
+                      All Rooms
+                    </Button>
+                    {roomTypes.map((roomType) => (
+                      <Button
+                        key={roomType.id}
+                        onClick={() => setSelectedRoomTypeId(roomType.id)}
+                        variant={selectedRoomTypeId === roomType.id ? "default" : "outline"}
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        {getCategoryIcon(roomType.category)}
+                        {roomType.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <CardContent>
                   {(() => {
                     const filteredRooms = selectedRoomTypeId 
