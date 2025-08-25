@@ -366,8 +366,37 @@ export default function PatientDetail() {
   };
 
   const dischargePatientMutation = useMutation({
-    mutationFn: async (admissionId: string) => {
-      const response = await fetch(`/api/admissions/${admissionId}`, {
+    mutationFn: async (currentAdmissionId: string) => {
+      // First, get current admission details
+      const currentAdmission = admissions?.find((adm: any) => adm.id === currentAdmissionId);
+      if (!currentAdmission) throw new Error("Current admission not found");
+      
+      // Create new discharge admission entry
+      const dischargeData = {
+        ...currentAdmission,
+        status: "discharged",
+        dischargeDate: new Date().toISOString(),
+        admissionId: `ADM-${Date.now()}-D`, // Unique ID for discharge entry
+      };
+      
+      // Remove fields that shouldn't be copied
+      delete dischargeData.id;
+      delete dischargeData.createdAt;
+      delete dischargeData.updatedAt;
+      
+      const response = await fetch("/api/admissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(dischargeData),
+      });
+      
+      if (!response.ok) throw new Error("Failed to create discharge record");
+      
+      // Update the current admission to discharged status as well
+      await fetch(`/api/admissions/${currentAdmissionId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -379,7 +408,6 @@ export default function PatientDetail() {
         }),
       });
       
-      if (!response.ok) throw new Error("Failed to discharge patient");
       return response.json();
     },
     onSuccess: () => {
@@ -387,7 +415,7 @@ export default function PatientDetail() {
       setIsDischargeDialogOpen(false);
       toast({
         title: "Patient discharged successfully",
-        description: "The patient has been discharged.",
+        description: "The patient has been discharged and a new record has been created.",
       });
     },
   });
@@ -397,16 +425,45 @@ export default function PatientDetail() {
       const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
       if (!currentAdmission) throw new Error("No active admission found");
       
-      const response = await fetch(`/api/admissions/${currentAdmission.id}`, {
+      // Create new room transfer admission entry
+      const roomUpdateData = {
+        ...currentAdmission,
+        wardType: data.wardType,
+        roomNumber: data.roomNumber,
+        status: "admitted", // Keep as admitted but in new room
+        admissionId: `ADM-${Date.now()}-RT`, // Unique ID for room transfer entry
+        notes: `Room transferred from ${currentAdmission.wardType} (${currentAdmission.roomNumber}) to ${data.wardType} (${data.roomNumber})`,
+      };
+      
+      // Remove fields that shouldn't be copied
+      delete roomUpdateData.id;
+      delete roomUpdateData.createdAt;
+      delete roomUpdateData.updatedAt;
+      
+      const response = await fetch("/api/admissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(roomUpdateData),
+      });
+      
+      if (!response.ok) throw new Error("Failed to create room transfer record");
+      
+      // Update the current admission with transfer status
+      await fetch(`/api/admissions/${currentAdmission.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          status: "transferred",
+          notes: `Transferred to ${data.wardType} (${data.roomNumber})`
+        }),
       });
       
-      if (!response.ok) throw new Error("Failed to update room");
       return response.json();
     },
     onSuccess: () => {
@@ -414,8 +471,8 @@ export default function PatientDetail() {
       setIsRoomUpdateDialogOpen(false);
       roomUpdateForm.reset();
       toast({
-        title: "Room updated successfully",
-        description: "Patient room information has been updated.",
+        title: "Room transfer completed",
+        description: "Patient has been transferred to the new room and a transfer record has been created.",
       });
     },
   });
@@ -469,6 +526,19 @@ export default function PatientDetail() {
   };
 
   const onRoomUpdate = (data: any) => {
+    // Validate required fields
+    const requiredFields = ['wardType', 'roomNumber'];
+    const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     updateRoomMutation.mutate(data);
   };
 
@@ -770,6 +840,14 @@ export default function PatientDetail() {
                       totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
                     }
                     
+                    // Add pathology order charges
+                    if (pathologyOrders) {
+                      totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
+                        const order = orderData.order || orderData;
+                        return sum + (order.totalPrice || 0);
+                      }, 0);
+                    }
+                    
                     return totalCharges.toLocaleString();
                   })()}
                 </p>
@@ -806,6 +884,14 @@ export default function PatientDetail() {
                     
                     if (services) {
                       totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
+                    }
+                    
+                    // Add pathology order charges
+                    if (pathologyOrders) {
+                      totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
+                        const order = orderData.order || orderData;
+                        return sum + (order.totalPrice || 0);
+                      }, 0);
                     }
                     
                     // Calculate total paid from all admissions
@@ -1014,8 +1100,34 @@ export default function PatientDetail() {
                                 : wardDisplay;
                             })()
                           }</TableCell>
-                          <TableCell>{formatDate(admission.admissionDate)}</TableCell>
-                          <TableCell>{formatDate(admission.dischargeDate)}</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const date = new Date(admission.admissionDate);
+                              return date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                              });
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            admission.dischargeDate ? (() => {
+                              const date = new Date(admission.dischargeDate);
+                              return date.toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                              });
+                            })() : "N/A"
+                          }</TableCell>
                           <TableCell>
                             <Badge 
                               className={
@@ -1764,7 +1876,10 @@ export default function PatientDetail() {
               <Label>Ward Type *</Label>
               <Select 
                 value={roomUpdateForm.watch("wardType")}
-                onValueChange={(value) => roomUpdateForm.setValue("wardType", value)}
+                onValueChange={(value) => {
+                  roomUpdateForm.setValue("wardType", value);
+                  roomUpdateForm.setValue("roomNumber", ""); // Clear room selection when ward type changes
+                }}
                 data-testid="select-update-ward-type"
               >
                 <SelectTrigger>
@@ -1781,12 +1896,45 @@ export default function PatientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label>Room Number</Label>
-              <Input
-                {...roomUpdateForm.register("roomNumber")}
-                placeholder="e.g., 101, A-204"
-                data-testid="input-update-room-number"
-              />
+              <Label>Room Number *</Label>
+              <Select
+                value={roomUpdateForm.watch("roomNumber")}
+                onValueChange={(value) => roomUpdateForm.setValue("roomNumber", value)}
+                disabled={!roomUpdateForm.watch("wardType")}
+                data-testid="select-update-room-number"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={roomUpdateForm.watch("wardType") ? "Select available room" : "Select ward type first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const selectedWardType = roomUpdateForm.watch("wardType");
+                    const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
+                    
+                    if (!selectedRoomType) return null;
+                    
+                    const availableRooms = rooms.filter((room: any) => 
+                      room.roomTypeId === selectedRoomType.id && 
+                      !room.isOccupied && 
+                      room.isActive
+                    );
+                    
+                    if (availableRooms.length === 0) {
+                      return (
+                        <SelectItem value="" disabled>
+                          No available rooms in {selectedWardType}
+                        </SelectItem>
+                      );
+                    }
+                    
+                    return availableRooms.map((room: any) => (
+                      <SelectItem key={room.id} value={room.roomNumber}>
+                        {room.roomNumber}
+                      </SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex justify-end gap-2 pt-4">
