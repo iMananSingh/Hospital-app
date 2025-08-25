@@ -299,7 +299,7 @@ export const insertAdmissionSchema = createInsertSchema(admissions).omit({
   doctorId: z.string().min(1, "Doctor is required"),
   wardType: z.string().min(1, "Ward type is required"),
   admissionDate: z.string().min(1, "Admission date is required"),
-  reason: z.string().min(1, "Reason for admission is required"),
+  reason: z.string().optional(),
   dailyCost: z.number().min(0, "Daily cost must be non-negative"),
   initialDeposit: z.number().min(0, "Initial deposit must be non-negative").optional(),
 });
