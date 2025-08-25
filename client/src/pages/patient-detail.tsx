@@ -1081,164 +1081,82 @@ export default function PatientDetail() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(() => {
-                        // Group admissions by the original admission ID (without suffixes)
-                        const groupedAdmissions = admissions.reduce((groups: any, admission: any) => {
-                          // Extract base admission ID (remove suffixes like -D, -RT)
-                          const baseId = admission.admissionId.replace(/-[DRT]+$/, '');
-                          if (!groups[baseId]) {
-                            groups[baseId] = [];
-                          }
-                          groups[baseId].push(admission);
-                          return groups;
-                        }, {});
-
-                        return Object.entries(groupedAdmissions).map(([baseId, groupAdmissions]: [string, any]) => {
-                          const sortedAdmissions = groupAdmissions.sort((a: any, b: any) => 
-                            new Date(a.admissionDate).getTime() - new Date(b.admissionDate).getTime()
-                          );
-                          
-                          // Get shared information from the first admission
-                          const firstAdmission = sortedAdmissions[0];
-                          const doctor = doctors.find((d: Doctor) => d.id === firstAdmission.doctorId);
-                          const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                          
-                          return (
-                            <React.Fragment key={baseId}>
-                              <TableRow className="border-b-2 border-gray-200">
-                                <TableCell rowSpan={sortedAdmissions.length} className="font-medium align-middle text-center border-r">
-                                  {baseId}
-                                </TableCell>
-                                <TableCell rowSpan={sortedAdmissions.length} className="align-middle text-center border-r">
-                                  {doctorName}
-                                </TableCell>
-                                <TableCell className="border-r">
-                                  {(() => {
-                                    const admission = sortedAdmissions[0];
-                                    const wardDisplay = admission.wardType;
-                                    return admission.roomNumber 
-                                      ? `${wardDisplay} (${admission.roomNumber})`
-                                      : wardDisplay;
-                                  })()}
-                                </TableCell>
-                                <TableCell>
-                                  {(() => {
-                                    const date = new Date(sortedAdmissions[0].admissionDate);
-                                    return date.toLocaleString('en-IN', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  })()}
-                                </TableCell>
-                                <TableCell>
-                                  {sortedAdmissions[0].dischargeDate ? (() => {
-                                    const date = new Date(sortedAdmissions[0].dischargeDate);
-                                    return date.toLocaleString('en-IN', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  })() : "N/A"}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge 
-                                    className={
-                                      sortedAdmissions[0].status === 'admitted' 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : sortedAdmissions[0].status === 'discharged'
-                                        ? 'bg-gray-100 text-gray-800'
-                                        : sortedAdmissions[0].status === 'room updated'
-                                        ? 'bg-blue-100 text-blue-800'
-                                        : 'bg-orange-100 text-orange-800'
-                                    }
-                                    variant="secondary"
-                                  >
-                                    {sortedAdmissions[0].status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell rowSpan={sortedAdmissions.length} className="align-middle text-center">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => {
-                                      // Toggle expanded view for this group
-                                      console.log('View details for', baseId);
-                                    }}
-                                  >
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                              {/* Additional rows for same admission ID */}
-                              {sortedAdmissions.slice(1).map((admission: any, index: number) => (
-                                <TableRow key={`${baseId}-${index + 1}`} className="border-0">
-                                  <TableCell className="border-r">
-                                    {(() => {
-                                      const wardDisplay = admission.wardType;
-                                      return admission.roomNumber 
-                                        ? `${wardDisplay} (${admission.roomNumber})`
-                                        : wardDisplay;
-                                    })()}
-                                  </TableCell>
-                                  <TableCell>
-                                    {(() => {
-                                      const date = new Date(admission.admissionDate);
-                                      return date.toLocaleString('en-IN', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      });
-                                    })()}
-                                  </TableCell>
-                                  <TableCell>
-                                    {admission.dischargeDate ? (() => {
-                                      const date = new Date(admission.dischargeDate);
-                                      return date.toLocaleString('en-IN', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      });
-                                    })() : "N/A"}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge 
-                                      className={
-                                        admission.status === 'admitted' 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : admission.status === 'discharged'
-                                          ? 'bg-gray-100 text-gray-800'
-                                          : admission.status === 'room updated'
-                                          ? 'bg-blue-100 text-blue-800'
-                                          : 'bg-orange-100 text-orange-800'
-                                      }
-                                      variant="secondary"
-                                    >
-                                      {admission.status}
-                                    </Badge>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </React.Fragment>
-                          );
-                        });
-                      })()}
+                      {admissions.map((admission: any) => (
+                        <TableRow key={admission.id}>
+                          <TableCell className="font-medium">{admission.admissionId}</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                              return doctor ? doctor.name : "No Doctor Assigned";
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const wardDisplay = admission.wardType;
+                              return admission.roomNumber 
+                                ? `${wardDisplay} (${admission.roomNumber})`
+                                : wardDisplay;
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            (() => {
+                              const date = new Date(admission.admissionDate);
+                              return date.toLocaleString('en-IN', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              });
+                            })()
+                          }</TableCell>
+                          <TableCell>{
+                            admission.dischargeDate ? (() => {
+                              const date = new Date(admission.dischargeDate);
+                              return date.toLocaleString('en-IN', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              });
+                            })() : "N/A"
+                          }</TableCell>
+                          <TableCell>
+                            <Badge 
+                              className={
+                                admission.status === 'admitted' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : admission.status === 'discharged'
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : admission.status === 'room updated'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-orange-100 text-orange-800'
+                              }
+                              variant="secondary"
+                            >
+                              {admission.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                console.log('View details for', admission.admissionId);
+                              }}
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 ) : (
