@@ -51,7 +51,7 @@ export default function PatientDetail() {
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
 
@@ -344,8 +344,8 @@ export default function PatientDetail() {
   };
 
   const onAdmissionSubmit = (data: any) => {
-    // Validate required fields (reason is now optional)
-    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'dailyCost'];
+    // Validate required fields (including reason which is required in database)
+    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'reason', 'dailyCost'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
     
     if (missingFields.length > 0) {
@@ -444,7 +444,7 @@ export default function PatientDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
       setIsPaymentDialogOpen(false);
-      setPaymentAmount(0);
+      setPaymentAmount("");
       toast({
         title: "Payment added successfully",
         description: "The payment has been recorded.",
@@ -725,11 +725,24 @@ export default function PatientDetail() {
         {/* Financial Monitoring */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              Financial Summary
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                Financial Summary
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setPaymentAmount("");
+                  setIsPaymentDialogOpen(true);
+                }}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Add Payment
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -760,19 +773,7 @@ export default function PatientDetail() {
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-sm text-muted-foreground">Paid</p>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setPaymentAmount(0);
-                      setIsPaymentDialogOpen(true);
-                    }}
-                    className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+                <p className="text-sm text-muted-foreground mb-1">Paid</p>
                 <p className="text-2xl font-bold text-green-700">
                   ₹{(() => {
                     // Get all admissions for this patient (including discharged ones)
@@ -1638,7 +1639,7 @@ export default function PatientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label>Reason for Admission</Label>
+              <Label>Reason for Admission *</Label>
               <Input
                 {...admissionForm.register("reason")}
                 placeholder="Brief reason for admission"
@@ -1820,7 +1821,7 @@ export default function PatientDetail() {
                   min="0"
                   step="0.01"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
                   placeholder="Enter payment amount"
                   data-testid="input-payment-amount"
                 />
@@ -1874,14 +1875,15 @@ export default function PatientDetail() {
             <Button
               onClick={() => {
                 const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
-                if (selectedAdmissionId && paymentAmount > 0) {
+                const amount = parseFloat(paymentAmount);
+                if (selectedAdmissionId && amount > 0) {
                   addPaymentMutation.mutate({ 
                     admissionId: selectedAdmissionId, 
-                    amount: paymentAmount 
+                    amount: amount 
                   });
                 }
               }}
-              disabled={addPaymentMutation.isPending || paymentAmount <= 0}
+              disabled={addPaymentMutation.isPending || !paymentAmount || parseFloat(paymentAmount) <= 0}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {addPaymentMutation.isPending ? "Adding Payment..." : "Add Payment"}
