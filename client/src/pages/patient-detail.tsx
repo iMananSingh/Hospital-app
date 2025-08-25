@@ -52,6 +52,7 @@ export default function PatientDetail() {
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
 
@@ -344,8 +345,8 @@ export default function PatientDetail() {
   };
 
   const onAdmissionSubmit = (data: any) => {
-    // Validate required fields (including reason which is required in database)
-    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'reason', 'dailyCost'];
+    // Validate required fields (reason is now optional)
+    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'dailyCost'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
     
     if (missingFields.length > 0) {
@@ -445,6 +446,7 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
+      setSelectedAdmissionForPayment("");
       toast({
         title: "Payment added successfully",
         description: "The payment has been recorded.",
@@ -736,6 +738,7 @@ export default function PatientDetail() {
                 size="sm"
                 onClick={() => {
                   setPaymentAmount("");
+                  setSelectedAdmissionForPayment("");
                   setIsPaymentDialogOpen(true);
                 }}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -1639,10 +1642,10 @@ export default function PatientDetail() {
             </div>
 
             <div className="space-y-2">
-              <Label>Reason for Admission *</Label>
+              <Label>Reason for Admission</Label>
               <Input
                 {...admissionForm.register("reason")}
-                placeholder="Brief reason for admission"
+                placeholder="Brief reason for admission (optional)"
                 data-testid="input-admission-reason"
               />
             </div>
@@ -1845,7 +1848,10 @@ export default function PatientDetail() {
               {admissions && admissions.length > 0 && (
                 <div className="space-y-2">
                   <Label>Add Payment To</Label>
-                  <Select defaultValue={admissions.find((adm: any) => adm.status === 'admitted')?.id || admissions[0]?.id}>
+                  <Select 
+                    value={selectedAdmissionForPayment || admissions.find((adm: any) => adm.status === 'admitted')?.id || admissions[0]?.id}
+                    onValueChange={setSelectedAdmissionForPayment}
+                  >
                     <SelectTrigger data-testid="select-admission">
                       <SelectValue />
                     </SelectTrigger>
@@ -1874,7 +1880,7 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
-                const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
+                const selectedAdmissionId = selectedAdmissionForPayment || admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(paymentAmount);
                 if (selectedAdmissionId && amount > 0) {
                   addPaymentMutation.mutate({ 

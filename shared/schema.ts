@@ -168,7 +168,7 @@ export const admissions = sqliteTable("admissions", {
   admissionDate: text("admission_date").notNull(),
   dischargeDate: text("discharge_date"),
   status: text("status").notNull().default("admitted"), // admitted, discharged, transferred
-  reason: text("reason").notNull(),
+  reason: text("reason"),
   diagnosis: text("diagnosis"),
   notes: text("notes"),
   dailyCost: real("daily_cost").notNull().default(0),

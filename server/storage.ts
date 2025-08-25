@@ -415,8 +415,15 @@ export class SqliteStorage implements IStorage {
 
   private generateAdmissionId(): string {
     const year = new Date().getFullYear();
-    const count = db.select().from(schema.admissions).all().length + 1;
-    return `ADM-${year}-${count.toString().padStart(3, '0')}`;
+    try {
+      const count = db.select().from(schema.admissions).all().length + 1;
+      return `ADM-${year}-${count.toString().padStart(3, '0')}`;
+    } catch (error) {
+      console.error('Error querying admissions table:', error);
+      // Fallback to timestamp-based ID if table query fails
+      const timestamp = Date.now().toString().slice(-6);
+      return `ADM-${year}-${timestamp}`;
+    }
   }
 
   async hashPassword(password: string): Promise<string> {
