@@ -746,9 +746,14 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
+
+    // Generate IST timestamp (like discharge does)
+    const admissionDate = new Date().toISOString(); // <-- keep consistent with discharge
+
     const created = db.insert(schema.admissions).values({
       ...admission,
       admissionId,
+      admissionDate,   // explicitly set IST-based timestamp
     }).returning().get();
     
     // Increment occupied beds for the room type
@@ -767,7 +772,7 @@ export class SqliteStorage implements IStorage {
           .run();
       }
     }
-    
+
     return created;
   }
 

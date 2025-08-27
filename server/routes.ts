@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema } from "@shared/schema";
 import { getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, PathologyTestCatalog } from "./pathology-catalog";
+import { updatePatientSchema } from "../shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -141,6 +142,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(patient);
     } catch (error) {
       res.status(500).json({ message: "Failed to get patient" });
+    }
+  });
+
+
+  app.patch("/api/patients/:id", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Validate incoming data (allow partial updates)
+      const patientData = updatePatientSchema.parse(req.body);
+
+      const updated = await storage.updatePatient(id, patientData);
+
+      if (!updated) {
+        return res.status(404).json({ message: "Patient not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Patient update error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(400).json({ message: "Failed to update patient" });
     }
   });
 

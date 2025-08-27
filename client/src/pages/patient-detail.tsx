@@ -709,7 +709,7 @@ export default function PatientDetail() {
               <Button 
                 onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-pathology-tests"
               >
                 <TestTube className="h-4 w-4" />
@@ -744,7 +744,7 @@ export default function PatientDetail() {
                   setIsServiceDialogOpen(true);
                 }}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
                 data-testid="button-add-medical-service"
               >
                 <Plus className="h-4 w-4" />

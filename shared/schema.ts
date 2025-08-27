@@ -356,3 +356,9 @@ export type RoomType = typeof roomTypes.$inferSelect;
 export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
 export type Room = typeof rooms.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
+
+
+
+// Update schema for PATCH (partial updates allowed)
+export const updatePatientSchema = insertPatientSchema.partial();
+export type UpdatePatient = z.infer<typeof updatePatientSchema>;

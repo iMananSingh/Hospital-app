@@ -74,11 +74,52 @@ export default function Patients() {
     },
   });
 
+  const updatePatientMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      // Remove empty string fields
+      const filteredUpdates = Object.fromEntries(
+        Object.entries(updates).filter(
+          ([_, value]) => value !== "" && value !== undefined && value !== null
+        )
+      );
+
+      const response = await fetch(`/api/patients/${id}`, {
+        method: "PATCH", // PATCH for partial updates
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(filteredUpdates),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update patient");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      setIsEditPatientOpen(false);
+      toast({
+        title: "Patient updated successfully",
+        description: "The patient record has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error updating patient",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
       name: "",
-      age: 0,
+      age: undefined,
       gender: "",
       phone: "",
       address: "",
@@ -87,6 +128,21 @@ export default function Patients() {
     },
     mode: "onChange",
   });
+
+  const editForm = useForm({
+    resolver: zodResolver(insertPatientSchema),
+    defaultValues: {
+      name: "",
+      age: undefined,
+      gender: "",
+      phone: "",
+      address: "",
+      email: "",
+      emergencyContact: "",
+    },
+    mode: "onChange",
+  });
+
 
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
@@ -171,7 +227,7 @@ export default function Patients() {
                     <TableHead>Age/Gender</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Registered</TableHead>
-                    <TableHead>Status</TableHead>
+                    {/* <TableHead>Status</TableHead> */}
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -193,14 +249,14 @@ export default function Patients() {
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
                         {formatDate(patient.createdAt)}
                       </TableCell>
-                      <TableCell>
+                      {/* <TableCell>
                         <Badge 
                           variant={patient.isActive ? "default" : "secondary"}
                           data-testid={`patient-status-${patient.id}`}
                         >
                           {patient.isActive ? "Active" : "Inactive"}
                         </Badge>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button 
@@ -216,9 +272,9 @@ export default function Patients() {
                             size="sm"
                             onClick={() => {
                               setSelectedPatient(patient);
+                              editForm.reset(patient);   // prefill fields
                               setIsEditPatientOpen(true);
                             }}
-                            data-testid={`button-edit-${patient.id}`}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -235,6 +291,7 @@ export default function Patients() {
 
       {/* New Patient Dialog */}
       <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
+
         <DialogContent className="max-w-2xl" data-testid="new-patient-dialog">
           <DialogHeader>
             <DialogTitle>Register New Patient</DialogTitle>
@@ -359,6 +416,7 @@ export default function Patients() {
         </DialogContent>
       </Dialog>
 
+
       {/* Edit Patient Dialog */}
       <Dialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen}>
         <DialogContent className="max-w-2xl" data-testid="edit-patient-dialog">
@@ -366,32 +424,141 @@ export default function Patients() {
             <DialogTitle>Edit Patient: {selectedPatient?.name}</DialogTitle>
           </DialogHeader>
           
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Patient editing functionality is available in the patient detail page.
-              <br />
-              Click "View Patient Details" to access the full patient profile and management options.
-            </p>
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditPatientOpen(false)}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedPatient) {
-                  navigate(`/patients/${selectedPatient.id}`);
-                  setIsEditPatientOpen(false);
+          <form
+            onSubmit={editForm.handleSubmit((data) => {
+              if (!selectedPatient) return;
+              updatePatientMutation.mutate(
+                { id: selectedPatient.id, updates: data },
+                {
+                  onSuccess: () => {
+                    setIsEditPatientOpen(false);
+                    editForm.reset();
+                  },
                 }
-              }}
-            >
-              View Patient Details
-            </Button>
-          </div>
+              );
+            })}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  {...editForm.register("name")}
+                  placeholder="Enter patient's full name"
+                />
+                {editForm.formState.errors.name && (
+                  <p className="text-sm text-destructive">
+                    {editForm.formState.errors.name.message}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  {...editForm.register("age", { valueAsNumber: true })}
+                  placeholder="Enter age"
+                />
+                {editForm.formState.errors.age && (
+                  <p className="text-sm text-destructive">
+                    {editForm.formState.errors.age.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender *</Label>
+                <Select
+                  value={editForm.watch("gender")}
+                  onValueChange={(value) =>
+                    editForm.setValue("gender", value, { shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editForm.formState.errors.gender && (
+                  <p className="text-sm text-destructive">
+                    {editForm.formState.errors.gender.message}
+                  </p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  {...editForm.register("phone")}
+                  placeholder="+91 XXXXX XXXXX"
+                />
+                {editForm.formState.errors.phone && (
+                  <p className="text-sm text-destructive">
+                    {editForm.formState.errors.phone.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                {...editForm.register("email")}
+                placeholder="patient@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                {...editForm.register("address")}
+                placeholder="Enter complete address"
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input
+                id="emergencyContact"
+                {...editForm.register("emergencyContact")}
+                placeholder="+91 XXXXX XXXXX"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditPatientOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  updatePatientMutation.isPending ||
+                  !editForm.formState.isValid
+                }
+                className="bg-medical-blue hover:bg-medical-blue/90"
+              >
+                {updatePatientMutation.isPending ? "Saving..." : "Update Patient"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
