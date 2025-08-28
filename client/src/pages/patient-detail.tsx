@@ -38,7 +38,7 @@ import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schem
 import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Patient, PatientService, Admission, Doctor } from "@shared/schema";
+import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 
 export default function PatientDetail() {
   const params = useParams();
@@ -127,6 +127,37 @@ export default function PatientDetail() {
     refetchInterval: 5000, // Refetch every 5 seconds to get latest orders
   });
 
+  // Fetch admission events for detailed history
+  const { data: admissionEventsMap = {} } = useQuery({
+    queryKey: ["/api/admission-events", patientId],
+    queryFn: async () => {
+      const eventsMap: Record<string, AdmissionEvent[]> = {};
+      
+      if (admissions && admissions.length > 0) {
+        await Promise.all(
+          admissions.map(async (admission: Admission) => {
+            try {
+              const response = await fetch(`/api/admissions/${admission.id}/events`, {
+                headers: {
+                  "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+                },
+              });
+              if (response.ok) {
+                const events = await response.json();
+                eventsMap[admission.id] = events;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch events for admission ${admission.id}:`, error);
+            }
+          })
+        );
+      }
+      
+      return eventsMap;
+    },
+    enabled: !!admissions && admissions.length > 0,
+  });
+
   // Fetch doctors for service assignment
   const { data: doctors = [] } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
@@ -161,8 +192,8 @@ export default function PatientDetail() {
     defaultValues: {
       patientId: patientId,
       doctorId: "",
-      wardType: "",
-      roomNumber: "",
+      currentWardType: "",
+      currentRoomNumber: "",
       admissionDate: "", // Will be set dynamically when dialog opens
       reason: "",
       diagnosis: "",
@@ -346,7 +377,7 @@ export default function PatientDetail() {
 
   const onAdmissionSubmit = (data: any) => {
     // Validate required fields (reason is now optional)
-    const requiredFields = ['doctorId', 'wardType', 'admissionDate', 'dailyCost'];
+    const requiredFields = ['doctorId', 'currentWardType', 'admissionDate', 'dailyCost'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
     
     if (missingFields.length > 0) {
@@ -367,55 +398,24 @@ export default function PatientDetail() {
 
   const dischargePatientMutation = useMutation({
     mutationFn: async (currentAdmissionId: string) => {
-      // First, get current admission details
-      const currentAdmission = admissions?.find((adm: any) => adm.id === currentAdmissionId);
-      if (!currentAdmission) throw new Error("Current admission not found");
-      
-      // Create new discharge admission entry
-      const dischargeData = {
-        ...currentAdmission,
-        status: "discharged",
-        dischargeDate: new Date().toISOString(),
-        admissionId: `ADM-${Date.now()}-D`, // Unique ID for discharge entry
-      };
-      
-      // Remove fields that shouldn't be copied
-      delete dischargeData.id;
-      delete dischargeData.createdAt;
-      delete dischargeData.updatedAt;
-      
-      const response = await fetch("/api/admissions", {
+      const response = await fetch(`/api/admissions/${currentAdmissionId}/discharge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(dischargeData),
       });
       
-      if (!response.ok) throw new Error("Failed to create discharge record");
-      
-      // Update the current admission to discharged status as well
-      await fetch(`/api/admissions/${currentAdmissionId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-        body: JSON.stringify({ 
-          status: "discharged",
-          dischargeDate: new Date().toISOString() 
-        }),
-      });
-      
+      if (!response.ok) throw new Error("Failed to discharge patient");
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admission-events"] });
       setIsDischargeDialogOpen(false);
       toast({
         title: "Patient discharged successfully",
-        description: "The patient has been discharged and a new record has been created.",
+        description: "The patient has been discharged and the event has been recorded.",
       });
     },
   });
@@ -425,54 +425,29 @@ export default function PatientDetail() {
       const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
       if (!currentAdmission) throw new Error("No active admission found");
       
-      // Create new room transfer admission entry
-      const roomUpdateData = {
-        ...currentAdmission,
-        wardType: data.wardType,
-        roomNumber: data.roomNumber,
-        status: "admitted", // Keep as admitted but in new room
-        admissionId: `ADM-${Date.now()}-RT`, // Unique ID for room transfer entry
-        notes: `Room transferred from ${currentAdmission.wardType} (${currentAdmission.roomNumber}) to ${data.wardType} (${data.roomNumber})`,
-      };
-      
-      // Remove fields that shouldn't be copied
-      delete roomUpdateData.id;
-      delete roomUpdateData.createdAt;
-      delete roomUpdateData.updatedAt;
-      
-      const response = await fetch("/api/admissions", {
+      const response = await fetch(`/api/admissions/${currentAdmission.id}/transfer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(roomUpdateData),
-      });
-      
-      if (!response.ok) throw new Error("Failed to create room transfer record");
-      
-      // Update the current admission with transfer status
-      await fetch(`/api/admissions/${currentAdmission.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
         body: JSON.stringify({
-          status: "room updated",
-          notes: `Transferred to ${data.wardType} (${data.roomNumber})`
+          roomNumber: data.roomNumber,
+          wardType: data.wardType,
         }),
       });
       
+      if (!response.ok) throw new Error("Failed to transfer room");
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admission-events"] });
       setIsRoomUpdateDialogOpen(false);
       roomUpdateForm.reset();
       toast({
         title: "Room transfer completed",
-        description: "Patient has been transferred to the new room and a transfer record has been created.",
+        description: "Patient has been transferred to the new room.",
       });
     },
   });
@@ -656,7 +631,7 @@ export default function PatientDetail() {
                 <p className="font-medium">
                   {(() => {
                     const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                    return currentAdmission?.roomNumber || "N/A";
+                    return currentAdmission?.currentRoomNumber || "N/A";
                   })()}
                 </p>
               </div>
@@ -1068,97 +1043,122 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {admissions && admissions.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Admission ID</TableHead>
-                        <TableHead>Doctor</TableHead>
-                        <TableHead>Ward</TableHead>
-                        <TableHead>Admission Date</TableHead>
-                        <TableHead>Discharge Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {admissions.map((admission: any) => (
-                        <TableRow key={admission.id}>
-                          <TableCell className="font-medium">{admission.admissionId}</TableCell>
-                          <TableCell>{
-                            (() => {
-                              const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
-                              return doctor ? doctor.name : "No Doctor Assigned";
-                            })()
-                          }</TableCell>
-                          <TableCell>{
-                            (() => {
-                              const wardDisplay = admission.wardType;
-                              return admission.roomNumber 
-                                ? `${wardDisplay} (${admission.roomNumber})`
-                                : wardDisplay;
-                            })()
-                          }</TableCell>
-                          <TableCell>{
-                            (() => {
-                              const date = new Date(admission.admissionDate);
-                              return date.toLocaleString('en-IN', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                              });
-                            })()
-                          }</TableCell>
-                          <TableCell>{
-                            admission.dischargeDate ? (() => {
-                              const date = new Date(admission.dischargeDate);
-                              return date.toLocaleString('en-IN', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                              });
-                            })() : "N/A"
-                          }</TableCell>
-                          <TableCell>
-                            <Badge 
-                              className={
-                                admission.status === 'admitted' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : admission.status === 'discharged'
-                                  ? 'bg-gray-100 text-gray-800'
-                                  : admission.status === 'room updated'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-orange-100 text-orange-800'
-                              }
-                              variant="secondary"
-                            >
-                              {admission.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => {
-                                console.log('View details for', admission.admissionId);
-                              }}
-                            >
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-6">
+                    {admissions.map((admission: any) => {
+                      const events = admissionEventsMap[admission.id] || [];
+                      const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                      
+                      return (
+                        <div key={admission.id} className="border rounded-lg p-4">
+                          {/* Admission Episode Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                              <h3 className="font-semibold text-lg">{admission.admissionId}</h3>
+                              <Badge 
+                                className={
+                                  admission.status === 'admitted' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }
+                                variant="secondary"
+                              >
+                                {admission.status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {doctor ? doctor.name : "No Doctor Assigned"}
+                            </div>
+                          </div>
+                          
+                          {/* Admission Summary */}
+                          <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Current Room:</span>
+                              <div className="font-medium">
+                                {admission.currentWardType && admission.currentRoomNumber 
+                                  ? `${admission.currentWardType} (${admission.currentRoomNumber})`
+                                  : "Not assigned"
+                                }
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Admission Date:</span>
+                              <div className="font-medium">
+                                {new Date(admission.admissionDate).toLocaleString('en-IN', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true
+                                })}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">
+                                {admission.status === 'discharged' ? 'Discharge Date:' : 'Days Admitted:'}
+                              </span>
+                              <div className="font-medium">
+                                {admission.dischargeDate ? 
+                                  new Date(admission.dischargeDate).toLocaleString('en-IN', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  }) :
+                                  Math.ceil((new Date().getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 3600 * 24))
+                                }
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Event Timeline */}
+                          {events.length > 0 && (
+                            <div>
+                              <h4 className="font-medium mb-2 text-sm text-muted-foreground">Event History:</h4>
+                              <div className="space-y-2">
+                                {events.map((event: AdmissionEvent) => (
+                                  <div key={event.id} className="flex items-start gap-3 text-sm">
+                                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                                      event.eventType === 'admit' ? 'bg-green-500' :
+                                      event.eventType === 'room_change' ? 'bg-blue-500' :
+                                      'bg-gray-500'
+                                    }`} />
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium capitalize">
+                                          {event.eventType.replace('_', ' ')}
+                                          {event.roomNumber && event.wardType && 
+                                            ` - ${event.wardType} (${event.roomNumber})`
+                                          }
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                          {new Date(event.eventTime).toLocaleString('en-IN', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                          })}
+                                        </span>
+                                      </div>
+                                      {event.notes && (
+                                        <div className="text-muted-foreground text-xs mt-1">
+                                          {event.notes}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-sm text-muted-foreground">No admissions recorded</p>
@@ -1664,10 +1664,10 @@ export default function PatientDetail() {
               <div className="space-y-2">
                 <Label>Ward/Room Type *</Label>
                 <Select 
-                  value={admissionForm.watch("wardType")}
+                  value={admissionForm.watch("currentWardType")}
                   onValueChange={(value) => {
-                    admissionForm.setValue("wardType", value);
-                    admissionForm.setValue("roomNumber", ""); // Clear room selection when ward type changes
+                    admissionForm.setValue("currentWardType", value);
+                    admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
                     // Auto-set daily cost based on selected room type
                     const selectedRoomType = roomTypes.find((rt: any) => rt.name === value);
                     if (selectedRoomType) {
@@ -1694,17 +1694,17 @@ export default function PatientDetail() {
               <div className="space-y-2">
                 <Label>Room Number *</Label>
                 <Select
-                  value={admissionForm.watch("roomNumber")}
-                  onValueChange={(value) => admissionForm.setValue("roomNumber", value)}
-                  disabled={!admissionForm.watch("wardType")}
+                  value={admissionForm.watch("currentRoomNumber")}
+                  onValueChange={(value) => admissionForm.setValue("currentRoomNumber", value)}
+                  disabled={!admissionForm.watch("currentWardType")}
                   data-testid="select-room-number"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={admissionForm.watch("wardType") ? "Select available room" : "Select ward type first"} />
+                    <SelectValue placeholder={admissionForm.watch("currentWardType") ? "Select available room" : "Select ward type first"} />
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
-                      const selectedWardType = admissionForm.watch("wardType");
+                      const selectedWardType = admissionForm.watch("currentWardType");
                       const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
                       
                       if (!selectedRoomType) return null;
@@ -1762,8 +1762,8 @@ export default function PatientDetail() {
                   {...admissionForm.register("dailyCost", { valueAsNumber: true })}
                   placeholder="Daily ward cost"
                   data-testid="input-daily-cost"
-                  readOnly={!!admissionForm.watch("wardType")}
-                  className={admissionForm.watch("wardType") ? "bg-gray-50" : ""}
+                  readOnly={!!admissionForm.watch("currentWardType")}
+                  className={admissionForm.watch("currentWardType") ? "bg-gray-50" : ""}
                 />
               </div>
 

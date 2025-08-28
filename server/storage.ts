@@ -8,7 +8,7 @@ import type {
   Bill, InsertBill, BillItem, InsertBillItem,
   PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest, 
   PatientService, InsertPatientService, Admission, InsertAdmission,
-  AuditLog, InsertAuditLog
+  AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog
 } from "@shared/schema";
 import { eq, desc, and, like, count, sum } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -174,19 +174,34 @@ async function initializeDatabase() {
         admission_id TEXT NOT NULL UNIQUE,
         patient_id TEXT NOT NULL REFERENCES patients(id),
         doctor_id TEXT REFERENCES doctors(id),
-        room_number TEXT,
-        ward_type TEXT,
+        current_room_id TEXT,
+        current_ward_type TEXT,
+        current_room_number TEXT,
         admission_date TEXT NOT NULL,
         discharge_date TEXT,
         status TEXT NOT NULL DEFAULT 'admitted',
-        reason TEXT NOT NULL,
+        reason TEXT,
         diagnosis TEXT,
         notes TEXT,
         daily_cost REAL NOT NULL DEFAULT 0,
         total_cost REAL NOT NULL DEFAULT 0,
         initial_deposit REAL NOT NULL DEFAULT 0,
+        additional_payments REAL NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS admission_events (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        admission_id TEXT NOT NULL REFERENCES admissions(id),
+        event_type TEXT NOT NULL,
+        event_time TEXT NOT NULL DEFAULT (datetime('now')),
+        room_id TEXT,
+        room_number TEXT,
+        ward_type TEXT,
+        notes TEXT,
+        created_by TEXT REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
       CREATE TABLE IF NOT EXISTS room_types (
@@ -242,6 +257,40 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE room_types ADD COLUMN occupied_beds INTEGER DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add additional_payments column to admissions table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN additional_payments REAL DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add new columns to admissions table for current room tracking
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN current_room_id TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN current_ward_type TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN current_room_number TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -376,6 +425,12 @@ export interface IStorage {
   getAdmissions(patientId?: string): Promise<Admission[]>;
   getAdmissionById(id: string): Promise<Admission | undefined>;
   updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission | undefined>;
+  
+  // Admission Events
+  createAdmissionEvent(event: InsertAdmissionEvent): Promise<AdmissionEvent>;
+  getAdmissionEvents(admissionId: string): Promise<AdmissionEvent[]>;
+  transferRoom(admissionId: string, roomData: { roomNumber: string, wardType: string }, userId: string): Promise<Admission | undefined>;
+  dischargePatient(admissionId: string, userId: string): Promise<Admission | undefined>;
 
   // Dashboard stats
   getDashboardStats(): Promise<any>;
@@ -746,34 +801,48 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
+    const admissionDate = new Date().toISOString();
 
-    // Generate IST timestamp (like discharge does)
-    const admissionDate = new Date().toISOString(); // <-- keep consistent with discharge
-
-    const created = db.insert(schema.admissions).values({
-      ...admission,
-      admissionId,
-      admissionDate,   // explicitly set IST-based timestamp
-    }).returning().get();
-    
-    // Increment occupied beds for the room type
-    if (admission.wardType) {
-      const roomType = db.select().from(schema.roomTypes)
-        .where(eq(schema.roomTypes.name, admission.wardType))
-        .get();
+    return db.transaction((tx) => {
+      // Create the admission episode
+      const created = tx.insert(schema.admissions).values({
+        ...admission,
+        admissionId,
+        admissionDate,
+        // Map the wardType to current fields
+        currentWardType: admission.currentWardType,
+        currentRoomNumber: admission.currentRoomNumber,
+      }).returning().get();
       
-      if (roomType) {
-        db.update(schema.roomTypes)
-          .set({ 
-            occupiedBeds: (roomType.occupiedBeds || 0) + 1,
-            updatedAt: new Date().toISOString()
-          })
-          .where(eq(schema.roomTypes.id, roomType.id))
-          .run();
+      // Create the initial admission event
+      tx.insert(schema.admissionEvents).values({
+        admissionId: created.id,
+        eventType: "admit",
+        eventTime: admissionDate,
+        roomNumber: admission.currentRoomNumber,
+        wardType: admission.currentWardType,
+        notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
+      }).run();
+      
+      // Increment occupied beds for the room type
+      if (admission.currentWardType) {
+        const roomType = tx.select().from(schema.roomTypes)
+          .where(eq(schema.roomTypes.name, admission.currentWardType))
+          .get();
+        
+        if (roomType) {
+          tx.update(schema.roomTypes)
+            .set({ 
+              occupiedBeds: (roomType.occupiedBeds || 0) + 1,
+              updatedAt: new Date().toISOString()
+            })
+            .where(eq(schema.roomTypes.id, roomType.id))
+            .run();
+        }
       }
-    }
 
-    return created;
+      return created;
+    });
   }
 
   async getAdmissions(patientId?: string): Promise<Admission[]> {
@@ -808,9 +877,9 @@ export class SqliteStorage implements IStorage {
     // Handle bed count changes when status changes
     if (currentAdmission && admission.status === 'discharged' && currentAdmission.status === 'admitted') {
       // Patient is being discharged - decrement occupied beds
-      if (currentAdmission.wardType) {
+      if (currentAdmission.currentWardType) {
         const roomType = db.select().from(schema.roomTypes)
-          .where(eq(schema.roomTypes.name, currentAdmission.wardType))
+          .where(eq(schema.roomTypes.name, currentAdmission.currentWardType))
           .get();
         
         if (roomType && roomType.occupiedBeds > 0) {
@@ -935,6 +1004,96 @@ export class SqliteStorage implements IStorage {
       .where(eq(schema.rooms.id, roomId))
       .returning()
       .get();
+  }
+
+  // Admission Events
+  async createAdmissionEvent(event: InsertAdmissionEvent): Promise<AdmissionEvent> {
+    const created = db.insert(schema.admissionEvents).values(event).returning().get();
+    return created;
+  }
+
+  async getAdmissionEvents(admissionId: string): Promise<AdmissionEvent[]> {
+    return db.select().from(schema.admissionEvents)
+      .where(eq(schema.admissionEvents.admissionId, admissionId))
+      .orderBy(schema.admissionEvents.eventTime)
+      .all();
+  }
+
+  async transferRoom(admissionId: string, roomData: { roomNumber: string, wardType: string }, userId: string): Promise<Admission | undefined> {
+    return db.transaction((tx) => {
+      // Update the admission's current room
+      const updated = tx.update(schema.admissions)
+        .set({ 
+          currentRoomNumber: roomData.roomNumber,
+          currentWardType: roomData.wardType,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(schema.admissions.id, admissionId))
+        .returning().get();
+      
+      // Create room change event
+      tx.insert(schema.admissionEvents).values({
+        admissionId: admissionId,
+        eventType: "room_change",
+        eventTime: new Date().toISOString(),
+        roomNumber: roomData.roomNumber,
+        wardType: roomData.wardType,
+        notes: `Room transferred to ${roomData.wardType} - Room ${roomData.roomNumber}`,
+        createdBy: userId,
+      }).run();
+      
+      return updated;
+    });
+  }
+
+  async dischargePatient(admissionId: string, userId: string): Promise<Admission | undefined> {
+    return db.transaction((tx) => {
+      const currentAdmission = tx.select().from(schema.admissions)
+        .where(eq(schema.admissions.id, admissionId))
+        .get();
+        
+      if (!currentAdmission) return undefined;
+      
+      const dischargeDate = new Date().toISOString();
+      
+      // Update admission status
+      const updated = tx.update(schema.admissions)
+        .set({ 
+          status: "discharged",
+          dischargeDate: dischargeDate,
+          updatedAt: dischargeDate
+        })
+        .where(eq(schema.admissions.id, admissionId))
+        .returning().get();
+      
+      // Create discharge event
+      tx.insert(schema.admissionEvents).values({
+        admissionId: admissionId,
+        eventType: "discharge",
+        eventTime: dischargeDate,
+        notes: `Patient discharged`,
+        createdBy: userId,
+      }).run();
+      
+      // Decrement occupied beds
+      if (currentAdmission.currentWardType) {
+        const roomType = tx.select().from(schema.roomTypes)
+          .where(eq(schema.roomTypes.name, currentAdmission.currentWardType))
+          .get();
+        
+        if (roomType && roomType.occupiedBeds > 0) {
+          tx.update(schema.roomTypes)
+            .set({ 
+              occupiedBeds: roomType.occupiedBeds - 1,
+              updatedAt: new Date().toISOString()
+            })
+            .where(eq(schema.roomTypes.id, roomType.id))
+            .run();
+        }
+      }
+      
+      return updated;
+    });
   }
 }
 

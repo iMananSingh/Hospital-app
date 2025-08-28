@@ -628,6 +628,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admission Events Routes
+  app.get("/api/admissions/:id/events", authenticateToken, async (req, res) => {
+    try {
+      const events = await storage.getAdmissionEvents(req.params.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching admission events:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admissions/:id/transfer", authenticateToken, async (req: any, res) => {
+    try {
+      const { roomNumber, wardType } = req.body;
+      const updated = await storage.transferRoom(req.params.id, { roomNumber, wardType }, req.user.id);
+      if (!updated) {
+        return res.status(404).json({ error: "Admission not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error transferring room:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admissions/:id/discharge", authenticateToken, async (req: any, res) => {
+    try {
+      const updated = await storage.dischargePatient(req.params.id, req.user.id);
+      if (!updated) {
+        return res.status(404).json({ error: "Admission not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error discharging patient:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

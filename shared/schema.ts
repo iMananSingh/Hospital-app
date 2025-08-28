@@ -157,17 +157,18 @@ export const patientServices = sqliteTable("patient_services", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Patient Admissions
+// Patient Admissions - One record per admission episode
 export const admissions = sqliteTable("admissions", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   admissionId: text("admission_id").notNull().unique(),
   patientId: text("patient_id").notNull().references(() => patients.id),
   doctorId: text("doctor_id").references(() => doctors.id),
-  roomNumber: text("room_number"),
-  wardType: text("ward_type"), // general, private, icu, emergency
+  currentRoomId: text("current_room_id"),
+  currentWardType: text("current_ward_type"),
+  currentRoomNumber: text("current_room_number"),
   admissionDate: text("admission_date").notNull(),
   dischargeDate: text("discharge_date"),
-  status: text("status").notNull().default("admitted"), // admitted, discharged, transferred
+  status: text("status").notNull().default("admitted"), // admitted, discharged
   reason: text("reason"),
   diagnosis: text("diagnosis"),
   notes: text("notes"),
@@ -177,6 +178,20 @@ export const admissions = sqliteTable("admissions", {
   additionalPayments: real("additional_payments").notNull().default(0),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Admission Events - History log for each admission episode
+export const admissionEvents = sqliteTable("admission_events", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  admissionId: text("admission_id").notNull().references(() => admissions.id),
+  eventType: text("event_type").notNull(), // admit, room_change, discharge
+  eventTime: text("event_time").notNull().default(sql`(datetime('now'))`),
+  roomId: text("room_id"),
+  roomNumber: text("room_number"),
+  wardType: text("ward_type"),
+  notes: text("notes"),
+  createdBy: text("created_by").references(() => users.id),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 // Audit log for tracking all changes
@@ -297,11 +312,16 @@ export const insertAdmissionSchema = createInsertSchema(admissions).omit({
 }).extend({
   patientId: z.string().min(1, "Patient is required"),
   doctorId: z.string().min(1, "Doctor is required"),
-  wardType: z.string().min(1, "Ward type is required"),
+  currentWardType: z.string().min(1, "Ward type is required"),
   admissionDate: z.string().min(1, "Admission date is required"),
   reason: z.string().optional(),
   dailyCost: z.number().min(0, "Daily cost must be non-negative"),
   initialDeposit: z.number().min(0, "Initial deposit must be non-negative").optional(),
+});
+
+export const insertAdmissionEventSchema = createInsertSchema(admissionEvents).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit({
@@ -352,6 +372,8 @@ export type PatientService = typeof patientServices.$inferSelect;
 export type InsertPatientService = z.infer<typeof insertPatientServiceSchema>;
 export type Admission = typeof admissions.$inferSelect;
 export type InsertAdmission = z.infer<typeof insertAdmissionSchema>;
+export type AdmissionEvent = typeof admissionEvents.$inferSelect;
+export type InsertAdmissionEvent = z.infer<typeof insertAdmissionEventSchema>;
 export type RoomType = typeof roomTypes.$inferSelect;
 export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
 export type Room = typeof rooms.$inferSelect;
