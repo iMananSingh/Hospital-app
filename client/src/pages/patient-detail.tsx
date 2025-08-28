@@ -1246,56 +1246,73 @@ export default function PatientDetail() {
                       color: 'bg-blue-500'
                     });
                     
-                    // Add services
+                    // Add services with proper date normalization
                     if (services && services.length > 0) {
                       services.forEach((service: any) => {
-                        // Combine scheduled date and time for timeline
-                        const scheduledDateTime = service.scheduledTime 
-                          ? `${service.scheduledDate}T${service.scheduledTime}:00`
-                          : service.scheduledDate;
+                        // Use createdAt if available for accurate timestamp, otherwise construct from scheduled date/time
+                        let serviceDate = service.createdAt;
+                        if (!serviceDate) {
+                          serviceDate = service.scheduledTime 
+                            ? `${service.scheduledDate}T${service.scheduledTime}:00Z`
+                            : `${service.scheduledDate}T00:00:00Z`;
+                        }
+                        
+                        // Ensure we have a valid date
+                        const parsedDate = new Date(serviceDate);
+                        if (isNaN(parsedDate.getTime())) {
+                          console.warn(`Invalid service date for service ${service.id}:`, serviceDate);
+                          return; // Skip this service if date is invalid
+                        }
                         
                         timelineEvents.push({
                           id: service.id,
                           type: 'service',
                           title: service.serviceName,
-                          date: scheduledDateTime,
+                          date: serviceDate,
                           description: `Status: ${service.status}`,
-                          color: 'bg-green-500'
+                          color: 'bg-green-500',
+                          sortTimestamp: parsedDate.getTime() // Add explicit sort timestamp
                         });
                       });
                     }
                     
-                    // Add admissions
+                    // Add admissions with proper date normalization
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
+                        // Use createdAt first, then admissionDate as fallback
+                        let admissionDate = admission.createdAt || admission.admissionDate;
+                        
+                        // Ensure date has proper format for parsing
+                        if (typeof admissionDate === 'string' && !admissionDate.includes('T') && !admissionDate.includes('Z')) {
+                          admissionDate = admissionDate + 'T00:00:00Z';
+                        }
+                        
+                        const parsedDate = new Date(admissionDate);
+                        if (isNaN(parsedDate.getTime())) {
+                          console.warn(`Invalid admission date for admission ${admission.id}:`, admissionDate);
+                          return; // Skip this admission if date is invalid
+                        }
+                        
                         timelineEvents.push({
                           id: admission.id,
                           type: 'admission',
                           title: 'Patient Admission',
-                          date: admission.createdAt || admission.admissionDate, // Use createdAt for accurate timestamp
+                          date: admissionDate,
                           description: (() => {
                             // Find doctor name and format ward type
                             const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
                             const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                            const wardDisplay = admission.wardType;
-                            
-                            // Add time formatting
-                            const admissionDate = new Date(admission.admissionDate);
-                            const admissionTime = admissionDate.toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true
-                            });
+                            const wardDisplay = admission.currentWardType || admission.wardType;
                             
                             const parts = [];
                             if (admission.reason) parts.push(`Reason: ${admission.reason}`);
                             parts.push(`Doctor: ${doctorName}`);
                             parts.push(`Ward: ${wardDisplay}`);
-                            parts.push(`Room: ${admission.roomNumber || 'N/A'}`);
-                            parts.push(`Time: ${admissionTime}`);
+                            parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
                             return parts.join(' • ');
                           })(),
                           color: 'bg-orange-500',
+                          sortTimestamp: parsedDate.getTime(), // Add explicit sort timestamp
                           extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -1309,18 +1326,33 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Add pathology orders
+                    // Add pathology orders with proper date normalization
                     if (pathologyOrders && pathologyOrders.length > 0) {
                       pathologyOrders.forEach((orderData: any) => {
                         const order = orderData.order || orderData;
                         if (order && order.orderId) {
+                          // Use createdAt first, then orderedDate as fallback
+                          let orderDate = order.createdAt || order.orderedDate;
+                          
+                          // Ensure date has proper format for parsing
+                          if (typeof orderDate === 'string' && !orderDate.includes('T') && !orderDate.includes('Z')) {
+                            orderDate = orderDate + 'T00:00:00Z';
+                          }
+                          
+                          const parsedDate = new Date(orderDate);
+                          if (isNaN(parsedDate.getTime())) {
+                            console.warn(`Invalid pathology order date for order ${order.id}:`, orderDate);
+                            return; // Skip this order if date is invalid
+                          }
+                          
                           timelineEvents.push({
                             id: order.id,
                             type: 'pathology',
                             title: `Pathology Order: ${order.orderId}`,
-                            date: order.createdAt || order.orderedDate, // Use createdAt for accurate timestamp, fallback to orderedDate
+                            date: orderDate,
                             description: `Status: ${order.status} • Tests: ${orderData.tests ? orderData.tests.length : 0}`,
                             color: 'bg-purple-500',
+                            sortTimestamp: parsedDate.getTime(), // Add explicit sort timestamp
                             extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
                               year: 'numeric',
                               month: 'short',
@@ -1335,8 +1367,12 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Sort events chronologically (most recent first)
-                    timelineEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    // Sort events chronologically using explicit timestamp (most recent first)
+                    timelineEvents.sort((a, b) => {
+                      const timestampA = (a as any).sortTimestamp || new Date(a.date).getTime();
+                      const timestampB = (b as any).sortTimestamp || new Date(b.date).getTime();
+                      return timestampB - timestampA;
+                    });
                     
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
                       <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
