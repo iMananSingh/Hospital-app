@@ -1095,6 +1095,70 @@ export class SqliteStorage implements IStorage {
       return updated;
     });
   }
+
+  async getAdmissionSummary(admissionId: string): Promise<any> {
+    const admission = db.select().from(schema.admissions)
+      .where(eq(schema.admissions.id, admissionId))
+      .get();
+      
+    if (!admission) return null;
+    
+    const events = db.select().from(schema.admissionEvents)
+      .where(eq(schema.admissionEvents.admissionId, admissionId))
+      .orderBy(schema.admissionEvents.eventTime)
+      .all();
+    
+    // Calculate room-wise breakdown
+    const roomBreakdown = [];
+    const sortedEvents = events.sort((a, b) => 
+      new Date(a.eventTime).getTime() - new Date(b.eventTime).getTime()
+    );
+    
+    for (let i = 0; i < sortedEvents.length; i++) {
+      const currentEvent = sortedEvents[i];
+      const nextEvent = sortedEvents[i + 1];
+      
+      if (currentEvent.eventType === 'admit' || currentEvent.eventType === 'room_change') {
+        const startTime = new Date(currentEvent.eventTime);
+        const endTime = nextEvent 
+          ? new Date(nextEvent.eventTime) 
+          : admission.dischargeDate 
+            ? new Date(admission.dischargeDate)
+            : new Date(); // Current time if still admitted
+        
+        const days = Math.max(1, Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 3600 * 24)));
+        
+        roomBreakdown.push({
+          wardType: currentEvent.wardType,
+          roomNumber: currentEvent.roomNumber,
+          days: days,
+          startDate: startTime.toISOString(),
+          endDate: endTime.toISOString(),
+          dailyCost: admission.dailyCost,
+          totalCost: admission.dailyCost * days
+        });
+      }
+    }
+    
+    const totalDays = roomBreakdown.reduce((sum, room) => sum + room.days, 0);
+    const totalRoomCost = roomBreakdown.reduce((sum, room) => sum + room.totalCost, 0);
+    const totalPaid = (admission.initialDeposit || 0) + (admission.additionalPayments || 0);
+    const balance = totalRoomCost - totalPaid;
+    
+    return {
+      admission,
+      events,
+      roomBreakdown,
+      summary: {
+        totalDays,
+        totalRoomCost,
+        initialDeposit: admission.initialDeposit || 0,
+        additionalPayments: admission.additionalPayments || 0,
+        totalPaid,
+        balance
+      }
+    };
+  }
 }
 
 export const storage = new SqliteStorage();
