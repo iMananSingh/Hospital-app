@@ -55,6 +55,9 @@ export default function PatientDetail() {
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState<string>("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
+  const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
 
   // Fetch patient details
   const { data: patient } = useQuery<Patient>({
@@ -467,7 +470,9 @@ export default function PatientDetail() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify({ 
-          additionalPayments: newTotal
+          additionalPayments: newTotal,
+          lastPaymentDate: new Date().toISOString(),
+          lastPaymentAmount: data.amount
         }),
       });
       
@@ -487,6 +492,50 @@ export default function PatientDetail() {
     onError: () => {
       toast({
         title: "Error adding payment",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const addDiscountMutation = useMutation({
+    mutationFn: async (data: { admissionId: string, amount: number, reason: string }) => {
+      const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
+      if (!admission) throw new Error("Admission not found");
+      
+      const currentDiscounts = admission.totalDiscount || 0;
+      const newTotal = currentDiscounts + data.amount;
+      
+      const response = await fetch(`/api/admissions/${data.admissionId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ 
+          totalDiscount: newTotal,
+          lastDiscountDate: new Date().toISOString(),
+          lastDiscountAmount: data.amount,
+          lastDiscountReason: data.reason
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to add discount");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      setIsDiscountDialogOpen(false);
+      setDiscountAmount("");
+      setDiscountReason("");
+      toast({
+        title: "Discount added successfully",
+        description: "The discount has been applied.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error adding discount",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -779,18 +828,32 @@ export default function PatientDetail() {
                 </svg>
                 Financial Summary
               </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setPaymentAmount("");
-                  setSelectedAdmissionForPayment("");
-                  setIsPaymentDialogOpen(true);
-                }}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Plus className="h-4 w-4" />
-                Add Payment
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setDiscountAmount("");
+                    setDiscountReason("");
+                    setIsDiscountDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Minus className="h-4 w-4" />
+                  Add Discount
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setPaymentAmount("");
+                    setSelectedAdmissionForPayment("");
+                    setIsPaymentDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Payment
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -873,8 +936,13 @@ export default function PatientDetail() {
                     const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
                       return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
                     }, 0);
+
+                    // Calculate total discounts from all admissions
+                    const totalDiscounts = allAdmissions.reduce((sum: number, adm: any) => {
+                      return sum + (adm.totalDiscount || 0);
+                    }, 0);
                     
-                    const balance = totalCharges - totalPaid;
+                    const balance = totalCharges - totalPaid - totalDiscounts;
                     
                     return balance.toLocaleString();
                   })()}
@@ -1323,7 +1391,7 @@ export default function PatientDetail() {
                           type: 'service',
                           title: service.serviceName,
                           date: serviceNormalized.date,
-                          description: `Status: ${service.status}`,
+                          description: `Status: ${service.status} • Cost: ₹${service.price || 0}`,
                           color: 'bg-green-500',
                           sortTimestamp: serviceNormalized.timestamp,
                           rawData: { service, primaryDate } // Debug info
@@ -1419,6 +1487,42 @@ export default function PatientDetail() {
                       });
                     }
                     
+                    // Add payment and discount entries from admissions
+                    if (admissions && admissions.length > 0) {
+                      console.log("Processing payment and discount entries for timeline");
+                      admissions.forEach((admission: any) => {
+                        // Add payment entries
+                        if (admission.lastPaymentDate && admission.lastPaymentAmount) {
+                          const paymentNormalized = normalizeDate(admission.lastPaymentDate, 'payment', admission.id);
+                          
+                          timelineEvents.push({
+                            id: `payment-${admission.id}`,
+                            type: 'payment',
+                            title: 'Payment Received',
+                            date: paymentNormalized.date,
+                            description: `Amount: ₹${admission.lastPaymentAmount}`,
+                            color: 'bg-green-600',
+                            sortTimestamp: paymentNormalized.timestamp
+                          });
+                        }
+
+                        // Add discount entries  
+                        if (admission.lastDiscountDate && admission.lastDiscountAmount) {
+                          const discountNormalized = normalizeDate(admission.lastDiscountDate, 'discount', admission.id);
+                          
+                          timelineEvents.push({
+                            id: `discount-${admission.id}`,
+                            type: 'discount',
+                            title: 'Discount Applied',
+                            date: discountNormalized.date,
+                            description: `Amount: ₹${admission.lastDiscountAmount}${admission.lastDiscountReason ? ` • Reason: ${admission.lastDiscountReason}` : ''}`,
+                            color: 'bg-red-500',
+                            sortTimestamp: discountNormalized.timestamp
+                          });
+                        }
+                      });
+                    }
+
                     // Add pathology orders
                     if (pathologyOrders && pathologyOrders.length > 0) {
                       console.log("Processing pathology orders for timeline:", pathologyOrders.length);
@@ -2155,6 +2259,70 @@ export default function PatientDetail() {
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {addPaymentMutation.isPending ? "Adding Payment..." : "Add Payment"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discount Dialog */}
+      <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Discount</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Discount Amount *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discountAmount}
+                  onChange={(e) => setDiscountAmount(e.target.value)}
+                  placeholder="Enter discount amount"
+                  data-testid="input-discount-amount"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Reason for Discount</Label>
+                <Input
+                  type="text"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  placeholder="Enter reason for discount (optional)"
+                  data-testid="input-discount-reason"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDiscountDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
+                const amount = parseFloat(discountAmount);
+                if (selectedAdmissionId && amount > 0) {
+                  addDiscountMutation.mutate({ 
+                    admissionId: selectedAdmissionId, 
+                    amount: amount,
+                    reason: discountReason
+                  });
+                }
+              }}
+              disabled={addDiscountMutation.isPending || !discountAmount || parseFloat(discountAmount) <= 0}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {addDiscountMutation.isPending ? "Adding Discount..." : "Add Discount"}
             </Button>
           </div>
         </DialogContent>
