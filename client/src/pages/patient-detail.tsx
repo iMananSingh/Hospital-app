@@ -1349,39 +1349,35 @@ export default function PatientDetail() {
                           
                           let title = '';
                           let color = 'bg-orange-500';
-                          let description = `Doctor: ${doctorName}`;
+                          let description = '';
                           
                           switch (event.eventType) {
                             case 'admit':
                               title = 'Patient Admitted';
                               color = 'bg-green-500';
                               if (event.roomNumber && event.wardType) {
-                                description += ` • Room: ${event.roomNumber} (${event.wardType})`;
-                              }
-                              if (admission.reason) {
-                                description += ` • Reason: ${admission.reason}`;
+                                description = `Room: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
                             case 'room_change':
                               title = 'Room Transfer';
                               color = 'bg-blue-500';
                               if (event.roomNumber && event.wardType) {
-                                description += ` • Moved to: ${event.roomNumber} (${event.wardType})`;
+                                description = `Moved to: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
                             case 'discharge':
                               title = 'Patient Discharged';
                               color = 'bg-gray-500';
                               if (event.roomNumber && event.wardType) {
-                                description += ` • From Room: ${event.roomNumber} (${event.wardType})`;
+                                description = `From: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
                             default:
                               title = `Admission ${event.eventType.replace('_', ' ')}`;
-                          }
-                          
-                          if (event.notes) {
-                            description += ` • Notes: ${event.notes}`;
+                              if (event.roomNumber && event.wardType) {
+                                description = `Room: ${event.roomNumber} (${event.wardType})`;
+                              }
                           }
                           
                           timelineEvents.push({
@@ -1451,7 +1447,7 @@ export default function PatientDetail() {
                           type: 'pathology',
                           title: `Pathology Order: ${order.orderId || 'Unknown Order'}`,
                           date: pathologyNormalized.date,
-                          description: `Status: ${order.status || 'ordered'} • Tests: ${testCount}`,
+                          description: `Status: ${order.status || 'ordered'} • Cost: ₹${order.totalPrice || 0}`,
                           color: 'bg-purple-500',
                           sortTimestamp: pathologyNormalized.timestamp,
                           extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
