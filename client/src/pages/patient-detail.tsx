@@ -1381,41 +1381,82 @@ export default function PatientDetail() {
                     // Add pathology orders with proper date normalization
                     if (pathologyOrders && pathologyOrders.length > 0) {
                       pathologyOrders.forEach((orderData: any) => {
+                        console.log("Processing pathology order for timeline:", orderData);
+                        
+                        // Handle both the nested structure from the API and direct order objects
                         const order = orderData.order || orderData;
-                        if (order && order.orderId) {
-                          // Use createdAt first, then orderedDate as fallback
-                          let orderDate = order.createdAt || order.orderedDate;
-                          
-                          // Ensure date has proper format for parsing
-                          if (typeof orderDate === 'string' && !orderDate.includes('T') && !orderDate.includes('Z')) {
+                        if (!order) {
+                          console.warn("No order found in pathology data:", orderData);
+                          return;
+                        }
+                        
+                        // Use multiple fallbacks for date - createdAt, orderedDate, or current time
+                        let orderDate = order.createdAt || order.orderedDate || new Date().toISOString();
+                        
+                        console.log(`Processing pathology order ${order.id || 'unknown'} with date:`, orderDate);
+                        
+                        // Handle different date formats
+                        let parsedDate;
+                        if (typeof orderDate === 'string') {
+                          // If it's just a date (YYYY-MM-DD), add time and timezone
+                          if (orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                             orderDate = orderDate + 'T00:00:00Z';
                           }
-                          
-                          const parsedDate = new Date(orderDate);
-                          if (isNaN(parsedDate.getTime())) {
-                            console.warn(`Invalid pathology order date for order ${order.id}:`, orderDate);
-                            return; // Skip this order if date is invalid
+                          // If it's datetime without timezone, add Z
+                          else if (orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                            orderDate = orderDate.replace(' ', 'T') + 'Z';
                           }
-                          
-                          timelineEvents.push({
-                            id: order.id,
-                            type: 'pathology',
-                            title: `Pathology Order: ${order.orderId}`,
-                            date: orderDate,
-                            description: `Status: ${order.status} • Tests: ${orderData.tests ? orderData.tests.length : 0}`,
-                            color: 'bg-purple-500',
-                            sortTimestamp: parsedDate.getTime(), // Add explicit sort timestamp
-                            extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                            })}` : null
-                          });
+                          // If it doesn't have timezone info, add Z
+                          else if (!orderDate.includes('Z') && !orderDate.includes('+') && !orderDate.includes('-', 10)) {
+                            if (!orderDate.includes('T')) {
+                              orderDate = orderDate + 'T00:00:00Z';
+                            } else {
+                              orderDate = orderDate + 'Z';
+                            }
+                          }
+                          parsedDate = new Date(orderDate);
+                        } else {
+                          parsedDate = new Date(orderDate);
                         }
+                        
+                        // Validate the parsed date
+                        if (isNaN(parsedDate.getTime())) {
+                          console.warn(`Invalid pathology order date for order ${order.id}:`, orderDate, "Using current time instead");
+                          parsedDate = new Date();
+                          orderDate = parsedDate.toISOString();
+                        }
+                        
+                        console.log(`Final parsed date for pathology order:`, parsedDate);
+                        
+                        // Count tests - handle both nested tests array and direct tests
+                        let testCount = 0;
+                        if (orderData.tests && Array.isArray(orderData.tests)) {
+                          testCount = orderData.tests.length;
+                        } else if (order.tests && Array.isArray(order.tests)) {
+                          testCount = order.tests.length;
+                        }
+                        
+                        const pathologyEvent = {
+                          id: order.id || `pathology-${Date.now()}`,
+                          type: 'pathology',
+                          title: `Pathology Order: ${order.orderId || 'Unknown Order'}`,
+                          date: orderDate,
+                          description: `Status: ${order.status || 'ordered'} • Tests: ${testCount}`,
+                          color: 'bg-purple-500',
+                          sortTimestamp: parsedDate.getTime(),
+                          extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                          })}` : null
+                        };
+                        
+                        console.log("Adding pathology event to timeline:", pathologyEvent);
+                        timelineEvents.push(pathologyEvent);
                       });
                     }
                     
