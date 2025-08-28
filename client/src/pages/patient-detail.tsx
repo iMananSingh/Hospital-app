@@ -524,7 +524,8 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
       setDiscountReason("");
@@ -2309,15 +2310,26 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
+                console.log("Discount button clicked");
+                console.log("Available admissions:", admissions);
+                console.log("Discount amount:", discountAmount);
+                console.log("Discount reason:", discountReason);
+
                 const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(discountAmount);
+                
+                console.log("Selected admission ID:", selectedAdmissionId);
+                console.log("Parsed amount:", amount);
+
                 if (selectedAdmissionId && amount > 0) {
+                  console.log("Calling discount mutation");
                   addDiscountMutation.mutate({ 
                     admissionId: selectedAdmissionId, 
                     amount: amount,
                     reason: discountReason.trim() || "Manual discount"
                   });
                 } else {
+                  console.log("Invalid data for discount");
                   toast({
                     title: "Error",
                     description: "Please enter a valid discount amount and ensure there's an admission record.",
