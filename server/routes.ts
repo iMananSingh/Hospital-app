@@ -666,19 +666,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admissions/:id/summary", authenticateToken, async (req, res) => {
-    try {
-      const summary = await storage.getAdmissionSummary(req.params.id);
-      if (!summary) {
-        return res.status(404).json({ error: "Admission not found" });
-      }
-      res.json(summary);
-    } catch (error) {
-      console.error("Error fetching admission summary:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
   const httpServer = createServer(app);
   return httpServer;
 }
