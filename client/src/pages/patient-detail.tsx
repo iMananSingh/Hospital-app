@@ -135,7 +135,7 @@ export default function PatientDetail() {
     queryKey: ["/api/admission-events", patientId],
     queryFn: async () => {
       const eventsMap: Record<string, AdmissionEvent[]> = {};
-      
+
       if (admissions && admissions.length > 0) {
         await Promise.all(
           admissions.map(async (admission: Admission) => {
@@ -155,7 +155,7 @@ export default function PatientDetail() {
           })
         );
       }
-      
+
       return eventsMap;
     },
     enabled: !!admissions && admissions.length > 0,
@@ -295,10 +295,10 @@ export default function PatientDetail() {
     console.log("Form errors:", serviceForm.formState.errors);
     console.log("Form is valid:", serviceForm.formState.isValid);
     console.log("Doctors available:", doctors);
-    
+
     // Custom validation for Select fields that aren't properly registered
     let hasErrors = false;
-    
+
     // Validate doctor selection
     if (!data.doctorId || data.doctorId === "none") {
       serviceForm.setError("doctorId", { 
@@ -309,7 +309,7 @@ export default function PatientDetail() {
     } else {
       serviceForm.clearErrors("doctorId");
     }
-    
+
     // For non-OPD services, validate service selection and price
     if (selectedServiceType !== "opd") {
       if (!data.serviceType || !data.serviceName) {
@@ -333,18 +333,18 @@ export default function PatientDetail() {
         serviceForm.clearErrors("price");
       }
     }
-    
+
     // If there are validation errors, don't submit
     if (hasErrors) {
       return;
     }
-    
+
     let serviceData;
-    
+
     if (selectedServiceType === "opd") {
       const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
       const consultationFee = selectedDoctor?.consultationFee || 0;
-      
+
       serviceData = {
         ...data,
         serviceId: `SRV-${Date.now()}`,
@@ -361,10 +361,10 @@ export default function PatientDetail() {
         doctorId: data.doctorId === "none" ? "" : data.doctorId,
       };
     }
-    
+
     console.log("Final service data to submit:", serviceData);
     console.log("About to call mutation...");
-    
+
     try {
       createServiceMutation.mutate(serviceData);
       console.log("Mutation called successfully");
@@ -382,7 +382,7 @@ export default function PatientDetail() {
     // Validate required fields (reason is now optional)
     const requiredFields = ['doctorId', 'currentWardType', 'admissionDate', 'dailyCost'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
-    
+
     if (missingFields.length > 0) {
       toast({
         title: "Missing Required Fields",
@@ -408,7 +408,7 @@ export default function PatientDetail() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      
+
       if (!response.ok) throw new Error("Failed to discharge patient");
       return response.json();
     },
@@ -427,7 +427,7 @@ export default function PatientDetail() {
     mutationFn: async (data: any) => {
       const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
       if (!currentAdmission) throw new Error("No active admission found");
-      
+
       const response = await fetch(`/api/admissions/${currentAdmission.id}/transfer`, {
         method: "POST",
         headers: {
@@ -439,7 +439,7 @@ export default function PatientDetail() {
           wardType: data.wardType,
         }),
       });
-      
+
       if (!response.ok) throw new Error("Failed to transfer room");
       return response.json();
     },
@@ -459,10 +459,10 @@ export default function PatientDetail() {
     mutationFn: async (data: { admissionId: string, amount: number }) => {
       const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
       if (!admission) throw new Error("Admission not found");
-      
+
       const currentAdditionalPayments = admission.additionalPayments || 0;
       const newTotal = currentAdditionalPayments + data.amount;
-      
+
       const response = await fetch(`/api/admissions/${data.admissionId}`, {
         method: "PATCH",
         headers: {
@@ -475,7 +475,7 @@ export default function PatientDetail() {
           lastPaymentAmount: data.amount
         }),
       });
-      
+
       if (!response.ok) throw new Error("Failed to add payment");
       return response.json();
     },
@@ -502,10 +502,10 @@ export default function PatientDetail() {
     mutationFn: async (data: { admissionId: string, amount: number, reason: string }) => {
       const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
       if (!admission) throw new Error("Admission not found");
-      
+
       const currentDiscounts = admission.totalDiscount || 0;
       const newTotal = currentDiscounts + data.amount;
-      
+
       const response = await fetch(`/api/admissions/${data.admissionId}`, {
         method: "PATCH",
         headers: {
@@ -519,7 +519,7 @@ export default function PatientDetail() {
           lastDiscountReason: data.reason
         }),
       });
-      
+
       if (!response.ok) throw new Error("Failed to add discount");
       return response.json();
     },
@@ -553,7 +553,7 @@ export default function PatientDetail() {
     // Validate required fields
     const requiredFields = ['wardType', 'roomNumber'];
     const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
-    
+
     if (missingFields.length > 0) {
       toast({
         title: "Missing Required Fields",
@@ -562,7 +562,7 @@ export default function PatientDetail() {
       });
       return;
     }
-    
+
     updateRoomMutation.mutate(data);
   };
 
@@ -583,13 +583,13 @@ export default function PatientDetail() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
-    
+
     // Handle different date formats and ensure local timezone
     const date = new Date(dateString);
-    
+
     // Check if date is valid
     if (isNaN(date.getTime())) return "N/A";
-    
+
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short", 
@@ -623,7 +623,7 @@ export default function PatientDetail() {
       <TopBar 
         title={`Patient: ${patient.name}`}
       />
-      
+
       <div className="p-6">
         {/* Patient Info Header */}
         <Card className="mb-6">
@@ -639,42 +639,42 @@ export default function PatientDetail() {
                 <p className="text-sm text-muted-foreground">Name</p>
                 <p className="font-medium">{patient.name}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Age</p>
                 <p className="font-medium">{patient.age} years</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Gender</p>
                 <p className="font-medium capitalize">{patient.gender}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Phone</p>
                 <p className="font-medium">{patient.phone}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Patient ID</p>
                 <p className="font-medium">{patient.patientId}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Emergency Contact</p>
                 <p className="font-medium">{patient.emergencyContact || "N/A"}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
                 <p className="font-medium">{patient.email || "N/A"}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Address</p>
                 <p className="font-medium">{patient.address || "N/A"}</p>
               </div>
-              
+
               <div>
                 <p className="text-sm text-muted-foreground">Room No</p>
                 <p className="font-medium">
@@ -698,7 +698,7 @@ export default function PatientDetail() {
               <Button 
                 onClick={() => {
                   console.log("=== SCHEDULE OPD CLICKED ===");
-                  
+
                   // Set current LOCAL date and time when opening the dialog
                   const now = new Date();
                   const currentDate = now.getFullYear() + '-' + 
@@ -706,7 +706,7 @@ export default function PatientDetail() {
                     String(now.getDate()).padStart(2, '0');
                   const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
                     String(now.getMinutes()).padStart(2, '0');
-                  
+
                   setSelectedServiceType("opd");
                   setSelectedServiceCategory("");
                   serviceForm.reset({
@@ -719,7 +719,7 @@ export default function PatientDetail() {
                     notes: "",
                     price: 0,
                   });
-                  
+
                   console.log(`Set current date/time: ${currentDate} ${currentTime}`);
                   setIsServiceDialogOpen(true);
                 }}
@@ -749,7 +749,7 @@ export default function PatientDetail() {
                     String(now.getDate()).padStart(2, '0');
                   const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
                     String(now.getMinutes()).padStart(2, '0');
-                  
+
                   // Reset service type and category for general service
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
@@ -764,7 +764,7 @@ export default function PatientDetail() {
                     notes: "",
                     price: 0,
                   });
-                  
+
                   setIsServiceDialogOpen(true);
                 }}
                 variant="outline"
@@ -778,7 +778,7 @@ export default function PatientDetail() {
               {/* Admission/Discharge Button */}
               {(() => {
                 const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                
+
                 if (currentAdmission) {
                   // Patient is admitted - show discharge button
                   return (
@@ -801,7 +801,7 @@ export default function PatientDetail() {
                         const currentDate = now.getFullYear() + '-' + 
                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                           String(now.getDate()).padStart(2, '0');
-                        
+
                         admissionForm.setValue("admissionDate", currentDate);
                         setIsAdmissionDialogOpen(true);
                       }}
@@ -864,7 +864,7 @@ export default function PatientDetail() {
                   ₹{(() => {
                     let totalCharges = 0;
                     const allAdmissions = admissions || [];
-                    
+
                     // Add room charges from all admissions
                     allAdmissions.forEach((admission: any) => {
                       const admissionDate = new Date(admission.admissionDate);
@@ -872,12 +872,12 @@ export default function PatientDetail() {
                       const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
                       totalCharges += (admission.dailyCost || 0) * daysDiff;
                     });
-                    
+
                     // Add service charges
                     if (services) {
                       totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
                     }
-                    
+
                     // Add pathology order charges
                     if (pathologyOrders) {
                       totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
@@ -885,12 +885,12 @@ export default function PatientDetail() {
                         return sum + (order.totalPrice || 0);
                       }, 0);
                     }
-                    
+
                     return totalCharges.toLocaleString();
                   })()}
                 </p>
               </div>
-              
+
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Paid</p>
                 <p className="text-2xl font-bold text-green-700">
@@ -904,14 +904,14 @@ export default function PatientDetail() {
                   })()}
                 </p>
               </div>
-              
+
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Balance</p>
                 <p className="text-2xl font-bold text-orange-700">
                   ₹{(() => {
                     let totalCharges = 0;
                     const allAdmissions = admissions || [];
-                    
+
                     // Calculate total charges from all admissions
                     allAdmissions.forEach((admission: any) => {
                       const admissionDate = new Date(admission.admissionDate);
@@ -919,11 +919,11 @@ export default function PatientDetail() {
                       const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
                       totalCharges += (admission.dailyCost || 0) * daysDiff;
                     });
-                    
+
                     if (services) {
                       totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
                     }
-                    
+
                     // Add pathology order charges
                     if (pathologyOrders) {
                       totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
@@ -931,7 +931,7 @@ export default function PatientDetail() {
                         return sum + (order.totalPrice || 0);
                       }, 0);
                     }
-                    
+
                     // Calculate total paid from all admissions
                     const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
                       return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
@@ -941,9 +941,9 @@ export default function PatientDetail() {
                     const totalDiscounts = allAdmissions.reduce((sum: number, adm: any) => {
                       return sum + (adm.totalDiscount || 0);
                     }, 0);
-                    
+
                     const balance = totalCharges - totalPaid - totalDiscounts;
-                    
+
                     return balance.toLocaleString();
                   })()}
                 </p>
@@ -974,7 +974,7 @@ export default function PatientDetail() {
                       String(now.getDate()).padStart(2, '0');
                     const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
                       String(now.getMinutes()).padStart(2, '0');
-                    
+
                     // Reset service type and category
                     setSelectedServiceType("");
                     setSelectedServiceCategory("");
@@ -989,7 +989,7 @@ export default function PatientDetail() {
                       notes: "",
                       price: 0,
                     });
-                    
+
                     setIsServiceDialogOpen(true);
                   }}
                   size="sm"
@@ -1017,7 +1017,7 @@ export default function PatientDetail() {
                         // Find doctor name from doctors array using doctorId
                         const doctor = doctors.find((d: Doctor) => d.id === service.doctorId);
                         const doctorName = doctor ? doctor.name : (service.doctorId ? "Unknown Doctor" : "No Doctor Assigned");
-                        
+
                         return (
                           <TableRow key={service.id}>
                             <TableCell className="font-medium">{service.serviceName}</TableCell>
@@ -1054,7 +1054,7 @@ export default function PatientDetail() {
                   {(() => {
                     // Check if patient is currently admitted
                     const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-                    
+
                     if (currentAdmission) {
                       return (
                         <>
@@ -1093,7 +1093,7 @@ export default function PatientDetail() {
                             const currentDate = now.getFullYear() + '-' + 
                               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
                               String(now.getDate()).padStart(2, '0');
-                            
+
                             admissionForm.setValue("admissionDate", currentDate);
                             setIsAdmissionDialogOpen(true);
                           }}
@@ -1115,7 +1115,7 @@ export default function PatientDetail() {
                     {admissions.map((admission: any) => {
                       const events = admissionEventsMap[admission.id] || [];
                       const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
-                      
+
                       return (
                         <div key={admission.id} className="border rounded-lg p-4">
                           {/* Admission Episode Header */}
@@ -1137,7 +1137,7 @@ export default function PatientDetail() {
                               {doctor ? doctor.name : "No Doctor Assigned"}
                             </div>
                           </div>
-                          
+
                           {/* Admission Summary */}
                           <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                             <div>
@@ -1181,7 +1181,7 @@ export default function PatientDetail() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Event Timeline */}
                           {events.length > 0 && (
                             <div>
@@ -1258,7 +1258,7 @@ export default function PatientDetail() {
                         // Handle both direct order objects and nested order structure
                         const order = orderData.order || orderData;
                         if (!order || !order.orderId) return null;
-                        
+
                         return (
                           <TableRow key={order.id}>
                             <TableCell className="font-medium">{order.orderId}</TableCell>
@@ -1302,18 +1302,18 @@ export default function PatientDetail() {
                 <div className="space-y-4">
                   {(() => {
                     console.log("=== TIMELINE DEBUG START ===");
-                    
+
                     // Helper function to normalize dates consistently
                     const normalizeDate = (dateInput: any, source: string, id?: string): { date: string; timestamp: number } => {
                       let dateStr: string;
-                      
+
                       // Handle null/undefined
                       if (!dateInput) {
                         console.warn(`No date provided for ${source} ${id || 'unknown'}, using current time`);
                         const now = new Date();
                         return { date: now.toISOString(), timestamp: now.getTime() };
                       }
-                      
+
                       // Convert to string if it's not already
                       if (typeof dateInput === 'string') {
                         dateStr = dateInput;
@@ -1322,9 +1322,9 @@ export default function PatientDetail() {
                       } else {
                         dateStr = String(dateInput);
                       }
-                      
+
                       console.log(`Normalizing date for ${source} ${id || 'unknown'}: "${dateStr}"`);
-                      
+
                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                       if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                         dateStr = dateStr.replace(' ', 'T') + 'Z';
@@ -1340,7 +1340,7 @@ export default function PatientDetail() {
                         dateStr = dateStr + 'Z';
                         console.log(`Added timezone to: "${dateStr}"`);
                       }
-                      
+
                       // Parse the date
                       const parsed = new Date(dateStr);
                       if (isNaN(parsed.getTime())) {
@@ -1348,16 +1348,16 @@ export default function PatientDetail() {
                         const now = new Date();
                         return { date: now.toISOString(), timestamp: now.getTime() };
                       }
-                      
+
                       const timestamp = parsed.getTime();
                       console.log(`Final normalized date for ${source} ${id || 'unknown'}: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
-                      
+
                       return { date: dateStr, timestamp };
                     };
-                    
+
                     // Create timeline events array
                     const timelineEvents = [];
-                    
+
                     // Add registration event
                     const regNormalized = normalizeDate(patient.createdAt, 'registration');
                     timelineEvents.push({
@@ -1369,7 +1369,7 @@ export default function PatientDetail() {
                       color: 'bg-blue-500',
                       sortTimestamp: regNormalized.timestamp
                     });
-                    
+
                     // Add services with proper date normalization
                     if (services && services.length > 0) {
                       console.log("Processing services for timeline:", services.length);
@@ -1383,9 +1383,9 @@ export default function PatientDetail() {
                             primaryDate = `${service.scheduledDate}T00:00:00`;
                           }
                         }
-                        
+
                         const serviceNormalized = normalizeDate(primaryDate, 'service', service.id);
-                        
+
                         timelineEvents.push({
                           id: service.id,
                           type: 'service',
@@ -1398,7 +1398,7 @@ export default function PatientDetail() {
                         });
                       });
                     }
-                    
+
                     // Add admission events
                     if (admissions && admissions.length > 0) {
                       console.log("Processing admissions for timeline:", admissions.length);
@@ -1406,19 +1406,19 @@ export default function PatientDetail() {
                         const events = admissionEventsMap[admission.id] || [];
                         const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
                         const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                        
+
                         console.log(`Processing admission ${admission.id} with ${events.length} events`);
-                        
+
                         // Add events from admission events table
                         events.forEach((event: AdmissionEvent) => {
                           // Priority: eventTime > createdAt
                           const primaryDate = event.eventTime || event.createdAt;
                           const eventNormalized = normalizeDate(primaryDate, 'admission_event', event.id);
-                          
+
                           let title = '';
                           let color = 'bg-orange-500';
                           let description = '';
-                          
+
                           switch (event.eventType) {
                             case 'admit':
                               title = 'Patient Admitted';
@@ -1447,7 +1447,7 @@ export default function PatientDetail() {
                                 description = `Room: ${event.roomNumber} (${event.wardType})`;
                               }
                           }
-                          
+
                           timelineEvents.push({
                             id: `${admission.id}-${event.id}`,
                             type: 'admission_event',
@@ -1459,12 +1459,12 @@ export default function PatientDetail() {
                             rawData: { event, primaryDate } // Debug info
                           });
                         });
-                        
+
                         // If no events exist, create a basic admission entry as fallback
                         if (events.length === 0) {
                           const primaryDate = admission.createdAt || admission.admissionDate;
                           const admissionNormalized = normalizeDate(primaryDate, 'admission_fallback', admission.id);
-                          
+
                           timelineEvents.push({
                             id: `${admission.id}-fallback`,
                             type: 'admission',
@@ -1486,7 +1486,7 @@ export default function PatientDetail() {
                         }
                       });
                     }
-                    
+
                     // Add payment and discount entries from admissions
                     if (admissions && admissions.length > 0) {
                       console.log("Processing payment and discount entries for timeline");
@@ -1494,7 +1494,7 @@ export default function PatientDetail() {
                         // Add payment entries
                         if (admission.lastPaymentDate && admission.lastPaymentAmount) {
                           const paymentNormalized = normalizeDate(admission.lastPaymentDate, 'payment', admission.id);
-                          
+
                           timelineEvents.push({
                             id: `payment-${admission.id}`,
                             type: 'payment',
@@ -1509,7 +1509,7 @@ export default function PatientDetail() {
                         // Add discount entries  
                         if (admission.lastDiscountDate && admission.lastDiscountAmount) {
                           const discountNormalized = normalizeDate(admission.lastDiscountDate, 'discount', admission.id);
-                          
+
                           timelineEvents.push({
                             id: `discount-${admission.id}`,
                             type: 'discount',
@@ -1533,11 +1533,11 @@ export default function PatientDetail() {
                           console.warn("No order found in pathology data:", orderData);
                           return;
                         }
-                        
+
                         // Priority: createdAt > orderedDate
                         const primaryDate = order.createdAt || order.orderedDate;
                         const pathologyNormalized = normalizeDate(primaryDate, 'pathology', order.id);
-                        
+
                         // Count tests - handle both nested tests array and direct tests
                         let testCount = 0;
                         if (orderData.tests && Array.isArray(orderData.tests)) {
@@ -1545,7 +1545,7 @@ export default function PatientDetail() {
                         } else if (order.tests && Array.isArray(order.tests)) {
                           testCount = order.tests.length;
                         }
-                        
+
                         const pathologyEvent = {
                           id: order.id || `pathology-${Date.now()}`,
                           type: 'pathology',
@@ -1565,11 +1565,11 @@ export default function PatientDetail() {
                           })}` : null,
                           rawData: { order, primaryDate } // Debug info
                         };
-                        
+
                         timelineEvents.push(pathologyEvent);
                       });
                     }
-                    
+
                     // Sort events chronologically (earliest first) using consistent timestamp
                     console.log("Timeline events before sorting:", timelineEvents.map(e => ({
                       id: e.id,
@@ -1578,19 +1578,19 @@ export default function PatientDetail() {
                       date: e.date,
                       localTime: new Date(e.sortTimestamp).toLocaleString()
                     })));
-                    
+
                     timelineEvents.sort((a, b) => {
                       // Primary sort by timestamp (ascending - earliest first)
                       const timestampDiff = a.sortTimestamp - b.sortTimestamp;
-                      
+
                       if (timestampDiff !== 0) {
                         return timestampDiff;
                       }
-                      
+
                       // Secondary sort by ID for stable sorting when timestamps are identical
                       return a.id.localeCompare(b.id);
                     });
-                    
+
                     console.log("Timeline events after sorting:", timelineEvents.map(e => ({
                       id: e.id,
                       title: e.title,
@@ -1598,9 +1598,9 @@ export default function PatientDetail() {
                       date: e.date,
                       localTime: new Date(e.sortTimestamp).toLocaleString()
                     })));
-                    
+
                     console.log("=== TIMELINE DEBUG END ===");
-                    
+
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
                       <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
                         <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
@@ -1650,7 +1650,7 @@ export default function PatientDetail() {
               {selectedServiceType === "opd" ? "Schedule OPD Consultation" : "Schedule Patient Service"}
             </DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
             {selectedServiceType !== "opd" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1690,7 +1690,7 @@ export default function PatientDetail() {
                     value={serviceForm.watch("serviceType")}
                     onValueChange={(value) => {
                       serviceForm.setValue("serviceType", value);
-                      
+
                       // Check if it's from API services or legacy services
                       const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === value);
                       if (selectedService) {
@@ -1721,7 +1721,7 @@ export default function PatientDetail() {
                 </div>
               </div>
             )}
-            
+
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
@@ -1729,7 +1729,7 @@ export default function PatientDetail() {
                   const selectedDoctorId = serviceForm.watch("doctorId");
                   const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
                   const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
-                  
+
                   return (
                     <p className="text-sm text-blue-600">
                       Consultation fee: ₹{consultationFee}
@@ -1889,7 +1889,7 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Admit Patient</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1957,15 +1957,15 @@ export default function PatientDetail() {
                     {(() => {
                       const selectedWardType = admissionForm.watch("currentWardType");
                       const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
-                      
+
                       if (!selectedRoomType) return null;
-                      
+
                       const availableRooms = rooms.filter((room: any) => 
                         room.roomTypeId === selectedRoomType.id && 
                         !room.isOccupied && 
                         room.isActive
                       );
-                      
+
                       if (availableRooms.length === 0) {
                         return (
                           <SelectItem value="" disabled>
@@ -1973,7 +1973,7 @@ export default function PatientDetail() {
                           </SelectItem>
                         );
                       }
-                      
+
                       return availableRooms.map((room: any) => (
                         <SelectItem key={room.id} value={room.roomNumber}>
                           {room.roomNumber}
@@ -2065,12 +2065,12 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Discharge Patient</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
               Are you sure you want to discharge this patient? This action will mark the admission as completed and set the discharge date to now.
             </p>
-            
+
             {(() => {
               const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
               if (currentAdmission) {
@@ -2085,7 +2085,7 @@ export default function PatientDetail() {
               return null;
             })()}
           </div>
-          
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -2111,7 +2111,7 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Update Room Assignment</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={roomUpdateForm.handleSubmit(onRoomUpdate)} className="space-y-4">
             <div className="space-y-2">
               <Label>Ward Type *</Label>
@@ -2151,15 +2151,15 @@ export default function PatientDetail() {
                   {(() => {
                     const selectedWardType = roomUpdateForm.watch("wardType");
                     const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
-                    
+
                     if (!selectedRoomType) return null;
-                    
+
                     const availableRooms = rooms.filter((room: any) => 
                       room.roomTypeId === selectedRoomType.id && 
                       !room.isOccupied && 
                       room.isActive
                     );
-                    
+
                     if (availableRooms.length === 0) {
                       return (
                         <SelectItem value="" disabled>
@@ -2167,7 +2167,7 @@ export default function PatientDetail() {
                         </SelectItem>
                       );
                     }
-                    
+
                     return availableRooms.map((room: any) => (
                       <SelectItem key={room.id} value={room.roomNumber}>
                         {room.roomNumber}
@@ -2177,7 +2177,7 @@ export default function PatientDetail() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
@@ -2203,7 +2203,7 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Add Payment</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -2218,7 +2218,7 @@ export default function PatientDetail() {
                   data-testid="input-payment-amount"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Payment Method</Label>
                 <Select defaultValue="cash">
@@ -2235,7 +2235,7 @@ export default function PatientDetail() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -2270,7 +2270,7 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Add Discount</DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -2285,7 +2285,7 @@ export default function PatientDetail() {
                   data-testid="input-discount-amount"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Reason for Discount</Label>
                 <Input
@@ -2298,7 +2298,7 @@ export default function PatientDetail() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -2315,7 +2315,13 @@ export default function PatientDetail() {
                   addDiscountMutation.mutate({ 
                     admissionId: selectedAdmissionId, 
                     amount: amount,
-                    reason: discountReason
+                    reason: discountReason.trim() || "Manual discount"
+                  });
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a valid discount amount and ensure there's an admission record.",
+                    variant: "destructive",
                   });
                 }
               }}
