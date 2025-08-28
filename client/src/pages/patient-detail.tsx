@@ -1470,7 +1470,7 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Sort events chronologically (most recent first) using consistent timestamp
+                    // Sort events chronologically (earliest first) using consistent timestamp
                     console.log("Timeline events before sorting:", timelineEvents.map(e => ({
                       id: e.id,
                       title: e.title,
@@ -1480,15 +1480,15 @@ export default function PatientDetail() {
                     })));
                     
                     timelineEvents.sort((a, b) => {
-                      // Primary sort by timestamp (descending - most recent first)
-                      const timestampDiff = b.sortTimestamp - a.sortTimestamp;
+                      // Primary sort by timestamp (ascending - earliest first)
+                      const timestampDiff = a.sortTimestamp - b.sortTimestamp;
                       
                       if (timestampDiff !== 0) {
                         return timestampDiff;
                       }
                       
                       // Secondary sort by ID for stable sorting when timestamps are identical
-                      return b.id.localeCompare(a.id);
+                      return a.id.localeCompare(b.id);
                     });
                     
                     console.log("Timeline events after sorting:", timelineEvents.map(e => ({
