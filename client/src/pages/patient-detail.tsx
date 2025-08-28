@@ -1233,70 +1233,119 @@ export default function PatientDetail() {
               <CardContent>
                 <div className="space-y-4">
                   {(() => {
+                    console.log("=== TIMELINE DEBUG START ===");
+                    
+                    // Helper function to normalize dates consistently
+                    const normalizeDate = (dateInput: any, source: string, id?: string): { date: string; timestamp: number } => {
+                      let dateStr: string;
+                      
+                      // Handle null/undefined
+                      if (!dateInput) {
+                        console.warn(`No date provided for ${source} ${id || 'unknown'}, using current time`);
+                        const now = new Date();
+                        return { date: now.toISOString(), timestamp: now.getTime() };
+                      }
+                      
+                      // Convert to string if it's not already
+                      if (typeof dateInput === 'string') {
+                        dateStr = dateInput;
+                      } else if (dateInput instanceof Date) {
+                        dateStr = dateInput.toISOString();
+                      } else {
+                        dateStr = String(dateInput);
+                      }
+                      
+                      console.log(`Normalizing date for ${source} ${id || 'unknown'}: "${dateStr}"`);
+                      
+                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+                      if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                        dateStr = dateStr.replace(' ', 'T') + 'Z';
+                        console.log(`Converted SQLite format to: "${dateStr}"`);
+                      }
+                      // Handle date only format: "YYYY-MM-DD"
+                      else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        dateStr = dateStr + 'T00:00:00Z';
+                        console.log(`Converted date-only format to: "${dateStr}"`);
+                      }
+                      // Handle datetime without timezone
+                      else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) && !dateStr.includes('Z') && !dateStr.includes('+')) {
+                        dateStr = dateStr + 'Z';
+                        console.log(`Added timezone to: "${dateStr}"`);
+                      }
+                      
+                      // Parse the date
+                      const parsed = new Date(dateStr);
+                      if (isNaN(parsed.getTime())) {
+                        console.error(`Failed to parse date "${dateStr}" for ${source} ${id || 'unknown'}, using current time`);
+                        const now = new Date();
+                        return { date: now.toISOString(), timestamp: now.getTime() };
+                      }
+                      
+                      const timestamp = parsed.getTime();
+                      console.log(`Final normalized date for ${source} ${id || 'unknown'}: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
+                      
+                      return { date: dateStr, timestamp };
+                    };
+                    
                     // Create timeline events array
                     const timelineEvents = [];
                     
                     // Add registration event
+                    const regNormalized = normalizeDate(patient.createdAt, 'registration');
                     timelineEvents.push({
                       id: 'registration',
                       type: 'registration',
                       title: 'Patient Registered',
-                      date: patient.createdAt,
+                      date: regNormalized.date,
                       description: `Patient ID: ${patient.patientId}`,
-                      color: 'bg-blue-500'
+                      color: 'bg-blue-500',
+                      sortTimestamp: regNormalized.timestamp
                     });
                     
                     // Add services with proper date normalization
                     if (services && services.length > 0) {
+                      console.log("Processing services for timeline:", services.length);
                       services.forEach((service: any) => {
-                        // Use createdAt if available for accurate timestamp, otherwise construct from scheduled date/time
-                        let serviceDate = service.createdAt;
-                        if (!serviceDate) {
-                          serviceDate = service.scheduledTime 
-                            ? `${service.scheduledDate}T${service.scheduledTime}:00Z`
-                            : `${service.scheduledDate}T00:00:00Z`;
+                        // Priority: createdAt > constructed date from scheduled fields
+                        let primaryDate = service.createdAt;
+                        if (!primaryDate && service.scheduledDate) {
+                          if (service.scheduledTime) {
+                            primaryDate = `${service.scheduledDate}T${service.scheduledTime}:00`;
+                          } else {
+                            primaryDate = `${service.scheduledDate}T00:00:00`;
+                          }
                         }
                         
-                        // Ensure we have a valid date
-                        const parsedDate = new Date(serviceDate);
-                        if (isNaN(parsedDate.getTime())) {
-                          console.warn(`Invalid service date for service ${service.id}:`, serviceDate);
-                          return; // Skip this service if date is invalid
-                        }
+                        const serviceNormalized = normalizeDate(primaryDate, 'service', service.id);
                         
                         timelineEvents.push({
                           id: service.id,
                           type: 'service',
                           title: service.serviceName,
-                          date: serviceDate,
+                          date: serviceNormalized.date,
                           description: `Status: ${service.status}`,
                           color: 'bg-green-500',
-                          sortTimestamp: parsedDate.getTime() // Add explicit sort timestamp
+                          sortTimestamp: serviceNormalized.timestamp,
+                          rawData: { service, primaryDate } // Debug info
                         });
                       });
                     }
                     
-                    // Add admission events instead of just admission records
+                    // Add admission events
                     if (admissions && admissions.length > 0) {
+                      console.log("Processing admissions for timeline:", admissions.length);
                       admissions.forEach((admission: any) => {
                         const events = admissionEventsMap[admission.id] || [];
                         const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
                         const doctorName = doctor ? doctor.name : "No Doctor Assigned";
                         
+                        console.log(`Processing admission ${admission.id} with ${events.length} events`);
+                        
                         // Add events from admission events table
                         events.forEach((event: AdmissionEvent) => {
-                          let eventDate = event.eventTime || event.createdAt;
-                          
-                          // Ensure date has proper format for parsing
-                          if (typeof eventDate === 'string' && !eventDate.includes('T') && !eventDate.includes('Z')) {
-                            eventDate = eventDate + 'Z'; // Treat as UTC if no timezone info
-                          }
-                          
-                          const parsedDate = new Date(eventDate);
-                          if (isNaN(parsedDate.getTime())) {
-                            console.warn(`Invalid event date for event ${event.id}:`, eventDate);
-                            return;
-                          }
+                          // Priority: eventTime > createdAt
+                          const primaryDate = event.eventTime || event.createdAt;
+                          const eventNormalized = normalizeDate(primaryDate, 'admission_event', event.id);
                           
                           let title = '';
                           let color = 'bg-orange-500';
@@ -1339,50 +1388,45 @@ export default function PatientDetail() {
                             id: `${admission.id}-${event.id}`,
                             type: 'admission_event',
                             title: title,
-                            date: eventDate,
+                            date: eventNormalized.date,
                             description: description,
                             color: color,
-                            sortTimestamp: parsedDate.getTime()
+                            sortTimestamp: eventNormalized.timestamp,
+                            rawData: { event, primaryDate } // Debug info
                           });
                         });
                         
                         // If no events exist, create a basic admission entry as fallback
                         if (events.length === 0) {
-                          let admissionDate = admission.createdAt || admission.admissionDate;
+                          const primaryDate = admission.createdAt || admission.admissionDate;
+                          const admissionNormalized = normalizeDate(primaryDate, 'admission_fallback', admission.id);
                           
-                          if (typeof admissionDate === 'string' && !admissionDate.includes('T') && !admissionDate.includes('Z')) {
-                            admissionDate = admissionDate + 'T00:00:00Z';
-                          }
-                          
-                          const parsedDate = new Date(admissionDate);
-                          if (!isNaN(parsedDate.getTime())) {
-                            timelineEvents.push({
-                              id: `${admission.id}-fallback`,
-                              type: 'admission',
-                              title: 'Patient Admission',
-                              date: admissionDate,
-                              description: (() => {
-                                const wardDisplay = admission.currentWardType || admission.wardType;
-                                const parts = [];
-                                if (admission.reason) parts.push(`Reason: ${admission.reason}`);
-                                parts.push(`Doctor: ${doctorName}`);
-                                parts.push(`Ward: ${wardDisplay}`);
-                                parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
-                                return parts.join(' • ');
-                              })(),
-                              color: 'bg-orange-500',
-                              sortTimestamp: parsedDate.getTime()
-                            });
-                          }
+                          timelineEvents.push({
+                            id: `${admission.id}-fallback`,
+                            type: 'admission',
+                            title: 'Patient Admission',
+                            date: admissionNormalized.date,
+                            description: (() => {
+                              const wardDisplay = admission.currentWardType || admission.wardType;
+                              const parts = [];
+                              if (admission.reason) parts.push(`Reason: ${admission.reason}`);
+                              parts.push(`Doctor: ${doctorName}`);
+                              parts.push(`Ward: ${wardDisplay}`);
+                              parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
+                              return parts.join(' • ');
+                            })(),
+                            color: 'bg-orange-500',
+                            sortTimestamp: admissionNormalized.timestamp,
+                            rawData: { admission, primaryDate } // Debug info
+                          });
                         }
                       });
                     }
                     
-                    // Add pathology orders with proper date normalization
+                    // Add pathology orders
                     if (pathologyOrders && pathologyOrders.length > 0) {
+                      console.log("Processing pathology orders for timeline:", pathologyOrders.length);
                       pathologyOrders.forEach((orderData: any) => {
-                        console.log("Processing pathology order for timeline:", orderData);
-                        
                         // Handle both the nested structure from the API and direct order objects
                         const order = orderData.order || orderData;
                         if (!order) {
@@ -1390,43 +1434,9 @@ export default function PatientDetail() {
                           return;
                         }
                         
-                        // Use multiple fallbacks for date - createdAt, orderedDate, or current time
-                        let orderDate = order.createdAt || order.orderedDate || new Date().toISOString();
-                        
-                        console.log(`Processing pathology order ${order.id || 'unknown'} with date:`, orderDate);
-                        
-                        // Handle different date formats
-                        let parsedDate;
-                        if (typeof orderDate === 'string') {
-                          // If it's just a date (YYYY-MM-DD), add time and timezone
-                          if (orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                            orderDate = orderDate + 'T00:00:00Z';
-                          }
-                          // If it's datetime without timezone, add Z
-                          else if (orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                            orderDate = orderDate.replace(' ', 'T') + 'Z';
-                          }
-                          // If it doesn't have timezone info, add Z
-                          else if (!orderDate.includes('Z') && !orderDate.includes('+') && !orderDate.includes('-', 10)) {
-                            if (!orderDate.includes('T')) {
-                              orderDate = orderDate + 'T00:00:00Z';
-                            } else {
-                              orderDate = orderDate + 'Z';
-                            }
-                          }
-                          parsedDate = new Date(orderDate);
-                        } else {
-                          parsedDate = new Date(orderDate);
-                        }
-                        
-                        // Validate the parsed date
-                        if (isNaN(parsedDate.getTime())) {
-                          console.warn(`Invalid pathology order date for order ${order.id}:`, orderDate, "Using current time instead");
-                          parsedDate = new Date();
-                          orderDate = parsedDate.toISOString();
-                        }
-                        
-                        console.log(`Final parsed date for pathology order:`, parsedDate);
+                        // Priority: createdAt > orderedDate
+                        const primaryDate = order.createdAt || order.orderedDate;
+                        const pathologyNormalized = normalizeDate(primaryDate, 'pathology', order.id);
                         
                         // Count tests - handle both nested tests array and direct tests
                         let testCount = 0;
@@ -1440,10 +1450,10 @@ export default function PatientDetail() {
                           id: order.id || `pathology-${Date.now()}`,
                           type: 'pathology',
                           title: `Pathology Order: ${order.orderId || 'Unknown Order'}`,
-                          date: orderDate,
+                          date: pathologyNormalized.date,
                           description: `Status: ${order.status || 'ordered'} • Tests: ${testCount}`,
                           color: 'bg-purple-500',
-                          sortTimestamp: parsedDate.getTime(),
+                          sortTimestamp: pathologyNormalized.timestamp,
                           extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -1452,27 +1462,44 @@ export default function PatientDetail() {
                             minute: '2-digit',
                             hour12: true,
                             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                          })}` : null
+                          })}` : null,
+                          rawData: { order, primaryDate } // Debug info
                         };
                         
-                        console.log("Adding pathology event to timeline:", pathologyEvent);
                         timelineEvents.push(pathologyEvent);
                       });
                     }
                     
-                    // Sort events chronologically using explicit timestamp (most recent first)
-                    // Use a more robust sorting approach
+                    // Sort events chronologically (most recent first) using consistent timestamp
+                    console.log("Timeline events before sorting:", timelineEvents.map(e => ({
+                      id: e.id,
+                      title: e.title,
+                      timestamp: e.sortTimestamp,
+                      date: e.date,
+                      localTime: new Date(e.sortTimestamp).toLocaleString()
+                    })));
+                    
                     timelineEvents.sort((a, b) => {
-                      const timestampA = (a as any).sortTimestamp || new Date(a.date).getTime() || 0;
-                      const timestampB = (b as any).sortTimestamp || new Date(b.date).getTime() || 0;
+                      // Primary sort by timestamp (descending - most recent first)
+                      const timestampDiff = b.sortTimestamp - a.sortTimestamp;
                       
-                      // If timestamps are equal, use string comparison as secondary sort
-                      if (timestampA === timestampB) {
-                        return b.date.localeCompare(a.date);
+                      if (timestampDiff !== 0) {
+                        return timestampDiff;
                       }
                       
-                      return timestampB - timestampA;
+                      // Secondary sort by ID for stable sorting when timestamps are identical
+                      return b.id.localeCompare(a.id);
                     });
+                    
+                    console.log("Timeline events after sorting:", timelineEvents.map(e => ({
+                      id: e.id,
+                      title: e.title,
+                      timestamp: e.sortTimestamp,
+                      date: e.date,
+                      localTime: new Date(e.sortTimestamp).toLocaleString()
+                    })));
+                    
+                    console.log("=== TIMELINE DEBUG END ===");
                     
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
                       <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -1481,27 +1508,15 @@ export default function PatientDetail() {
                           <div className="flex items-center justify-between">
                             <p className="font-medium">{event.title}</p>
                             <span className="text-sm text-muted-foreground">
-                              {(() => {
-                                // Handle UTC timestamps from database properly
-                                let date = new Date(event.date);
-                                
-                                // If the date string doesn't include timezone info (from SQLite),
-                                // it needs to be treated as UTC
-                                if (typeof event.date === 'string' && !event.date.includes('T') && !event.date.includes('Z')) {
-                                  // SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - treat as UTC
-                                  date = new Date(event.date + 'Z'); // Add Z to indicate UTC
-                                }
-                                
-                                return date.toLocaleString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: true,
-                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                                });
-                              })()}
+                              {new Date(event.sortTimestamp).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                              })}
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground">
