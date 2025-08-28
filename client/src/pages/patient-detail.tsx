@@ -1155,6 +1155,107 @@ export default function PatientDetail() {
                               </div>
                             </div>
                           )}
+                          
+                          {/* Admission Summary for Discharged Patients */}
+                          {admission.status === 'discharged' && (
+                            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                              <h4 className="font-medium mb-3 text-sm text-gray-700">Admission Summary</h4>
+                              {(() => {
+                                // Calculate room-wise breakdown
+                                const roomBreakdown = [];
+                                const sortedEvents = [...events].sort((a, b) => 
+                                  new Date(a.eventTime).getTime() - new Date(b.eventTime).getTime()
+                                );
+                                
+                                for (let i = 0; i < sortedEvents.length; i++) {
+                                  const currentEvent = sortedEvents[i];
+                                  const nextEvent = sortedEvents[i + 1];
+                                  
+                                  if (currentEvent.eventType === 'admit' || currentEvent.eventType === 'room_change') {
+                                    const startTime = new Date(currentEvent.eventTime);
+                                    const endTime = nextEvent ? new Date(nextEvent.eventTime) : new Date(admission.dischargeDate!);
+                                    const days = Math.max(1, Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 3600 * 24)));
+                                    
+                                    roomBreakdown.push({
+                                      wardType: currentEvent.wardType,
+                                      roomNumber: currentEvent.roomNumber,
+                                      days: days,
+                                      startDate: startTime,
+                                      endDate: endTime
+                                    });
+                                  }
+                                }
+                                
+                                const totalDays = roomBreakdown.reduce((sum, room) => sum + room.days, 0);
+                                const totalCost = admission.dailyCost * totalDays;
+                                
+                                return (
+                                  <div className="space-y-3">
+                                    {/* Total Summary */}
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                      <div>
+                                        <span className="text-muted-foreground">Total Days:</span>
+                                        <div className="font-medium">{totalDays} days</div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground">Total Room Cost:</span>
+                                        <div className="font-medium">₹{totalCost.toLocaleString()}</div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Room-wise Breakdown */}
+                                    <div>
+                                      <span className="text-muted-foreground text-sm">Room-wise Breakdown:</span>
+                                      <div className="mt-2 space-y-2">
+                                        {roomBreakdown.map((room, index) => (
+                                          <div key={index} className="flex justify-between items-center p-2 bg-white rounded text-sm">
+                                            <div>
+                                              <div className="font-medium">
+                                                {room.wardType} ({room.roomNumber})
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {room.startDate.toLocaleDateString('en-IN')} - {room.endDate.toLocaleDateString('en-IN')}
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="font-medium">{room.days} {room.days === 1 ? 'day' : 'days'}</div>
+                                              <div className="text-xs text-muted-foreground">
+                                                ₹{(admission.dailyCost * room.days).toLocaleString()}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* Payment Summary */}
+                                    <div className="pt-2 border-t border-gray-200">
+                                      <div className="grid grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                          <span className="text-muted-foreground">Initial Deposit:</span>
+                                          <div className="font-medium">₹{(admission.initialDeposit || 0).toLocaleString()}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Additional Payments:</span>
+                                          <div className="font-medium">₹{(admission.additionalPayments || 0).toLocaleString()}</div>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground">Balance:</span>
+                                          <div className={`font-medium ${
+                                            (totalCost - (admission.initialDeposit || 0) - (admission.additionalPayments || 0)) > 0 
+                                              ? 'text-red-600' 
+                                              : 'text-green-600'
+                                          }`}>
+                                            ₹{(totalCost - (admission.initialDeposit || 0) - (admission.additionalPayments || 0)).toLocaleString()}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
