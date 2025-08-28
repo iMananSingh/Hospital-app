@@ -1276,53 +1276,105 @@ export default function PatientDetail() {
                       });
                     }
                     
-                    // Add admissions with proper date normalization
+                    // Add admission events instead of just admission records
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
-                        // Use createdAt first, then admissionDate as fallback
-                        let admissionDate = admission.createdAt || admission.admissionDate;
+                        const events = admissionEventsMap[admission.id] || [];
+                        const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                        const doctorName = doctor ? doctor.name : "No Doctor Assigned";
                         
-                        // Ensure date has proper format for parsing
-                        if (typeof admissionDate === 'string' && !admissionDate.includes('T') && !admissionDate.includes('Z')) {
-                          admissionDate = admissionDate + 'T00:00:00Z';
-                        }
-                        
-                        const parsedDate = new Date(admissionDate);
-                        if (isNaN(parsedDate.getTime())) {
-                          console.warn(`Invalid admission date for admission ${admission.id}:`, admissionDate);
-                          return; // Skip this admission if date is invalid
-                        }
-                        
-                        timelineEvents.push({
-                          id: admission.id,
-                          type: 'admission',
-                          title: 'Patient Admission',
-                          date: admissionDate,
-                          description: (() => {
-                            // Find doctor name and format ward type
-                            const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
-                            const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-                            const wardDisplay = admission.currentWardType || admission.wardType;
-                            
-                            const parts = [];
-                            if (admission.reason) parts.push(`Reason: ${admission.reason}`);
-                            parts.push(`Doctor: ${doctorName}`);
-                            parts.push(`Ward: ${wardDisplay}`);
-                            parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
-                            return parts.join(' • ');
-                          })(),
-                          color: 'bg-orange-500',
-                          sortTimestamp: parsedDate.getTime(), // Add explicit sort timestamp
-                          extraInfo: admission.dischargeDate ? `Discharged: ${new Date(admission.dischargeDate).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                          })}` : null
+                        // Add events from admission events table
+                        events.forEach((event: AdmissionEvent) => {
+                          let eventDate = event.eventTime || event.createdAt;
+                          
+                          // Ensure date has proper format for parsing
+                          if (typeof eventDate === 'string' && !eventDate.includes('T') && !eventDate.includes('Z')) {
+                            eventDate = eventDate + 'Z'; // Treat as UTC if no timezone info
+                          }
+                          
+                          const parsedDate = new Date(eventDate);
+                          if (isNaN(parsedDate.getTime())) {
+                            console.warn(`Invalid event date for event ${event.id}:`, eventDate);
+                            return;
+                          }
+                          
+                          let title = '';
+                          let color = 'bg-orange-500';
+                          let description = `Doctor: ${doctorName}`;
+                          
+                          switch (event.eventType) {
+                            case 'admit':
+                              title = 'Patient Admitted';
+                              color = 'bg-green-500';
+                              if (event.roomNumber && event.wardType) {
+                                description += ` • Room: ${event.roomNumber} (${event.wardType})`;
+                              }
+                              if (admission.reason) {
+                                description += ` • Reason: ${admission.reason}`;
+                              }
+                              break;
+                            case 'room_change':
+                              title = 'Room Transfer';
+                              color = 'bg-blue-500';
+                              if (event.roomNumber && event.wardType) {
+                                description += ` • Moved to: ${event.roomNumber} (${event.wardType})`;
+                              }
+                              break;
+                            case 'discharge':
+                              title = 'Patient Discharged';
+                              color = 'bg-gray-500';
+                              if (event.roomNumber && event.wardType) {
+                                description += ` • From Room: ${event.roomNumber} (${event.wardType})`;
+                              }
+                              break;
+                            default:
+                              title = `Admission ${event.eventType.replace('_', ' ')}`;
+                          }
+                          
+                          if (event.notes) {
+                            description += ` • Notes: ${event.notes}`;
+                          }
+                          
+                          timelineEvents.push({
+                            id: `${admission.id}-${event.id}`,
+                            type: 'admission_event',
+                            title: title,
+                            date: eventDate,
+                            description: description,
+                            color: color,
+                            sortTimestamp: parsedDate.getTime()
+                          });
                         });
+                        
+                        // If no events exist, create a basic admission entry as fallback
+                        if (events.length === 0) {
+                          let admissionDate = admission.createdAt || admission.admissionDate;
+                          
+                          if (typeof admissionDate === 'string' && !admissionDate.includes('T') && !admissionDate.includes('Z')) {
+                            admissionDate = admissionDate + 'T00:00:00Z';
+                          }
+                          
+                          const parsedDate = new Date(admissionDate);
+                          if (!isNaN(parsedDate.getTime())) {
+                            timelineEvents.push({
+                              id: `${admission.id}-fallback`,
+                              type: 'admission',
+                              title: 'Patient Admission',
+                              date: admissionDate,
+                              description: (() => {
+                                const wardDisplay = admission.currentWardType || admission.wardType;
+                                const parts = [];
+                                if (admission.reason) parts.push(`Reason: ${admission.reason}`);
+                                parts.push(`Doctor: ${doctorName}`);
+                                parts.push(`Ward: ${wardDisplay}`);
+                                parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
+                                return parts.join(' • ');
+                              })(),
+                              color: 'bg-orange-500',
+                              sortTimestamp: parsedDate.getTime()
+                            });
+                          }
+                        }
                       });
                     }
                     
@@ -1368,9 +1420,16 @@ export default function PatientDetail() {
                     }
                     
                     // Sort events chronologically using explicit timestamp (most recent first)
+                    // Use a more robust sorting approach
                     timelineEvents.sort((a, b) => {
-                      const timestampA = (a as any).sortTimestamp || new Date(a.date).getTime();
-                      const timestampB = (b as any).sortTimestamp || new Date(b.date).getTime();
+                      const timestampA = (a as any).sortTimestamp || new Date(a.date).getTime() || 0;
+                      const timestampB = (b as any).sortTimestamp || new Date(b.date).getTime() || 0;
+                      
+                      // If timestamps are equal, use string comparison as secondary sort
+                      if (timestampA === timestampB) {
+                        return b.date.localeCompare(a.date);
+                      }
+                      
                       return timestampB - timestampA;
                     });
                     
