@@ -197,6 +197,7 @@ async function initializeDatabase() {
         address TEXT NOT NULL DEFAULT '123 Healthcare Street, Medical District, City - 123456',
         phone TEXT NOT NULL DEFAULT '+91 98765 43210',
         email TEXT NOT NULL DEFAULT 'info@medcarepro.com',
+        registration_number TEXT,
         logo_path TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -277,6 +278,15 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE admissions ADD COLUMN additional_payments REAL DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add registration_number column to hospital_settings table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE hospital_settings ADD COLUMN registration_number TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -1125,6 +1135,7 @@ export class SqliteStorage implements IStorage {
           address: '123 Healthcare Street, Medical District, City - 123456',
           phone: '+91 98765 43210',
           email: 'info@medcarepro.com',
+          registrationNumber: null,
           logoPath: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -1141,6 +1152,7 @@ export class SqliteStorage implements IStorage {
         address: '123 Healthcare Street, Medical District, City - 123456',
         phone: '+91 98765 43210',
         email: 'info@medcarepro.com',
+        registrationNumber: null,
         logoPath: null,
       };
     }
@@ -1155,6 +1167,7 @@ export class SqliteStorage implements IStorage {
         address: settings.address,
         phone: settings.phone,
         email: settings.email,
+        registrationNumber: settings.registrationNumber || null,
         logoPath: settings.logoPath || null,
         updatedAt: new Date().toISOString()
       }).onConflictDoUpdate({
@@ -1164,6 +1177,7 @@ export class SqliteStorage implements IStorage {
           address: settings.address,
           phone: settings.phone,
           email: settings.email,
+          registrationNumber: settings.registrationNumber || null,
           logoPath: settings.logoPath || null,
           updatedAt: new Date().toISOString()
         }

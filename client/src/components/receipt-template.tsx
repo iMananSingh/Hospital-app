@@ -20,6 +20,7 @@ interface ReceiptTemplateProps {
     address: string;
     phone: string;
     email: string;
+    registrationNumber?: string;
     logo?: string;
   };
   onPrint: () => void;
@@ -235,6 +236,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     ${hospitalInfo.address}<br>
                     Phone: ${hospitalInfo.phone}<br>
                     Email: ${hospitalInfo.email}
+                    ${hospitalInfo.registrationNumber ? `<br>Reg. No.: ${hospitalInfo.registrationNumber}` : ''}
                   </div>
                 </div>
               </div>

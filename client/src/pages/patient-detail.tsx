@@ -81,6 +81,7 @@ export default function PatientDetail() {
     address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
     phone: hospitalSettings?.phone || "+91 98765 43210",
     email: hospitalSettings?.email || "info@medcarepro.com",
+    registrationNumber: hospitalSettings?.registrationNumber || "",
     logo: hospitalSettings?.logoPath || undefined
   };
 
@@ -1704,22 +1705,12 @@ export default function PatientDetail() {
                     console.log("=== TIMELINE DEBUG END ===");
 
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
-                      <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                        <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium">{event.title}</p>
-                            <div className="flex items-center gap-2">
-                              <ReceiptTemplate
-                                receiptData={generateReceiptData(event, event.type)}
-                                hospitalInfo={hospitalInfo}
-                                onPrint={() => {
-                                  toast({
-                                    title: "Receipt printed",
-                                    description: "Receipt has been sent to printer.",
-                                  });
-                                }}
-                              />
+                      <div key={event.id} className="flex items-stretch gap-3">
+                        <div className="flex-1 flex items-start gap-3 p-3 border rounded-lg">
+                          <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium">{event.title}</p>
                               <span className="text-sm text-muted-foreground">
                                 {new Date(event.sortTimestamp).toLocaleString('en-US', {
                                   year: 'numeric',
@@ -1732,15 +1723,27 @@ export default function PatientDetail() {
                                 })}
                               </span>
                             </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {event.description}
-                          </p>
-                          {(event as any).extraInfo && (
-                            <p className="text-sm text-green-600">
-                              {(event as any).extraInfo}
+                            <p className="text-sm text-muted-foreground">
+                              {event.description}
                             </p>
-                          )}
+                            {(event as any).extraInfo && (
+                              <p className="text-sm text-green-600">
+                                {(event as any).extraInfo}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <ReceiptTemplate
+                            receiptData={generateReceiptData(event, event.type)}
+                            hospitalInfo={hospitalInfo}
+                            onPrint={() => {
+                              toast({
+                                title: "Receipt printed",
+                                description: "Receipt has been sent to printer.",
+                              });
+                            }}
+                          />
                         </div>
                       </div>
                     )) : (
