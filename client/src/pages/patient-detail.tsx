@@ -97,7 +97,13 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: true,
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      })
+      }),
+      details: {
+        patientAge: patient?.age || 'N/A',
+        patientGender: patient?.gender || 'N/A',
+        doctorName: event.doctorName || 'N/A',
+        category: event.category || eventType
+      }
     };
 
     switch (eventType) {

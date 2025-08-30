@@ -27,6 +27,54 @@ interface ReceiptTemplateProps {
 }
 
 export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptTemplateProps) {
+  const getReceiptTitle = (type: string, details?: Record<string, any>) => {
+    switch (type) {
+      case 'pathology':
+        return 'Pathology Receipt';
+      case 'service':
+        // Get the service category from details
+        const category = details?.category;
+        if (category) {
+          switch (category) {
+            case 'diagnostics':
+              return 'Diagnostic Service Receipt';
+            case 'procedures':
+              return 'Medical Procedure Receipt';
+            case 'operations':
+              return 'Surgical Operation Receipt';
+            case 'misc':
+              return 'Miscellaneous Service Receipt';
+            default:
+              return 'Service Receipt';
+          }
+        }
+        return 'Service Receipt';
+      case 'admission':
+        return 'Admission Receipt';
+      case 'payment':
+        return 'Payment Receipt';
+      case 'discount':
+        return 'Discount Receipt';
+      default:
+        return 'Receipt';
+    }
+  };
+
+  const getPatientAge = () => {
+    // Try to extract age from patient details if available
+    return receiptData.details?.patientAge || 'N/A';
+  };
+
+  const getPatientGender = () => {
+    // Try to extract gender from patient details if available
+    return receiptData.details?.patientGender || 'N/A';
+  };
+
+  const getDoctorName = () => {
+    // Try to extract doctor name from details if available
+    return receiptData.details?.doctorName || 'N/A';
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -35,7 +83,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Receipt - ${receiptData.title}</title>
+          <title>Receipt - ${getReceiptTitle(receiptData.type, receiptData.details)}</title>
           <style>
             * {
               margin: 0;
@@ -44,251 +92,259 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              line-height: 1.6;
+              font-family: Arial, sans-serif;
+              line-height: 1.4;
               color: #333;
               background: white;
+              font-size: 14px;
             }
             
             .receipt {
               max-width: 800px;
               margin: 0 auto;
-              padding: 40px;
-              min-height: 50vh;
-              border: 2px solid #e5e7eb;
-              border-radius: 12px;
-              background: white;
+              padding: 20px;
+              min-height: 90vh;
+              display: flex;
+              flex-direction: column;
             }
             
+            /* Header - Logo and Hospital Name only */
             .header {
               display: flex;
               align-items: center;
-              justify-content: space-between;
-              margin-bottom: 40px;
-              padding-bottom: 20px;
-              border-bottom: 3px solid #3b82f6;
+              justify-content: center;
+              margin-bottom: 20px;
+              padding-bottom: 15px;
+              border-bottom: 2px solid #333;
             }
             
             .hospital-info {
-              flex: 1;
-              display: flex !important;
+              display: flex;
               align-items: center;
+              gap: 15px;
             }
             
             .hospital-logo {
-              width: 80px;
-              height: 80px;
+              width: 60px;
+              height: 60px;
               object-fit: contain;
-              border-radius: 8px;
             }
             
             .hospital-name {
-              font-size: 28px;
+              font-size: 24px;
               font-weight: bold;
-              color: #1e40af;
-              margin-bottom: 8px;
+              color: #333;
             }
             
-            .hospital-details {
-              color: #6b7280;
-              font-size: 14px;
-              line-height: 1.4;
-            }
-            
-            .receipt-type {
-              background: #3b82f6;
-              color: white;
-              padding: 12px 24px;
-              border-radius: 8px;
-              font-weight: bold;
-              font-size: 16px;
+            /* Receipt Title */
+            .receipt-title {
               text-align: center;
-              min-width: 150px;
-            }
-            
-            .receipt-info {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 30px;
-              margin-bottom: 40px;
-            }
-            
-            .info-section {
-              background: #f8fafc;
-              padding: 20px;
-              border-radius: 8px;
-              border-left: 4px solid #3b82f6;
-            }
-            
-            .info-title {
+              font-size: 18px;
               font-weight: bold;
-              color: #1e40af;
-              margin-bottom: 12px;
-              font-size: 16px;
+              margin: 20px 0;
+              text-transform: uppercase;
+              letter-spacing: 1px;
             }
             
-            .info-row {
+            /* Patient Information Box */
+            .patient-info-box {
+              border: 2px solid #333;
+              padding: 15px;
+              margin: 20px 0;
+              background: #f9f9f9;
+            }
+            
+            .patient-line-1 {
               display: flex;
               justify-content: space-between;
               margin-bottom: 8px;
-              font-size: 14px;
-            }
-            
-            .info-label {
-              color: #6b7280;
-              font-weight: 500;
-            }
-            
-            .info-value {
-              font-weight: 600;
-              color: #374151;
-            }
-            
-            .amount-section {
-              background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-              color: white;
-              padding: 24px;
-              border-radius: 12px;
-              text-align: center;
-              margin: 30px 0;
-            }
-            
-            .amount-label {
-              font-size: 16px;
-              margin-bottom: 8px;
-              opacity: 0.9;
-            }
-            
-            .amount-value {
-              font-size: 36px;
               font-weight: bold;
             }
             
+            .patient-line-2 {
+              display: flex;
+              justify-content: space-between;
+              font-weight: bold;
+            }
+            
+            /* Bill Details */
+            .bill-section {
+              margin: 20px 0;
+              flex-grow: 1;
+            }
+            
+            .bill-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+            }
+            
+            .bill-table th,
+            .bill-table td {
+              border: 1px solid #333;
+              padding: 8px;
+              text-align: left;
+            }
+            
+            .bill-table th {
+              background: #f0f0f0;
+              font-weight: bold;
+            }
+            
+            .amount-cell {
+              text-align: right;
+            }
+            
+            .total-row {
+              font-weight: bold;
+              background: #f0f0f0;
+            }
+            
             .description-section {
-              margin: 30px 0;
-              padding: 20px;
-              background: #f1f5f9;
-              border-radius: 8px;
-              border: 1px solid #e2e8f0;
+              margin: 15px 0;
+              padding: 10px;
+              background: #f9f9f9;
+              border: 1px solid #ddd;
             }
             
             .description-title {
               font-weight: bold;
-              color: #1e40af;
-              margin-bottom: 12px;
-              font-size: 16px;
+              margin-bottom: 5px;
             }
             
-            .description-text {
-              color: #374151;
-              line-height: 1.6;
-            }
-            
-            .footer {
+            /* Signature Section */
+            .signature-section {
               margin-top: 40px;
-              padding-top: 20px;
-              border-top: 2px solid #e5e7eb;
-              text-align: center;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
             }
             
-            .footer-note {
-              color: #6b7280;
+            .signature-box {
+              text-align: center;
+              min-width: 200px;
+            }
+            
+            .signature-line {
+              border-bottom: 1px solid #333;
+              margin-bottom: 5px;
+              height: 40px;
+            }
+            
+            /* Footer */
+            .footer {
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px solid #333;
+              text-align: center;
               font-size: 12px;
-              font-style: italic;
+              line-height: 1.5;
+            }
+            
+            .footer-line {
+              margin-bottom: 3px;
             }
             
             .receipt-id {
-              background: #f3f4f6;
-              padding: 8px 16px;
-              border-radius: 6px;
-              font-family: monospace;
-              font-size: 12px;
-              color: #374151;
               margin-top: 10px;
-              display: inline-block;
+              font-family: monospace;
+              font-size: 10px;
+              color: #666;
             }
             
             @media print {
               body {
                 margin: 0;
-                padding: 20px;
+                padding: 10px;
               }
               .receipt {
-                border: none;
-                box-shadow: none;
-                padding: 20px;
+                padding: 10px;
               }
             }
           </style>
         </head>
         <body>
           <div class="receipt">
+            <!-- Header - Logo and Hospital Name Only -->
             <div class="header">
-              <div class="hospital-info" style="display: flex; align-items: center;">
+              <div class="hospital-info">
                 ${hospitalInfo.logo ? `
-                  <div style="margin-right: 20px;">
-                    <img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo">
-                  </div>
+                  <img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo">
                 ` : ''}
-                <div>
-                  <div class="hospital-name">${hospitalInfo.name}</div>
-                  <div class="hospital-details">
-                    ${hospitalInfo.address}<br>
-                    Phone: ${hospitalInfo.phone}<br>
-                    Email: ${hospitalInfo.email}
-                    ${hospitalInfo.registrationNumber ? `<br>Reg. No.: ${hospitalInfo.registrationNumber}` : ''}
-                  </div>
-                </div>
-              </div>
-              <div class="receipt-type">
-                ${receiptData.type.toUpperCase()} RECEIPT
+                <div class="hospital-name">${hospitalInfo.name}</div>
               </div>
             </div>
             
-            <div class="receipt-info">
-              <div class="info-section">
-                <div class="info-title">Patient Information</div>
-                <div class="info-row">
-                  <span class="info-label">Patient Name:</span>
-                  <span class="info-value">${receiptData.patientName}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Patient ID:</span>
-                  <span class="info-value">${receiptData.patientId}</span>
-                </div>
+            <!-- Receipt Title -->
+            <div class="receipt-title">
+              ${getReceiptTitle(receiptData.type, receiptData.details)}
+            </div>
+            
+            <!-- Patient Information Box -->
+            <div class="patient-info-box">
+              <div class="patient-line-1">
+                <span>${receiptData.patientName} (${receiptData.patientId}), ${getPatientAge()} Years, ${getPatientGender()}</span>
+                <span>Date: ${receiptData.date}</span>
               </div>
+              <div class="patient-line-2">
+                <span>Doctor: ${getDoctorName()}</span>
+                <span>Receipt No: ${receiptData.id}</span>
+              </div>
+            </div>
+            
+            <!-- Bill Section -->
+            <div class="bill-section">
+              <table class="bill-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60%;">Description</th>
+                    <th style="width: 20%;">Quantity</th>
+                    <th style="width: 20%;">Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${receiptData.title}</td>
+                    <td style="text-align: center;">1</td>
+                    <td class="amount-cell">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                  </tr>
+                  <tr class="total-row">
+                    <td colspan="2" style="text-align: right; font-weight: bold;">Total Amount:</td>
+                    <td class="amount-cell" style="font-weight: bold;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                  </tr>
+                </tbody>
+              </table>
               
-              <div class="info-section">
-                <div class="info-title">Receipt Details</div>
-                <div class="info-row">
-                  <span class="info-label">Date:</span>
-                  <span class="info-value">${receiptData.date}</span>
+              ${receiptData.description ? `
+                <div class="description-section">
+                  <div class="description-title">Details:</div>
+                  <div>${receiptData.description}</div>
                 </div>
-                <div class="info-row">
-                  <span class="info-label">Receipt ID:</span>
-                  <span class="info-value">${receiptData.id}</span>
-                </div>
+              ` : ''}
+            </div>
+            
+            <!-- Signature Section -->
+            <div class="signature-section">
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Patient/Attendant Signature</div>
+              </div>
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <div>Authorized Signature & Stamp</div>
               </div>
             </div>
             
-            ${receiptData.amount ? `
-              <div class="amount-section">
-                <div class="amount-label">${receiptData.type === 'discount' ? 'Discount Amount' : 'Amount'}</div>
-                <div class="amount-value">₹${receiptData.amount.toLocaleString()}</div>
-              </div>
-            ` : ''}
-            
-            <div class="description-section">
-              <div class="description-title">${receiptData.title}</div>
-              <div class="description-text">${receiptData.description}</div>
-            </div>
-            
+            <!-- Footer -->
             <div class="footer">
-              <div class="footer-note">
-                This is a computer generated receipt and does not require signature.<br>
-                Generated on ${new Date().toLocaleString()}
+              <div class="footer-line">${hospitalInfo.address}</div>
+              <div class="footer-line">Phone: ${hospitalInfo.phone} | Email: ${hospitalInfo.email}</div>
+              ${hospitalInfo.registrationNumber ? `
+                <div class="footer-line">Registration No: ${hospitalInfo.registrationNumber}</div>
+              ` : ''}
+              <div class="receipt-id">
+                Receipt ID: RCP-${Date.now()} | Generated on ${new Date().toLocaleString()}
               </div>
-              <div class="receipt-id">Receipt ID: RCP-${Date.now()}</div>
             </div>
           </div>
         </body>
