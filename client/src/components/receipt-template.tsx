@@ -159,6 +159,15 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               justify-content: space-between;
               margin-bottom: 8px;
               font-weight: bold;
+              gap: 20px;
+            }
+            
+            .patient-line-1 span {
+              flex: 1;
+            }
+            
+            .patient-line-1 span:last-child {
+              text-align: right;
             }
             
             .patient-line-2 {
@@ -288,8 +297,18 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             <!-- Patient Information Box -->
             <div class="patient-info-box">
               <div class="patient-line-1">
-                <span>${receiptData.patientName} (${receiptData.patientId}), ${getPatientAge()} Years, ${getPatientGender()}</span>
-                <span>Date: ${receiptData.date}</span>
+                <span>Name: ${receiptData.patientName} (${receiptData.patientId})</span>
+                <span>Age: ${getPatientAge()}</span>
+                <span>Sex: ${getPatientGender()}</span>
+                <span>Date: ${(() => {
+                  const date = new Date(receiptData.date);
+                  return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                  });
+                })()}</span>
               </div>
               <div class="patient-line-2">
                 <span>Doctor: ${getDoctorName()}</span>
