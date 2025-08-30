@@ -32,12 +32,14 @@ import {
   Clock,
   Minus,
   Edit,
-  Settings
+  Settings,
+  Printer
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ReceiptTemplate } from "@/components/receipt-template";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 
 export default function PatientDetail() {
@@ -58,6 +60,91 @@ export default function PatientDetail() {
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
+
+  // Hospital info for receipts (in real app, this would come from settings)
+  const hospitalInfo = {
+    name: "MedCare Pro Hospital",
+    address: "123 Healthcare Street, Medical District, City - 123456",
+    phone: "+91 98765 43210",
+    email: "info@medcarepro.com",
+    logo: undefined // Would be set from settings
+  };
+
+  const generateReceiptData = (event: any, eventType: string) => {
+    const baseData = {
+      patientName: patient?.name || "Unknown Patient",
+      patientId: patient?.patientId || "Unknown ID",
+      date: new Date(event.sortTimestamp).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      })
+    };
+
+    switch (eventType) {
+      case 'service':
+        return {
+          ...baseData,
+          type: 'service' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          amount: event.rawData?.service?.price
+        };
+      
+      case 'pathology':
+        return {
+          ...baseData,
+          type: 'pathology' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          amount: event.rawData?.order?.totalPrice
+        };
+      
+      case 'admission_event':
+        return {
+          ...baseData,
+          type: 'admission' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description
+        };
+      
+      case 'payment':
+        return {
+          ...baseData,
+          type: 'payment' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
+        };
+      
+      case 'discount':
+        return {
+          ...baseData,
+          type: 'discount' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
+        };
+      
+      default:
+        return {
+          ...baseData,
+          type: 'service' as const,
+          id: event.id,
+          title: event.title,
+          description: event.description
+        };
+    }
+  };
 
   // Fetch patient details
   const { data: patient } = useQuery<Patient>({
@@ -1608,17 +1695,29 @@ export default function PatientDetail() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <p className="font-medium">{event.title}</p>
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(event.sortTimestamp).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true,
-                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                              })}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <ReceiptTemplate
+                                receiptData={generateReceiptData(event, event.type)}
+                                hospitalInfo={hospitalInfo}
+                                onPrint={() => {
+                                  toast({
+                                    title: "Receipt printed",
+                                    description: "Receipt has been sent to printer.",
+                                  });
+                                }}
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(event.sortTimestamp).toLocaleString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                })}
+                              </span>
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {event.description}
