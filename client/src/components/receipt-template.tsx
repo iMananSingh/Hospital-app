@@ -252,6 +252,11 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               color: #666;
             }
             
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            
             @media print {
               body {
                 margin: 0;
