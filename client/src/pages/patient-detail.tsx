@@ -1733,17 +1733,19 @@ export default function PatientDetail() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center">
-                          <ReceiptTemplate
-                            receiptData={generateReceiptData(event, event.type)}
-                            hospitalInfo={hospitalInfo}
-                            onPrint={() => {
-                              toast({
-                                title: "Receipt printed",
-                                description: "Receipt has been sent to printer.",
-                              });
-                            }}
-                          />
+                        <div className="flex items-stretch">
+                          <div className="flex items-center h-full">
+                            <ReceiptTemplate
+                              receiptData={generateReceiptData(event, event.type)}
+                              hospitalInfo={hospitalInfo}
+                              onPrint={() => {
+                                toast({
+                                  title: "Receipt printed",
+                                  description: "Receipt has been sent to printer.",
+                                });
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     )) : (
