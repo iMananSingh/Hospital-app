@@ -81,15 +81,13 @@ export default function PatientDetail() {
     address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
     phone: hospitalSettings?.phone || "+91 98765 43210",
     email: hospitalSettings?.email || "info@medcarepro.com",
-    logo: hospitalSettings?.logoPath || undefined,
-    regNumber: hospitalSettings?.regNumber || "" // Added for registration number
+    logo: hospitalSettings?.logoPath || undefined
   };
 
   const generateReceiptData = (event: any, eventType: string) => {
     const baseData = {
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
-      regNumber: hospitalInfo.regNumber, // Include registration number
       date: new Date(event.sortTimestamp).toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -111,7 +109,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: event.rawData?.service?.price
         };
-
+      
       case 'pathology':
         return {
           ...baseData,
@@ -121,7 +119,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: event.rawData?.order?.totalPrice
         };
-
+      
       case 'admission_event':
         return {
           ...baseData,
@@ -130,7 +128,7 @@ export default function PatientDetail() {
           title: event.title,
           description: event.description
         };
-
+      
       case 'payment':
         return {
           ...baseData,
@@ -140,7 +138,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
         };
-
+      
       case 'discount':
         return {
           ...baseData,
@@ -150,7 +148,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
         };
-
+      
       default:
         return {
           ...baseData,
@@ -717,35 +715,6 @@ export default function PatientDetail() {
     return allServices.filter(s => s.category === category && s.isActive);
   };
 
-  // Helper functions for timeline event display
-  const getEventTypeColor = (type: string) => {
-    switch (type) {
-      case 'service': return 'bg-green-100 text-green-800';
-      case 'pathology': return 'bg-purple-100 text-purple-800';
-      case 'admission': return 'bg-orange-100 text-orange-800';
-      case 'payment': return 'bg-blue-100 text-blue-800';
-      case 'discount': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getEventIcon = (type: string) => {
-    switch (type) {
-      case 'service': return <Stethoscope className="h-4 w-4" />;
-      case 'pathology': return <TestTube className="h-4 w-4" />;
-      case 'admission': return <Bed className="h-4 w-4" />;
-      case 'payment': return <Plus className="h-4 w-4" />;
-      case 'discount': return <Minus className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const handlePrintReceipt = (event: any, eventType: string) => {
-    toast({
-      title: "Receipt printed",
-      description: "Receipt has been sent to printer.",
-    });
-  };
 
   if (!patient) {
     return <div className="flex items-center justify-center h-64">Loading patient details...</div>;
@@ -1634,7 +1603,7 @@ export default function PatientDetail() {
                             title: 'Payment Received',
                             date: paymentNormalized.date,
                             description: `Amount: ₹${admission.lastPaymentAmount}`,
-                            color: 'bg-blue-600', // Changed color for payment
+                            color: 'bg-green-600',
                             sortTimestamp: paymentNormalized.timestamp
                           });
                         }
@@ -1735,47 +1704,44 @@ export default function PatientDetail() {
                     console.log("=== TIMELINE DEBUG END ===");
 
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
-                      <div className="flex items-stretch space-x-3">
+                      <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
                         <div className="flex-1">
-                          <div key={event.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline" className={getEventTypeColor(event.type)}>
-                                  {getEventIcon(event.type)}
-                                  {event.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                </Badge>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(event.sortTimestamp).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                                  })}
-                                </span>
-                              </div>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{event.title}</p>
+                            <div className="flex items-center gap-2">
+                              <ReceiptTemplate
+                                receiptData={generateReceiptData(event, event.type)}
+                                hospitalInfo={hospitalInfo}
+                                onPrint={() => {
+                                  toast({
+                                    title: "Receipt printed",
+                                    description: "Receipt has been sent to printer.",
+                                  });
+                                }}
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {new Date(event.sortTimestamp).toLocaleString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                })}
+                              </span>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {event.description}
-                            </p>
-                            {(event as any).extraInfo && (
-                              <p className="text-sm text-green-600">
-                                {(event as any).extraInfo}
-                              </p>
-                            )}
                           </div>
+                          <p className="text-sm text-muted-foreground">
+                            {event.description}
+                          </p>
+                          {(event as any).extraInfo && (
+                            <p className="text-sm text-green-600">
+                              {(event as any).extraInfo}
+                            </p>
+                          )}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrintReceipt(event, event.type)}
-                          className="text-xs px-3 py-2 h-full flex items-center justify-center min-w-[80px]"
-                        >
-                          <Printer className="w-3 h-3 mr-1" />
-                          Print
-                        </Button>
                       </div>
                     )) : (
                       <div className="text-center text-muted-foreground py-8">
@@ -2464,7 +2430,7 @@ export default function PatientDetail() {
 
                 const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(discountAmount);
-
+                
                 console.log("Selected admission ID:", selectedAdmissionId);
                 console.log("Parsed amount:", amount);
 

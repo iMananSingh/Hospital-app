@@ -201,7 +201,6 @@ export const hospitalSettings = sqliteTable("hospital_settings", {
   address: text("address").notNull().default("123 Healthcare Street, Medical District, City - 123456"),
   phone: text("phone").notNull().default("+91 98765 43210"),
   email: text("email").notNull().default("info@medcarepro.com"),
-  registrationNumber: text("registration_number").default("REG123456789"),
   logoPath: text("logo_path"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
