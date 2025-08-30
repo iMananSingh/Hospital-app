@@ -156,17 +156,30 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             .patient-line-1 {
               display: flex;
-              justify-content: space-between;
               margin-bottom: 8px;
               font-weight: bold;
               gap: 20px;
+              align-items: center;
             }
             
-            .patient-line-1 span {
-              flex: 1;
+            .patient-line-1 .name-section {
+              flex: 2;
+              min-width: 0;
             }
             
-            .patient-line-1 span:last-child {
+            .patient-line-1 .age-section {
+              flex: 0 0 auto;
+              min-width: 80px;
+            }
+            
+            .patient-line-1 .sex-section {
+              flex: 0 0 auto;
+              min-width: 80px;
+            }
+            
+            .patient-line-1 .date-section {
+              flex: 0 0 auto;
+              min-width: 120px;
               text-align: right;
             }
             
@@ -297,10 +310,10 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             <!-- Patient Information Box -->
             <div class="patient-info-box">
               <div class="patient-line-1">
-                <span>Name: ${receiptData.patientName} (${receiptData.patientId})</span>
-                <span>Age: ${getPatientAge()}</span>
-                <span>Sex: ${getPatientGender()}</span>
-                <span>Date: ${(() => {
+                <span class="name-section">Name: ${receiptData.patientName} (${receiptData.patientId})</span>
+                <span class="age-section">Age: ${getPatientAge()}</span>
+                <span class="sex-section">Sex: ${getPatientGender()}</span>
+                <span class="date-section">Date: ${(() => {
                   const date = new Date(receiptData.date);
                   return date.toLocaleDateString('en-US', {
                     year: 'numeric',
