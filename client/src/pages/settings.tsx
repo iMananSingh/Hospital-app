@@ -177,6 +177,7 @@ export default function Settings() {
       address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
       phone: hospitalSettings?.phone || "+91 98765 43210",
       email: hospitalSettings?.email || "info@medcarepro.com",
+      registrationNumber: hospitalSettings?.registrationNumber || "REG123456789",
     },
   });
 
@@ -188,6 +189,7 @@ export default function Settings() {
         address: hospitalSettings.address,
         phone: hospitalSettings.phone,
         email: hospitalSettings.email,
+        registrationNumber: hospitalSettings.registrationNumber,
       });
       setHospitalLogo(hospitalSettings.logoPath);
     }
@@ -580,6 +582,15 @@ export default function Settings() {
                           data-testid="input-hospital-email" 
                         />
                       </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Registration Number</Label>
+                      <Input 
+                        {...hospitalForm.register("registrationNumber")}
+                        placeholder="Hospital registration number"
+                        data-testid="input-hospital-registration" 
+                      />
                     </div>
                     
                     <Button 

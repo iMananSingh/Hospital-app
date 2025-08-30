@@ -234,7 +234,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                   <div class="hospital-details">
                     ${hospitalInfo.address}<br>
                     Phone: ${hospitalInfo.phone}<br>
-                    Email: ${hospitalInfo.email}
+                    Email: ${hospitalInfo.email}<br>
+                    Reg. No.: ${hospitalInfo.registrationNumber}
                   </div>
                 </div>
               </div>

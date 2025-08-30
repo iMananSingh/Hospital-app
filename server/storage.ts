@@ -1125,6 +1125,7 @@ export class SqliteStorage implements IStorage {
           address: '123 Healthcare Street, Medical District, City - 123456',
           phone: '+91 98765 43210',
           email: 'info@medcarepro.com',
+          registrationNumber: 'REG123456789',
           logoPath: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -1141,6 +1142,7 @@ export class SqliteStorage implements IStorage {
         address: '123 Healthcare Street, Medical District, City - 123456',
         phone: '+91 98765 43210',
         email: 'info@medcarepro.com',
+        registrationNumber: 'REG123456789',
         logoPath: null,
       };
     }
@@ -1155,6 +1157,7 @@ export class SqliteStorage implements IStorage {
         address: settings.address,
         phone: settings.phone,
         email: settings.email,
+        registrationNumber: settings.registrationNumber || 'REG123456789',
         logoPath: settings.logoPath || null,
         updatedAt: new Date().toISOString()
       }).onConflictDoUpdate({
@@ -1164,6 +1167,7 @@ export class SqliteStorage implements IStorage {
           address: settings.address,
           phone: settings.phone,
           email: settings.email,
+          registrationNumber: settings.registrationNumber || 'REG123456789',
           logoPath: settings.logoPath || null,
           updatedAt: new Date().toISOString()
         }
