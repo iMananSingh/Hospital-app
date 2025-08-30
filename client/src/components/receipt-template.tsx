@@ -72,7 +72,27 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
 
   const getDoctorName = () => {
     // Try to extract doctor name from details if available
-    return receiptData.details?.doctorName || 'N/A';
+    if (receiptData.details?.doctorName) {
+      return receiptData.details.doctorName;
+    }
+    
+    // For pathology receipts, try to get doctor from the details
+    if (receiptData.type === 'pathology' && receiptData.details?.doctor) {
+      return `Dr. ${receiptData.details.doctor.name}`;
+    }
+    
+    // For service receipts, try to get doctor from the details
+    if (receiptData.type === 'service' && receiptData.details?.doctor) {
+      return `Dr. ${receiptData.details.doctor.name}`;
+    }
+    
+    // For admission receipts, try to get doctor from the details
+    if (receiptData.type === 'admission' && receiptData.details?.doctor) {
+      return `Dr. ${receiptData.details.doctor.name}`;
+    }
+    
+    // If no doctor information is available
+    return 'No Doctor Assigned';
   };
 
   const handlePrint = () => {

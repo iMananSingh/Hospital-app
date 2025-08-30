@@ -114,9 +114,13 @@ export default function PatientDetail() {
           id: event.id,
           title: event.title,
           description: event.description,
-          amount: event.rawData?.service?.price
+          amount: event.rawData?.service?.price,
+          details: {
+            ...baseData.details,
+            doctorName: event.rawData?.service?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.service.doctorId)?.name || 'Unknown Doctor'}` : 'No Doctor Assigned',
+          }
         };
-      
+
       case 'pathology':
         return {
           ...baseData,
@@ -124,18 +128,26 @@ export default function PatientDetail() {
           id: event.id,
           title: event.title,
           description: event.description,
-          amount: event.rawData?.order?.totalPrice
+          amount: event.rawData?.order?.totalPrice,
+          details: {
+            ...baseData.details,
+            doctorName: event.rawData?.order?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId)?.name || 'Unknown Doctor'}` : 'External Patient',
+          }
         };
-      
+
       case 'admission_event':
         return {
           ...baseData,
           type: 'admission' as const,
           id: event.id,
           title: event.title,
-          description: event.description
+          description: event.description,
+          details: {
+            ...baseData.details,
+            doctorName: event.rawData?.admission?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId)?.name || 'Unknown Doctor'}` : 'No Doctor Assigned',
+          }
         };
-      
+
       case 'payment':
         return {
           ...baseData,
@@ -145,7 +157,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
         };
-      
+
       case 'discount':
         return {
           ...baseData,
@@ -155,7 +167,7 @@ export default function PatientDetail() {
           description: event.description,
           amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
         };
-      
+
       default:
         return {
           ...baseData,
@@ -2441,7 +2453,7 @@ export default function PatientDetail() {
 
                 const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(discountAmount);
-                
+
                 console.log("Selected admission ID:", selectedAdmissionId);
                 console.log("Parsed amount:", amount);
 
