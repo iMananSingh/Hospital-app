@@ -1735,8 +1735,8 @@ export default function PatientDetail() {
                     console.log("=== TIMELINE DEBUG END ===");
 
                     return timelineEvents.length > 0 ? timelineEvents.map((event) => (
-                      <div key={event.id} className="flex items-stretch gap-3">
-                        <div className="flex-1 flex items-start gap-3 p-3 border rounded-lg">
+                      <div key={event.id} className={event.type === 'registration' ? 'w-full' : 'flex items-stretch gap-3'}>
+                        <div className={`${event.type === 'registration' ? 'w-full' : 'flex-1'} flex items-start gap-3 p-3 border rounded-lg`}>
                           <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
@@ -1763,20 +1763,22 @@ export default function PatientDetail() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-stretch">
-                          <div className="flex items-center h-full">
-                            <ReceiptTemplate
-                              receiptData={generateReceiptData(event, event.type)}
-                              hospitalInfo={hospitalInfo}
-                              onPrint={() => {
-                                toast({
-                                  title: "Receipt printed",
-                                  description: "Receipt has been sent to printer.",
-                                });
-                              }}
-                            />
+                        {event.type !== 'registration' && (
+                          <div className="flex items-stretch">
+                            <div className="flex items-center h-full">
+                              <ReceiptTemplate
+                                receiptData={generateReceiptData(event, event.type)}
+                                hospitalInfo={hospitalInfo}
+                                onPrint={() => {
+                                  toast({
+                                    title: "Receipt printed",
+                                    description: "Receipt has been sent to printer.",
+                                  });
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     )) : (
                       <div className="text-center text-muted-foreground py-8">
