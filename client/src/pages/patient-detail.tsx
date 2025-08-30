@@ -117,7 +117,10 @@ export default function PatientDetail() {
           amount: event.rawData?.service?.price,
           details: {
             ...baseData.details,
-            doctorName: event.rawData?.service?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.service.doctorId)?.name || 'Unknown Doctor'}` : 'No Doctor Assigned',
+            doctorName: event.rawData?.service?.doctorId ? (() => {
+              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.service.doctorId);
+              return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
+            })() : 'No Doctor Assigned',
           }
         };
 
@@ -131,7 +134,10 @@ export default function PatientDetail() {
           amount: event.rawData?.order?.totalPrice,
           details: {
             ...baseData.details,
-            doctorName: event.rawData?.order?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId)?.name || 'Unknown Doctor'}` : 'External Patient',
+            doctorName: event.rawData?.order?.doctorId ? (() => {
+              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
+              return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
+            })() : 'External Patient',
           }
         };
 
@@ -1602,7 +1608,7 @@ export default function PatientDetail() {
                             })(),
                             color: 'bg-orange-500',
                             sortTimestamp: admissionNormalized.timestamp,
-                            rawData: { admission, primaryDate } // Debug info
+                            rawData: { admission, primaryDate, doctorName } // Include doctor info for receipt
                           });
                         }
                       });

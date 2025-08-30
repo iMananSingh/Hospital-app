@@ -78,17 +78,20 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     
     // For pathology receipts, try to get doctor from the details
     if (receiptData.type === 'pathology' && receiptData.details?.doctor) {
-      return `Dr. ${receiptData.details.doctor.name}`;
+      const doctorName = receiptData.details.doctor.name;
+      return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
     
     // For service receipts, try to get doctor from the details
     if (receiptData.type === 'service' && receiptData.details?.doctor) {
-      return `Dr. ${receiptData.details.doctor.name}`;
+      const doctorName = receiptData.details.doctor.name;
+      return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
     
     // For admission receipts, try to get doctor from the details
     if (receiptData.type === 'admission' && receiptData.details?.doctor) {
-      return `Dr. ${receiptData.details.doctor.name}`;
+      const doctorName = receiptData.details.doctor.name;
+      return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
     
     // If no doctor information is available
