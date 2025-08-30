@@ -119,7 +119,7 @@ export default function PatientDetail() {
             ...baseData.details,
             doctorName: event.rawData?.service?.doctorId ? (() => {
               const doctor = doctors.find((d: Doctor) => d.id === event.rawData.service.doctorId);
-              return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
+              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
             })() : 'No Doctor Assigned',
           }
         };
@@ -136,12 +136,13 @@ export default function PatientDetail() {
             ...baseData.details,
             doctorName: event.rawData?.order?.doctorId ? (() => {
               const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
-              return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
+              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
             })() : 'External Patient',
           }
         };
 
       case 'admission_event':
+      case 'admission':
         return {
           ...baseData,
           type: 'admission' as const,
@@ -150,7 +151,10 @@ export default function PatientDetail() {
           description: event.description,
           details: {
             ...baseData.details,
-            doctorName: event.rawData?.admission?.doctorId ? `Dr. ${doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId)?.name || 'Unknown Doctor'}` : 'No Doctor Assigned',
+            doctorName: event.doctorName || (event.rawData?.admission?.doctorId ? (() => {
+              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId);
+              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
+            })() : 'No Doctor Assigned'),
           }
         };
 
@@ -1583,7 +1587,8 @@ export default function PatientDetail() {
                             description: description,
                             color: color,
                             sortTimestamp: eventNormalized.timestamp,
-                            rawData: { event, primaryDate } // Debug info
+                            rawData: { event, primaryDate }, // Debug info
+                            doctorName: doctorName // Add doctorName directly to the event
                           });
                         });
 
@@ -1608,7 +1613,8 @@ export default function PatientDetail() {
                             })(),
                             color: 'bg-orange-500',
                             sortTimestamp: admissionNormalized.timestamp,
-                            rawData: { admission, primaryDate, doctorName } // Include doctor info for receipt
+                            rawData: { admission, primaryDate, doctorName }, // Include doctor info for receipt
+                            doctorName: doctorName // Add doctorName directly to the event
                           });
                         }
                       });

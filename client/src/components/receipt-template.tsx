@@ -73,7 +73,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   const getDoctorName = () => {
     // Try to extract doctor name from details if available
     if (receiptData.details?.doctorName) {
-      return receiptData.details.doctorName;
+      const doctorName = receiptData.details.doctorName;
+      return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
     
     // For pathology receipts, try to get doctor from the details
