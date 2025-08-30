@@ -119,7 +119,7 @@ export default function PatientDetail() {
     
     // Get all timeline events for the same date and service type
     const allEvents = [
-      ...(patientServices?.map(service => ({
+      ...(services?.map(service => ({
         type: 'service',
         date: service.scheduledDate,
         category: service.serviceType,
