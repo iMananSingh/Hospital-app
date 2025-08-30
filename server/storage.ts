@@ -1114,33 +1114,27 @@ export class SqliteStorage implements IStorage {
 
   async getHospitalSettings(): Promise<any> {
     try {
-      // Ensure hospital_settings table exists and has default row
-      db.exec(`INSERT OR IGNORE INTO hospital_settings (id) VALUES ('default')`);
+      // Try to get existing settings
+      let settings = db.select().from(schema.hospitalSettings).where(eq(schema.hospitalSettings.id, 'default')).get();
       
-      const settings = db.exec(`SELECT * FROM hospital_settings WHERE id = 'default'`);
-      if (settings.length > 0 && settings[0].values.length > 0) {
-        const row = settings[0].values[0];
-        return {
-          id: row[0],
-          name: row[1],
-          address: row[2],
-          phone: row[3],
-          email: row[4],
-          logoPath: row[5],
-        };
+      // If no settings exist, create default ones
+      if (!settings) {
+        settings = db.insert(schema.hospitalSettings).values({
+          id: 'default',
+          name: 'MedCare Pro Hospital',
+          address: '123 Healthcare Street, Medical District, City - 123456',
+          phone: '+91 98765 43210',
+          email: 'info@medcarepro.com',
+          logoPath: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }).returning().get();
       }
       
-      // Return defaults if no settings found
-      return {
-        id: 'default',
-        name: 'MedCare Pro Hospital',
-        address: '123 Healthcare Street, Medical District, City - 123456',
-        phone: '+91 98765 43210',
-        email: 'info@medcarepro.com',
-        logoPath: null,
-      };
+      return settings;
     } catch (error) {
       console.error('Error getting hospital settings:', error);
+      // Return defaults if database operation fails
       return {
         id: 'default',
         name: 'MedCare Pro Hospital',
@@ -1154,20 +1148,28 @@ export class SqliteStorage implements IStorage {
 
   async saveHospitalSettings(settings: any): Promise<any> {
     try {
-      const updateQuery = `
-        INSERT OR REPLACE INTO hospital_settings (id, name, address, phone, email, logo_path, updated_at) 
-        VALUES ('default', ?, ?, ?, ?, ?, datetime('now'))
-      `;
+      // Use Drizzle ORM to update hospital settings
+      const updated = db.insert(schema.hospitalSettings).values({
+        id: 'default',
+        name: settings.name,
+        address: settings.address,
+        phone: settings.phone,
+        email: settings.email,
+        logoPath: settings.logoPath || null,
+        updatedAt: new Date().toISOString()
+      }).onConflictDoUpdate({
+        target: schema.hospitalSettings.id,
+        set: {
+          name: settings.name,
+          address: settings.address,
+          phone: settings.phone,
+          email: settings.email,
+          logoPath: settings.logoPath || null,
+          updatedAt: new Date().toISOString()
+        }
+      }).returning().get();
       
-      db.prepare(updateQuery).run(
-        settings.name,
-        settings.address,
-        settings.phone,
-        settings.email,
-        settings.logoPath || null
-      );
-      
-      return await this.getHospitalSettings();
+      return updated;
     } catch (error) {
       console.error('Error saving hospital settings:', error);
       throw error;
