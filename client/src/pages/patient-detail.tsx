@@ -85,7 +85,79 @@ export default function PatientDetail() {
     logo: hospitalSettings?.logoPath || undefined
   };
 
+  // Helper function to determine service type for receipt numbering
+  const getServiceType = (eventType: string, event: any) => {
+    switch (eventType) {
+      case 'service':
+        // Check specific service categories
+        const category = event.category?.toLowerCase();
+        if (category === 'discharge' || event.description?.toLowerCase().includes('discharge')) {
+          return 'discharge';
+        }
+        if (category === 'room_transfer' || event.description?.toLowerCase().includes('transfer')) {
+          return 'room_transfer';
+        }
+        return 'service';
+      case 'pathology':
+        return 'pathology';
+      case 'admission':
+        return 'admission';
+      case 'payment':
+        return 'payment';
+      case 'discount':
+        return 'discount';
+      default:
+        return eventType;
+    }
+  };
+
+  // Helper function to calculate daily count for receipt numbering
+  const calculateDailyCount = (eventType: string, eventDate: string, currentEvent: any) => {
+    // For now, return a sequential number based on the event position in the timeline
+    // In production, this would call the API to get the actual daily count
+    const serviceType = getServiceType(eventType, currentEvent);
+    
+    // Get all timeline events for the same date and service type
+    const allEvents = [
+      ...(patientServices?.map(service => ({
+        type: 'service',
+        date: service.scheduledDate,
+        category: service.serviceType,
+        id: service.id,
+        sortTimestamp: new Date(service.scheduledDate + 'T' + service.scheduledTime).getTime()
+      })) || []),
+      ...(pathologyOrders?.map(order => ({
+        type: 'pathology',
+        date: order.order.orderedDate,
+        id: order.order.id,
+        sortTimestamp: new Date(order.order.orderedDate).getTime()
+      })) || []),
+      ...(admissions?.map(admission => ({
+        type: 'admission',
+        date: admission.admissionDate,
+        id: admission.id,
+        sortTimestamp: new Date(admission.admissionDate).getTime()
+      })) || [])
+    ];
+
+    // Filter and sort events for the same date and service type
+    const sameTypeEvents = allEvents
+      .filter(event => {
+        const eventServiceType = getServiceType(event.type, event);
+        return event.date === eventDate && eventServiceType === serviceType;
+      })
+      .sort((a, b) => a.sortTimestamp - b.sortTimestamp);
+
+    // Find the position of current event
+    const currentIndex = sameTypeEvents.findIndex(event => event.id === currentEvent.id);
+    return currentIndex >= 0 ? currentIndex + 1 : 1;
+  };
+
   const generateReceiptData = (event: any, eventType: string) => {
+    // Calculate daily count for the service type on the event date
+    const eventDate = new Date(event.sortTimestamp).toISOString().split('T')[0];
+    const dailyCount = calculateDailyCount(eventType, eventDate, event);
+
     const baseData = {
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
@@ -102,7 +174,9 @@ export default function PatientDetail() {
         patientAge: patient?.age || 'N/A',
         patientGender: patient?.gender || 'N/A',
         doctorName: event.doctorName || 'N/A',
-        category: event.category || eventType
+        category: event.category || eventType,
+        serviceType: getServiceType(eventType, event),
+        dailyCount: dailyCount
       }
     };
 

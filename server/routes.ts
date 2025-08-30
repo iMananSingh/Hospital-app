@@ -660,6 +660,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Daily receipt count for receipt numbering
+  app.get("/api/receipts/daily-count/:serviceType/:date", authenticateToken, async (req, res) => {
+    try {
+      const { serviceType, date } = req.params;
+      const count = await storage.getDailyReceiptCount(serviceType, date);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting daily receipt count:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Admission Events Routes
   app.get("/api/admissions/:id/events", authenticateToken, async (req, res) => {
     try {

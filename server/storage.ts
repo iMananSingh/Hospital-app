@@ -463,6 +463,9 @@ export interface IStorage {
 
   // Audit logging
   logAction(log: InsertAuditLog): Promise<void>;
+
+  // Receipt numbering
+  getDailyReceiptCount(serviceType: string, date: string): Promise<number>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -1212,6 +1215,64 @@ export class SqliteStorage implements IStorage {
     } catch (error) {
       console.error('Error saving logo:', error);
       throw error;
+    }
+  }
+
+  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
+    try {
+      let count = 0;
+      
+      switch (serviceType.toLowerCase()) {
+        case 'opd':
+        case 'service':
+        case 'ser':
+          count = db.select().from(schema.patientServices)
+            .where(eq(schema.patientServices.scheduledDate, date))
+            .all().length;
+          break;
+          
+        case 'pathology':
+        case 'pat':
+          count = db.select().from(schema.pathologyOrders)
+            .where(eq(schema.pathologyOrders.orderedDate, date))
+            .all().length;
+          break;
+          
+        case 'admission':
+        case 'adm':
+          count = db.select().from(schema.admissions)
+            .where(eq(schema.admissions.admissionDate, date))
+            .all().length;
+          break;
+          
+        case 'discharge':
+        case 'dis':
+          count = db.select().from(schema.admissions)
+            .where(and(
+              eq(schema.admissions.dischargeDate, date),
+              eq(schema.admissions.status, 'discharged')
+            ))
+            .all().length;
+          break;
+          
+        case 'room_transfer':
+        case 'rts':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              eq(schema.admissionEvents.eventType, 'room_change'),
+              eq(schema.admissionEvents.eventTime, date)
+            ))
+            .all().length;
+          break;
+          
+        default:
+          count = 0;
+      }
+      
+      return count + 1; // Return next number in sequence
+    } catch (error) {
+      console.error('Error getting daily receipt count:', error);
+      return 1; // Default to 1 if error
     }
   }
 }

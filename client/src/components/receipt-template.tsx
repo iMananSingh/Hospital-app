@@ -99,9 +99,51 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     return 'No Doctor Assigned';
   };
 
+  const generateReceiptNumber = () => {
+    const today = new Date();
+    const yymmdd = today.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
+    
+    let serviceCode = '';
+    switch (receiptData.type) {
+      case 'service':
+        // Check if it's discharge or room transfer based on service details
+        if (receiptData.details?.serviceType === 'discharge') {
+          serviceCode = 'DIS';
+        } else if (receiptData.details?.serviceType === 'room_transfer') {
+          serviceCode = 'RTS';
+        } else {
+          serviceCode = 'SER';
+        }
+        break;
+      case 'pathology':
+        serviceCode = 'PAT';
+        break;
+      case 'admission':
+        serviceCode = 'ADM';
+        break;
+      case 'payment':
+        serviceCode = 'PAY';
+        break;
+      case 'discount':
+        serviceCode = 'DIS';
+        break;
+      default:
+        serviceCode = 'OPD';
+    }
+    
+    // For now, use timestamp-based counter - in production, this should query the database
+    // to get the actual daily count for the service type
+    const dailyCount = receiptData.details?.dailyCount || 1;
+    const countStr = dailyCount.toString().padStart(4, '0');
+    
+    return `${yymmdd}-${serviceCode}-${countStr}`;
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    const receiptNumber = generateReceiptNumber();
 
     const receiptHtml = `
       <!DOCTYPE html>
@@ -349,7 +391,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               </div>
               <div class="patient-line-2">
                 <span>Doctor: ${getDoctorName()}</span>
-                <span>Receipt No: ${receiptData.id}</span>
+                <span>Receipt No: ${receiptNumber}</span>
               </div>
             </div>
             
@@ -404,7 +446,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <div class="footer-line">Registration No: ${hospitalInfo.registrationNumber}</div>
               ` : ''}
               <div class="receipt-id">
-                Receipt ID: RCP-${Date.now()} | Generated on ${new Date().toLocaleString()}
+                Receipt ID: ${receiptNumber} | Generated on ${new Date().toLocaleString()}
               </div>
             </div>
           </div>
