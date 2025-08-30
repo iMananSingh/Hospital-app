@@ -70,13 +70,15 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             .hospital-info {
               flex: 1;
+              display: flex !important;
+              align-items: center;
             }
             
             .hospital-logo {
               width: 80px;
               height: 80px;
               object-fit: contain;
-              margin-right: 20px;
+              border-radius: 8px;
             }
             
             .hospital-name {
@@ -221,13 +223,19 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
         <body>
           <div class="receipt">
             <div class="header">
-              <div class="hospital-info">
-                ${hospitalInfo.logo ? `<img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo" style="float: left;">` : ''}
-                <div class="hospital-name">${hospitalInfo.name}</div>
-                <div class="hospital-details">
-                  ${hospitalInfo.address}<br>
-                  Phone: ${hospitalInfo.phone}<br>
-                  Email: ${hospitalInfo.email}
+              <div class="hospital-info" style="display: flex; align-items: center;">
+                ${hospitalInfo.logo ? `
+                  <div style="margin-right: 20px;">
+                    <img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo">
+                  </div>
+                ` : ''}
+                <div>
+                  <div class="hospital-name">${hospitalInfo.name}</div>
+                  <div class="hospital-details">
+                    ${hospitalInfo.address}<br>
+                    Phone: ${hospitalInfo.phone}<br>
+                    Email: ${hospitalInfo.email}
+                  </div>
                 </div>
               </div>
               <div class="receipt-type">

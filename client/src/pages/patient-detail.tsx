@@ -61,13 +61,27 @@ export default function PatientDetail() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
 
-  // Hospital info for receipts (in real app, this would come from settings)
+  // Fetch hospital settings for receipts
+  const { data: hospitalSettings } = useQuery({
+    queryKey: ["/api/settings/hospital"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/hospital", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch hospital settings");
+      return response.json();
+    },
+  });
+
+  // Hospital info for receipts
   const hospitalInfo = {
-    name: "MedCare Pro Hospital",
-    address: "123 Healthcare Street, Medical District, City - 123456",
-    phone: "+91 98765 43210",
-    email: "info@medcarepro.com",
-    logo: undefined // Would be set from settings
+    name: hospitalSettings?.name || "MedCare Pro Hospital",
+    address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
+    phone: hospitalSettings?.phone || "+91 98765 43210",
+    email: hospitalSettings?.email || "info@medcarepro.com",
+    logo: hospitalSettings?.logoPath || undefined
   };
 
   const generateReceiptData = (event: any, eventType: string) => {
