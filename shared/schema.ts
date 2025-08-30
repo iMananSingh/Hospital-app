@@ -194,15 +194,27 @@ export const admissionEvents = sqliteTable("admission_events", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Audit log for tracking all changes
+// Hospital settings for system configuration
+export const hospitalSettings = sqliteTable("hospital_settings", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  name: text("name").notNull().default("MedCare Pro Hospital"),
+  address: text("address").notNull().default("123 Healthcare Street, Medical District, City - 123456"),
+  phone: text("phone").notNull().default("+91 98765 43210"),
+  email: text("email").notNull().default("info@medcarepro.com"),
+  logoPath: text("logo_path"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Audit log for tracking all user actions
 export const auditLog = sqliteTable("audit_log", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   userId: text("user_id").notNull().references(() => users.id),
-  action: text("action").notNull(), // create, update, delete, login, logout
+  action: text("action").notNull(), // create, update, delete, view
   tableName: text("table_name").notNull(),
   recordId: text("record_id").notNull(),
-  oldValues: text("old_values"), // JSON string
-  newValues: text("new_values"), // JSON string
+  oldValues: text("old_values"), // JSON string of old values
+  newValues: text("new_values"), // JSON string of new values
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
@@ -347,6 +359,13 @@ export const insertRoomSchema = createInsertSchema(rooms).omit({
   updatedAt: true,
 });
 
+// Insert schema for hospital settings
+export const insertHospitalSettingsSchema = createInsertSchema(hospitalSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -366,8 +385,6 @@ export type PathologyOrder = typeof pathologyOrders.$inferSelect;
 export type InsertPathologyOrder = z.infer<typeof insertPathologyOrderSchema>;
 export type PathologyTest = typeof pathologyTests.$inferSelect;
 export type InsertPathologyTest = z.infer<typeof insertPathologyTestSchema>;
-export type AuditLog = typeof auditLog.$inferSelect;
-export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type PatientService = typeof patientServices.$inferSelect;
 export type InsertPatientService = z.infer<typeof insertPatientServiceSchema>;
 export type Admission = typeof admissions.$inferSelect;
@@ -378,6 +395,11 @@ export type RoomType = typeof roomTypes.$inferSelect;
 export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
 export type Room = typeof rooms.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
+export type HospitalSettings = typeof hospitalSettings.$inferSelect;
+export type InsertHospitalSettings = z.infer<typeof insertHospitalSettingsSchema>;
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 
 

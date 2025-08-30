@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,11 +36,50 @@ export default function Settings() {
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
   const [isNewUserOpen, setIsNewUserOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [hospitalLogo, setHospitalLogo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
+  });
+
+  const { data: hospitalSettings, isLoading: settingsLoading } = useQuery({
+    queryKey: ["/api/settings/hospital"],
+  });
+
+  const saveHospitalSettingsMutation = useMutation({
+    mutationFn: async (settingsData: any) => {
+      const response = await fetch("/api/settings/hospital", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(settingsData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save hospital settings");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/hospital"] });
+      toast({
+        title: "Settings saved successfully",
+        description: "Hospital information has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error saving settings",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const createServiceMutation = useMutation({
@@ -132,12 +171,62 @@ export default function Settings() {
     },
   });
 
+  const hospitalForm = useForm({
+    defaultValues: {
+      name: hospitalSettings?.name || "MedCare Pro Hospital",
+      address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
+      phone: hospitalSettings?.phone || "+91 98765 43210",
+      email: hospitalSettings?.email || "info@medcarepro.com",
+    },
+  });
+
+  // Update form when hospital settings are loaded
+  React.useEffect(() => {
+    if (hospitalSettings) {
+      hospitalForm.reset({
+        name: hospitalSettings.name,
+        address: hospitalSettings.address,
+        phone: hospitalSettings.phone,
+        email: hospitalSettings.email,
+      });
+      setHospitalLogo(hospitalSettings.logoPath);
+    }
+  }, [hospitalSettings, hospitalForm]);
+
   const onServiceSubmit = (data: any) => {
     createServiceMutation.mutate(data);
   };
 
   const onUserSubmit = (data: any) => {
     createUserMutation.mutate(data);
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image under 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setHospitalLogo(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onHospitalSettingsSubmit = (data: any) => {
+    saveHospitalSettingsMutation.mutate({
+      ...data,
+      logoPath: hospitalLogo,
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -416,64 +505,92 @@ export default function Settings() {
                 <CardHeader>
                   <CardTitle>Hospital Information</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Hospital Logo</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <div className="space-y-2">
-                        <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <Input 
-                            type="file" 
-                            accept="image/*" 
-                            className="hidden" 
-                            id="logo-upload"
-                            data-testid="input-hospital-logo"
-                          />
-                          <Label 
-                            htmlFor="logo-upload" 
-                            className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
-                          >
-                            Upload Hospital Logo
-                          </Label>
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 2MB</p>
+                <CardContent>
+                  <form onSubmit={hospitalForm.handleSubmit(onHospitalSettingsSubmit)} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Hospital Logo</Label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <div className="space-y-2">
+                          {hospitalLogo ? (
+                            <div className="w-16 h-16 mx-auto rounded-lg overflow-hidden">
+                              <img 
+                                src={hospitalLogo} 
+                                alt="Hospital Logo" 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div>
+                            <Input 
+                              ref={fileInputRef}
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              id="logo-upload"
+                              onChange={handleLogoUpload}
+                              data-testid="input-hospital-logo"
+                            />
+                            <Label 
+                              htmlFor="logo-upload" 
+                              className="cursor-pointer text-sm text-blue-600 hover:text-blue-500"
+                            >
+                              {hospitalLogo ? 'Change Hospital Logo' : 'Upload Hospital Logo'}
+                            </Label>
+                            <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 2MB</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label>Hospital Name</Label>
-                    <Input defaultValue="MedCare Pro Hospital" data-testid="input-hospital-name" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Address</Label>
-                    <Textarea 
-                      defaultValue="123 Healthcare Street, Medical District, City - 123456"
-                      rows={3}
-                      data-testid="input-hospital-address"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Phone</Label>
-                      <Input defaultValue="+91 98765 43210" data-testid="input-hospital-phone" />
+                      <Label>Hospital Name</Label>
+                      <Input 
+                        {...hospitalForm.register("name")}
+                        data-testid="input-hospital-name" 
+                      />
                     </div>
+                    
                     <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input defaultValue="info@medcarepro.com" data-testid="input-hospital-email" />
+                      <Label>Address</Label>
+                      <Textarea 
+                        {...hospitalForm.register("address")}
+                        rows={3}
+                        data-testid="input-hospital-address"
+                      />
                     </div>
-                  </div>
-                  
-                  <Button className="w-full" data-testid="button-save-hospital-info">
-                    Save Hospital Information
-                  </Button>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Phone</Label>
+                        <Input 
+                          {...hospitalForm.register("phone")}
+                          data-testid="input-hospital-phone" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email</Label>
+                        <Input 
+                          {...hospitalForm.register("email")}
+                          data-testid="input-hospital-email" 
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit"
+                      className="w-full" 
+                      disabled={saveHospitalSettingsMutation.isPending}
+                      data-testid="button-save-hospital-info"
+                    >
+                      {saveHospitalSettingsMutation.isPending ? "Saving..." : "Save Hospital Information"}
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             </div>

@@ -628,6 +628,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Hospital Settings Routes
+  app.get("/api/settings/hospital", authenticateToken, async (req, res) => {
+    try {
+      const settings = await storage.getHospitalSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching hospital settings:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/settings/hospital", authenticateToken, async (req, res) => {
+    try {
+      const settings = await storage.saveHospitalSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error saving hospital settings:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/settings/upload-logo", authenticateToken, async (req, res) => {
+    try {
+      const { logo } = req.body;
+      const logoPath = await storage.saveLogo(logo);
+      res.json({ logoPath });
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Admission Events Routes
   app.get("/api/admissions/:id/events", authenticateToken, async (req, res) => {
     try {

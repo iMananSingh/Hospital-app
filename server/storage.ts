@@ -191,6 +191,17 @@ async function initializeDatabase() {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS hospital_settings (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        name TEXT NOT NULL DEFAULT 'MedCare Pro Hospital',
+        address TEXT NOT NULL DEFAULT '123 Healthcare Street, Medical District, City - 123456',
+        phone TEXT NOT NULL DEFAULT '+91 98765 43210',
+        email TEXT NOT NULL DEFAULT 'info@medcarepro.com',
+        logo_path TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS admission_events (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         admission_id TEXT NOT NULL REFERENCES admissions(id),
@@ -434,6 +445,11 @@ export interface IStorage {
 
   // Dashboard stats
   getDashboardStats(): Promise<any>;
+
+  // Hospital settings
+  getHospitalSettings(): Promise<any>;
+  saveHospitalSettings(settings: any): Promise<any>;
+  saveLogo(logoData: string): Promise<string>;
 
   // Audit logging
   logAction(log: InsertAuditLog): Promise<void>;
@@ -1094,6 +1110,93 @@ export class SqliteStorage implements IStorage {
       
       return updated;
     });
+  }
+
+  async getHospitalSettings(): Promise<any> {
+    try {
+      // Ensure hospital_settings table exists and has default row
+      db.exec(`INSERT OR IGNORE INTO hospital_settings (id) VALUES ('default')`);
+      
+      const settings = db.exec(`SELECT * FROM hospital_settings WHERE id = 'default'`);
+      if (settings.length > 0 && settings[0].values.length > 0) {
+        const row = settings[0].values[0];
+        return {
+          id: row[0],
+          name: row[1],
+          address: row[2],
+          phone: row[3],
+          email: row[4],
+          logoPath: row[5],
+        };
+      }
+      
+      // Return defaults if no settings found
+      return {
+        id: 'default',
+        name: 'MedCare Pro Hospital',
+        address: '123 Healthcare Street, Medical District, City - 123456',
+        phone: '+91 98765 43210',
+        email: 'info@medcarepro.com',
+        logoPath: null,
+      };
+    } catch (error) {
+      console.error('Error getting hospital settings:', error);
+      return {
+        id: 'default',
+        name: 'MedCare Pro Hospital',
+        address: '123 Healthcare Street, Medical District, City - 123456',
+        phone: '+91 98765 43210',
+        email: 'info@medcarepro.com',
+        logoPath: null,
+      };
+    }
+  }
+
+  async saveHospitalSettings(settings: any): Promise<any> {
+    try {
+      const updateQuery = `
+        INSERT OR REPLACE INTO hospital_settings (id, name, address, phone, email, logo_path, updated_at) 
+        VALUES ('default', ?, ?, ?, ?, ?, datetime('now'))
+      `;
+      
+      db.prepare(updateQuery).run(
+        settings.name,
+        settings.address,
+        settings.phone,
+        settings.email,
+        settings.logoPath || null
+      );
+      
+      return await this.getHospitalSettings();
+    } catch (error) {
+      console.error('Error saving hospital settings:', error);
+      throw error;
+    }
+  }
+
+  async saveLogo(logoData: string): Promise<string> {
+    try {
+      // Extract base64 data and file type
+      const matches = logoData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches) {
+        throw new Error('Invalid image data format');
+      }
+      
+      const mimeType = matches[1];
+      const base64Data = matches[2];
+      const extension = mimeType.split('/')[1];
+      
+      // Create filename and path
+      const filename = `hospital-logo-${Date.now()}.${extension}`;
+      const logoPath = `/uploads/${filename}`;
+      
+      // For simplicity, we'll store the base64 data directly in the database
+      // In a production system, you'd save to filesystem or cloud storage
+      return logoData; // Return the original data URL for now
+    } catch (error) {
+      console.error('Error saving logo:', error);
+      throw error;
+    }
   }
 }
 
