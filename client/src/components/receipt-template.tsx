@@ -172,7 +172,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               text-align: center;
               font-size: 18px;
               font-weight: bold;
-              margin: 20px 0;
+              margin: 10px 0 5px 0;
               text-transform: uppercase;
               letter-spacing: 1px;
             }
@@ -181,7 +181,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             .patient-info-box {
               border: 2px solid #333;
               padding: 15px;
-              margin: 20px 0;
+              margin: 8px 0 20px 0;
               background: #f9f9f9;
             }
             
