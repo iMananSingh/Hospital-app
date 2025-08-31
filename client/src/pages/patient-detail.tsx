@@ -189,6 +189,54 @@ export default function PatientDetail() {
       return 'RECEIPT-NOT-FOUND';
     };
 
+    // Helper function to get doctor name from doctor ID
+    const getDoctorName = () => {
+      // First try to get doctor name from event directly
+      if (event.doctorName) {
+        return event.doctorName.startsWith('Dr.') ? event.doctorName : `Dr. ${event.doctorName}`;
+      }
+
+      // Try to get from nested doctor object
+      if (event.doctor?.name) {
+        const doctorName = event.doctor.name;
+        return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
+      }
+
+      // Try to resolve doctor ID from the doctors array
+      if (event.doctorId && doctors && doctors.length > 0) {
+        const doctor = doctors.find((d: Doctor) => d.id === event.doctorId);
+        if (doctor) {
+          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+        }
+      }
+
+      // Try to get from rawData for pathology orders
+      if (eventType === 'pathology' && event.rawData?.order?.doctorId) {
+        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
+        if (doctor) {
+          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+        }
+      }
+
+      // Try to get from rawData for admission events
+      if (eventType === 'admission_event' && event.rawData?.event?.doctorId) {
+        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.event.doctorId);
+        if (doctor) {
+          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+        }
+      }
+
+      // Try to get from rawData for admission fallback
+      if (eventType === 'admission' && event.rawData?.admission?.doctorId) {
+        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId);
+        if (doctor) {
+          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+        }
+      }
+
+      return 'No Doctor Assigned';
+    };
+
     // Base receipt data structure
     const baseReceiptData = {
       type: eventType as 'service' | 'pathology' | 'admission' | 'payment' | 'discount',
@@ -203,7 +251,7 @@ export default function PatientDetail() {
         ...event,
         patientAge: patient?.age,
         patientGender: patient?.gender,
-        doctorName: event.doctorName || event.doctor?.name || 'No Doctor Assigned',
+        doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber()
       }
     };
