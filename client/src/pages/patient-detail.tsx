@@ -138,7 +138,7 @@ export default function PatientDetail() {
     }
   };
 
-  
+
 
   const generateReceiptData = (event: any, eventType: string) => {
     // Helper function to get receipt number from different sources
@@ -361,18 +361,18 @@ export default function PatientDetail() {
       const serviceType = getServiceType('service', data);
       const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
       const count = await getDailyCountFromAPI('service', eventDate, data);
-      
+
       // Format: YYMMDD-TYPE-NNNN (correct format)
       const dateObj = new Date(eventDate);
       const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
-      
+
       let typeCode = '';
       if (serviceType === 'opd') {
         typeCode = 'OPD';
       } else {
         typeCode = 'SER';
       }
-      
+
       const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, '0')}`;
 
       const serviceDataWithReceipt = {

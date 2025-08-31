@@ -417,13 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient Services Management
   app.post("/api/patient-services", authenticateToken, async (req, res) => {
     try {
-      const data = insertPatientServiceSchema.parse(req.body); // Assuming insertPatientServiceSchema is available and correctly defined
-      
-      // Generate receipt number before creating the service
-      const receiptCount = await storage.getLatestReceiptNumber(data.serviceType); // Assuming a function to get the latest receipt number for a given service type
-      const receiptNumber = `REC-${receiptCount + 1}`; // Simple increment logic, adjust as needed
-
-      const service = await storage.createPatientService({ ...data, receiptNumber }); // Pass the generated receiptNumber to createPatientService
+      const service = await storage.createPatientService(req.body);
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
