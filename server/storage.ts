@@ -188,6 +188,11 @@ async function initializeDatabase() {
         initial_deposit REAL NOT NULL DEFAULT 0,
         additional_payments REAL NOT NULL DEFAULT 0,
         lastPaymentDate TEXT,
+        total_discount REAL DEFAULT 0,
+        lastDiscountDate TEXT,
+        lastDiscountAmount REAL DEFAULT 0,
+        lastDiscountReason TEXT,
+        lastPaymentAmount REAL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -317,10 +322,52 @@ async function initializeDatabase() {
     } catch (error) {
       // Column already exists, ignore error
     }
-    
+
+    // Add lastPaymentDate column to admissions table if it doesn't exist
     try {
       db.$client.exec(`
         ALTER TABLE admissions ADD COLUMN lastPaymentDate TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add discount-related columns to admissions table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN total_discount REAL DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN lastDiscountDate TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN lastDiscountAmount REAL DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN lastDiscountReason TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN lastPaymentAmount REAL DEFAULT 0;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -811,7 +858,7 @@ export class SqliteStorage implements IStorage {
     return created;
   }
 
-  async getPatientServices(patientId?: string): Promise<PatientService[]> {
+  async getPatientServices(patientId?: string): Promise<PatientService[]>{
     if (patientId) {
       return db.select().from(schema.patientServices)
         .where(eq(schema.patientServices.patientId, patientId))
@@ -931,11 +978,28 @@ export class SqliteStorage implements IStorage {
         }
       }
     }
-    
+
     // Update lastPaymentDate if a payment is made
     if (admission.status === 'paid' && updated) {
         updated.lastPaymentDate = new Date().toISOString();
         await db.update(schema.admissions).set({ lastPaymentDate: updated.lastPaymentDate }).where(eq(schema.admissions.id, id)).run();
+    }
+
+    // Update discount related fields if they are provided
+    if (admission.total_discount !== undefined) {
+      updated.total_discount = admission.total_discount;
+    }
+    if (admission.lastDiscountDate !== undefined) {
+      updated.lastDiscountDate = admission.lastDiscountDate;
+    }
+    if (admission.lastDiscountAmount !== undefined) {
+      updated.lastDiscountAmount = admission.lastDiscountAmount;
+    }
+    if (admission.lastDiscountReason !== undefined) {
+      updated.lastDiscountReason = admission.lastDiscountReason;
+    }
+    if (admission.lastPaymentAmount !== undefined) {
+      updated.lastPaymentAmount = admission.lastPaymentAmount;
     }
 
 
