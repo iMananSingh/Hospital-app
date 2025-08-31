@@ -386,11 +386,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             <!-- Signature Section -->
             <div class="signature-section">
-              <div class="signature-box">
-                <div class="signature-line"></div>
-                <div>Patient/Attendant Signature</div>
-              </div>
-              <div class="signature-box">
+              <div class="signature-box" style="margin-left: auto;">
                 <div class="signature-line"></div>
                 <div>Authorized Signature & Stamp</div>
               </div>
