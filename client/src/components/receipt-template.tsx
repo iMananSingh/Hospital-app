@@ -108,8 +108,10 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     let serviceCode = '';
     switch (receiptData.type) {
       case 'service':
-        // Check if it's discharge or room transfer based on service details
-        if (receiptData.details?.serviceType === 'discharge') {
+        // Check if it's OPD service
+        if (receiptData.details?.serviceType === 'opd') {
+          serviceCode = 'OPD';
+        } else if (receiptData.details?.serviceType === 'discharge') {
           serviceCode = 'DIS';
         } else if (receiptData.details?.serviceType === 'room_transfer') {
           serviceCode = 'RTS';

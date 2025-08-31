@@ -713,17 +713,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
-
-
-
-// Receipt daily count endpoint
-app.get('/api/receipts/daily-count/:serviceType/:date', authenticateToken, async (req, res) => {
-  try {
-    const { serviceType, date } = req.params;
-    const count = await storage.getDailyReceiptCount(serviceType, date);
-    res.json({ count });
-  } catch (error) {
-    console.error('Error getting daily receipt count:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
