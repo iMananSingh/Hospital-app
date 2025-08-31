@@ -794,7 +794,7 @@ export class SqliteStorage implements IStorage {
     const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
     const orderedDate = orderData.orderedDate || new Date().toISOString().split('T')[0];
-    
+
     // Generate proper receipt number for pathology
     const count = await this.getDailyReceiptCount('pathology', orderedDate);
     const dateObj = new Date(orderedDate);
@@ -877,38 +877,19 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async createPatientService(service: InsertPatientService): Promise<PatientService> {
-    const serviceId = `SRV-${Date.now()}`;
-    const scheduledDate = service.scheduledDate || new Date().toISOString().split('T')[0];
-    
-    // Determine the correct service type for counting
-    let countServiceType = service.serviceType || 'service';
-    
-    // Generate proper receipt number based on service type
-    const count = await this.getDailyReceiptCount(countServiceType, scheduledDate);
-    
-    // Format date as YYMMDD
-    const dateObj = new Date(scheduledDate);
-    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
-    
-    // Determine service code
-    let serviceCode = 'SER';
-    if (countServiceType === 'opd') {
-      serviceCode = 'OPD';
-    } else if (countServiceType === 'discharge') {
-      serviceCode = 'DIS';
-    } else if (countServiceType === 'room_transfer') {
-      serviceCode = 'RTS';
+  async createPatientService(serviceData: any): Promise<any> {
+    try {
+      const created = db.insert(schema.patientServices).values({
+        ...serviceData,
+        serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
+        receiptNumber: serviceData.receiptNumber || null,
+      }).returning().get();
+
+      return created;
+    } catch (error) {
+      console.error('Error creating patient service:', error);
+      throw error;
     }
-    
-    const receiptNumber = `${yymmdd}-${serviceCode}-${count.toString().padStart(4, '0')}`;
-    
-    const created = db.insert(schema.patientServices).values({
-      ...service,
-      serviceId,
-      receiptNumber,
-    }).returning().get();
-    return created;
   }
 
   async getPatientServices(patientId?: string): Promise<PatientService[]>{

@@ -142,6 +142,39 @@ export default function PatientDetail() {
     // Get event date for receipt numbering
     const eventDate = new Date(event.sortTimestamp).toISOString().split('T')[0];
 
+    // Helper function to get receipt number from different sources
+    const getReceiptNumber = () => {
+      // First try to get from direct receiptNumber field
+      if (event.receiptNumber) {
+        return event.receiptNumber;
+      }
+      
+      // For services, try to get from rawData if available
+      if (eventType === 'service' && event.rawData?.service?.receiptNumber) {
+        return event.rawData.service.receiptNumber;
+      }
+      
+      // For pathology, try to get from order data
+      if (eventType === 'pathology') {
+        if (event.rawData?.order?.receiptNumber) {
+          return event.rawData.order.receiptNumber;
+        }
+        // Also try direct order access
+        if (event.order?.receiptNumber) {
+          return event.order.receiptNumber;
+        }
+      }
+      
+      // For admission events, try to get from admission data
+      if (eventType === 'admission' || eventType === 'admission_event') {
+        if (event.rawData?.admission?.receiptNumber) {
+          return event.rawData.admission.receiptNumber;
+        }
+      }
+      
+      return 'RECEIPT-NOT-GENERATED';
+    };
+
     // Base receipt data structure
     const baseReceiptData = {
       type: eventType as 'service' | 'pathology' | 'admission' | 'payment' | 'discount',
@@ -157,7 +190,7 @@ export default function PatientDetail() {
         patientAge: patient?.age,
         patientGender: patient?.gender,
         doctorName: event.doctorName || event.doctor?.name || 'No Doctor Assigned',
-        receiptNumber: event.receiptNumber || 'RECEIPT-NOT-FOUND'
+        receiptNumber: getReceiptNumber()
       }
     };
 
@@ -1511,7 +1544,13 @@ export default function PatientDetail() {
                           description: `Status: ${service.status} • Cost: ₹${service.price || 0}`,
                           color: 'bg-green-500',
                           sortTimestamp: serviceNormalized.timestamp,
-                          rawData: { service, primaryDate } // Debug info
+                          rawData: { service, primaryDate }, // Debug info
+                          // Include all service fields directly in the event for receipt access
+                          receiptNumber: service.receiptNumber,
+                          serviceName: service.serviceName,
+                          price: service.price,
+                          serviceType: service.serviceType,
+                          doctorId: service.doctorId
                         });
                       });
                     }
@@ -1682,7 +1721,12 @@ export default function PatientDetail() {
                             hour12: true,
                             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
                           })}` : null,
-                          rawData: { order, primaryDate } // Debug info
+                          rawData: { order, primaryDate }, // Debug info
+                          // Include order fields directly for receipt access
+                          receiptNumber: order.receiptNumber,
+                          orderId: order.orderId,
+                          totalPrice: order.totalPrice,
+                          orderedDate: order.orderedDate
                         };
 
                         timelineEvents.push(pathologyEvent);
