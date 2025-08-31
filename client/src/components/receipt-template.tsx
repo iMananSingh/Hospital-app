@@ -382,13 +382,6 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                   </tr>
                 </tbody>
               </table>
-              
-              ${receiptData.description ? `
-                <div class="description-section">
-                  <div class="description-title">Details:</div>
-                  <div>${receiptData.description}</div>
-                </div>
-              ` : ''}
             </div>
             
             <!-- Signature Section -->
