@@ -134,6 +134,7 @@ async function initializeDatabase() {
         report_date TEXT,
         remarks TEXT,
         total_price REAL NOT NULL DEFAULT 0,
+        receipt_number TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -165,6 +166,7 @@ async function initializeDatabase() {
         completed_date TEXT,
         notes TEXT,
         price REAL NOT NULL DEFAULT 0,
+        receipt_number TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -368,6 +370,24 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE admissions ADD COLUMN lastPaymentAmount REAL DEFAULT 0;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add receiptNumber column to patient_services table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_services ADD COLUMN receipt_number TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add receiptNumber column to pathology_orders table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE pathology_orders ADD COLUMN receipt_number TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -773,6 +793,7 @@ export class SqliteStorage implements IStorage {
   async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
     const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
+    const receiptNumber = await this.getDailyReceiptCount('pat', new Date().toISOString().split('T')[0]);
 
     return db.transaction((tx) => {
       // Insert the order first
@@ -780,6 +801,7 @@ export class SqliteStorage implements IStorage {
         ...orderData,
         orderId: generatedOrderId,
         totalPrice,
+        receiptNumber: receiptNumber.toString().padStart(4, '0'),
       }).returning().get();
 
       // Insert all tests for this order
@@ -851,9 +873,13 @@ export class SqliteStorage implements IStorage {
 
   async createPatientService(service: InsertPatientService): Promise<PatientService> {
     const serviceId = `SRV-${Date.now()}`;
+    const scheduledDate = service.scheduledDate || new Date().toISOString().split('T')[0];
+    const receiptNumber = await this.getDailyReceiptCount(service.serviceType, scheduledDate);
+    
     const created = db.insert(schema.patientServices).values({
       ...service,
       serviceId,
+      receiptNumber: receiptNumber.toString().padStart(4, '0'),
     }).returning().get();
     return created;
   }

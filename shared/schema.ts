@@ -120,6 +120,7 @@ export const pathologyOrders = sqliteTable("pathology_orders", {
   reportDate: text("report_date"),
   remarks: text("remarks"),
   totalPrice: real("total_price").notNull().default(0),
+  receiptNumber: text("receipt_number"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });

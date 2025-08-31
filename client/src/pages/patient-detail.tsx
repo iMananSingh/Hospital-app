@@ -124,12 +124,12 @@ export default function PatientDetail() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      
+
       if (!response.ok) {
         console.error('Failed to get daily count from API');
         return 1;
       }
-      
+
       const data = await response.json();
       return data.count;
     } catch (error) {
@@ -171,15 +171,24 @@ export default function PatientDetail() {
           ...baseData,
           type: 'service' as const,
           id: event.id,
-          title: event.title,
-          description: event.description,
-          amount: event.rawData?.service?.price,
+          title: event.serviceName ? `${event.serviceName} - Service Receipt` : 'Service Receipt',
+          items: [
+            {
+              description: event.serviceName || 'Service',
+              quantity: 1,
+              amount: event.price || 0
+            }
+          ],
+          total: event.price || 0,
           details: {
-            ...baseData.details,
-            doctorName: event.rawData?.service?.doctorId ? (() => {
-              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.service.doctorId);
-              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
-            })() : 'No Doctor Assigned',
+            serviceType: event.serviceType,
+            serviceName: event.serviceName,
+            doctorName: event.doctorName || 'No Doctor Assigned',
+            category: event.category,
+            eventDate: new Date(event.sortTimestamp).toISOString().split('T')[0],
+            patientAge: patient?.age,
+            patientGender: patient?.gender,
+            receiptNumber: event.receiptNumber,
           }
         };
 
@@ -188,15 +197,21 @@ export default function PatientDetail() {
           ...baseData,
           type: 'pathology' as const,
           id: event.id,
-          title: event.title,
-          description: event.description,
-          amount: event.rawData?.order?.totalPrice,
+          title: 'Pathology Test Receipt',
+          items: event.tests?.map((test: any) => ({
+            description: test.testName,
+            quantity: 1,
+            amount: test.price
+          })) || [],
+          total: event.totalPrice || 0,
           details: {
-            ...baseData.details,
-            doctorName: event.rawData?.order?.doctorId ? (() => {
-              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
-              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
-            })() : 'External Patient',
+            orderId: event.orderId,
+            doctor: event.doctor,
+            remarks: event.remarks,
+            eventDate: new Date(event.sortTimestamp).toISOString().split('T')[0],
+            patientAge: patient?.age,
+            patientGender: patient?.gender,
+            receiptNumber: event.receiptNumber,
           }
         };
 
@@ -404,13 +419,24 @@ export default function PatientDetail() {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
+      // Generate receipt number before sending to API
+      const serviceType = getServiceType('service', data);
+      const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
+      const count = await getDailyCountFromAPI('service', eventDate, data);
+      const receiptNumber = `${serviceType.toUpperCase()}-${eventDate.replace(/-/g, '')}-${String(count).padStart(4, '0')}`;
+      
+      const serviceDataWithReceipt = {
+        ...data,
+        receiptNumber: receiptNumber,
+      };
+
       const response = await fetch("/api/patient-services", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(serviceDataWithReceipt),
       });
       if (!response.ok) throw new Error("Failed to create service");
       return response.json();

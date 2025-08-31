@@ -100,7 +100,12 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const generateReceiptNumber = async () => {
-    // Use the event date from receipt data, or fall back to today
+    // If receipt number is already stored, use it
+    if (receiptData.details?.receiptNumber) {
+      return receiptData.details.receiptNumber;
+    }
+
+    // Fallback: generate receipt number dynamically (for old records)
     const eventDate = receiptData.details?.eventDate || new Date().toISOString().split('T')[0];
     const dateObj = new Date(eventDate);
     const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
