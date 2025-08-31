@@ -89,6 +89,10 @@ export default function PatientDetail() {
   const getServiceType = (eventType: string, event: any) => {
     switch (eventType) {
       case 'service':
+        // Check if it's OPD service
+        if (event.serviceType === 'opd' || event.serviceName === 'OPD Consultation') {
+          return 'opd';
+        }
         // Check specific service categories
         const category = event.category?.toLowerCase();
         if (category === 'discharge' || event.description?.toLowerCase().includes('discharge')) {

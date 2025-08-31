@@ -106,17 +106,27 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
     
     let serviceCode = '';
+    let serviceTypeForAPI = '';
+    
     switch (receiptData.type) {
       case 'service':
-        // Check if it's OPD service
-        if (receiptData.details?.serviceType === 'opd') {
+        // Check if it's OPD service - look in both details and main receipt data
+        const isOPD = receiptData.details?.serviceType === 'opd' || 
+                      receiptData.details?.serviceName === 'OPD Consultation' ||
+                      receiptData.title?.includes('OPD');
+        
+        if (isOPD) {
           serviceCode = 'OPD';
+          serviceTypeForAPI = 'opd';
         } else if (receiptData.details?.serviceType === 'discharge') {
           serviceCode = 'DIS';
+          serviceTypeForAPI = 'discharge';
         } else if (receiptData.details?.serviceType === 'room_transfer') {
           serviceCode = 'RTS';
+          serviceTypeForAPI = 'room_transfer';
         } else {
           serviceCode = 'SER';
+          serviceTypeForAPI = 'service';
         }
         break;
       case 'pathology':
@@ -138,7 +148,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     // Get daily count from API
     let dailyCount = 1;
     try {
-      const response = await fetch(`/api/receipts/daily-count/${receiptData.details?.serviceType || receiptData.type}/${eventDate}`, {
+      const apiServiceType = serviceTypeForAPI || receiptData.type;
+      const response = await fetch(`/api/receipts/daily-count/${apiServiceType}/${eventDate}`, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
