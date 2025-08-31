@@ -99,51 +99,16 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     return 'No Doctor Assigned';
   };
 
-  const generateReceiptNumber = async () => {
-    // Always use stored receipt number if available
-    if (receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
-    }
-
-    // Fallback for old records without stored receipt numbers
-    const eventDate = receiptData.details?.eventDate || new Date().toISOString().split('T')[0];
-    const dateObj = new Date(eventDate);
-    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
-    
-    let serviceCode = 'SER';
-    
-    switch (receiptData.type) {
-      case 'service':
-        if (receiptData.details?.serviceType === 'opd') {
-          serviceCode = 'OPD';
-        } else if (receiptData.details?.serviceType === 'discharge') {
-          serviceCode = 'DIS';
-        } else if (receiptData.details?.serviceType === 'room_transfer') {
-          serviceCode = 'RTS';
-        }
-        break;
-      case 'pathology':
-        serviceCode = 'PAT';
-        break;
-      case 'admission':
-        serviceCode = 'ADM';
-        break;
-      case 'payment':
-        serviceCode = 'PAY';
-        break;
-      case 'discount':
-        serviceCode = 'DIS';
-        break;
-    }
-    
-    return `${yymmdd}-${serviceCode}-0001`;
+  const getReceiptNumber = () => {
+    // Always use the stored receipt number
+    return receiptData.details?.receiptNumber || 'RECEIPT-NOT-GENERATED';
   };
 
   const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const receiptNumber = await generateReceiptNumber();
+    const receiptNumber = getReceiptNumber();
 
     const receiptHtml = `
       <!DOCTYPE html>

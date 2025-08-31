@@ -881,9 +881,11 @@ export class SqliteStorage implements IStorage {
     const serviceId = `SRV-${Date.now()}`;
     const scheduledDate = service.scheduledDate || new Date().toISOString().split('T')[0];
     
+    // Determine the correct service type for counting
+    let countServiceType = service.serviceType || 'service';
+    
     // Generate proper receipt number based on service type
-    const serviceType = service.serviceType || 'service';
-    const count = await this.getDailyReceiptCount(serviceType, scheduledDate);
+    const count = await this.getDailyReceiptCount(countServiceType, scheduledDate);
     
     // Format date as YYMMDD
     const dateObj = new Date(scheduledDate);
@@ -891,11 +893,11 @@ export class SqliteStorage implements IStorage {
     
     // Determine service code
     let serviceCode = 'SER';
-    if (serviceType === 'opd') {
+    if (countServiceType === 'opd') {
       serviceCode = 'OPD';
-    } else if (serviceType === 'discharge') {
+    } else if (countServiceType === 'discharge') {
       serviceCode = 'DIS';
-    } else if (serviceType === 'room_transfer') {
+    } else if (countServiceType === 'room_transfer') {
       serviceCode = 'RTS';
     }
     

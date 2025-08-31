@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
-import { useForm } from "react-hook-form";
+import { useForm } from "react-hook-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -414,7 +414,7 @@ export default function PatientDetail() {
       const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
       const count = await getDailyCountFromAPI('service', eventDate, data);
       const receiptNumber = `${serviceType.toUpperCase()}-${eventDate.replace(/-/g, '')}-${String(count).padStart(4, '0')}`;
-      
+
       const serviceDataWithReceipt = {
         ...data,
         receiptNumber: receiptNumber,
