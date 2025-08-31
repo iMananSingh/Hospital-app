@@ -365,8 +365,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               <table class="bill-table">
                 <thead>
                   <tr>
-                    <th style="width: 70%;">Description</th>
-                    <th style="width: 30%;">Amount (₹)</th>
+                    <th style="width: 80%;">Description</th>
+                    <th style="width: 20%; text-align: right;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
