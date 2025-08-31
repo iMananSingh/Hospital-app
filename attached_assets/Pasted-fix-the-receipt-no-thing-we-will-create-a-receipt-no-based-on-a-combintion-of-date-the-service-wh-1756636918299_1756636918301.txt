@@ -1,0 +1,12 @@
+fix the receipt no thing, we will create a receipt no. based on a combintion of date, the service which it is billed for and the serial number of the receipt for that "particular service/ billable" on that date. so lets suppose there are no patients and therefore no receipts int he database as of yet, so when the first ever patient is registered, will this action have a receipt? no... registration has no receipt. next the same patient is scheduled for OPD, now the first ever receipt is created for the first ever patient, but since the receipt no depends on the date, service and the count of that item/receipt that particular day, so the receipt no should be yymmdd-first three lettersog th service-count(total 4 numbers), if it is 20th aug 2025 and an opd receipt, and the first opd scheduled, then the receipt number should be -> 250820-OPD-0001.
+
+now next patient is registered and also scheduled for OPD then it will be -> 250820-OPD-0002.
+next -> 250820-OPD-0003,
+
+now suppose there is a hault, now other patient as of yet but the first patient that came is referred toget few lab tests done from the inhouse patholofy lab, then the receipt for that should be -> 250820-PAT-0001.
+
+now suppose the the day ends, then the first OPD scheduled the next day which is 21st aug 2025 should be - 250821-OPD-0001, because the count restarts everyday, suppose there were total 50 opd on this day, then what should be the receipt no for the last opd receipt? - 250821-OPD-0050.
+
+what about the admission related receipts? same case, if the first patient on 21st aug, then it will be 250821-ADM-0001, if total 7 admission on this day , the sevent patient's admission receipt will say receipt no: 250821-ADM-0001.
+
+what about the services related to the for discharge it will be DIS, for room transfer it will be RTS, for additional services, (which curently have a bunch of categories like Diagnostic services, medical procedures, misc services, surgcal procedures), all of them will have SER (for services). let me know if you have anyquestion before implementing.
