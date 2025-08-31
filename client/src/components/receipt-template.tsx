@@ -100,38 +100,26 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const generateReceiptNumber = async () => {
-    // If receipt number is already stored, use it
+    // Always use stored receipt number if available
     if (receiptData.details?.receiptNumber) {
       return receiptData.details.receiptNumber;
     }
 
-    // Fallback: generate receipt number dynamically (for old records)
+    // Fallback for old records without stored receipt numbers
     const eventDate = receiptData.details?.eventDate || new Date().toISOString().split('T')[0];
     const dateObj = new Date(eventDate);
-    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
+    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
     
-    let serviceCode = '';
-    let serviceTypeForAPI = '';
+    let serviceCode = 'SER';
     
     switch (receiptData.type) {
       case 'service':
-        // Check if it's OPD service - look in both details and main receipt data
-        const isOPD = receiptData.details?.serviceType === 'opd' || 
-                      receiptData.details?.serviceName === 'OPD Consultation' ||
-                      receiptData.title?.includes('OPD');
-        
-        if (isOPD) {
+        if (receiptData.details?.serviceType === 'opd') {
           serviceCode = 'OPD';
-          serviceTypeForAPI = 'opd';
         } else if (receiptData.details?.serviceType === 'discharge') {
           serviceCode = 'DIS';
-          serviceTypeForAPI = 'discharge';
         } else if (receiptData.details?.serviceType === 'room_transfer') {
           serviceCode = 'RTS';
-          serviceTypeForAPI = 'room_transfer';
-        } else {
-          serviceCode = 'SER';
-          serviceTypeForAPI = 'service';
         }
         break;
       case 'pathology':
@@ -146,31 +134,9 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       case 'discount':
         serviceCode = 'DIS';
         break;
-      default:
-        serviceCode = 'OPD';
     }
     
-    // Get daily count from API
-    let dailyCount = 1;
-    try {
-      const apiServiceType = serviceTypeForAPI || receiptData.type;
-      const response = await fetch(`/api/receipts/daily-count/${apiServiceType}/${eventDate}`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        dailyCount = data.count;
-      }
-    } catch (error) {
-      console.error('Error fetching daily count for receipt:', error);
-    }
-    
-    const countStr = dailyCount.toString().padStart(4, '0');
-    
-    return `${yymmdd}-${serviceCode}-${countStr}`;
+    return `${yymmdd}-${serviceCode}-0001`;
   };
 
   const handlePrint = async () => {

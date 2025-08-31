@@ -172,14 +172,8 @@ export default function PatientDetail() {
           type: 'service' as const,
           id: event.id,
           title: event.serviceName ? `${event.serviceName} - Service Receipt` : 'Service Receipt',
-          items: [
-            {
-              description: event.serviceName || 'Service',
-              quantity: 1,
-              amount: event.price || 0
-            }
-          ],
-          total: event.price || 0,
+          amount: event.price || 0,
+          description: event.serviceName || 'Service',
           details: {
             serviceType: event.serviceType,
             serviceName: event.serviceName,
@@ -198,12 +192,8 @@ export default function PatientDetail() {
           type: 'pathology' as const,
           id: event.id,
           title: 'Pathology Test Receipt',
-          items: event.tests?.map((test: any) => ({
-            description: test.testName,
-            quantity: 1,
-            amount: test.price
-          })) || [],
-          total: event.totalPrice || 0,
+          amount: event.totalPrice || 0,
+          description: `Pathology Order: ${event.orderId || 'Unknown Order'}`,
           details: {
             orderId: event.orderId,
             doctor: event.doctor,

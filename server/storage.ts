@@ -189,12 +189,12 @@ async function initializeDatabase() {
         total_cost REAL NOT NULL DEFAULT 0,
         initial_deposit REAL NOT NULL DEFAULT 0,
         additional_payments REAL NOT NULL DEFAULT 0,
-        lastPaymentDate TEXT,
+        last_payment_date TEXT,
         total_discount REAL DEFAULT 0,
-        lastDiscountDate TEXT,
-        lastDiscountAmount REAL DEFAULT 0,
-        lastDiscountReason TEXT,
-        lastPaymentAmount REAL DEFAULT 0,
+        last_discount_date TEXT,
+        last_discount_amount REAL DEFAULT 0,
+        last_discount_reason TEXT,
+        last_payment_amount REAL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -325,10 +325,10 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
-    // Add lastPaymentDate column to admissions table if it doesn't exist
+    // Add last_payment_date column to admissions table if it doesn't exist
     try {
       db.$client.exec(`
-        ALTER TABLE admissions ADD COLUMN lastPaymentDate TEXT;
+        ALTER TABLE admissions ADD COLUMN last_payment_date TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -345,7 +345,7 @@ async function initializeDatabase() {
 
     try {
       db.$client.exec(`
-        ALTER TABLE admissions ADD COLUMN lastDiscountDate TEXT;
+        ALTER TABLE admissions ADD COLUMN last_discount_date TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -353,7 +353,7 @@ async function initializeDatabase() {
 
     try {
       db.$client.exec(`
-        ALTER TABLE admissions ADD COLUMN lastDiscountAmount REAL DEFAULT 0;
+        ALTER TABLE admissions ADD COLUMN last_discount_amount REAL DEFAULT 0;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -361,7 +361,7 @@ async function initializeDatabase() {
 
     try {
       db.$client.exec(`
-        ALTER TABLE admissions ADD COLUMN lastDiscountReason TEXT;
+        ALTER TABLE admissions ADD COLUMN last_discount_reason TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -369,7 +369,7 @@ async function initializeDatabase() {
 
     try {
       db.$client.exec(`
-        ALTER TABLE admissions ADD COLUMN lastPaymentAmount REAL DEFAULT 0;
+        ALTER TABLE admissions ADD COLUMN last_payment_amount REAL DEFAULT 0;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -793,7 +793,13 @@ export class SqliteStorage implements IStorage {
   async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
     const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
-    const receiptNumber = await this.getDailyReceiptCount('pat', new Date().toISOString().split('T')[0]);
+    const orderedDate = orderData.orderedDate || new Date().toISOString().split('T')[0];
+    
+    // Generate proper receipt number for pathology
+    const count = await this.getDailyReceiptCount('pathology', orderedDate);
+    const dateObj = new Date(orderedDate);
+    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+    const receiptNumber = `${yymmdd}-PAT-${count.toString().padStart(4, '0')}`;
 
     return db.transaction((tx) => {
       // Insert the order first
@@ -801,7 +807,7 @@ export class SqliteStorage implements IStorage {
         ...orderData,
         orderId: generatedOrderId,
         totalPrice,
-        receiptNumber: receiptNumber.toString().padStart(4, '0'),
+        receiptNumber,
       }).returning().get();
 
       // Insert all tests for this order
@@ -874,12 +880,31 @@ export class SqliteStorage implements IStorage {
   async createPatientService(service: InsertPatientService): Promise<PatientService> {
     const serviceId = `SRV-${Date.now()}`;
     const scheduledDate = service.scheduledDate || new Date().toISOString().split('T')[0];
-    const receiptNumber = await this.getDailyReceiptCount(service.serviceType, scheduledDate);
+    
+    // Generate proper receipt number based on service type
+    const serviceType = service.serviceType || 'service';
+    const count = await this.getDailyReceiptCount(serviceType, scheduledDate);
+    
+    // Format date as YYMMDD
+    const dateObj = new Date(scheduledDate);
+    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+    
+    // Determine service code
+    let serviceCode = 'SER';
+    if (serviceType === 'opd') {
+      serviceCode = 'OPD';
+    } else if (serviceType === 'discharge') {
+      serviceCode = 'DIS';
+    } else if (serviceType === 'room_transfer') {
+      serviceCode = 'RTS';
+    }
+    
+    const receiptNumber = `${yymmdd}-${serviceCode}-${count.toString().padStart(4, '0')}`;
     
     const created = db.insert(schema.patientServices).values({
       ...service,
       serviceId,
-      receiptNumber: receiptNumber.toString().padStart(4, '0'),
+      receiptNumber,
     }).returning().get();
     return created;
   }
@@ -1005,27 +1030,10 @@ export class SqliteStorage implements IStorage {
       }
     }
 
-    // Update lastPaymentDate if a payment is made
+    // Update last_payment_date if a payment is made
     if (admission.status === 'paid' && updated) {
         updated.lastPaymentDate = new Date().toISOString();
         await db.update(schema.admissions).set({ lastPaymentDate: updated.lastPaymentDate }).where(eq(schema.admissions.id, id)).run();
-    }
-
-    // Update discount related fields if they are provided
-    if (admission.total_discount !== undefined) {
-      updated.total_discount = admission.total_discount;
-    }
-    if (admission.lastDiscountDate !== undefined) {
-      updated.lastDiscountDate = admission.lastDiscountDate;
-    }
-    if (admission.lastDiscountAmount !== undefined) {
-      updated.lastDiscountAmount = admission.lastDiscountAmount;
-    }
-    if (admission.lastDiscountReason !== undefined) {
-      updated.lastDiscountReason = admission.lastDiscountReason;
-    }
-    if (admission.lastPaymentAmount !== undefined) {
-      updated.lastPaymentAmount = admission.lastPaymentAmount;
     }
 
 
