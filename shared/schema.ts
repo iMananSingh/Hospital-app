@@ -154,6 +154,7 @@ export const patientServices = sqliteTable("patient_services", {
   completedDate: text("completed_date"),
   notes: text("notes"),
   price: real("price").notNull().default(0),
+  receiptNumber: text("receipt_number"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });

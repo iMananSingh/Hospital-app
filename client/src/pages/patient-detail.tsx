@@ -142,115 +142,26 @@ export default function PatientDetail() {
     // Get event date for receipt numbering
     const eventDate = new Date(event.sortTimestamp).toISOString().split('T')[0];
 
-    const baseData = {
-      patientName: patient?.name || "Unknown Patient",
-      patientId: patient?.patientId || "Unknown ID",
-      date: new Date(event.sortTimestamp).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }),
+    // Base receipt data structure
+    const baseReceiptData = {
+      type: eventType as 'service' | 'pathology' | 'admission' | 'payment' | 'discount',
+      id: event.id,
+      title: event.title || event.serviceName || event.testName || event.description || 'Service',
+      date: event.sortTimestamp,
+      amount: event.amount || event.price || event.totalPrice || 0,
+      description: event.description || event.serviceName || event.testName || '',
+      patientName: patient?.name || 'Unknown Patient',
+      patientId: patient?.patientId || 'Unknown ID',
       details: {
-        patientAge: patient?.age || 'N/A',
-        patientGender: patient?.gender || 'N/A',
-        doctorName: event.doctorName || 'N/A',
-        category: event.category || eventType,
-        serviceType: getServiceType(eventType, event),
-        eventDate: eventDate,
-        eventId: event.id
+        ...event,
+        patientAge: patient?.age,
+        patientGender: patient?.gender,
+        doctorName: event.doctorName || event.doctor?.name || 'No Doctor Assigned',
+        receiptNumber: event.receiptNumber || 'RECEIPT-NOT-FOUND'
       }
     };
 
-    switch (eventType) {
-      case 'service':
-        return {
-          ...baseData,
-          type: 'service' as const,
-          id: event.id,
-          title: event.serviceName ? `${event.serviceName} - Service Receipt` : 'Service Receipt',
-          amount: event.price || 0,
-          description: event.serviceName || 'Service',
-          details: {
-            serviceType: event.serviceType,
-            serviceName: event.serviceName,
-            doctorName: event.doctorName || 'No Doctor Assigned',
-            category: event.category,
-            eventDate: new Date(event.sortTimestamp).toISOString().split('T')[0],
-            patientAge: patient?.age,
-            patientGender: patient?.gender,
-            receiptNumber: event.receiptNumber,
-          }
-        };
-
-      case 'pathology':
-        return {
-          ...baseData,
-          type: 'pathology' as const,
-          id: event.id,
-          title: 'Pathology Test Receipt',
-          amount: event.totalPrice || 0,
-          description: `Pathology Order: ${event.orderId || 'Unknown Order'}`,
-          details: {
-            orderId: event.orderId,
-            doctor: event.doctor,
-            remarks: event.remarks,
-            eventDate: new Date(event.sortTimestamp).toISOString().split('T')[0],
-            patientAge: patient?.age,
-            patientGender: patient?.gender,
-            receiptNumber: event.receiptNumber,
-          }
-        };
-
-      case 'admission_event':
-      case 'admission':
-        return {
-          ...baseData,
-          type: 'admission' as const,
-          id: event.id,
-          title: event.title,
-          description: event.description,
-          details: {
-            ...baseData.details,
-            doctorName: event.doctorName || (event.rawData?.admission?.doctorId ? (() => {
-              const doctor = doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId);
-              return doctor ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown Doctor';
-            })() : 'No Doctor Assigned'),
-          }
-        };
-
-      case 'payment':
-        return {
-          ...baseData,
-          type: 'payment' as const,
-          id: event.id,
-          title: event.title,
-          description: event.description,
-          amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
-        };
-
-      case 'discount':
-        return {
-          ...baseData,
-          type: 'discount' as const,
-          id: event.id,
-          title: event.title,
-          description: event.description,
-          amount: parseFloat(event.description.match(/₹([\d,]+)/)?.[1]?.replace(/,/g, '') || '0')
-        };
-
-      default:
-        return {
-          ...baseData,
-          type: 'service' as const,
-          id: event.id,
-          title: event.title,
-          description: event.description
-        };
-    }
+    return baseReceiptData;
   };
 
   // Fetch patient details
