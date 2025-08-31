@@ -365,19 +365,17 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               <table class="bill-table">
                 <thead>
                   <tr>
-                    <th style="width: 60%;">Description</th>
-                    <th style="width: 20%;">Quantity</th>
-                    <th style="width: 20%;">Amount (₹)</th>
+                    <th style="width: 70%;">Description</th>
+                    <th style="width: 30%;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td>${receiptData.title}</td>
-                    <td style="text-align: center;">1</td>
                     <td class="amount-cell">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                   <tr class="total-row">
-                    <td colspan="2" style="text-align: right; font-weight: bold;">Total Amount:</td>
+                    <td style="text-align: right; font-weight: bold;">Total Amount:</td>
                     <td class="amount-cell" style="font-weight: bold;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                 </tbody>
