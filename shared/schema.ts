@@ -323,6 +323,7 @@ export const insertPatientServiceSchema = createInsertSchema(patientServices).om
   serviceName: z.string().min(1, "Service name is required"),
   scheduledDate: z.string().min(1, "Scheduled date is required"),
   scheduledTime: z.string().min(1, "Scheduled time is required"),
+  receiptNumber: z.string().optional(),
 });
 
 export const insertAdmissionSchema = createInsertSchema(admissions).omit({

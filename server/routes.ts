@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
-      
+
       const user = await storage.getUserByUsername(username);
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -291,15 +291,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/bills", authenticateToken, async (req: any, res) => {
     try {
       const { bill, items } = req.body;
-      
+
       const billData = insertBillSchema.parse({
         ...bill,
         createdBy: req.user.id,
         billDate: new Date().toISOString().split('T')[0],
       });
-      
+
       const itemsData = items.map((item: any) => insertBillItemSchema.parse(item));
-      
+
       const createdBill = await storage.createBill(billData, itemsData);
       res.json(createdBill);
     } catch (error) {
@@ -362,17 +362,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received pathology order request:", JSON.stringify(req.body, null, 2));
       const { orderData, tests } = req.body;
-      
+
       if (!orderData || !tests) {
         return res.status(400).json({ message: "Missing orderData or tests" });
       }
-      
+
       // Ensure doctorId is null if empty string or "external"
       const processedOrderData = {
         ...orderData,
         doctorId: orderData.doctorId === "" || orderData.doctorId === "external" ? null : orderData.doctorId
       };
-      
+
       const order = await storage.createPathologyOrder(processedOrderData, tests);
       res.json(order);
     } catch (error: any) {
@@ -414,15 +414,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Patient Services Management
   app.post("/api/patient-services", authenticateToken, async (req, res) => {
     try {
-      const service = await storage.createPatientService(req.body);
+      const data = insertPatientServiceSchema.parse(req.body); // Assuming insertPatientServiceSchema is available and correctly defined
+      
+      // Generate receipt number before creating the service
+      const receiptCount = await storage.getLatestReceiptNumber(data.serviceType); // Assuming a function to get the latest receipt number for a given service type
+      const receiptNumber = `REC-${receiptCount + 1}`; // Simple increment logic, adjust as needed
+
+      const service = await storage.createPatientService({ ...data, receiptNumber }); // Pass the generated receiptNumber to createPatientService
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Failed to create patient service" });
     }
   });
+
 
   app.put("/api/patient-services/:id", authenticateToken, async (req, res) => {
     try {
