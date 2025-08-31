@@ -138,6 +138,50 @@ export default function PatientDetail() {
     }
   };
 
+  // Generate receipt number based on service type and date
+  const generateReceiptNumber = async (eventType: string, eventDate: string, currentEvent: any): Promise<string> => {
+    try {
+      const serviceType = getServiceType(eventType, currentEvent);
+      const count = await getDailyCountFromAPI(eventType, eventDate, currentEvent);
+
+      // Format: YYMMDD-TYPE-NNNN
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+
+      let typeCode = '';
+      switch (serviceType.toLowerCase()) {
+        case 'opd':
+          typeCode = 'OPD';
+          break;
+        case 'service':
+          typeCode = 'SER';
+          break;
+        case 'pathology':
+          typeCode = 'PAT';
+          break;
+        case 'admission':
+          typeCode = 'ADM';
+          break;
+        case 'discharge':
+          typeCode = 'DIS';
+          break;
+        case 'room_transfer':
+          typeCode = 'RTS';
+          break;
+        case 'payment':
+          typeCode = 'PAY';
+          break;
+        default:
+          typeCode = 'SER';
+      }
+
+      return `${yymmdd}-${typeCode}-${count.toString().padStart(4, '0')}`;
+    } catch (error) {
+      console.error('Error generating receipt number:', error);
+      return 'RECEIPT-ERROR';
+    }
+  };
+
   const generateReceiptData = (event: any, eventType: string) => {
     // Get event date for receipt numbering
     const eventDate = new Date(event.sortTimestamp).toISOString().split('T')[0];
@@ -148,12 +192,12 @@ export default function PatientDetail() {
       if (event.receiptNumber) {
         return event.receiptNumber;
       }
-      
+
       // For services, try to get from rawData if available
       if (eventType === 'service' && event.rawData?.service?.receiptNumber) {
         return event.rawData.service.receiptNumber;
       }
-      
+
       // For pathology, try to get from order data
       if (eventType === 'pathology') {
         if (event.rawData?.order?.receiptNumber) {
@@ -164,14 +208,14 @@ export default function PatientDetail() {
           return event.order.receiptNumber;
         }
       }
-      
+
       // For admission events, try to get from admission data
       if (eventType === 'admission' || eventType === 'admission_event') {
         if (event.rawData?.admission?.receiptNumber) {
           return event.rawData.admission.receiptNumber;
         }
       }
-      
+
       return 'RECEIPT-NOT-GENERATED';
     };
 
