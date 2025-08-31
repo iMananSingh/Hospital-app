@@ -161,8 +161,18 @@ export default function PatientDetail() {
         }
       }
 
-      // For admission events, try to get from admission data
-      if (eventType === 'admission' || eventType === 'admission_event') {
+      // For admission events, try to get from admission event data
+      if (eventType === 'admission_event') {
+        if (event.rawData?.event?.receiptNumber) {
+          return event.rawData.event.receiptNumber;
+        }
+        if (event.receiptNumber) {
+          return event.receiptNumber;
+        }
+      }
+
+      // For admission fallback, try to get from admission data
+      if (eventType === 'admission') {
         if (event.rawData?.admission?.receiptNumber) {
           return event.rawData.admission.receiptNumber;
         }
@@ -1629,7 +1639,8 @@ export default function PatientDetail() {
                             color: color,
                             sortTimestamp: eventNormalized.timestamp,
                             rawData: { event, primaryDate }, // Debug info
-                            doctorName: doctorName // Add doctorName directly to the event
+                            doctorName: doctorName, // Add doctorName directly to the event
+                            receiptNumber: event.receiptNumber // Include receipt number from event
                           });
                         });
 

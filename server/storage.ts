@@ -220,6 +220,7 @@ async function initializeDatabase() {
         room_number TEXT,
         ward_type TEXT,
         notes TEXT,
+        receipt_number TEXT,
         created_by TEXT REFERENCES users(id),
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -388,6 +389,15 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE pathology_orders ADD COLUMN receipt_number TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add receiptNumber column to admission_events table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE admission_events ADD COLUMN receipt_number TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -921,8 +931,15 @@ export class SqliteStorage implements IStorage {
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
     const admissionDate = new Date().toISOString();
+    const eventDate = admissionDate.split('T')[0];
 
     return db.transaction((tx) => {
+      // Generate receipt number for admission
+      const admissionCount = this.getDailyReceiptCountSync('admission', eventDate);
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+      const receiptNumber = `${yymmdd}-ADM-${admissionCount.toString().padStart(4, '0')}`;
+
       // Create the admission episode
       const created = tx.insert(schema.admissions).values({
         ...admission,
@@ -933,7 +950,7 @@ export class SqliteStorage implements IStorage {
         currentRoomNumber: admission.currentRoomNumber,
       }).returning().get();
 
-      // Create the initial admission event
+      // Create the initial admission event with receipt number
       tx.insert(schema.admissionEvents).values({
         admissionId: created.id,
         eventType: "admit",
@@ -941,6 +958,7 @@ export class SqliteStorage implements IStorage {
         roomNumber: admission.currentRoomNumber,
         wardType: admission.currentWardType,
         notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
+        receiptNumber: receiptNumber,
       }).run();
 
       // Increment occupied beds for the room type
@@ -1147,25 +1165,35 @@ export class SqliteStorage implements IStorage {
 
   async transferRoom(admissionId: string, roomData: { roomNumber: string, wardType: string }, userId: string): Promise<Admission | undefined> {
     return db.transaction((tx) => {
+      const eventTime = new Date().toISOString();
+      const eventDate = eventTime.split('T')[0];
+
+      // Generate receipt number for room transfer
+      const transferCount = this.getDailyReceiptCountSync('room_transfer', eventDate);
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+      const receiptNumber = `${yymmdd}-RMC-${transferCount.toString().padStart(4, '0')}`;
+
       // Update the admission's current room
       const updated = tx.update(schema.admissions)
         .set({ 
           currentRoomNumber: roomData.roomNumber,
           currentWardType: roomData.wardType,
-          updatedAt: new Date().toISOString()
+          updatedAt: eventTime
         })
         .where(eq(schema.admissions.id, admissionId))
         .returning().get();
 
-      // Create room change event
+      // Create room change event with receipt number
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
         eventType: "room_change",
-        eventTime: new Date().toISOString(),
+        eventTime: eventTime,
         roomNumber: roomData.roomNumber,
         wardType: roomData.wardType,
         notes: `Room transferred to ${roomData.wardType} - Room ${roomData.roomNumber}`,
         createdBy: userId,
+        receiptNumber: receiptNumber,
       }).run();
 
       return updated;
@@ -1181,6 +1209,13 @@ export class SqliteStorage implements IStorage {
       if (!currentAdmission) return undefined;
 
       const dischargeDate = new Date().toISOString();
+      const eventDate = dischargeDate.split('T')[0];
+
+      // Generate receipt number for discharge
+      const dischargeCount = this.getDailyReceiptCountSync('discharge', eventDate);
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+      const receiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, '0')}`;
 
       // Update admission status
       const updated = tx.update(schema.admissions)
@@ -1192,13 +1227,14 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.id, admissionId))
         .returning().get();
 
-      // Create discharge event
+      // Create discharge event with receipt number
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
         eventType: "discharge",
         eventTime: dischargeDate,
         notes: `Patient discharged`,
         createdBy: userId,
+        receiptNumber: receiptNumber,
       }).run();
 
       // Decrement occupied beds
@@ -1315,13 +1351,13 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
+  // Synchronous version for use within transactions
+  private getDailyReceiptCountSync(serviceType: string, date: string): number {
     try {
       let count = 0;
 
       switch (serviceType.toLowerCase()) {
         case 'opd':
-          // Count OPD services specifically
           count = db.select().from(schema.patientServices)
             .where(and(
               eq(schema.patientServices.scheduledDate, date),
@@ -1332,7 +1368,6 @@ export class SqliteStorage implements IStorage {
 
         case 'service':
         case 'ser':
-          // Count all non-OPD services
           count = db.select().from(schema.patientServices)
             .where(and(
               eq(schema.patientServices.scheduledDate, date),
@@ -1350,14 +1385,16 @@ export class SqliteStorage implements IStorage {
 
         case 'admission':
         case 'adm':
-          count = db.select().from(schema.admissions)
-            .where(eq(schema.admissions.admissionDate, date))
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'admit')
+            ))
             .all().length;
           break;
 
         case 'discharge':
         case 'dis':
-          // Count discharge events on this date
           count = db.select().from(schema.admissionEvents)
             .where(and(
               like(schema.admissionEvents.eventTime, `${date}%`),
@@ -1368,7 +1405,6 @@ export class SqliteStorage implements IStorage {
 
         case 'room_transfer':
         case 'rts':
-          // Count room transfer events on this date
           count = db.select().from(schema.admissionEvents)
             .where(and(
               like(schema.admissionEvents.eventTime, `${date}%`),
@@ -1379,7 +1415,6 @@ export class SqliteStorage implements IStorage {
 
         case 'payment':
         case 'pay':
-          // Count payment events on this date (using lastPaymentDate from admissions)
           count = db.select().from(schema.admissions)
             .where(like(schema.admissions.lastPaymentDate, `${date}%`))
             .all().length;
@@ -1389,11 +1424,15 @@ export class SqliteStorage implements IStorage {
           count = 0;
       }
 
-      return count + 1; // Return next number in sequence
+      return count + 1;
     } catch (error) {
-      console.error('Error getting daily receipt count:', error);
-      return 1; // Default to 1 if error
+      console.error('Error getting daily receipt count sync:', error);
+      return 1;
     }
+  }
+
+  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
+    return this.getDailyReceiptCountSync(serviceType, date);
   }
 }
 

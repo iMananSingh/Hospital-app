@@ -192,12 +192,13 @@ export const admissions = sqliteTable("admissions", {
 export const admissionEvents = sqliteTable("admission_events", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   admissionId: text("admission_id").notNull().references(() => admissions.id),
-  eventType: text("event_type").notNull(), // admit, room_change, discharge
+  eventType: text("event_type").notNull(), // 'admit', 'room_change', 'discharge'
   eventTime: text("event_time").notNull().default(sql`(datetime('now'))`),
   roomId: text("room_id"),
   roomNumber: text("room_number"),
   wardType: text("ward_type"),
   notes: text("notes"),
+  receiptNumber: text("receipt_number"),
   createdBy: text("created_by").references(() => users.id),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
