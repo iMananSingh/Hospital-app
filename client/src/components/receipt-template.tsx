@@ -99,9 +99,11 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     return 'No Doctor Assigned';
   };
 
-  const generateReceiptNumber = () => {
-    const today = new Date();
-    const yymmdd = today.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
+  const generateReceiptNumber = async () => {
+    // Use the event date from receipt data, or fall back to today
+    const eventDate = receiptData.details?.eventDate || new Date().toISOString().split('T')[0];
+    const dateObj = new Date(eventDate);
+    const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6); // YYMMDD
     
     let serviceCode = '';
     switch (receiptData.type) {
@@ -131,19 +133,33 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
         serviceCode = 'OPD';
     }
     
-    // For now, use timestamp-based counter - in production, this should query the database
-    // to get the actual daily count for the service type
-    const dailyCount = receiptData.details?.dailyCount || 1;
+    // Get daily count from API
+    let dailyCount = 1;
+    try {
+      const response = await fetch(`/api/receipts/daily-count/${receiptData.details?.serviceType || receiptData.type}/${eventDate}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        dailyCount = data.count;
+      }
+    } catch (error) {
+      console.error('Error fetching daily count for receipt:', error);
+    }
+    
     const countStr = dailyCount.toString().padStart(4, '0');
     
     return `${yymmdd}-${serviceCode}-${countStr}`;
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const receiptNumber = generateReceiptNumber();
+    const receiptNumber = await generateReceiptNumber();
 
     const receiptHtml = `
       <!DOCTYPE html>

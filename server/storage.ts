@@ -10,7 +10,7 @@ import type {
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog
 } from "@shared/schema";
-import { eq, desc, and, like, count, sum } from "drizzle-orm";
+import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
@@ -187,6 +187,7 @@ async function initializeDatabase() {
         total_cost REAL NOT NULL DEFAULT 0,
         initial_deposit REAL NOT NULL DEFAULT 0,
         additional_payments REAL NOT NULL DEFAULT 0,
+        lastPaymentDate TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -265,7 +266,7 @@ async function initializeDatabase() {
     } catch (error) {
       // Column already exists, ignore error
     }
-    
+
     try {
       db.$client.exec(`
         ALTER TABLE room_types ADD COLUMN occupied_beds INTEGER DEFAULT 0;
@@ -312,6 +313,14 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE admissions ADD COLUMN current_room_number TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+    
+    try {
+      db.$client.exec(`
+        ALTER TABLE admissions ADD COLUMN lastPaymentDate TEXT;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -446,7 +455,7 @@ export interface IStorage {
   getAdmissions(patientId?: string): Promise<Admission[]>;
   getAdmissionById(id: string): Promise<Admission | undefined>;
   updateAdmission(id: string, admission: Partial<InsertAdmission>): Promise<Admission | undefined>;
-  
+
   // Admission Events
   createAdmissionEvent(event: InsertAdmissionEvent): Promise<AdmissionEvent>;
   getAdmissionEvents(admissionId: string): Promise<AdmissionEvent[]>;
@@ -669,7 +678,7 @@ export class SqliteStorage implements IStorage {
 
   async createBill(bill: InsertBill, items: InsertBillItem[]): Promise<Bill> {
     const billNumber = this.generateBillNumber();
-    
+
     return db.transaction((tx) => {
       const created = tx.insert(schema.bills).values({
         ...bill,
@@ -682,7 +691,7 @@ export class SqliteStorage implements IStorage {
       }));
 
       tx.insert(schema.billItems).values(billItems);
-      
+
       return created;
     });
   }
@@ -717,7 +726,7 @@ export class SqliteStorage implements IStorage {
   async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
     const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
-    
+
     return db.transaction((tx) => {
       // Insert the order first
       const created = tx.insert(schema.pathologyOrders).values({
@@ -736,7 +745,7 @@ export class SqliteStorage implements IStorage {
           status: 'ordered',
         }).run();
       });
-      
+
       return created;
     });
   }
@@ -842,7 +851,7 @@ export class SqliteStorage implements IStorage {
         currentWardType: admission.currentWardType,
         currentRoomNumber: admission.currentRoomNumber,
       }).returning().get();
-      
+
       // Create the initial admission event
       tx.insert(schema.admissionEvents).values({
         admissionId: created.id,
@@ -852,13 +861,13 @@ export class SqliteStorage implements IStorage {
         wardType: admission.currentWardType,
         notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
       }).run();
-      
+
       // Increment occupied beds for the room type
       if (admission.currentWardType) {
         const roomType = tx.select().from(schema.roomTypes)
           .where(eq(schema.roomTypes.name, admission.currentWardType))
           .get();
-        
+
         if (roomType) {
           tx.update(schema.roomTypes)
             .set({ 
@@ -897,12 +906,12 @@ export class SqliteStorage implements IStorage {
     const currentAdmission = db.select().from(schema.admissions)
       .where(eq(schema.admissions.id, id))
       .get();
-    
+
     const updated = db.update(schema.admissions)
       .set({ ...admission, updatedAt: new Date().toISOString() })
       .where(eq(schema.admissions.id, id))
       .returning().get();
-    
+
     // Handle bed count changes when status changes
     if (currentAdmission && admission.status === 'discharged' && currentAdmission.status === 'admitted') {
       // Patient is being discharged - decrement occupied beds
@@ -910,7 +919,7 @@ export class SqliteStorage implements IStorage {
         const roomType = db.select().from(schema.roomTypes)
           .where(eq(schema.roomTypes.name, currentAdmission.currentWardType))
           .get();
-        
+
         if (roomType && roomType.occupiedBeds > 0) {
           db.update(schema.roomTypes)
             .set({ 
@@ -923,6 +932,13 @@ export class SqliteStorage implements IStorage {
       }
     }
     
+    // Update lastPaymentDate if a payment is made
+    if (admission.status === 'paid' && updated) {
+        updated.lastPaymentDate = new Date().toISOString();
+        await db.update(schema.admissions).set({ lastPaymentDate: updated.lastPaymentDate }).where(eq(schema.admissions.id, id)).run();
+    }
+
+
     return updated;
   }
 
@@ -933,14 +949,14 @@ export class SqliteStorage implements IStorage {
   async getDashboardStats(): Promise<any> {
     try {
       const today = new Date().toISOString().split('T')[0];
-      
+
       // Get OPD patient count for today
       const opdPatients = db.select()
         .from(schema.patientServices)
         .where(
           and(
-            eq(schema.patientServices.serviceType, 'opd'),
-            eq(schema.patientServices.scheduledDate, today)
+            eq(schema.patientServices.scheduledDate, today),
+            eq(schema.patientServices.serviceType, 'opd')
           )
         ).all();
 
@@ -949,7 +965,7 @@ export class SqliteStorage implements IStorage {
         .from(schema.admissions)
         .where(eq(schema.admissions.status, 'admitted'))
         .all().length;
-      
+
       // Get lab tests count for today
       const labTests = db.select()
         .from(schema.pathologyOrders)
@@ -1059,7 +1075,7 @@ export class SqliteStorage implements IStorage {
         })
         .where(eq(schema.admissions.id, admissionId))
         .returning().get();
-      
+
       // Create room change event
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
@@ -1070,7 +1086,7 @@ export class SqliteStorage implements IStorage {
         notes: `Room transferred to ${roomData.wardType} - Room ${roomData.roomNumber}`,
         createdBy: userId,
       }).run();
-      
+
       return updated;
     });
   }
@@ -1080,11 +1096,11 @@ export class SqliteStorage implements IStorage {
       const currentAdmission = tx.select().from(schema.admissions)
         .where(eq(schema.admissions.id, admissionId))
         .get();
-        
+
       if (!currentAdmission) return undefined;
-      
+
       const dischargeDate = new Date().toISOString();
-      
+
       // Update admission status
       const updated = tx.update(schema.admissions)
         .set({ 
@@ -1094,7 +1110,7 @@ export class SqliteStorage implements IStorage {
         })
         .where(eq(schema.admissions.id, admissionId))
         .returning().get();
-      
+
       // Create discharge event
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
@@ -1103,13 +1119,13 @@ export class SqliteStorage implements IStorage {
         notes: `Patient discharged`,
         createdBy: userId,
       }).run();
-      
+
       // Decrement occupied beds
       if (currentAdmission.currentWardType) {
         const roomType = tx.select().from(schema.roomTypes)
           .where(eq(schema.roomTypes.name, currentAdmission.currentWardType))
           .get();
-        
+
         if (roomType && roomType.occupiedBeds > 0) {
           tx.update(schema.roomTypes)
             .set({ 
@@ -1120,7 +1136,7 @@ export class SqliteStorage implements IStorage {
             .run();
         }
       }
-      
+
       return updated;
     });
   }
@@ -1129,7 +1145,7 @@ export class SqliteStorage implements IStorage {
     try {
       // Try to get existing settings
       let settings = db.select().from(schema.hospitalSettings).where(eq(schema.hospitalSettings.id, 'default')).get();
-      
+
       // If no settings exist, create default ones
       if (!settings) {
         settings = db.insert(schema.hospitalSettings).values({
@@ -1144,7 +1160,7 @@ export class SqliteStorage implements IStorage {
           updatedAt: new Date().toISOString()
         }).returning().get();
       }
-      
+
       return settings;
     } catch (error) {
       console.error('Error getting hospital settings:', error);
@@ -1185,7 +1201,7 @@ export class SqliteStorage implements IStorage {
           updatedAt: new Date().toISOString()
         }
       }).returning().get();
-      
+
       return updated;
     } catch (error) {
       console.error('Error saving hospital settings:', error);
@@ -1200,15 +1216,15 @@ export class SqliteStorage implements IStorage {
       if (!matches) {
         throw new Error('Invalid image data format');
       }
-      
+
       const mimeType = matches[1];
       const base64Data = matches[2];
       const extension = mimeType.split('/')[1];
-      
+
       // Create filename and path
       const filename = `hospital-logo-${Date.now()}.${extension}`;
       const logoPath = `/uploads/${filename}`;
-      
+
       // For simplicity, we'll store the base64 data directly in the database
       // In a production system, you'd save to filesystem or cloud storage
       return logoData; // Return the original data URL for now
@@ -1221,54 +1237,77 @@ export class SqliteStorage implements IStorage {
   async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
     try {
       let count = 0;
-      
+
       switch (serviceType.toLowerCase()) {
         case 'opd':
-        case 'service':
-        case 'ser':
+          // Count OPD services specifically
           count = db.select().from(schema.patientServices)
-            .where(eq(schema.patientServices.scheduledDate, date))
+            .where(and(
+              eq(schema.patientServices.scheduledDate, date),
+              eq(schema.patientServices.serviceType, 'opd')
+            ))
             .all().length;
           break;
-          
+
+        case 'service':
+        case 'ser':
+          // Count all non-OPD services
+          count = db.select().from(schema.patientServices)
+            .where(and(
+              eq(schema.patientServices.scheduledDate, date),
+              ne(schema.patientServices.serviceType, 'opd')
+            ))
+            .all().length;
+          break;
+
         case 'pathology':
         case 'pat':
           count = db.select().from(schema.pathologyOrders)
             .where(eq(schema.pathologyOrders.orderedDate, date))
             .all().length;
           break;
-          
+
         case 'admission':
         case 'adm':
           count = db.select().from(schema.admissions)
             .where(eq(schema.admissions.admissionDate, date))
             .all().length;
           break;
-          
+
         case 'discharge':
         case 'dis':
-          count = db.select().from(schema.admissions)
-            .where(and(
-              eq(schema.admissions.dischargeDate, date),
-              eq(schema.admissions.status, 'discharged')
-            ))
-            .all().length;
-          break;
-          
-        case 'room_transfer':
-        case 'rts':
+          // Count discharge events on this date
           count = db.select().from(schema.admissionEvents)
             .where(and(
-              eq(schema.admissionEvents.eventType, 'room_change'),
-              eq(schema.admissionEvents.eventTime, date)
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'discharge')
             ))
             .all().length;
           break;
-          
+
+        case 'room_transfer':
+        case 'rts':
+          // Count room transfer events on this date
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'room_change')
+            ))
+            .all().length;
+          break;
+
+        case 'payment':
+        case 'pay':
+          // Count payment events on this date (using lastPaymentDate from admissions)
+          count = db.select().from(schema.admissions)
+            .where(like(schema.admissions.lastPaymentDate, `${date}%`))
+            .all().length;
+          break;
+
         default:
           count = 0;
       }
-      
+
       return count + 1; // Return next number in sequence
     } catch (error) {
       console.error('Error getting daily receipt count:', error);

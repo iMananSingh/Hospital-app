@@ -111,52 +111,32 @@ export default function PatientDetail() {
     }
   };
 
-  // Helper function to calculate daily count for receipt numbering
-  const calculateDailyCount = (eventType: string, eventDate: string, currentEvent: any) => {
-    // For now, return a sequential number based on the event position in the timeline
-    // In production, this would call the API to get the actual daily count
-    const serviceType = getServiceType(eventType, currentEvent);
-    
-    // Get all timeline events for the same date and service type
-    const allEvents = [
-      ...(services?.map(service => ({
-        type: 'service',
-        date: service.scheduledDate,
-        category: service.serviceType,
-        id: service.id,
-        sortTimestamp: new Date(service.scheduledDate + 'T' + service.scheduledTime).getTime()
-      })) || []),
-      ...(pathologyOrders?.map(order => ({
-        type: 'pathology',
-        date: order.order.orderedDate,
-        id: order.order.id,
-        sortTimestamp: new Date(order.order.orderedDate).getTime()
-      })) || []),
-      ...(admissions?.map(admission => ({
-        type: 'admission',
-        date: admission.admissionDate,
-        id: admission.id,
-        sortTimestamp: new Date(admission.admissionDate).getTime()
-      })) || [])
-    ];
-
-    // Filter and sort events for the same date and service type
-    const sameTypeEvents = allEvents
-      .filter(event => {
-        const eventServiceType = getServiceType(event.type, event);
-        return event.date === eventDate && eventServiceType === serviceType;
-      })
-      .sort((a, b) => a.sortTimestamp - b.sortTimestamp);
-
-    // Find the position of current event
-    const currentIndex = sameTypeEvents.findIndex(event => event.id === currentEvent.id);
-    return currentIndex >= 0 ? currentIndex + 1 : 1;
+  // Helper function to get daily count for receipt numbering from API
+  const getDailyCountFromAPI = async (eventType: string, eventDate: string, currentEvent: any): Promise<number> => {
+    try {
+      const serviceType = getServiceType(eventType, currentEvent);
+      const response = await fetch(`/api/receipts/daily-count/${serviceType}/${eventDate}`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to get daily count from API');
+        return 1;
+      }
+      
+      const data = await response.json();
+      return data.count;
+    } catch (error) {
+      console.error('Error fetching daily count:', error);
+      return 1;
+    }
   };
 
   const generateReceiptData = (event: any, eventType: string) => {
-    // Calculate daily count for the service type on the event date
+    // Get event date for receipt numbering
     const eventDate = new Date(event.sortTimestamp).toISOString().split('T')[0];
-    const dailyCount = calculateDailyCount(eventType, eventDate, event);
 
     const baseData = {
       patientName: patient?.name || "Unknown Patient",
@@ -176,7 +156,8 @@ export default function PatientDetail() {
         doctorName: event.doctorName || 'N/A',
         category: event.category || eventType,
         serviceType: getServiceType(eventType, event),
-        dailyCount: dailyCount
+        eventDate: eventDate,
+        eventId: event.id
       }
     };
 
