@@ -1052,15 +1052,28 @@ export class SqliteStorage implements IStorage {
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
         String(now.getDate()).padStart(2, '0');
 
-      // Get OPD patient count for today - check for both 'opd' and 'OPD Consultation'
+      console.log('Dashboard stats - Today date:', today);
+
+      // Debug: Get all patient services to see what's in the database
+      const allServices = db.select().from(schema.patientServices).all();
+      console.log('All patient services:', allServices.map(s => ({
+        id: s.id,
+        serviceType: s.serviceType,
+        serviceName: s.serviceName,
+        scheduledDate: s.scheduledDate
+      })));
+
+      // Get OPD patient count for today - check for serviceType = 'opd'
       const opdPatients = db.select()
         .from(schema.patientServices)
         .where(
           and(
             eq(schema.patientServices.scheduledDate, today),
-            sql`(${schema.patientServices.serviceType} = 'opd' OR ${schema.patientServices.serviceName} = 'OPD Consultation')`
+            eq(schema.patientServices.serviceType, 'opd')
           )
         ).all();
+
+      console.log('OPD patients found for today:', opdPatients);
 
       // Get inpatients count (currently admitted)
       const inpatients = db.select()
