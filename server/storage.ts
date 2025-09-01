@@ -1052,13 +1052,13 @@ export class SqliteStorage implements IStorage {
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
         String(now.getDate()).padStart(2, '0');
 
-      // Get OPD patient count for today
+      // Get OPD patient count for today - check for both 'opd' and 'OPD Consultation'
       const opdPatients = db.select()
         .from(schema.patientServices)
         .where(
           and(
             eq(schema.patientServices.scheduledDate, today),
-            eq(schema.patientServices.serviceType, 'opd')
+            sql`(${schema.patientServices.serviceType} = 'opd' OR ${schema.patientServices.serviceName} = 'OPD Consultation')`
           )
         ).all();
 
