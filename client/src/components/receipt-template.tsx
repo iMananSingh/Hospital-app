@@ -298,7 +298,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             .receipt-id {
-              margin-top: 10px;
+              margin-top: 15px;
               font-family: monospace;
               font-size: 10px;
               color: #666;
