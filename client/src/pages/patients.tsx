@@ -176,13 +176,15 @@ export default function Patients() {
   );
 
   const formatDate = (dateString: string) => {
-    // Parse the ISO string and format it consistently
+    // Parse the ISO string and format for Indian timezone
     const date = new Date(dateString);
-    // Use UTC methods to avoid timezone issues
-    const year = date.getUTCFullYear();
-    const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-    const day = date.getUTCDate();
-    return `${month} ${day}, ${year}`;
+    // Format for Indian timezone (Asia/Kolkata)
+    return date.toLocaleDateString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (

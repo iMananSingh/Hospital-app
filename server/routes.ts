@@ -131,9 +131,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patients", authenticateToken, async (req, res) => {
     try {
       const patientData = insertPatientSchema.parse(req.body);
-      // Ensure createdAt is set to current UTC time if not provided
+      // Set createdAt to current time in Indian timezone (UTC+5:30)
       if (!patientData.createdAt) {
-        patientData.createdAt = new Date().toISOString();
+        const now = new Date();
+        // Add 5.5 hours (5 hours 30 minutes) to UTC to get Indian time
+        const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        patientData.createdAt = indianTime.toISOString();
       }
       const patient = await storage.createPatient(patientData);
       res.json(patient);
