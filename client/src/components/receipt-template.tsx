@@ -222,7 +222,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             /* Bill Details */
             .bill-section {
-              margin: 8px 0 20px 0;
+              margin: 2px 0 20px 0;
               flex-grow: 1;
             }
             
