@@ -13,7 +13,10 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", new Date().toDateString()], // Include date in query key
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 0, // Consider data immediately stale
+    cacheTime: 0, // Don't cache the data
   });
 
   if (isLoading) {
