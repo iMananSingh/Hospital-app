@@ -181,7 +181,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             .patient-info-box {
               border: 2px solid #333;
               padding: 15px;
-              margin: 8px 0 20px 0;
+              margin: 8px 0 5px 0;
               background: #f9f9f9;
             }
             
