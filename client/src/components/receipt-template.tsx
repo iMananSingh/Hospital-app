@@ -310,12 +310,31 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             @media print {
-              body {
-                margin: 0;
-                padding: 10px;
+              * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
               }
+              
+              html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+                background: white !important;
+              }
+              
+              body {
+                padding: 10px !important;
+              }
+              
               .receipt {
-                padding: 10px;
+                margin: 0 !important;
+                padding: 10px !important;
+                page-break-inside: avoid;
+              }
+              
+              .header {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
               }
             }
           </style>
