@@ -112,8 +112,13 @@ export default function OpdList() {
   };
 
   const totalOpdCount = opdServices.length;
+  // Use consistent date format to match server calculation
+  const now = new Date();
+  const today = now.getFullYear() + '-' + 
+    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(now.getDate()).padStart(2, '0');
   const todayOpdCount = opdServices.filter(service => 
-    service.scheduledDate === new Date().toISOString().split('T')[0]
+    service.scheduledDate === today
   ).length;
 
   if (isLoading) {
