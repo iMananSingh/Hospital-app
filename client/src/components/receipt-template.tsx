@@ -391,11 +391,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             <!-- Footer -->
             <div class="footer">
-              <div class="footer-line">${hospitalInfo.address}</div>
-              <div class="footer-line">Phone: ${hospitalInfo.phone} | Email: ${hospitalInfo.email}</div>
-              ${hospitalInfo.registrationNumber ? `
-                <div class="footer-line">Registration No: ${hospitalInfo.registrationNumber}</div>
-              ` : ''}
+              <div class="footer-line">Address: ${hospitalInfo.address}</div>
+              <div class="footer-line">Phone: ${hospitalInfo.phone} | Email: ${hospitalInfo.email}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${hospitalInfo.registrationNumber}` : ''}</div>
               <div class="receipt-id">
                 Receipt ID: ${receiptNumber} | Generated on ${new Date().toLocaleString()}
               </div>
