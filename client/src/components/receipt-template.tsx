@@ -360,7 +360,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             <div class="patient-info-box">
               <div class="patient-line-1">
                 <span class="name-section">Name: ${receiptData.patientName} (${receiptData.patientId})</span>
-                <span class="age-section">Age: ${getPatientAge()}</span>
+                <span class="age-section">Age: ${getPatientAge()} yrs</span>
                 <span class="sex-section">Sex: ${getPatientGender()}</span>
                 <span class="date-section">Date: ${(() => {
                   const date = new Date(receiptData.date);
