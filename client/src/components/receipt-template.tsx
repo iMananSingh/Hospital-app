@@ -134,7 +134,6 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               max-width: 800px;
               margin: 0 auto;
               padding: 20px;
-              min-height: 90vh;
               display: flex;
               flex-direction: column;
             }
