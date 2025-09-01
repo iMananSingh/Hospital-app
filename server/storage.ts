@@ -1047,6 +1047,7 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
+      // Use EXACT same date calculation as OPD List page
       const now = new Date();
       const today = now.getFullYear() + '-' + 
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -1054,26 +1055,16 @@ export class SqliteStorage implements IStorage {
 
       console.log('Dashboard stats - Today date:', today);
 
-      // Debug: Get all patient services to see what's in the database
-      const allServices = db.select().from(schema.patientServices).all();
-      console.log('All patient services:', allServices.map(s => ({
-        id: s.id,
-        serviceType: s.serviceType,
-        serviceName: s.serviceName,
-        scheduledDate: s.scheduledDate
-      })));
-
-      // Get OPD patient count for today - check for serviceType = 'opd'
-      const opdPatients = db.select()
-        .from(schema.patientServices)
+      // Get OPD patient count for today using same filter logic as OPD List
+      const todayOpdCount = db.select().from(schema.patientServices)
         .where(
           and(
             eq(schema.patientServices.scheduledDate, today),
             eq(schema.patientServices.serviceType, 'opd')
           )
-        ).all();
+        ).all().length;
 
-      console.log('OPD patients found for today:', opdPatients);
+      console.log('Dashboard OPD count for today:', todayOpdCount);
 
       // Get inpatients count (currently admitted)
       const inpatients = db.select()
@@ -1094,7 +1085,7 @@ export class SqliteStorage implements IStorage {
         .all().length;
 
       return {
-        opdPatients: opdPatients.length,
+        opdPatients: todayOpdCount,
         inpatients,
         labTests,
         diagnostics
