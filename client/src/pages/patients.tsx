@@ -176,11 +176,13 @@ export default function Patients() {
   );
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    // Parse the ISO string and format it consistently
+    const date = new Date(dateString);
+    // Use UTC methods to avoid timezone issues
+    const year = date.getUTCFullYear();
+    const month = date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = date.getUTCDate();
+    return `${month} ${day}, ${year}`;
   };
 
   return (
