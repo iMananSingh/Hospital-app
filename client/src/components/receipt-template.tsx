@@ -245,7 +245,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             .amount-cell {
-              text-align: right;
+              text-align: right !important;
             }
             
             .total-row {
@@ -366,17 +366,17 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <thead>
                   <tr>
                     <th style="width: 80%;">Description</th>
-                    <th style="width: 20%; text-align: right;">Amount (₹)</th>
+                    <th style="width: 20%; text-align: right !important;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td>${receiptData.title}</td>
-                    <td class="amount-cell">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                    <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                   <tr class="total-row">
                     <td style="text-align: right; font-weight: bold;">Total Amount:</td>
-                    <td class="amount-cell" style="font-weight: bold;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                    <td class="amount-cell" style="font-weight: bold; text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                 </tbody>
               </table>
