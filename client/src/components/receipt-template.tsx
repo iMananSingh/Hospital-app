@@ -229,7 +229,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             .bill-table {
               width: 100%;
               border-collapse: collapse;
-              margin: 15px 0;
+              margin: 5px 0;
             }
             
             .bill-table th,
@@ -254,8 +254,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             .description-section {
-              margin: 15px 0;
-              padding: 10px;
+              margin: 5px 0;
+              padding: 8px;
               background: #f9f9f9;
               border: 1px solid #ddd;
             }
@@ -267,7 +267,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             /* Signature Section */
             .signature-section {
-              margin-top: 15px;
+              margin-top: 8px;
               display: flex;
               justify-content: space-between;
               align-items: center;
@@ -286,8 +286,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             /* Footer */
             .footer {
-              margin-top: 15px;
-              padding-top: 10px;
+              margin-top: 8px;
+              padding-top: 8px;
               border-top: 2px solid #333;
               text-align: center;
               font-size: 12px;
