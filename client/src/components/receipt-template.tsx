@@ -266,7 +266,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             
             /* Signature Section */
             .signature-section {
-              margin-top: 8px;
+              margin: 20px 0;
               display: flex;
               justify-content: space-between;
               align-items: center;
