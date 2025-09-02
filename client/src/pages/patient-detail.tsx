@@ -1638,8 +1638,8 @@ export default function PatientDetail() {
 
                     // Add registration event with IST correction
                     const regNormalized = normalizeDate(patient.createdAt, 'registration');
-                    // Add 5.5 hours (19800000 ms) to convert UTC to IST for display
-                    const istTimestamp = regNormalized.timestamp + (5.5 * 60 * 60 * 1000);
+                    // Subtract 5.5 hours (19800000 ms) to correct the timezone display
+                    const istTimestamp = regNormalized.timestamp - (5.5 * 60 * 60 * 1000);
                     timelineEvents.push({
                       id: 'registration',
                       type: 'registration',
