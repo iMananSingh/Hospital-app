@@ -1877,15 +1877,31 @@ export default function PatientDetail() {
                             <div className="flex items-center justify-between">
                               <p className="font-medium">{event.title}</p>
                               <span className="text-sm text-muted-foreground">
-                                {new Date(event.sortTimestamp).toLocaleString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: true,
-                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                                })}
+                                {(() => {
+                                  if (event.type === 'registration') {
+                                    // For registration, parse the date as local time and display directly
+                                    const regDate = new Date(event.date);
+                                    return regDate.toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  } else {
+                                    // For other events, use the existing timezone-aware display
+                                    return new Date(event.sortTimestamp).toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true,
+                                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                    });
+                                  }
+                                })()}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
