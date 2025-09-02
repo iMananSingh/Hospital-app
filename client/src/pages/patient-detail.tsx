@@ -1549,6 +1549,35 @@ export default function PatientDetail() {
 
                       console.log(`Normalizing date for ${source} ${id || 'unknown'}: "${dateStr}"`);
 
+                      // Special handling for registration dates - don't force UTC timezone
+                      if (source === 'registration') {
+                        // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - treat as local time
+                        if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                          dateStr = dateStr.replace(' ', 'T');
+                          console.log(`Converted SQLite format (local time) to: "${dateStr}"`);
+                        }
+                        // Handle date only format: "YYYY-MM-DD" - treat as local time
+                        else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                          dateStr = dateStr + 'T00:00:00';
+                          console.log(`Converted date-only format (local time) to: "${dateStr}"`);
+                        }
+                        // If already has timezone info or is ISO string, use as-is
+                        
+                        // Parse as local time for registration
+                        const parsed = new Date(dateStr);
+                        if (isNaN(parsed.getTime())) {
+                          console.error(`Failed to parse registration date "${dateStr}", using current time`);
+                          const now = new Date();
+                          return { date: now.toISOString(), timestamp: now.getTime() };
+                        }
+
+                        const timestamp = parsed.getTime();
+                        console.log(`Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
+                        
+                        return { date: parsed.toISOString(), timestamp };
+                      }
+
+                      // For other sources (services, admissions, etc), use existing logic
                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                       if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                         dateStr = dateStr.replace(' ', 'T') + 'Z';
