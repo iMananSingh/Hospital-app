@@ -13,7 +13,16 @@ interface DashboardStats {
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats", new Date().toDateString()], // Include date in query key
+    queryKey: ["/api/dashboard/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/dashboard/stats", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch dashboard stats");
+      return response.json();
+    },
     refetchInterval: 10000, // Refetch every 10 seconds
     staleTime: 0, // Consider data immediately stale
     cacheTime: 0, // Don't cache the data
