@@ -178,12 +178,15 @@ export default function Patients() {
   const formatDate = (dateString: string) => {
     // Parse the ISO string and format for Indian timezone
     const date = new Date(dateString);
-    // Format for Indian timezone (Asia/Kolkata)
-    return date.toLocaleDateString('en-IN', {
+    // Format for Indian timezone (Asia/Kolkata) with time for testing
+    return date.toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
     });
   };
 
