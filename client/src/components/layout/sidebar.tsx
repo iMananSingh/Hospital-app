@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/ui/button";
 import { 
   Hospital, 
   FileText, 
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Patient Registration", href: "/patients", icon: Users },
   { name: "Pathology Tests", href: "/pathology", icon: TestTube },
+  { name: "Lab Tests", href: "/lab-tests", icon: TestTube },
   { name: "Doctor Management", href: "/doctors", icon: UserPlus },
   { name: "Service Management", href: "/services", icon: Building2 },
   { name: "Billing & Invoicing", href: "/billing", icon: FileText },
@@ -34,6 +35,10 @@ export default function Sidebar() {
       .map(n => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  const isActive = (href: string) => {
+    return location === href || (href !== "/" && location.startsWith(href));
   };
 
   return (
@@ -53,27 +58,22 @@ export default function Sidebar() {
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-2">
-        {navigation.map((item) => {
-          const isActive = location === item.href || 
-            (item.href !== "/" && location.startsWith(item.href));
-          
-          return (
-            <Link 
-              key={item.name} 
-              href={item.href}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
-                isActive
-                  ? "bg-medical-blue text-white"
-                  : "text-text-muted hover:bg-muted hover:text-text-dark"
-              )}
-              data-testid={`nav-${item.href === "/" ? "dashboard" : item.href.substring(1)}`}
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
+        {navigation.map((item) => (
+          <Link 
+            key={item.name} 
+            href={item.href}
+            className={cn(
+              "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
+              isActive(item.href)
+                ? "bg-medical-blue text-white"
+                : "text-text-muted hover:bg-muted hover:text-text-dark"
+            )}
+            data-testid={`nav-${item.href === "/" ? "dashboard" : item.href.substring(1)}`}
+          >
+            <item.icon className="w-5 h-5" />
+            <span>{item.name}</span>
+          </Link>
+        ))}
       </nav>
 
       {/* User Profile Section */}

@@ -47,7 +47,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       iconColor: "text-purple-500",
       testId: "stat-labs",
       clickable: true,
-      linkTo: "/pathology"
+      linkTo: "/lab-tests"
     },
     {
       title: "Diagnostics",

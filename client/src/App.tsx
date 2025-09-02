@@ -13,6 +13,7 @@ import Pathology from "@/pages/pathology";
 import Doctors from "@/pages/doctors";
 import ServiceManagement from "@/pages/services";
 import OpdList from "@/pages/opd-list";
+import LabTests from "@/pages/lab-tests";
 import Admissions from "@/pages/admissions";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/services" component={() => <ProtectedRoute component={ServiceManagement} />} />
       <Route path="/admissions" component={() => <ProtectedRoute component={Admissions} />} />
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
+      <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />
     </Switch>
