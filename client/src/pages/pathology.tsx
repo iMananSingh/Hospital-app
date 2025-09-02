@@ -271,6 +271,39 @@ export default function Pathology() {
     queryKey: ["/api/doctors"],
   });
 
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string, status: string }) => {
+      const response = await fetch(`/api/pathology/${orderId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update order status");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
+      toast({
+        title: "Status updated",
+        description: "The order status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating status",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log("Sending order data:", data);
@@ -493,7 +526,6 @@ export default function Pathology() {
                         <TableHead>Patient</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>Date Ordered</TableHead>
-                        <TableHead>Tests Count</TableHead>
                         <TableHead>Total Price</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
@@ -510,7 +542,6 @@ export default function Pathology() {
                             <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
                             <TableCell>{doctor?.name || "External Patient"}</TableCell>
                             <TableCell>{formatDate(order.orderedDate)}</TableCell>
-                            <TableCell>Multiple Tests</TableCell>
                             <TableCell>₹{order.totalPrice}</TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(order.status)} variant="secondary">
@@ -518,14 +549,31 @@ export default function Pathology() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setSelectedOrder(order)}
-                                data-testid={`view-order-${order.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setSelectedOrder(order)}
+                                  data-testid={`view-order-${order.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Select 
+                                  value={order.status} 
+                                  onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
+                                  disabled={updateOrderStatusMutation.isPending}
+                                >
+                                  <SelectTrigger className="w-32" data-testid={`status-select-${order.id}`}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="ordered">Ordered</SelectItem>
+                                    <SelectItem value="collected">Collected</SelectItem>
+                                    <SelectItem value="processing">Processing</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );

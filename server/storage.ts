@@ -864,6 +864,33 @@ export class SqliteStorage implements IStorage {
     };
   }
 
+  async updatePathologyOrderStatus(orderId: string, status: string): Promise<any> {
+    const updatedOrder = db.update(schema.pathologyOrders)
+      .set({ 
+        status,
+        updatedAt: new Date().toISOString(),
+        ...(status === 'completed' ? { completedDate: new Date().toISOString() } : {})
+      })
+      .where(eq(schema.pathologyOrders.id, orderId))
+      .returning()
+      .get();
+
+    if (!updatedOrder) {
+      throw new Error("Order not found");
+    }
+
+    // Also update all tests in this order to the same status
+    db.update(schema.pathologyTests)
+      .set({ 
+        status,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(schema.pathologyTests.orderId, orderId))
+      .run();
+
+    return updatedOrder;
+  }
+
   async getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]> {
     return db.select().from(schema.pathologyOrders)
       .where(eq(schema.pathologyOrders.patientId, patientId))

@@ -397,6 +397,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/pathology/:id/status", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+      
+      const updatedOrder = await storage.updatePathologyOrderStatus(id, status);
+      res.json(updatedOrder);
+    } catch (error: any) {
+      console.error("Error updating pathology order status:", error);
+      res.status(400).json({ message: "Failed to update order status", error: error.message });
+    }
+  });
+
   app.get("/api/pathology/:id", authenticateToken, async (req, res) => {
     try {
       const orderDetails = await storage.getPathologyOrderById(req.params.id);
