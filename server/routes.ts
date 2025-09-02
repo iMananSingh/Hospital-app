@@ -1,11 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, db } from "./storage";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema } from "@shared/schema";
 import { getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, PathologyTestCatalog } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
+import { desc } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -690,6 +692,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ count });
     } catch (error) {
       console.error("Error getting daily receipt count:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Debug endpoint to check last patient creation time
+  app.get("/api/debug/last-patient", authenticateToken, async (req, res) => {
+    try {
+      const result = db.select({
+        id: schema.patients.id,
+        name: schema.patients.name,
+        createdAt: schema.patients.createdAt
+      })
+      .from(schema.patients)
+      .orderBy(desc(schema.patients.createdAt))
+      .limit(1)
+      .get();
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting last patient:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
