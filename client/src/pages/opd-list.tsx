@@ -53,9 +53,11 @@ export default function OpdList() {
   // Group OPD services by doctor
   const opdServicesByDoctor = useMemo(() => {
     const filtered = opdServices.filter(service => {
+      const patient = patients.find(p => p.id === service.patientId);
       const matchesSearch = searchQuery === "" || 
-        patients.find(p => p.id === service.patientId)?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patients.find(p => p.id === service.patientId)?.patientId.toLowerCase().includes(searchQuery.toLowerCase());
+        patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient?.phone.includes(searchQuery);
       
       const matchesDoctor = selectedDoctor === "all" || service.doctorId === selectedDoctor;
       const matchesStatus = selectedStatus === "all" || service.status === selectedStatus;
@@ -160,7 +162,7 @@ export default function OpdList() {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search patients..."
+                placeholder="Search by name, ID, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"

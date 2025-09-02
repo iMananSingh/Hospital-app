@@ -52,7 +52,8 @@ export default function LabTests() {
       const matchesSearch = searchQuery === "" || 
         order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase());
+        patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient?.phone?.includes(searchQuery);
       
       const matchesDoctor = selectedDoctor === "all" || order.doctorId === selectedDoctor || 
         (selectedDoctor === "external" && !order.doctorId);
@@ -177,7 +178,7 @@ export default function LabTests() {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search orders..."
+                placeholder="Search by order ID, name, patient ID, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
