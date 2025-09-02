@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { TestTube, Eye, Search, Plus, ShoppingCart, Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -471,146 +471,110 @@ export default function Pathology() {
       />
       
       <div className="p-6">
-        <Tabs defaultValue="all-tests" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="all-tests" data-testid="tab-all-tests">All Tests</TabsTrigger>
-            <TabsTrigger value="pending" data-testid="tab-pending-tests">Pending</TabsTrigger>
-            <TabsTrigger value="completed" data-testid="tab-completed-tests">Completed</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all-tests">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>All Pathology Orders</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Total: {filteredOrders.length} orders
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40" data-testid="filter-status">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="ordered">Ordered</SelectItem>
-                        <SelectItem value="collected">Collected</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
-                    <p className="text-sm text-muted-foreground mt-2">Loading tests...</p>
-                  </div>
-                ) : filteredOrders.length === 0 ? (
-                  <div className="text-center py-8">
-                    <TestTube className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      No pathology orders match your current search criteria.
-                    </p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Patient</TableHead>
-                        <TableHead>Doctor</TableHead>
-                        <TableHead>Date Ordered</TableHead>
-                        <TableHead>Total Price</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Pathology Orders</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Total: {filteredOrders.length} orders
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-40" data-testid="filter-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="ordered">Ordered</SelectItem>
+                    <SelectItem value="collected">Collected</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Loading tests...</p>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <TestTube className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  No pathology orders match your current search criteria.
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Doctor</TableHead>
+                    <TableHead>Date Ordered</TableHead>
+                    <TableHead>Total Price</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((orderData: any) => {
+                    const order = orderData.order;
+                    const patient = orderData.patient;
+                    const doctor = orderData.doctor;
+                    return (
+                      <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
+                        <TableCell className="font-medium">{order.orderId}</TableCell>
+                        <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
+                        <TableCell>{doctor?.name || "External Patient"}</TableCell>
+                        <TableCell>{formatDate(order.orderedDate)}</TableCell>
+                        <TableCell>₹{order.totalPrice}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(order.status)} variant="secondary">
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                              data-testid={`view-order-${order.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Select 
+                              value={order.status} 
+                              onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
+                              disabled={updateOrderStatusMutation.isPending}
+                            >
+                              <SelectTrigger className="w-32" data-testid={`status-select-${order.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ordered">Ordered</SelectItem>
+                                <SelectItem value="collected">Collected</SelectItem>
+                                <SelectItem value="processing">Processing</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOrders.map((orderData: any) => {
-                        const order = orderData.order;
-                        const patient = orderData.patient;
-                        const doctor = orderData.doctor;
-                        return (
-                          <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
-                            <TableCell className="font-medium">{order.orderId}</TableCell>
-                            <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
-                            <TableCell>{doctor?.name || "External Patient"}</TableCell>
-                            <TableCell>{formatDate(order.orderedDate)}</TableCell>
-                            <TableCell>₹{order.totalPrice}</TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(order.status)} variant="secondary">
-                                {order.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setSelectedOrder(order)}
-                                  data-testid={`view-order-${order.id}`}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Select 
-                                  value={order.status} 
-                                  onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
-                                  disabled={updateOrderStatusMutation.isPending}
-                                >
-                                  <SelectTrigger className="w-32" data-testid={`status-select-${order.id}`}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="ordered">Ordered</SelectItem>
-                                    <SelectItem value="collected">Collected</SelectItem>
-                                    <SelectItem value="processing">Processing</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pending">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Tests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Pending tests will be displayed here</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="completed">
-            <Card>
-              <CardHeader>
-                <CardTitle>Completed Tests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">Completed tests will be displayed here</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Order New Test Dialog */}
