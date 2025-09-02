@@ -1376,14 +1376,21 @@ export default function PatientDetail() {
                             <div>
                               <span className="text-muted-foreground">Admission Date:</span>
                               <div className="font-medium">
-                                {new Date(admission.admissionDate).toLocaleString('en-IN', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: true
-                                })}
+                                {(() => {
+                                  // Handle SQLite datetime format as local time
+                                  let admissionDateStr = admission.admissionDate;
+                                  if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                    admissionDateStr = admissionDateStr.replace(' ', 'T');
+                                  }
+                                  return new Date(admissionDateStr).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  });
+                                })()}
                               </div>
                             </div>
                             <div>
@@ -1392,15 +1399,29 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate ? 
-                                  new Date(admission.dischargeDate).toLocaleString('en-IN', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                  }) :
-                                  Math.ceil((new Date().getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 3600 * 24))
+                                  (() => {
+                                    // Handle SQLite datetime format as local time
+                                    let dischargeDateStr = admission.dischargeDate;
+                                    if (dischargeDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                      dischargeDateStr = dischargeDateStr.replace(' ', 'T');
+                                    }
+                                    return new Date(dischargeDateStr).toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  })() :
+                                  (() => {
+                                    // Calculate days using local time
+                                    let admissionDateStr = admission.admissionDate;
+                                    if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                      admissionDateStr = admissionDateStr.replace(' ', 'T');
+                                    }
+                                    return Math.ceil((new Date().getTime() - new Date(admissionDateStr).getTime()) / (1000 * 3600 * 24));
+                                  })()
                                 }
                               </div>
                             </div>
@@ -1562,7 +1583,7 @@ export default function PatientDetail() {
                           console.log(`Converted date-only format (local time) to: "${dateStr}"`);
                         }
                         // If already has timezone info or is ISO string, use as-is
-                        
+
                         // Parse as local time for registration
                         const parsed = new Date(dateStr);
                         if (isNaN(parsed.getTime())) {
@@ -1573,7 +1594,7 @@ export default function PatientDetail() {
 
                         const timestamp = parsed.getTime();
                         console.log(`Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
-                        
+
                         // For registration dates, return the local dateStr without conversion to UTC
                         return { date: dateStr, timestamp };
                       }
