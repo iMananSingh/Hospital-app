@@ -176,11 +176,14 @@ export default function Patients() {
   );
 
   const formatDate = (dateString: string) => {
-    // Parse the ISO string and format for Indian timezone
+    // Parse the ISO string and apply the same correction as patient detail timeline
     const date = new Date(dateString);
-    // Format for Indian timezone (Asia/Kolkata) with time for testing
-    return date.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
+    // Subtract 5.5 hours to correct the timezone display (same as patient detail)
+    const correctedTimestamp = date.getTime() - (5.5 * 60 * 60 * 1000);
+    const correctedDate = new Date(correctedTimestamp);
+    
+    // Format without timezone to avoid double conversion
+    return correctedDate.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
