@@ -433,7 +433,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient Services Management
   app.post("/api/patient-services", authenticateToken, async (req, res) => {
     try {
-      const service = await storage.createPatientService(req.body);
+      const serviceData = req.body;
+      
+      // If this is an OPD service and no scheduled date is provided, use Indian timezone
+      if (serviceData.serviceType === 'opd' && !serviceData.scheduledDate) {
+        const now = new Date();
+        const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        serviceData.scheduledDate = indianTime.toISOString().split('T')[0];
+      }
+      
+      console.log('Creating patient service with data:', serviceData);
+      const service = await storage.createPatientService(serviceData);
+      console.log('Created patient service:', service);
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);

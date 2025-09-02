@@ -1056,24 +1056,31 @@ export class SqliteStorage implements IStorage {
         String(indianTime.getDate()).padStart(2, '0');
 
       console.log('Dashboard stats - Today date (IST):', today);
+      console.log('Dashboard stats - Raw now:', now);
+      console.log('Dashboard stats - Indian time:', indianTime);
 
       // Get ALL OPD services first to debug
       const allOpdServices = db.select().from(schema.patientServices)
         .where(eq(schema.patientServices.serviceType, 'opd'))
         .all();
 
-      console.log('All OPD services:', allOpdServices.map(s => ({ 
+      console.log('All OPD services found:', allOpdServices.length);
+      console.log('All OPD services details:', allOpdServices.map(s => ({ 
         id: s.id, 
         scheduledDate: s.scheduledDate, 
-        serviceType: s.serviceType 
+        serviceType: s.serviceType,
+        createdAt: s.createdAt
       })));
 
       // Get OPD patient count for today using same filter logic as OPD List
-      const todayOpdServices = allOpdServices.filter(service => 
-        service.scheduledDate === today
-      );
+      const todayOpdServices = allOpdServices.filter(service => {
+        const matches = service.scheduledDate === today;
+        console.log(`Service ${service.id}: scheduledDate="${service.scheduledDate}" vs today="${today}" => matches: ${matches}`);
+        return matches;
+      });
 
-      console.log('Today OPD services filtered:', todayOpdServices);
+      console.log('Today OPD services filtered:', todayOpdServices.length);
+      console.log('Today OPD services details:', todayOpdServices);
       console.log('Dashboard OPD count for today:', todayOpdServices.length);
 
       // Get inpatients count (currently admitted)
