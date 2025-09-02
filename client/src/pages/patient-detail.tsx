@@ -1570,21 +1570,25 @@ export default function PatientDetail() {
 
                       console.log(`Normalizing date for ${source} ${id || 'unknown'}: "${dateStr}"`);
 
-                      // Special handling for registration dates - don't force UTC timezone
+                      // For registration dates, use the same UTC handling as other events
                       if (source === 'registration') {
-                        // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - treat as local time
+                        // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - convert to UTC
                         if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                          dateStr = dateStr.replace(' ', 'T');
-                          console.log(`Converted SQLite format (local time) to: "${dateStr}"`);
+                          dateStr = dateStr.replace(' ', 'T') + 'Z';
+                          console.log(`Converted SQLite format (UTC) to: "${dateStr}"`);
                         }
-                        // Handle date only format: "YYYY-MM-DD" - treat as local time
+                        // Handle date only format: "YYYY-MM-DD" - convert to UTC
                         else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                          dateStr = dateStr + 'T00:00:00';
-                          console.log(`Converted date-only format (local time) to: "${dateStr}"`);
+                          dateStr = dateStr + 'T00:00:00Z';
+                          console.log(`Converted date-only format (UTC) to: "${dateStr}"`);
                         }
-                        // If already has timezone info or is ISO string, use as-is
+                        // Handle datetime without timezone - add Z for UTC
+                        else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) && !dateStr.includes('Z') && !dateStr.includes('+')) {
+                          dateStr = dateStr + 'Z';
+                          console.log(`Added timezone to: "${dateStr}"`);
+                        }
 
-                        // Parse as local time for registration
+                        // Parse the date
                         const parsed = new Date(dateStr);
                         if (isNaN(parsed.getTime())) {
                           console.error(`Failed to parse registration date "${dateStr}", using current time`);
@@ -1595,7 +1599,6 @@ export default function PatientDetail() {
                         const timestamp = parsed.getTime();
                         console.log(`Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
 
-                        // For registration dates, return the local dateStr without conversion to UTC
                         return { date: dateStr, timestamp };
                       }
 
@@ -1898,31 +1901,15 @@ export default function PatientDetail() {
                             <div className="flex items-center justify-between">
                               <p className="font-medium">{event.title}</p>
                               <span className="text-sm text-muted-foreground">
-                                {(() => {
-                                  if (event.type === 'registration') {
-                                    // For registration, parse the date as local time and display directly
-                                    const regDate = new Date(event.date);
-                                    return regDate.toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  } else {
-                                    // For other events, use the existing timezone-aware display
-                                    return new Date(event.sortTimestamp).toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true,
-                                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                                    });
-                                  }
-                                })()}
+                                {new Date(event.sortTimestamp).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                              })}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
