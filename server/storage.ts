@@ -1047,24 +1047,34 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
-      // Use EXACT same date calculation as OPD List page
+      // Use EXACT same date calculation as OPD List page but for Indian timezone
       const now = new Date();
-      const today = now.getFullYear() + '-' + 
-        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(now.getDate()).padStart(2, '0');
+      // Add 5.5 hours for Indian timezone
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' + 
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(indianTime.getDate()).padStart(2, '0');
 
-      console.log('Dashboard stats - Today date:', today);
+      console.log('Dashboard stats - Today date (IST):', today);
+
+      // Get ALL OPD services first to debug
+      const allOpdServices = db.select().from(schema.patientServices)
+        .where(eq(schema.patientServices.serviceType, 'opd'))
+        .all();
+
+      console.log('All OPD services:', allOpdServices.map(s => ({ 
+        id: s.id, 
+        scheduledDate: s.scheduledDate, 
+        serviceType: s.serviceType 
+      })));
 
       // Get OPD patient count for today using same filter logic as OPD List
-      const todayOpdCount = db.select().from(schema.patientServices)
-        .where(
-          and(
-            eq(schema.patientServices.scheduledDate, today),
-            eq(schema.patientServices.serviceType, 'opd')
-          )
-        ).all().length;
+      const todayOpdServices = allOpdServices.filter(service => 
+        service.scheduledDate === today
+      );
 
-      console.log('Dashboard OPD count for today:', todayOpdCount);
+      console.log('Today OPD services filtered:', todayOpdServices);
+      console.log('Dashboard OPD count for today:', todayOpdServices.length);
 
       // Get inpatients count (currently admitted)
       const inpatients = db.select()
@@ -1085,7 +1095,7 @@ export class SqliteStorage implements IStorage {
         .all().length;
 
       return {
-        opdPatients: todayOpdCount,
+        opdPatients: todayOpdServices.length,
         inpatients,
         labTests,
         diagnostics
