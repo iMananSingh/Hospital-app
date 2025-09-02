@@ -112,11 +112,12 @@ export default function OpdList() {
   };
 
   const totalOpdCount = opdServices.length;
-  // Use consistent date format to match server calculation
+  // Use Indian timezone (UTC+5:30) for consistent date calculation
   const now = new Date();
-  const today = now.getFullYear() + '-' + 
-    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-    String(now.getDate()).padStart(2, '0');
+  const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  const today = indianTime.getFullYear() + '-' + 
+    String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(indianTime.getDate()).padStart(2, '0');
   const todayOpdCount = opdServices.filter(service => 
     service.scheduledDate === today
   ).length;

@@ -1047,14 +1047,16 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
-      // Use EXACT same date calculation as the frontend OPD List page
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
-      const today = now.getFullYear() + '-' + 
-        String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(now.getDate()).padStart(2, '0');
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' + 
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(indianTime.getDate()).padStart(2, '0');
 
-      console.log('Dashboard stats - Today date:', today);
+      console.log('Dashboard stats - Today date (Indian time):', today);
       console.log('Dashboard stats - Raw now:', now);
+      console.log('Dashboard stats - Indian time:', indianTime);
 
       // Get ALL OPD services first to debug
       const allOpdServices = db.select().from(schema.patientServices)
