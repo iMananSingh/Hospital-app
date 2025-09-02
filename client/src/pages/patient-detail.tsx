@@ -1574,7 +1574,8 @@ export default function PatientDetail() {
                         const timestamp = parsed.getTime();
                         console.log(`Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
                         
-                        return { date: parsed.toISOString(), timestamp };
+                        // For registration dates, return the local dateStr without conversion to UTC
+                        return { date: dateStr, timestamp };
                       }
 
                       // For other sources (services, admissions, etc), use existing logic
