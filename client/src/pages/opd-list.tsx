@@ -119,7 +119,7 @@ export default function OpdList() {
     String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
     String(indianTime.getDate()).padStart(2, '0');
   const todayOpdCount = opdServices.filter(service => 
-    service.scheduledDate === today
+    service.scheduledDate === today && service.serviceType === 'opd'
   ).length;
 
   if (isLoading) {

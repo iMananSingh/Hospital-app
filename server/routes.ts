@@ -421,8 +421,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient Services Routes
   app.get("/api/patient-services", authenticateToken, async (req, res) => {
     try {
-      const { patientId } = req.query;
-      const services = await storage.getPatientServices(patientId as string);
+      const { patientId, serviceType } = req.query;
+      let services = await storage.getPatientServices(patientId as string);
+      
+      // Filter by service type if specified
+      if (serviceType) {
+        services = services.filter(service => service.serviceType === serviceType);
+        console.log(`Filtered ${services.length} services for type: ${serviceType}`);
+      }
+      
       res.json(services);
     } catch (error) {
       console.error("Error fetching patient services:", error);
