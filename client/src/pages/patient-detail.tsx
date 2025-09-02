@@ -1636,8 +1636,10 @@ export default function PatientDetail() {
                     // Create timeline events array
                     const timelineEvents = [];
 
-                    // Add registration event
+                    // Add registration event with IST correction
                     const regNormalized = normalizeDate(patient.createdAt, 'registration');
+                    // Add 5.5 hours (19800000 ms) to convert UTC to IST for display
+                    const istTimestamp = regNormalized.timestamp + (5.5 * 60 * 60 * 1000);
                     timelineEvents.push({
                       id: 'registration',
                       type: 'registration',
@@ -1645,7 +1647,7 @@ export default function PatientDetail() {
                       date: regNormalized.date,
                       description: `Patient ID: ${patient.patientId}`,
                       color: 'bg-blue-500',
-                      sortTimestamp: regNormalized.timestamp
+                      sortTimestamp: istTimestamp
                     });
 
                     // Add services with proper date normalization
@@ -1901,14 +1903,22 @@ export default function PatientDetail() {
                             <div className="flex items-center justify-between">
                               <p className="font-medium">{event.title}</p>
                               <span className="text-sm text-muted-foreground">
-                                {new Date(event.sortTimestamp).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                              })}
+                                {(() => {
+                                  // For registration events, use the IST-corrected timestamp
+                                  // For other events, use the original timestamp as they're already in local time
+                                  const displayTimestamp = event.type === 'registration' 
+                                    ? event.sortTimestamp  // Already IST-corrected above
+                                    : event.sortTimestamp;
+                                  
+                                  return new Date(displayTimestamp).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                  });
+                                })()}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
