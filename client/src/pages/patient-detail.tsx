@@ -1907,8 +1907,7 @@ export default function PatientDetail() {
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
-                                hour12: true,
-                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                hour12: true
                               })}
                               </span>
                             </div>
