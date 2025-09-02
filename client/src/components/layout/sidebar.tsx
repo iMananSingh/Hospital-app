@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/ui/button";
+import { Button } from "@/components/ui/button";
 import { 
   Hospital, 
   FileText, 
