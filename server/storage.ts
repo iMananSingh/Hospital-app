@@ -649,7 +649,12 @@ export class SqliteStorage implements IStorage {
 
   async deleteDoctor(id: string): Promise<Doctor | undefined> {
     try {
-      const deleted = db.delete(schema.doctors)
+      // Soft delete by setting isActive to false instead of hard delete
+      const deleted = db.update(schema.doctors)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date().toISOString() 
+        })
         .where(eq(schema.doctors.id, id))
         .returning().get();
       return deleted;
