@@ -377,6 +377,11 @@ export default function PatientDetail() {
     queryKey: ["/api/rooms"],
   });
 
+  // Fetch all current admissions to check room occupancy in real-time
+  const { data: allCurrentAdmissions = [] } = useQuery<any[]>({
+    queryKey: ["/api/inpatients/currently-admitted"],
+  });
+
   const serviceForm = useForm({
     mode: "onChange",
     defaultValues: {
@@ -502,10 +507,20 @@ export default function PatientDetail() {
         description: "The patient has been admitted.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Admission creation error:", error);
+      
+      // Handle room occupancy error specifically
+      let errorMessage = "Please try again.";
+      if (error.message && error.message.includes("already occupied")) {
+        errorMessage = error.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error creating admission",
-        description: "Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -2324,25 +2339,44 @@ export default function PatientDetail() {
 
                       if (!selectedRoomType) return null;
 
-                      const availableRooms = rooms.filter((room: any) => 
+                      // Get all rooms for this room type
+                      const allRoomsForType = rooms.filter((room: any) => 
                         room.roomTypeId === selectedRoomType.id && 
-                        !room.isOccupied && 
                         room.isActive
                       );
 
-                      if (availableRooms.length === 0) {
+                      if (allRoomsForType.length === 0) {
                         return (
                           <SelectItem value="" disabled>
-                            No available rooms in {selectedWardType}
+                            No rooms available in {selectedWardType}
                           </SelectItem>
                         );
                       }
 
-                      return availableRooms.map((room: any) => (
-                        <SelectItem key={room.id} value={room.roomNumber}>
-                          {room.roomNumber}
-                        </SelectItem>
-                      ));
+                      // Check which rooms are actually occupied based on current admissions
+                      const occupiedRoomNumbers = new Set(
+                        allCurrentAdmissions
+                          .filter((admission: any) => 
+                            admission.currentWardType === selectedWardType && 
+                            admission.status === 'admitted'
+                          )
+                          .map((admission: any) => admission.currentRoomNumber)
+                      );
+
+                      return allRoomsForType.map((room: any) => {
+                        const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
+                        
+                        return (
+                          <SelectItem 
+                            key={room.id} 
+                            value={room.roomNumber}
+                            disabled={isOccupied}
+                            className={isOccupied ? "text-gray-400 bg-gray-100 cursor-not-allowed" : ""}
+                          >
+                            {room.roomNumber}{isOccupied ? " (Occupied)" : ""}
+                          </SelectItem>
+                        );
+                      });
                     })()}
                   </SelectContent>
                 </Select>

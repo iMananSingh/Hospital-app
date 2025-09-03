@@ -1058,6 +1058,24 @@ export class SqliteStorage implements IStorage {
     const eventDate = admissionDate.split('T')[0];
 
     return db.transaction((tx) => {
+      // CRITICAL VALIDATION: Check if room is already occupied
+      if (admission.currentRoomNumber && admission.currentWardType) {
+        const existingAdmission = tx.select()
+          .from(schema.admissions)
+          .where(
+            and(
+              eq(schema.admissions.currentRoomNumber, admission.currentRoomNumber),
+              eq(schema.admissions.currentWardType, admission.currentWardType),
+              eq(schema.admissions.status, 'admitted')
+            )
+          )
+          .get();
+
+        if (existingAdmission) {
+          throw new Error(`Room ${admission.currentRoomNumber} in ${admission.currentWardType} is already occupied by another patient. Please select a different room.`);
+        }
+      }
+
       // Generate receipt number for admission
       const admissionCount = this.getDailyReceiptCountSync('admission', eventDate);
       const dateObj = new Date(eventDate);
