@@ -127,6 +127,7 @@ export default function Doctors() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/deleted"] });
       toast({
         title: "Doctor deleted successfully",
         description: "The doctor profile has been removed.",
