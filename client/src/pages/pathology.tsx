@@ -249,6 +249,7 @@ export default function Pathology() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: pathologyOrders = [], isLoading } = useQuery({
@@ -408,7 +409,7 @@ export default function Pathology() {
 
   const filteredCatalog = (testCatalog || []).filter((test: any) => {
     const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
-    const matchesSearch = test.test_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = test.test_name?.toLowerCase().includes(catalogSearchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -634,6 +635,21 @@ export default function Pathology() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search tests by name..."
+                      value={catalogSearchQuery}
+                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="search-catalog-tests"
+                    />
+                  </div>
                 </div>
               </div>
 
