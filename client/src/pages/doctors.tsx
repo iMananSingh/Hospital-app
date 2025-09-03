@@ -290,10 +290,9 @@ export default function Doctors() {
       <div className="p-6">
         <Tabs defaultValue="all-doctors" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">All Doctors</TabsTrigger>
-            <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Deleted Doctors</TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">Payment Tracking</TabsTrigger>
+            <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">Active Doctors</TabsTrigger>
             <TabsTrigger value="schedules" data-testid="tab-schedules">Schedules</TabsTrigger>
+            <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Inactive Doctors</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all-doctors">
@@ -415,9 +414,9 @@ export default function Doctors() {
           <TabsContent value="deleted-doctors">
             <Card>
               <CardHeader>
-                <CardTitle>Deleted Doctors</CardTitle>
+                <CardTitle>Inactive Doctors</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Doctors that have been removed can be restored here. Total: {deletedDoctors?.length || 0} deleted doctors
+                  Doctors that have been deactivated can be restored here. Total: {deletedDoctors?.length || 0} inactive doctors
                 </p>
               </CardHeader>
               <CardContent>
@@ -429,7 +428,7 @@ export default function Doctors() {
                 ) : (deletedDoctors?.length || 0) === 0 ? (
                   <div className="text-center py-8">
                     <Stethoscope className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No deleted doctors found</p>
+                    <p className="text-muted-foreground">No inactive doctors found</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="deleted-doctors-grid">
@@ -453,7 +452,7 @@ export default function Doctors() {
                               </div>
                             </div>
                             <Badge variant="secondary" className="bg-red-100 text-red-800">
-                              Deleted
+                              Inactive
                             </Badge>
                           </div>
 
@@ -473,7 +472,7 @@ export default function Doctors() {
                             </div>
 
                             <div className="text-xs text-muted-foreground">
-                              Deleted: {formatDate(doctor.updatedAt)}
+                              Deactivated: {formatDate(doctor.updatedAt)}
                             </div>
                           </div>
 
@@ -498,66 +497,7 @@ export default function Doctors() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Doctor Payment Tracking</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Monthly consultation fees and revenue tracking
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Table data-testid="doctor-payments-table">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Specialization</TableHead>
-                      <TableHead>Consultation Fee</TableHead>
-                      <TableHead>This Month</TableHead>
-                      <TableHead>Total Revenue</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredDoctors.map((doctor: Doctor) => (
-                      <TableRow key={doctor.id} data-testid={`payment-row-${doctor.id}`}>
-                        <TableCell data-testid={`payment-name-${doctor.id}`}>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">
-                                {doctor.name.split(' ').map(n => n[0]).join('')}
-                              </span>
-                            </div>
-                            <span className="font-medium">{doctor.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell data-testid={`payment-specialization-${doctor.id}`}>
-                          {doctor.specialization}
-                        </TableCell>
-                        <TableCell data-testid={`payment-fee-${doctor.id}`}>
-                          {formatCurrency(doctor.consultationFee)}
-                        </TableCell>
-                        <TableCell data-testid={`payment-month-${doctor.id}`}>
-                          <span className="text-muted-foreground">Data not available</span>
-                        </TableCell>
-                        <TableCell data-testid={`payment-total-${doctor.id}`}>
-                          <span className="text-muted-foreground">Data not available</span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={doctor.isActive ? "default" : "secondary"}
-                            data-testid={`payment-status-${doctor.id}`}
-                          >
-                            {doctor.isActive ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           <TabsContent value="schedules">
             <Card>
