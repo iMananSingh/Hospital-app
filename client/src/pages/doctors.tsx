@@ -23,8 +23,11 @@ export default function Doctors() {
   const [isNewDoctorOpen, setIsNewDoctorOpen] = useState(false);
   const [isEditDoctorOpen, setIsEditDoctorOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPermanentDeleteDialogOpen, setIsPermanentDeleteDialogOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+  const [doctorToPermanentlyDelete, setDoctorToPermanentlyDelete] = useState<Doctor | null>(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
@@ -170,6 +173,37 @@ export default function Doctors() {
     },
   });
 
+  const permanentDeleteDoctorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/doctors/${id}/permanent`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to permanently delete doctor");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/deleted"] });
+      toast({
+        title: "Doctor permanently deleted",
+        description: "The doctor profile has been permanently removed from the system.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error permanently deleting doctor",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
     resolver: zodResolver(insertDoctorSchema),
     defaultValues: {
@@ -229,6 +263,21 @@ export default function Doctors() {
 
   const handleRestoreDoctor = (doctorId: string) => {
     restoreDoctorMutation.mutate(doctorId);
+  };
+
+  const handlePermanentDeleteDoctor = (doctor: Doctor) => {
+    setDoctorToPermanentlyDelete(doctor);
+    setDeleteConfirmationText("");
+    setIsPermanentDeleteDialogOpen(true);
+  };
+
+  const confirmPermanentDeleteDoctor = () => {
+    if (doctorToPermanentlyDelete && deleteConfirmationText === "delete") {
+      permanentDeleteDoctorMutation.mutate(doctorToPermanentlyDelete.id);
+      setIsPermanentDeleteDialogOpen(false);
+      setDoctorToPermanentlyDelete(null);
+      setDeleteConfirmationText("");
+    }
   };
 
   const filteredDoctors = doctors?.filter((doctor: Doctor) =>
@@ -476,16 +525,25 @@ export default function Doctors() {
                             </div>
                           </div>
 
-                          <div className="flex space-x-2 mt-4 pt-4 border-t">
+                          <div className="flex flex-col space-y-2 mt-4 pt-4 border-t">
                             <Button 
                               variant="default" 
                               size="sm"
-                              className="flex-1 bg-green-600 hover:bg-green-700"
+                              className="bg-green-600 hover:bg-green-700"
                               onClick={() => handleRestoreDoctor(doctor.id)}
                               disabled={restoreDoctorMutation.isPending}
                               data-testid={`button-restore-${doctor.id}`}
                             >
                               {restoreDoctorMutation.isPending ? "Restoring..." : "Restore Doctor"}
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handlePermanentDeleteDoctor(doctor)}
+                              disabled={permanentDeleteDoctorMutation.isPending}
+                              data-testid={`button-permanent-delete-${doctor.id}`}
+                            >
+                              {permanentDeleteDoctorMutation.isPending ? "Deleting..." : "Delete Permanently"}
                             </Button>
                           </div>
                         </CardContent>
@@ -815,6 +873,61 @@ export default function Doctors() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Permanent Delete Confirmation Dialog */}
+      <Dialog open={isPermanentDeleteDialogOpen} onOpenChange={setIsPermanentDeleteDialogOpen}>
+        <DialogContent className="max-w-md" data-testid="permanent-delete-doctor-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Permanently Delete Doctor</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800 font-medium mb-2">⚠️ Warning: This action is irreversible</p>
+              <p className="text-sm text-red-700">
+                You are about to permanently delete <strong>{doctorToPermanentlyDelete?.name}</strong> from the system. 
+                This will completely remove all doctor data and cannot be undone.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirmation" className="text-sm font-medium">
+                Type "delete" to confirm permanent deletion:
+              </Label>
+              <Input
+                id="delete-confirmation"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder="Type 'delete' here"
+                className="text-center"
+                data-testid="input-delete-confirmation"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPermanentDeleteDialogOpen(false);
+                setDoctorToPermanentlyDelete(null);
+                setDeleteConfirmationText("");
+              }}
+              data-testid="button-cancel-permanent-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmPermanentDeleteDoctor}
+              disabled={deleteConfirmationText !== "delete" || permanentDeleteDoctorMutation.isPending}
+              data-testid="button-confirm-permanent-delete"
+            >
+              {permanentDeleteDoctorMutation.isPending ? "Deleting..." : "Delete Permanently"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

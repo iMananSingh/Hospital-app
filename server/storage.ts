@@ -2,11 +2,11 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "@shared/schema";
-import type { 
+import type {
   User, InsertUser, Doctor, InsertDoctor, Patient, InsertPatient,
   PatientVisit, InsertPatientVisit, Service, InsertService,
   Bill, InsertBill, BillItem, InsertBillItem,
-  PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest, 
+  PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest,
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog
 } from "@shared/schema";
@@ -485,9 +485,9 @@ export interface IStorage {
   getDoctors(): Promise<Doctor[]>;
   getDoctorById(id: string): Promise<Doctor | undefined>;
   updateDoctor(id: string, doctor: Partial<InsertDoctor>): Promise<Doctor | undefined>;
-  deleteDoctor(id: string): Promise<Doctor | undefined>;
-  getDeletedDoctors(): Promise<Doctor[]>;
+  deleteDoctor(id: string): Promise<Doctor | undefined>; // Added deleteDoctor
   restoreDoctor(id: string): Promise<Doctor | undefined>;
+  permanentlyDeleteDoctor(id: string): Promise<Doctor | undefined>;
 
   // Patient management
   createPatient(patient: InsertPatient): Promise<Patient>;
@@ -653,9 +653,9 @@ export class SqliteStorage implements IStorage {
     try {
       // Soft delete by setting isActive to false instead of hard delete
       const deleted = db.update(schema.doctors)
-        .set({ 
+        .set({
           isActive: false,
-          updatedAt: new Date().toISOString() 
+          updatedAt: new Date().toISOString()
         })
         .where(eq(schema.doctors.id, id))
         .returning().get();
@@ -673,15 +673,28 @@ export class SqliteStorage implements IStorage {
   async restoreDoctor(id: string): Promise<Doctor | undefined> {
     try {
       const restored = db.update(schema.doctors)
-        .set({ 
+        .set({
           isActive: true,
-          updatedAt: new Date().toISOString() 
+          updatedAt: new Date().toISOString()
         })
         .where(eq(schema.doctors.id, id))
         .returning().get();
       return restored;
     } catch (error) {
       console.error("Error restoring doctor:", error);
+      throw error;
+    }
+  }
+
+  async permanentlyDeleteDoctor(id: string): Promise<Doctor | undefined> {
+    try {
+      // Hard delete the doctor record
+      const deleted = db.delete(schema.doctors)
+        .where(eq(schema.doctors.id, id))
+        .returning().get();
+      return deleted;
+    } catch (error) {
+      console.error("Error permanently deleting doctor:", error);
       throw error;
     }
   }
@@ -906,7 +919,7 @@ export class SqliteStorage implements IStorage {
 
   async updatePathologyOrderStatus(orderId: string, status: string): Promise<any> {
     const updatedOrder = db.update(schema.pathologyOrders)
-      .set({ 
+      .set({
         status,
         updatedAt: new Date().toISOString(),
         ...(status === 'completed' ? { completedDate: new Date().toISOString() } : {})
@@ -921,7 +934,7 @@ export class SqliteStorage implements IStorage {
 
     // Also update all tests in this order to the same status
     db.update(schema.pathologyTests)
-      .set({ 
+      .set({
         status,
         updatedAt: new Date().toISOString()
       })
@@ -1036,7 +1049,7 @@ export class SqliteStorage implements IStorage {
 
         if (roomType) {
           tx.update(schema.roomTypes)
-            .set({ 
+            .set({
               occupiedBeds: (roomType.occupiedBeds || 0) + 1,
               updatedAt: new Date().toISOString()
             })
@@ -1088,7 +1101,7 @@ export class SqliteStorage implements IStorage {
 
         if (roomType && roomType.occupiedBeds > 0) {
           db.update(schema.roomTypes)
-            .set({ 
+            .set({
               occupiedBeds: roomType.occupiedBeds - 1,
               updatedAt: new Date().toISOString()
             })
@@ -1117,8 +1130,8 @@ export class SqliteStorage implements IStorage {
       // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
       const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' + 
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
         String(indianTime.getDate()).padStart(2, '0');
 
       console.log('Dashboard stats - Today date (Indian time):', today);
@@ -1131,9 +1144,9 @@ export class SqliteStorage implements IStorage {
         .all();
 
       console.log('All OPD services found:', allOpdServices.length);
-      console.log('All OPD services details:', allOpdServices.map(s => ({ 
-        id: s.id, 
-        scheduledDate: s.scheduledDate, 
+      console.log('All OPD services details:', allOpdServices.map(s => ({
+        id: s.id,
+        scheduledDate: s.scheduledDate,
         serviceType: s.serviceType,
         createdAt: s.createdAt
       })));
@@ -1205,7 +1218,7 @@ export class SqliteStorage implements IStorage {
     await db.delete(schema.roomTypes).where(eq(schema.roomTypes.id, id)).run();
   }
 
-  // Room Management  
+  // Room Management
   async getAllRooms(): Promise<any[]> {
     return db.select().from(schema.rooms).orderBy(schema.rooms.roomNumber).all();
   }
@@ -1266,7 +1279,7 @@ export class SqliteStorage implements IStorage {
 
       // Update the admission's current room
       const updated = tx.update(schema.admissions)
-        .set({ 
+        .set({
           currentRoomNumber: roomData.roomNumber,
           currentWardType: roomData.wardType,
           updatedAt: eventTime
@@ -1309,7 +1322,7 @@ export class SqliteStorage implements IStorage {
 
       // Update admission status
       const updated = tx.update(schema.admissions)
-        .set({ 
+        .set({
           status: "discharged",
           dischargeDate: dischargeDate,
           updatedAt: dischargeDate
@@ -1335,7 +1348,7 @@ export class SqliteStorage implements IStorage {
 
         if (roomType && roomType.occupiedBeds > 0) {
           tx.update(schema.roomTypes)
-            .set({ 
+            .set({
               occupiedBeds: roomType.occupiedBeds - 1,
               updatedAt: new Date().toISOString()
             })

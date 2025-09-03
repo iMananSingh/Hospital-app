@@ -264,6 +264,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Added restore doctor route
+  app.put("/api/doctors/:id/restore", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const restored = await storage.restoreDoctor(id);
+      if (!restored) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+      res.json({ message: "Doctor restored successfully", doctor: restored });
+    } catch (error) {
+      console.error("Doctor restoration error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to restore doctor" });
+    }
+  });
+
+  // Added permanent delete endpoint for doctors
+  app.delete("/api/doctors/:id/permanent", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.permanentlyDeleteDoctor(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+      res.json({ message: "Doctor permanently deleted successfully" });
+    } catch (error) {
+      console.error("Doctor permanent deletion error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to permanently delete doctor" });
+    }
+  });
+
   // Service routes
   app.get("/api/services", authenticateToken, async (req, res) => {
     try {
