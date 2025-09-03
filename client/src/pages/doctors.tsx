@@ -32,6 +32,10 @@ export default function Doctors() {
     queryKey: ["/api/doctors"],
   });
 
+  const { data: deletedDoctors, isLoading: isLoadingDeleted } = useQuery({
+    queryKey: ["/api/doctors/deleted"],
+  });
+
   const createDoctorMutation = useMutation({
     mutationFn: async (doctorData: any) => {
       const response = await fetch("/api/doctors", {
@@ -134,6 +138,38 @@ export default function Doctors() {
     },
   });
 
+  const restoreDoctorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/doctors/${id}/restore`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to restore doctor");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/deleted"] });
+      toast({
+        title: "Doctor restored successfully",
+        description: "The doctor profile has been restored to active status.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error restoring doctor",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
     resolver: zodResolver(insertDoctorSchema),
     defaultValues: {
@@ -189,6 +225,10 @@ export default function Doctors() {
       setIsDeleteDialogOpen(false);
       setDoctorToDelete(null);
     }
+  };
+
+  const handleRestoreDoctor = (doctorId: string) => {
+    restoreDoctorMutation.mutate(doctorId);
   };
 
   const filteredDoctors = doctors?.filter((doctor: Doctor) =>
@@ -251,6 +291,7 @@ export default function Doctors() {
         <Tabs defaultValue="all-doctors" className="space-y-6">
           <TabsList>
             <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">All Doctors</TabsTrigger>
+            <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Deleted Doctors</TabsTrigger>
             <TabsTrigger value="payments" data-testid="tab-payments">Payment Tracking</TabsTrigger>
             <TabsTrigger value="schedules" data-testid="tab-schedules">Schedules</TabsTrigger>
           </TabsList>
@@ -360,6 +401,92 @@ export default function Doctors() {
                             >
                               <Trash2 className="w-4 h-4 mr-1" />
                               Delete
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="deleted-doctors">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deleted Doctors</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Doctors that have been removed can be restored here. Total: {deletedDoctors?.length || 0} deleted doctors
+                </p>
+              </CardHeader>
+              <CardContent>
+                {isLoadingDeleted ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                    <p className="text-sm text-muted-foreground mt-2">Loading deleted doctors...</p>
+                  </div>
+                ) : (deletedDoctors?.length || 0) === 0 ? (
+                  <div className="text-center py-8">
+                    <Stethoscope className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No deleted doctors found</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="deleted-doctors-grid">
+                    {deletedDoctors?.map((doctor: Doctor) => (
+                      <Card key={doctor.id} className="opacity-75 hover:opacity-100 transition-opacity border-red-200" data-testid={`deleted-doctor-card-${doctor.id}`}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center">
+                                <span className="text-white font-medium text-sm">
+                                  {doctor.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-600" data-testid={`deleted-doctor-name-${doctor.id}`}>
+                                  {doctor.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground" data-testid={`deleted-doctor-specialization-${doctor.id}`}>
+                                  {doctor.specialization}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary" className="bg-red-100 text-red-800">
+                              Deleted
+                            </Badge>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              {getSpecializationIcon(doctor.specialization)}
+                              <span className="text-sm text-gray-600" data-testid={`deleted-doctor-qualification-${doctor.id}`}>
+                                {doctor.qualification}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <IndianRupee className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm font-medium text-gray-600" data-testid={`deleted-doctor-fee-${doctor.id}`}>
+                                Consultation: {formatCurrency(doctor.consultationFee)}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground">
+                              Deleted: {formatDate(doctor.updatedAt)}
+                            </div>
+                          </div>
+
+                          <div className="flex space-x-2 mt-4 pt-4 border-t">
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleRestoreDoctor(doctor.id)}
+                              disabled={restoreDoctorMutation.isPending}
+                              data-testid={`button-restore-${doctor.id}`}
+                            >
+                              {restoreDoctorMutation.isPending ? "Restoring..." : "Restore Doctor"}
                             </Button>
                           </div>
                         </CardContent>

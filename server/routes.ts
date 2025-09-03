@@ -191,7 +191,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doctors = await storage.getDoctors();
       res.json(doctors);
     } catch (error) {
-      res.status(500).json({ message: "Failed to get doctors" });
+      console.error("Doctors fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch doctors" });
+    }
+  });
+
+  app.get("/api/doctors/deleted", authenticateToken, async (req, res) => {
+    try {
+      const deletedDoctors = await storage.getDeletedDoctors();
+      res.json(deletedDoctors);
+    } catch (error) {
+      console.error("Deleted doctors fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch deleted doctors" });
     }
   });
 
@@ -418,11 +429,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       if (!status) {
         return res.status(400).json({ message: "Status is required" });
       }
-      
+
       const updatedOrder = await storage.updatePathologyOrderStatus(id, status);
       res.json(updatedOrder);
     } catch (error: any) {
@@ -457,13 +468,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { patientId, serviceType } = req.query;
       let services = await storage.getPatientServices(patientId as string);
-      
+
       // Filter by service type if specified
       if (serviceType) {
         services = services.filter(service => service.serviceType === serviceType);
         console.log(`Filtered ${services.length} services for type: ${serviceType}`);
       }
-      
+
       res.json(services);
     } catch (error) {
       console.error("Error fetching patient services:", error);
@@ -475,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patient-services", authenticateToken, async (req, res) => {
     try {
       const serviceData = req.body;
-      
+
       console.log('Creating patient service with data:', serviceData);
       const service = await storage.createPatientService(serviceData);
       console.log('Created patient service:', service);
