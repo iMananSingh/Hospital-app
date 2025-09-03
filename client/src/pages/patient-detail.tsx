@@ -33,7 +33,8 @@ import {
   Minus,
   Edit,
   Settings,
-  Printer
+  Printer,
+  Search
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { z } from "zod";
@@ -60,6 +61,7 @@ export default function PatientDetail() {
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
+  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
 
   // Fetch hospital settings for receipts
   const { data: hospitalSettings } = useQuery({
@@ -829,11 +831,26 @@ export default function PatientDetail() {
     { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
   ];
 
-  // Filter services by category
+  // Filter services by category and search query
   const getFilteredServices = (category: string) => {
     if (!allServices) return [];
-    if (!category || category === "all") return allServices.filter(s => s.isActive);
-    return allServices.filter(s => s.category === category && s.isActive);
+    
+    let filtered = allServices.filter(s => s.isActive);
+    
+    // Filter by category
+    if (category && category !== "all") {
+      filtered = filtered.filter(s => s.category === category);
+    }
+    
+    // Filter by search query
+    if (serviceSearchQuery.trim()) {
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
+        (s.description && s.description.toLowerCase().includes(serviceSearchQuery.toLowerCase()))
+      );
+    }
+    
+    return filtered;
   };
 
 
@@ -1971,35 +1988,58 @@ export default function PatientDetail() {
 
           <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
             {selectedServiceType !== "opd" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Service Category</Label>
-                  <Select 
-                    value={selectedServiceCategory || "all"}
-                    onValueChange={(value) => {
-                      setSelectedServiceCategory(value === "all" ? "" : value);
-                      // Reset service selection when category changes
-                      serviceForm.setValue("serviceType", "");
-                      serviceForm.setValue("serviceName", "");
-                      serviceForm.setValue("price", 0);
-                    }}
-                    data-testid="select-service-category"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service category (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      {serviceCategories.map((category) => (
-                        <SelectItem key={category.key} value={category.key}>
-                          <div className="flex items-center gap-2">
-                            <category.icon className="h-4 w-4" />
-                            {category.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-4">
+                {/* Search and Category Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Search Services</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search services by name..."
+                        value={serviceSearchQuery}
+                        onChange={(e) => {
+                          setServiceSearchQuery(e.target.value);
+                          // Reset service selection when search changes
+                          serviceForm.setValue("serviceType", "");
+                          serviceForm.setValue("serviceName", "");
+                          serviceForm.setValue("price", 0);
+                        }}
+                        className="pl-10"
+                        data-testid="search-services"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Service Category</Label>
+                    <Select 
+                      value={selectedServiceCategory || "all"}
+                      onValueChange={(value) => {
+                        setSelectedServiceCategory(value === "all" ? "" : value);
+                        // Reset service selection when category changes
+                        serviceForm.setValue("serviceType", "");
+                        serviceForm.setValue("serviceName", "");
+                        serviceForm.setValue("price", 0);
+                      }}
+                      data-testid="select-service-category"
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select service category (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {serviceCategories.map((category) => (
+                          <SelectItem key={category.key} value={category.key}>
+                            <div className="flex items-center gap-2">
+                              <category.icon className="h-4 w-4" />
+                              {category.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -2027,6 +2067,11 @@ export default function PatientDetail() {
                       {getFilteredServices(selectedServiceCategory).map((service) => (
                         <SelectItem key={service.id} value={service.id}>
                           {service.name}
+                          {service.description && (
+                            <span className="text-muted-foreground ml-2">
+                              - {service.description}
+                            </span>
+                          )}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -2169,6 +2214,7 @@ export default function PatientDetail() {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
+                  setServiceSearchQuery("");
                   serviceForm.reset({
                     patientId: patientId || "",
                     serviceType: "",
