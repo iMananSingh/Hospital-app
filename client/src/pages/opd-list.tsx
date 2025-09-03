@@ -90,7 +90,7 @@ export default function OpdList() {
   const getDoctorName = (doctorId: string) => {
     if (doctorId === "unassigned") return "Unassigned";
     const doctor = doctors.find(d => d.id === doctorId);
-    return doctor ? `Dr. ${doctor.name}` : "Unknown Doctor";
+    return doctor ? doctor.name : "Unknown Doctor";
   };
 
   const getDoctorSpecialization = (doctorId: string) => {
@@ -178,7 +178,7 @@ export default function OpdList() {
                 <SelectItem value="all">All Doctors</SelectItem>
                 {doctors.map(doctor => (
                   <SelectItem key={doctor.id} value={doctor.id}>
-                    Dr. {doctor.name}
+                    {doctor.name}
                   </SelectItem>
                 ))}
                 <SelectItem value="unassigned">Unassigned</SelectItem>

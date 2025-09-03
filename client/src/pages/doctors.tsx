@@ -39,11 +39,11 @@ export default function Doctors() {
         },
         body: JSON.stringify(doctorData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create doctor");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -74,11 +74,11 @@ export default function Doctors() {
         },
         body: JSON.stringify(doctorData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update doctor");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -199,7 +199,7 @@ export default function Doctors() {
         onNewAction={() => setIsNewDoctorOpen(true)}
         newActionLabel="Add Doctor"
       />
-      
+
       <div className="p-6">
         <Tabs defaultValue="all-doctors" className="space-y-6">
           <TabsList>
@@ -262,7 +262,7 @@ export default function Doctors() {
                               {doctor.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </div>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center space-x-2">
                               {getSpecializationIcon(doctor.specialization)}
@@ -270,19 +270,19 @@ export default function Doctors() {
                                 {doctor.qualification}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
                               <IndianRupee className="w-4 h-4 text-healthcare-green" />
                               <span className="text-sm font-medium" data-testid={`doctor-fee-${doctor.id}`}>
                                 Consultation: {formatCurrency(doctor.consultationFee)}
                               </span>
                             </div>
-                            
+
                             <div className="text-xs text-muted-foreground">
                               Joined: {formatDate(doctor.createdAt)}
                             </div>
                           </div>
-                          
+
                           <div className="flex space-x-2 mt-4 pt-4 border-t">
                             <Button 
                               variant="ghost" 
@@ -402,7 +402,7 @@ export default function Doctors() {
           <DialogHeader>
             <DialogTitle>Add New Doctor</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -417,7 +417,7 @@ export default function Doctors() {
                   <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="specialization">Specialization *</Label>
                 <Select onValueChange={(value) => form.setValue("specialization", value)}>
@@ -451,7 +451,7 @@ export default function Doctors() {
                   <p className="text-sm text-destructive">{form.formState.errors.qualification.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="consultationFee">Consultation Fee (₹) *</Label>
                 <Input
@@ -496,7 +496,7 @@ export default function Doctors() {
             <DialogHeader>
               <DialogTitle>Doctor Profile - {selectedDoctor.name}</DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
                 <div className="w-16 h-16 bg-healthcare-green rounded-full flex items-center justify-center">
@@ -576,7 +576,7 @@ export default function Doctors() {
           <DialogHeader>
             <DialogTitle>Edit Doctor Profile</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -591,7 +591,7 @@ export default function Doctors() {
                   <p className="text-sm text-destructive">{editForm.formState.errors.name.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="edit-specialization">Specialization *</Label>
                 <Select 
@@ -628,7 +628,7 @@ export default function Doctors() {
                   <p className="text-sm text-destructive">{editForm.formState.errors.qualification.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="edit-consultationFee">Consultation Fee (₹) *</Label>
                 <Input

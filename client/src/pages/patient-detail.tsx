@@ -193,20 +193,19 @@ export default function PatientDetail() {
     const getDoctorName = () => {
       // First try to get doctor name from event directly
       if (event.doctorName) {
-        return event.doctorName.startsWith('Dr.') ? event.doctorName : `Dr. ${event.doctorName}`;
+        return event.doctorName;
       }
 
       // Try to get from nested doctor object
       if (event.doctor?.name) {
-        const doctorName = event.doctor.name;
-        return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
+        return event.doctor.name;
       }
 
       // Try to resolve doctor ID from the doctors array
       if (event.doctorId && doctors && doctors.length > 0) {
         const doctor = doctors.find((d: Doctor) => d.id === event.doctorId);
         if (doctor) {
-          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+          return doctor.name;
         }
       }
 
@@ -214,7 +213,7 @@ export default function PatientDetail() {
       if (eventType === 'pathology' && event.rawData?.order?.doctorId) {
         const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
         if (doctor) {
-          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+          return doctor.name;
         }
       }
 
@@ -222,7 +221,7 @@ export default function PatientDetail() {
       if (eventType === 'admission_event' && event.rawData?.event?.doctorId) {
         const doctor = doctors.find((d: Doctor) => d.id === event.rawData.event.doctorId);
         if (doctor) {
-          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+          return doctor.name;
         }
       }
 
@@ -230,7 +229,7 @@ export default function PatientDetail() {
       if (eventType === 'admission' && event.rawData?.admission?.doctorId) {
         const doctor = doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId);
         if (doctor) {
-          return doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`;
+          return doctor.name;
         }
       }
 

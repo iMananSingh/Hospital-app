@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,13 +47,13 @@ export default function LabTests() {
       if (!orderData?.order) return false;
       const order = orderData.order;
       const patient = orderData.patient;
-      
+
       const matchesSearch = searchQuery === "" || 
         order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient?.phone?.includes(searchQuery);
-      
+
       const matchesDoctor = selectedDoctor === "all" || order.doctorId === selectedDoctor || 
         (selectedDoctor === "external" && !order.doctorId);
       const matchesStatus = selectedStatus === "all" || order.status === selectedStatus;
@@ -185,16 +184,16 @@ export default function LabTests() {
                 data-testid="search-lab-tests"
               />
             </div>
-            
+
             <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
               <SelectTrigger data-testid="filter-doctor">
                 <SelectValue placeholder="Filter by doctor" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Doctors</SelectItem>
-                {doctors.map(doctor => (
+                {doctors.map((doctor: Doctor) => (
                   <SelectItem key={doctor.id} value={doctor.id}>
-                    Dr. {doctor.name}
+                    {doctor.name} - {doctor.specialization}
                   </SelectItem>
                 ))}
                 <SelectItem value="external">External Patients</SelectItem>
@@ -270,7 +269,7 @@ export default function LabTests() {
                     const patient = orderData.patient;
                     const doctor = orderData.doctor;
                     const orderedDate = new Date(order.orderedDate);
-                    
+
                     return (
                       <div
                         key={order.id}
@@ -287,7 +286,7 @@ export default function LabTests() {
                                 {order.orderId}
                               </Badge>
                             </div>
-                            
+
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -315,14 +314,14 @@ export default function LabTests() {
                           >
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                           </Badge>
-                          
+
                           <div className="text-right">
                             <div className="font-medium">₹{order.totalPrice}</div>
                             <div className="text-xs text-muted-foreground">
                               Total Amount
                             </div>
                           </div>
-                          
+
                           <Link href={`/pathology`}>
                             <Button variant="outline" size="sm" data-testid={`view-order-${order.id}`}>
                               <Eye className="w-4 h-4" />
