@@ -1581,6 +1581,194 @@ export class SqliteStorage implements IStorage {
   async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
     return this.getDailyReceiptCountSync(serviceType, date);
   }
+
+  // Inpatient Management Detail Methods (IST-based calculations)
+  async getBedOccupancyDetails(): Promise<any> {
+    try {
+      // Get all room types with their rooms
+      const roomTypes = await this.getAllRoomTypes();
+      
+      const bedOccupancy = await Promise.all(roomTypes.map(async (roomType) => {
+        // Get all rooms for this room type
+        const rooms = await this.getRoomsByType(roomType.id);
+        
+        // For each room, get the occupying patient details if occupied
+        const roomsWithOccupancy = await Promise.all(rooms.map(async (room) => {
+          let occupyingPatient = null;
+          
+          if (room.isOccupied) {
+            // Find current admission for this room
+            const admission = db.select()
+              .from(schema.admissions)
+              .where(
+                and(
+                  eq(schema.admissions.currentRoomId, room.id),
+                  eq(schema.admissions.status, 'admitted')
+                )
+              )
+              .get();
+
+            if (admission) {
+              // Get patient details
+              const patient = db.select()
+                .from(schema.patients)
+                .where(eq(schema.patients.id, admission.patientId))
+                .get();
+                
+              if (patient) {
+                occupyingPatient = {
+                  name: patient.name,
+                  patientId: patient.patientId
+                };
+              }
+            }
+          }
+          
+          return {
+            ...room,
+            occupyingPatient
+          };
+        }));
+
+        return {
+          ...roomType,
+          rooms: roomsWithOccupancy
+        };
+      }));
+
+      return bedOccupancy;
+    } catch (error) {
+      console.error('Error fetching bed occupancy details:', error);
+      throw error;
+    }
+  }
+
+  async getCurrentlyAdmittedPatients(): Promise<any[]> {
+    try {
+      // Get all currently admitted patients with their details
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.status, 'admitted'))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
+
+      const patientsWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return patientsWithDetails;
+    } catch (error) {
+      console.error('Error fetching currently admitted patients:', error);
+      throw error;
+    }
+  }
+
+  async getTodayAdmissions(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      // Get admissions for today
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.admissionDate, today))
+        .orderBy(desc(schema.admissions.createdAt))
+        .all();
+
+      const admissionsWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return admissionsWithDetails;
+    } catch (error) {
+      console.error('Error fetching today\'s admissions:', error);
+      throw error;
+    }
+  }
+
+  async getTodayDischarges(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      // Get discharges for today
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(
+          and(
+            eq(schema.admissions.dischargeDate, today),
+            eq(schema.admissions.status, 'discharged')
+          )
+        )
+        .orderBy(desc(schema.admissions.updatedAt))
+        .all();
+
+      const dischargesWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return dischargesWithDetails;
+    } catch (error) {
+      console.error('Error fetching today\'s discharges:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new SqliteStorage();

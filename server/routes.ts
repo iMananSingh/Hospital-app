@@ -820,6 +820,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Inpatient Management Detail Routes (IST-based calculations)
+  app.get("/api/inpatients/bed-occupancy", authenticateToken, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const bedOccupancy = await storage.getBedOccupancyDetails();
+      res.json(bedOccupancy);
+    } catch (error) {
+      console.error("Error fetching bed occupancy:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/inpatients/currently-admitted", authenticateToken, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const admittedPatients = await storage.getCurrentlyAdmittedPatients();
+      res.json(admittedPatients);
+    } catch (error) {
+      console.error("Error fetching currently admitted patients:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/inpatients/admitted-today", authenticateToken, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const todayAdmissions = await storage.getTodayAdmissions();
+      res.json(todayAdmissions);
+    } catch (error) {
+      console.error("Error fetching today's admissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/inpatients/discharged-today", authenticateToken, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const todayDischarges = await storage.getTodayDischarges();
+      res.json(todayDischarges);
+    } catch (error) {
+      console.error("Error fetching today's discharges:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

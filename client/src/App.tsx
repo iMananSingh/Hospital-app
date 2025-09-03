@@ -15,6 +15,10 @@ import ServiceManagement from "@/pages/services";
 import OpdList from "@/pages/opd-list";
 import LabTests from "@/pages/lab-tests";
 import Admissions from "@/pages/admissions";
+import BedOccupancy from "@/pages/bed-occupancy";
+import CurrentlyAdmitted from "@/pages/currently-admitted";
+import AdmittedToday from "@/pages/admitted-today";
+import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
@@ -60,6 +64,10 @@ function Router() {
       <Route path="/doctors" component={() => <ProtectedRoute component={Doctors} />} />
       <Route path="/services" component={() => <ProtectedRoute component={ServiceManagement} />} />
       <Route path="/admissions" component={() => <ProtectedRoute component={Admissions} />} />
+      <Route path="/bed-occupancy" component={() => <ProtectedRoute component={BedOccupancy} />} />
+      <Route path="/currently-admitted" component={() => <ProtectedRoute component={CurrentlyAdmitted} />} />
+      <Route path="/admitted-today" component={() => <ProtectedRoute component={AdmittedToday} />} />
+      <Route path="/discharged-today" component={() => <ProtectedRoute component={DischargedToday} />} />
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />

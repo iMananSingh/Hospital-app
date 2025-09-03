@@ -32,35 +32,36 @@ export default function InPatientManagement() {
     queryKey: ["/api/patients"],
   });
 
-  // Fetch room types for bed count calculation
-  const { data: roomTypes = [] } = useQuery<RoomType[]>({
-    queryKey: ["/api/room-types"],
+  // Fetch bed occupancy data for IST-based calculation
+  const { data: bedOccupancyData = [] } = useQuery<any[]>({
+    queryKey: ["/api/inpatients/bed-occupancy"],
   });
 
-  // Calculate statistics
+  // Fetch IST-based counts
+  const { data: currentlyAdmittedData = [] } = useQuery<any[]>({
+    queryKey: ["/api/inpatients/currently-admitted"],
+  });
+
+  const { data: admittedTodayData = [] } = useQuery<any[]>({
+    queryKey: ["/api/inpatients/admitted-today"],
+  });
+
+  const { data: dischargedTodayData = [] } = useQuery<any[]>({
+    queryKey: ["/api/inpatients/discharged-today"],
+  });
+
+  // Calculate statistics from IST-based API data
   const totalBeds = useMemo(() => {
-    return roomTypes.reduce((sum, roomType) => sum + (roomType.totalBeds || 0), 0);
-  }, [roomTypes]);
+    return bedOccupancyData.reduce((sum, roomType) => sum + (roomType.totalBeds || 0), 0);
+  }, [bedOccupancyData]);
 
   const occupiedBeds = useMemo(() => {
-    return roomTypes.reduce((sum, roomType) => sum + (roomType.occupiedBeds || 0), 0);
-  }, [roomTypes]);
+    return bedOccupancyData.reduce((sum, roomType) => sum + (roomType.occupiedBeds || 0), 0);
+  }, [bedOccupancyData]);
 
-  const currentlyAdmitted = useMemo(() => {
-    return admissions.filter(admission => admission.status === 'admitted').length;
-  }, [admissions]);
-
-  const today = new Date().toISOString().split('T')[0];
-  
-  const admittedToday = useMemo(() => {
-    return admissions.filter(admission => admission.admissionDate === today).length;
-  }, [admissions, today]);
-
-  const dischargedToday = useMemo(() => {
-    return admissions.filter(admission => 
-      admission.dischargeDate === today && admission.status === 'discharged'
-    ).length;
-  }, [admissions, today]);
+  const currentlyAdmitted = currentlyAdmittedData.length;
+  const admittedToday = admittedTodayData.length;
+  const dischargedToday = dischargedTodayData.length;
 
   // Filter admissions based on search
   const filteredAdmissions = useMemo(() => {
@@ -72,7 +73,7 @@ export default function InPatientManagement() {
         patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         admission.admissionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admission.wardType?.toLowerCase().includes(searchQuery.toLowerCase())
+        admission.currentWardType?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     });
   }, [admissions, patients, searchQuery]);
@@ -103,7 +104,7 @@ export default function InPatientManagement() {
       <div className="p-6">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Link href="/services">
+          <Link href="/bed-occupancy">
             <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
               <CardContent className="p-6">
                 <div className="flex items-center">
@@ -117,41 +118,47 @@ export default function InPatientManagement() {
             </Card>
           </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <User className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Currently Admitted</p>
-                  <p className="text-2xl font-bold text-gray-900">{currentlyAdmitted}</p>
+          <Link href="/currently-admitted">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <User className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Currently Admitted</p>
+                    <p className="text-2xl font-bold text-gray-900">{currentlyAdmitted}</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <UserCheck className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Admitted Today</p>
-                  <p className="text-2xl font-bold text-gray-900">{admittedToday}</p>
+          <Link href="/admitted-today">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <UserCheck className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Admitted Today</p>
+                    <p className="text-2xl font-bold text-gray-900">{admittedToday}</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
 
-          <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <UserX className="h-8 w-8 text-red-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Discharged Today</p>
-                  <p className="text-2xl font-bold text-gray-900">{dischargedToday}</p>
+          <Link href="/discharged-today">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <UserX className="h-8 w-8 text-red-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Discharged Today</p>
+                    <p className="text-2xl font-bold text-gray-900">{dischargedToday}</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Search and Filters */}
@@ -209,8 +216,8 @@ export default function InPatientManagement() {
                           <div className="text-sm text-gray-500">ID: {getPatientId(admission.patientId)}</div>
                         </div>
                       </TableCell>
-                      <TableCell>{admission.wardType || "Not specified"}</TableCell>
-                      <TableCell>{admission.roomNumber || "TBA"}</TableCell>
+                      <TableCell>{admission.currentWardType || "Not specified"}</TableCell>
+                      <TableCell>{admission.currentRoomNumber || "TBA"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-gray-400" />
