@@ -1592,46 +1592,54 @@ export class SqliteStorage implements IStorage {
         // Get all rooms for this room type
         const rooms = await this.getRoomsByType(roomType.id);
         
-        // For each room, get the occupying patient details if occupied
+        let actualOccupiedBeds = 0;
+        
+        // For each room, check for actual current admissions
         const roomsWithOccupancy = await Promise.all(rooms.map(async (room) => {
           let occupyingPatient = null;
+          let isActuallyOccupied = false;
           
-          if (room.isOccupied) {
-            // Find current admission for this room
-            const admission = db.select()
-              .from(schema.admissions)
-              .where(
-                and(
-                  eq(schema.admissions.currentRoomId, room.id),
-                  eq(schema.admissions.status, 'admitted')
-                )
+          // Check if there's a current admission for this room by room number and ward type
+          const admission = db.select()
+            .from(schema.admissions)
+            .where(
+              and(
+                eq(schema.admissions.currentRoomNumber, room.roomNumber),
+                eq(schema.admissions.currentWardType, roomType.name),
+                eq(schema.admissions.status, 'admitted')
               )
-              .get();
+            )
+            .get();
 
-            if (admission) {
-              // Get patient details
-              const patient = db.select()
-                .from(schema.patients)
-                .where(eq(schema.patients.id, admission.patientId))
-                .get();
-                
-              if (patient) {
-                occupyingPatient = {
-                  name: patient.name,
-                  patientId: patient.patientId
-                };
-              }
+          if (admission) {
+            isActuallyOccupied = true;
+            actualOccupiedBeds++;
+            
+            // Get patient details
+            const patient = db.select()
+              .from(schema.patients)
+              .where(eq(schema.patients.id, admission.patientId))
+              .get();
+              
+            if (patient) {
+              occupyingPatient = {
+                name: patient.name,
+                patientId: patient.patientId
+              };
             }
           }
           
           return {
             ...room,
+            isOccupied: isActuallyOccupied,
             occupyingPatient
           };
         }));
 
+        // Return the room type with corrected occupied bed count
         return {
           ...roomType,
+          occupiedBeds: actualOccupiedBeds, // Use actual count instead of stored value
           rooms: roomsWithOccupancy
         };
       }));
