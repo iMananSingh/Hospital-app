@@ -485,6 +485,7 @@ export interface IStorage {
   getDoctors(): Promise<Doctor[]>;
   getDoctorById(id: string): Promise<Doctor | undefined>;
   updateDoctor(id: string, doctor: Partial<InsertDoctor>): Promise<Doctor | undefined>;
+  deleteDoctor(id: string): Promise<Doctor | undefined>; // Added deleteDoctor
 
   // Patient management
   createPatient(patient: InsertPatient): Promise<Patient>;
@@ -644,6 +645,18 @@ export class SqliteStorage implements IStorage {
       .where(eq(schema.doctors.id, id))
       .returning().get();
     return updated;
+  }
+
+  async deleteDoctor(id: string): Promise<Doctor | undefined> {
+    try {
+      const deleted = db.delete(schema.doctors)
+        .where(eq(schema.doctors.id, id))
+        .returning().get();
+      return deleted;
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      throw error;
+    }
   }
 
   async createPatient(patient: InsertPatient): Promise<Patient> {
