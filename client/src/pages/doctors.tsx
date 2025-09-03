@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Eye, Edit, Stethoscope, IndianRupee } from "lucide-react";
+import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee } from "lucide-react";
 import { insertDoctorSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,9 @@ import type { Doctor } from "@shared/schema";
 export default function Doctors() {
   const [isNewDoctorOpen, setIsNewDoctorOpen] = useState(false);
   const [isEditDoctorOpen, setIsEditDoctorOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
@@ -100,6 +103,37 @@ export default function Doctors() {
     },
   });
 
+  const deleteDoctorMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/doctors/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete doctor");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      toast({
+        title: "Doctor deleted successfully",
+        description: "The doctor profile has been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error deleting doctor",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
     resolver: zodResolver(insertDoctorSchema),
     defaultValues: {
@@ -142,6 +176,19 @@ export default function Doctors() {
       userId: doctor.userId,
     });
     setIsEditDoctorOpen(true);
+  };
+
+  const handleDeleteDoctor = (doctor: Doctor) => {
+    setDoctorToDelete(doctor);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteDoctor = () => {
+    if (doctorToDelete) {
+      deleteDoctorMutation.mutate(doctorToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setDoctorToDelete(null);
+    }
   };
 
   const filteredDoctors = doctors?.filter((doctor: Doctor) =>
@@ -303,6 +350,16 @@ export default function Doctors() {
                             >
                               <Edit className="w-4 h-4 mr-1" />
                               Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteDoctor(doctor)}
+                              data-testid={`button-delete-${doctor.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
                             </Button>
                           </div>
                         </CardContent>
@@ -665,6 +722,32 @@ export default function Doctors() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent data-testid="delete-doctor-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {doctorToDelete?.name}? This action cannot be undone.
+              All associated appointments and records will remain but will no longer be linked to this doctor.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteDoctor}
+              disabled={deleteDoctorMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              {deleteDoctorMutation.isPending ? "Deleting..." : "Delete Doctor"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
