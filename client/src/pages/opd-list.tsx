@@ -37,7 +37,6 @@ export default function OpdList() {
       if (!response.ok) throw new Error("Failed to fetch OPD services");
       return response.json();
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Fetch patients for service details

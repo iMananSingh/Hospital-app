@@ -23,9 +23,6 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Failed to fetch dashboard stats");
       return response.json();
     },
-    refetchInterval: 10000, // Refetch every 10 seconds
-    staleTime: 0, // Consider data immediately stale
-    cacheTime: 0, // Don't cache the data
   });
 
   if (isLoading) {

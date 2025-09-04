@@ -30,7 +30,6 @@ export default function CurrentlyAdmittedPage() {
   // Fetch currently admitted patients
   const { data: admittedPatients = [], isLoading } = useQuery<AdmissionWithDetails[]>({
     queryKey: ["/api/inpatients/currently-admitted"],
-    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   // Filter patients based on search
