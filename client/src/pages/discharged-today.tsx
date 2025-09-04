@@ -37,7 +37,7 @@ export default function DischargedTodayPage() {
   // Filter discharges based on search
   const filteredDischarges = useMemo(() => {
     if (!searchQuery) return todayDischarges;
-    
+
     return todayDischarges.filter(admission => {
       const searchLower = searchQuery.toLowerCase();
       return (
@@ -97,59 +97,8 @@ export default function DischargedTodayPage() {
   return (
     <div className="space-y-6">
       <TopBar title="Patients Discharged Today" />
-      
+
       <div className="p-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <UserX className="h-8 w-8 text-red-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Discharges</p>
-                  <p className="text-2xl font-bold text-gray-900">{todayDischarges.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <IndianRupee className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Avg Stay (days)</p>
-                  <p className="text-2xl font-bold text-gray-900">{getAverageStay()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Building2 className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Beds Freed</p>
-                  <p className="text-2xl font-bold text-gray-900">{todayDischarges.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">

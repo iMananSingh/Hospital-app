@@ -30,12 +30,13 @@ export default function CurrentlyAdmittedPage() {
   // Fetch currently admitted patients
   const { data: admittedPatients = [], isLoading } = useQuery<AdmissionWithDetails[]>({
     queryKey: ["/api/inpatients/currently-admitted"],
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   // Filter patients based on search
   const filteredPatients = useMemo(() => {
     if (!searchQuery) return admittedPatients;
-    
+
     return admittedPatients.filter(admission => {
       const searchLower = searchQuery.toLowerCase();
       return (
@@ -72,54 +73,9 @@ export default function CurrentlyAdmittedPage() {
   return (
     <div className="space-y-6">
       <TopBar title="Currently Admitted Patients" />
-      
+
       <div className="p-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <User className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Patients</p>
-                  <p className="text-2xl font-bold text-gray-900">{admittedPatients.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Building2 className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Occupied Wards</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {new Set(admittedPatients.map(p => p.currentWardType).filter(Boolean)).size}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-orange-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Avg Stay (days)</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {admittedPatients.length > 0 
-                      ? Math.round(admittedPatients.reduce((sum, p) => 
-                          sum + calculateDays(p.admissionDate), 0) / admittedPatients.length)
-                      : 0
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Removed Summary Stats */}
 
         {/* Search and Filters */}
         <Card className="mb-6">

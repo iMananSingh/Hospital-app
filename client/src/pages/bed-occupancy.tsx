@@ -91,38 +91,8 @@ export default function BedOccupancyPage() {
         <TopBar title="Bed Occupancy" />
         
         <div className="p-6">
-          {/* Summary Stats */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-center">
-                  <Building2 className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Room Types</p>
-                    <p className="text-2xl font-bold text-gray-900">{bedOccupancy.length}</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <Bed className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Beds</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {bedOccupancy.reduce((sum, rt) => sum + rt.totalBeds, 0)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <Users className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Occupied Beds</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {bedOccupancy.reduce((sum, rt) => sum + rt.occupiedBeds, 0)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
+                      
 
           {/* Room Types and Rooms */}
           <div className="space-y-6">

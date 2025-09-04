@@ -36,7 +36,7 @@ export default function AdmittedTodayPage() {
   // Filter admissions based on search
   const filteredAdmissions = useMemo(() => {
     if (!searchQuery) return todayAdmissions;
-    
+
     return todayAdmissions.filter(admission => {
       const searchLower = searchQuery.toLowerCase();
       return (
@@ -79,63 +79,8 @@ export default function AdmittedTodayPage() {
   return (
     <div className="space-y-6">
       <TopBar title="Patients Admitted Today" />
-      
+
       <div className="p-6">
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <UserCheck className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Admissions</p>
-                  <p className="text-2xl font-bold text-gray-900">{todayAdmissions.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <IndianRupee className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Deposits Collected</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Building2 className="h-8 w-8 text-orange-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Wards Occupied</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {new Set(todayAdmissions.map(p => p.currentWardType).filter(Boolean)).size}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Stethoscope className="h-8 w-8 text-purple-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Doctors Involved</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {new Set(todayAdmissions.map(p => p.doctorId).filter(Boolean)).size}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
