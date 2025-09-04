@@ -1054,8 +1054,13 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
-    const admissionDate = new Date().toISOString();
-    const eventDate = admissionDate.split('T')[0];
+    // Use Indian timezone (UTC+5:30) for consistent date calculation
+    const now = new Date();
+    const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    const eventDate = indianTime.getFullYear() + '-' +
+      String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+      String(indianTime.getDate()).padStart(2, '0');
+    const admissionDate = eventDate; // Store just the date part for easier querying
 
     return db.transaction((tx) => {
       // CRITICAL VALIDATION: Check if room is already occupied
@@ -1373,8 +1378,13 @@ export class SqliteStorage implements IStorage {
 
       if (!currentAdmission) return undefined;
 
-      const dischargeDate = new Date().toISOString();
-      const eventDate = dischargeDate.split('T')[0];
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const eventDate = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+      const dischargeDate = eventDate; // Store just the date part for easier querying
 
       // Generate receipt number for discharge
       const dischargeCount = this.getDailyReceiptCountSync('discharge', eventDate);
@@ -1387,7 +1397,7 @@ export class SqliteStorage implements IStorage {
         .set({
           status: "discharged",
           dischargeDate: dischargeDate,
-          updatedAt: dischargeDate
+          updatedAt: new Date().toISOString()
         })
         .where(eq(schema.admissions.id, admissionId))
         .returning().get();
@@ -1396,7 +1406,7 @@ export class SqliteStorage implements IStorage {
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
         eventType: "discharge",
-        eventTime: dischargeDate,
+        eventTime: new Date().toISOString(),
         notes: `Patient discharged`,
         createdBy: userId,
         receiptNumber: receiptNumber,
