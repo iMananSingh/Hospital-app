@@ -97,11 +97,11 @@ export default function BedOccupancyPage() {
           {/* Legend */}
           <div className="flex items-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-600 rounded"></div>
+              <div className="w-4 h-4 bg-rose-500 rounded"></div>
               <span className="text-sm font-medium">Occupied</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-600 rounded"></div>
+              <div className="w-4 h-4 bg-emerald-500 rounded"></div>
               <span className="text-sm font-medium">Available</span>
             </div>
           </div>
@@ -131,8 +131,8 @@ export default function BedOccupancyPage() {
                             <Card 
                               className={`cursor-pointer transition-all hover:shadow-md ${
                                 room.isOccupied 
-                                  ? 'bg-red-600 border-red-700 hover:bg-red-700 text-white' 
-                                  : 'bg-green-600 border-green-700 hover:bg-green-700 text-white'
+                                  ? 'bg-rose-500 border-rose-600 hover:bg-rose-600 text-white' 
+                                  : 'bg-emerald-500 border-emerald-600 hover:bg-emerald-600 text-white'
                               }`}
                             >
                               <CardContent className="p-4">
