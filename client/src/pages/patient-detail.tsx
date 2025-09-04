@@ -2371,7 +2371,7 @@ export default function PatientDetail() {
                             key={room.id} 
                             value={room.roomNumber}
                             disabled={isOccupied}
-                            className={isOccupied ? "text-gray-400 bg-gray-100 cursor-not-allowed" : ""}
+                            className={isOccupied ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800" : ""}
                           >
                             {room.roomNumber}{isOccupied ? " (Occupied)" : ""}
                           </SelectItem>
@@ -2552,25 +2552,44 @@ export default function PatientDetail() {
 
                     if (!selectedRoomType) return null;
 
-                    const availableRooms = rooms.filter((room: any) => 
+                    // Get all rooms for this room type
+                    const allRoomsForType = rooms.filter((room: any) => 
                       room.roomTypeId === selectedRoomType.id && 
-                      !room.isOccupied && 
                       room.isActive
                     );
 
-                    if (availableRooms.length === 0) {
+                    if (allRoomsForType.length === 0) {
                       return (
                         <SelectItem value="" disabled>
-                          No available rooms in {selectedWardType}
+                          No rooms available in {selectedWardType}
                         </SelectItem>
                       );
                     }
 
-                    return availableRooms.map((room: any) => (
-                      <SelectItem key={room.id} value={room.roomNumber}>
-                        {room.roomNumber}
-                      </SelectItem>
-                    ));
+                    // Check which rooms are actually occupied based on current admissions
+                    const occupiedRoomNumbers = new Set(
+                      allCurrentAdmissions
+                        .filter((admission: any) => 
+                          admission.currentWardType === selectedWardType && 
+                          admission.status === 'admitted'
+                        )
+                        .map((admission: any) => admission.currentRoomNumber)
+                    );
+
+                    return allRoomsForType.map((room: any) => {
+                      const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
+                      
+                      return (
+                        <SelectItem 
+                          key={room.id} 
+                          value={room.roomNumber}
+                          disabled={isOccupied}
+                          className={isOccupied ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800" : ""}
+                        >
+                          {room.roomNumber}{isOccupied ? " (Occupied)" : ""}
+                        </SelectItem>
+                      );
+                    });
                   })()}
                 </SelectContent>
               </Select>
