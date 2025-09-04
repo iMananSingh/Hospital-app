@@ -94,8 +94,17 @@ export default function BedOccupancyPage() {
         <TopBar title="Bed Occupancy" />
         
         <div className="p-6">
-          
-                      
+          {/* Legend */}
+          <div className="flex items-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-600 rounded"></div>
+              <span className="text-sm font-medium">Occupied</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-green-600 rounded"></div>
+              <span className="text-sm font-medium">Available</span>
+            </div>
+          </div>
 
           {/* Room Types and Rooms */}
           <div className="space-y-6">
@@ -122,30 +131,18 @@ export default function BedOccupancyPage() {
                             <Card 
                               className={`cursor-pointer transition-all hover:shadow-md ${
                                 room.isOccupied 
-                                  ? 'bg-green-50 border-green-200 hover:bg-green-100' 
-                                  : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                  ? 'bg-red-600 border-red-700 hover:bg-red-700 text-white' 
+                                  : 'bg-green-600 border-green-700 hover:bg-green-700 text-white'
                               }`}
                             >
                               <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-center">
                                   <div className="flex items-center gap-2">
-                                    <Bed className={`h-4 w-4 ${
-                                      room.isOccupied ? 'text-green-600' : 'text-blue-600'
-                                    }`} />
-                                    <span className="font-medium text-sm">
+                                    <Bed className="h-4 w-4 text-white" />
+                                    <span className="font-medium text-sm text-white">
                                       {room.roomNumber}
                                     </span>
                                   </div>
-                                  <Badge 
-                                    variant={room.isOccupied ? "default" : "secondary"}
-                                    className={`text-xs ${
-                                      room.isOccupied 
-                                        ? 'bg-green-100 text-green-800 hover:bg-green-100' 
-                                        : 'bg-blue-100 text-blue-800 hover:bg-blue-100'
-                                    }`}
-                                  >
-                                    {room.isOccupied ? 'Occupied' : 'Available'}
-                                  </Badge>
                                 </div>
                                 {room.floor && (
                                   <p className="text-xs text-muted-foreground mt-1">
