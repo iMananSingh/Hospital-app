@@ -31,6 +31,9 @@ export default function AdmittedTodayPage() {
   // Fetch today's admissions with IST timezone
   const { data: todayAdmissions = [], isLoading } = useQuery<AdmissionWithDetails[]>({
     queryKey: ["/api/inpatients/admitted-today"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Filter admissions based on search

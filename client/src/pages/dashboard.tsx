@@ -14,6 +14,9 @@ interface DashboardStats {
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const response = await fetch("/api/dashboard/stats", {
         headers: {

@@ -32,6 +32,9 @@ export default function DischargedTodayPage() {
   // Fetch today's discharges with IST timezone
   const { data: todayDischarges = [], isLoading } = useQuery<AdmissionWithDetails[]>({
     queryKey: ["/api/inpatients/discharged-today"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Filter discharges based on search

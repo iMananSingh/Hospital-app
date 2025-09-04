@@ -35,19 +35,31 @@ export default function InPatientManagement() {
   // Fetch bed occupancy data for IST-based calculation
   const { data: bedOccupancyData = [] } = useQuery<any[]>({
     queryKey: ["/api/inpatients/bed-occupancy"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch IST-based counts
   const { data: currentlyAdmittedData = [] } = useQuery<any[]>({
     queryKey: ["/api/inpatients/currently-admitted"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: admittedTodayData = [] } = useQuery<any[]>({
     queryKey: ["/api/inpatients/admitted-today"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: dischargedTodayData = [] } = useQuery<any[]>({
     queryKey: ["/api/inpatients/discharged-today"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Calculate statistics from IST-based API data

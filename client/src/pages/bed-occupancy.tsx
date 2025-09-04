@@ -42,6 +42,9 @@ interface RoomType {
 export default function BedOccupancyPage() {
   const { data: bedOccupancy = [], isLoading } = useQuery<RoomType[]>({
     queryKey: ["/api/inpatients/bed-occupancy"],
+    staleTime: 0, // Always refetch for real-time data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   const getCategoryIcon = (category: string) => {
