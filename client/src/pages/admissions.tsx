@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Bed, 
   User, 
@@ -15,12 +16,14 @@ import {
   Search,
   Building2,
   UserCheck,
-  UserX
+  UserX,
+  Eye
 } from "lucide-react";
 import type { Admission, Patient, RoomType } from "@shared/schema";
 
 export default function InPatientManagement() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch all admissions
   const { data: admissions = [] } = useQuery<Admission[]>({
@@ -75,20 +78,30 @@ export default function InPatientManagement() {
   const admittedToday = admittedTodayData.length;
   const dischargedToday = dischargedTodayData.length;
 
-  // Filter admissions based on search
+  // Filter admissions based on search and status
   const filteredAdmissions = useMemo(() => {
-    if (!searchQuery) return admissions;
+    let filtered = admissions;
     
-    return admissions.filter(admission => {
-      const patient = patients.find(p => p.id === admission.patientId);
-      return (
-        patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admission.admissionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admission.currentWardType?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    });
-  }, [admissions, patients, searchQuery]);
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(admission => admission.status === statusFilter);
+    }
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(admission => {
+        const patient = patients.find(p => p.id === admission.patientId);
+        return (
+          patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          admission.admissionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          admission.currentWardType?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+    }
+    
+    return filtered;
+  }, [admissions, patients, searchQuery, statusFilter]);
 
   const getPatientName = (patientId: string) => {
     const patient = patients.find(p => p.id === patientId);
@@ -186,6 +199,16 @@ export default function InPatientManagement() {
                   className="pl-10"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Patients</SelectItem>
+                  <SelectItem value="admitted">Admitted Only</SelectItem>
+                  <SelectItem value="discharged">Discharged Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -211,8 +234,8 @@ export default function InPatientManagement() {
                     <TableHead>Ward/Room Type</TableHead>
                     <TableHead>Room Number</TableHead>
                     <TableHead>Admission Date</TableHead>
+                    <TableHead>Discharge Date</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Daily Cost</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -237,15 +260,24 @@ export default function InPatientManagement() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        {admission.dischargeDate ? (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            {new Date(admission.dischargeDate).toLocaleDateString()}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={getStatusBadgeVariant(admission.status)}>
                           {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell>₹{admission.dailyCost.toLocaleString()}</TableCell>
                       <TableCell>
                         <Link href={`/patients/${admission.patientId}`}>
                           <Button variant="outline" size="sm">
-                            View Patient
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
                       </TableCell>
