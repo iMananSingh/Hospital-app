@@ -6,7 +6,7 @@ channel = "stable-25_05"
 packages = ["sqlite"]
 
 [deployment]
-run = ["npm", "run", "start"]
+run = ["npm", "start"]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 
@@ -39,13 +39,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [agent]
 expertMode = true
