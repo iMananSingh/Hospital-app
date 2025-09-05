@@ -1076,12 +1076,12 @@ export default function Settings() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="editPassword">New Password (Leave empty to keep current)</Label>
+                <Label htmlFor="editPassword">New Password</Label>
                 <Input
                   id="editPassword"
                   type="password"
                   {...editUserForm.register("password")}
-                  placeholder="••••••••"
+                  placeholder="Leave empty to keep current"
                   data-testid="input-edit-user-password"
                 />
                 {editUserForm.formState.errors.password && (
