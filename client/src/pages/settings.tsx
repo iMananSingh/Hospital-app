@@ -588,28 +588,28 @@ export default function Settings() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users?.map((user: User) => (
-                        <TableRow key={user.id} data-testid={`user-row-${user.id}`}>
-                          <TableCell className="font-medium" data-testid={`user-name-${user.id}`}>
-                            {user.fullName}
+                      {users?.map((tableUser: User) => (
+                        <TableRow key={tableUser.id} data-testid={`user-row-${tableUser.id}`}>
+                          <TableCell className="font-medium" data-testid={`user-name-${tableUser.id}`}>
+                            {tableUser.fullName}
                           </TableCell>
-                          <TableCell data-testid={`user-username-${user.id}`}>
-                            {user.username}
+                          <TableCell data-testid={`user-username-${tableUser.id}`}>
+                            {tableUser.username}
                           </TableCell>
                           <TableCell>
                             <Badge 
                               variant="secondary" 
-                              className={getRoleColor(user.role)}
-                              data-testid={`user-role-${user.id}`}
+                              className={getRoleColor(tableUser.role)}
+                              data-testid={`user-role-${tableUser.id}`}
                             >
-                              {user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              {tableUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge 
                               variant="default"
                               className="bg-green-100 text-green-800"
-                              data-testid={`user-status-${user.id}`}
+                              data-testid={`user-status-${tableUser.id}`}
                             >
                               Active
                             </Badge>
@@ -619,8 +619,8 @@ export default function Settings() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
-                                onClick={() => handleEditUser(user)}
-                                data-testid={`button-edit-user-${user.id}`}
+                                onClick={() => handleEditUser(tableUser)}
+                                data-testid={`button-edit-user-${tableUser.id}`}
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -628,9 +628,9 @@ export default function Settings() {
                                 variant="ghost" 
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteUser(user)}
-                                disabled={user.id === user?.id} // Prevent deleting self
-                                data-testid={`button-delete-user-${user.id}`}
+                                onClick={() => handleDeleteUser(tableUser)}
+                                disabled={tableUser.id === user?.id} // Prevent deleting self
+                                data-testid={`button-delete-user-${tableUser.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
