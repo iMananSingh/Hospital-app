@@ -622,14 +622,16 @@ export default function Settings() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditUser(tableUser)}
-                                data-testid={`button-edit-user-${tableUser.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
+                              {tableUser.username !== 'root' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEditUser(tableUser)}
+                                  data-testid={`button-edit-user-${tableUser.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
                               <Button 
                                 variant="ghost" 
                                 size="sm"

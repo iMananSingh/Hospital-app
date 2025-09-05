@@ -118,6 +118,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const userData = req.body;
 
+      // Get user to check if it's the root user
+      const userToUpdate = await storage.getUserById(id);
+      if (!userToUpdate) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent editing root user
+      if (userToUpdate.username === 'root') {
+        return res.status(403).json({ message: "Cannot edit the root user" });
+      }
+
       // Prevent updating self to a non-admin role
       if (req.user.id === id && userData.role !== 'admin') {
         return res.status(400).json({ message: "Cannot change your own admin role" });
