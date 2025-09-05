@@ -108,6 +108,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/users/:id", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to update users
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { id } = req.params;
+      const userData = req.body;
+
+      // Prevent updating self to a non-admin role
+      if (req.user.id === id && userData.role !== 'admin') {
+        return res.status(400).json({ message: "Cannot change your own admin role" });
+      }
+
+      const updatedUser = await storage.updateUser(id, userData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ 
+        id: updatedUser.id, 
+        username: updatedUser.username, 
+        fullName: updatedUser.fullName, 
+        role: updatedUser.role 
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to delete users
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { id } = req.params;
+
+      // Prevent deleting self
+      if (req.user.id === id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // Dashboard routes
   app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
     try {

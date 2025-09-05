@@ -35,7 +35,11 @@ import type { Service, User } from "@shared/schema";
 export default function Settings() {
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
   const [isNewUserOpen, setIsNewUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [hospitalLogo, setHospitalLogo] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -139,6 +143,7 @@ export default function Settings() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsNewUserOpen(false);
       userForm.reset();
       toast({
@@ -149,6 +154,74 @@ export default function Settings() {
     onError: () => {
       toast({
         title: "Error creating user",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }: { id: string; userData: any }) => {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(userData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update user");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsEditUserOpen(false);
+      editUserForm.reset();
+      toast({
+        title: "User updated successfully",
+        description: "The user account has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error updating user",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to delete user");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsDeleteUserOpen(false);
+      setUserToDelete(null);
+      toast({
+        title: "User deleted successfully",
+        description: "The user account has been deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error deleting user",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -170,6 +243,14 @@ export default function Settings() {
     defaultValues: {
       username: "",
       password: "",
+      fullName: "",
+      role: "",
+    },
+  });
+
+  const editUserForm = useForm({
+    defaultValues: {
+      username: "",
       fullName: "",
       role: "",
     },
@@ -205,6 +286,26 @@ export default function Settings() {
 
   const onUserSubmit = (data: any) => {
     createUserMutation.mutate(data);
+  };
+
+  const onEditUserSubmit = (data: any) => {
+    if (!selectedUser) return;
+    updateUserMutation.mutate({ id: selectedUser.id, userData: data });
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    editUserForm.reset({
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+    });
+    setIsEditUserOpen(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteUserOpen(true);
   };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -518,6 +619,7 @@ export default function Settings() {
                               <Button 
                                 variant="ghost" 
                                 size="sm"
+                                onClick={() => handleEditUser(user)}
                                 data-testid={`button-edit-user-${user.id}`}
                               >
                                 <Edit className="w-4 h-4" />
@@ -526,6 +628,8 @@ export default function Settings() {
                                 variant="ghost" 
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={user.id === user?.id} // Prevent deleting self
                                 data-testid={`button-delete-user-${user.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -925,6 +1029,121 @@ export default function Settings() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+        <DialogContent className="max-w-2xl" data-testid="edit-user-dialog">
+          <DialogHeader>
+            <DialogTitle>Edit User: {selectedUser?.fullName}</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={editUserForm.handleSubmit(onEditUserSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFullName">Full Name *</Label>
+                <Input
+                  id="editFullName"
+                  {...editUserForm.register("fullName")}
+                  placeholder="John Doe"
+                  data-testid="input-edit-user-fullname"
+                />
+                {editUserForm.formState.errors.fullName && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.fullName.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="editUsername">Username *</Label>
+                <Input
+                  id="editUsername"
+                  {...editUserForm.register("username")}
+                  placeholder="johndoe"
+                  data-testid="input-edit-user-username"
+                />
+                {editUserForm.formState.errors.username && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.username.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editRole">Role *</Label>
+              <Select 
+                value={editUserForm.watch("role")} 
+                onValueChange={(value) => editUserForm.setValue("role", value)}
+              >
+                <SelectTrigger data-testid="select-edit-user-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {userRoles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {editUserForm.formState.errors.role && (
+                <p className="text-sm text-destructive">{editUserForm.formState.errors.role.message}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditUserOpen(false)}
+                data-testid="button-cancel-edit-user"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateUserMutation.isPending}
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-save-edit-user"
+              >
+                {updateUserMutation.isPending ? "Updating..." : "Update User"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={isDeleteUserOpen} onOpenChange={setIsDeleteUserOpen}>
+        <DialogContent data-testid="delete-user-dialog">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p>Are you sure you want to delete user <strong>{userToDelete?.fullName}</strong>?</p>
+            <p className="text-sm text-muted-foreground">
+              This action cannot be undone. The user will no longer be able to access the system.
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteUserOpen(false)}
+              data-testid="button-cancel-delete-user"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
+              disabled={deleteUserMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete-user"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

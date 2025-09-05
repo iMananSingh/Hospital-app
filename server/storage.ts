@@ -478,6 +478,8 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<User | undefined>;
   verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
 
@@ -628,6 +630,21 @@ export class SqliteStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return db.select().from(schema.users).all();
+  }
+
+  async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    const updated = db.update(schema.users)
+      .set({ ...userData, updatedAt: new Date().toISOString() })
+      .where(eq(schema.users.id, id))
+      .returning().get();
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<User | undefined> {
+    const deleted = db.delete(schema.users)
+      .where(eq(schema.users.id, id))
+      .returning().get();
+    return deleted;
   }
 
   async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
