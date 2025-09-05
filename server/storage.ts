@@ -415,7 +415,7 @@ async function initializeDatabase() {
 // Demo data creation function
 async function createDemoData() {
   try {
-    // Check and create demo users
+    // Check and create demo users (only create if they've never existed before)
     const demoUserData = [
       { username: 'admin', password: 'admin123', fullName: 'System Administrator', role: 'admin', id: 'admin-user-id' },
       { username: 'doctor', password: 'doctor123', fullName: 'Dr. John Smith', role: 'doctor', id: 'doctor-user-id' },
@@ -424,20 +424,26 @@ async function createDemoData() {
     ];
 
     for (const userData of demoUserData) {
-      const existing = db.select().from(schema.users).where(eq(schema.users.username, userData.username)).get();
+      // Check if user exists by ID (this will be null if user was deleted)
+      const existing = db.select().from(schema.users).where(eq(schema.users.id, userData.id)).get();
       if (!existing) {
-        const hashedPassword = await bcrypt.hash(userData.password, 10);
-        db.insert(schema.users).values({
-          id: userData.id,
-          username: userData.username,
-          password: hashedPassword,
-          fullName: userData.fullName,
-          role: userData.role,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }).run();
-        console.log(`Created demo user: ${userData.username}`);
+        // Only create if it's the first time the system is running (no users exist at all)
+        // or if this is the admin user (which should always exist)
+        const allUsers = db.select().from(schema.users).all();
+        if (allUsers.length === 0 || userData.username === 'admin') {
+          const hashedPassword = await bcrypt.hash(userData.password, 10);
+          db.insert(schema.users).values({
+            id: userData.id,
+            username: userData.username,
+            password: hashedPassword,
+            fullName: userData.fullName,
+            role: userData.role,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }).run();
+          console.log(`Created demo user: ${userData.username}`);
+        }
       }
     }
 
