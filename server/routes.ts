@@ -153,6 +153,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
+      // Get user to check if it's the root user
+      const userToDelete = await storage.getUserById(id);
+      if (!userToDelete) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent deleting root user
+      if (userToDelete.username === 'root') {
+        return res.status(403).json({ message: "Cannot delete the root user" });
+      }
+
       const deleted = await storage.deleteUser(id);
       if (!deleted) {
         return res.status(404).json({ message: "User not found" });

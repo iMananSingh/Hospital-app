@@ -635,7 +635,7 @@ export default function Settings() {
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteUser(tableUser)}
-                                disabled={tableUser.id === user?.id} // Prevent deleting self
+                                disabled={tableUser.id === user?.id || tableUser.username === 'root'} // Prevent deleting self or root user
                                 data-testid={`button-delete-user-${tableUser.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
