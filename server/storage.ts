@@ -663,16 +663,28 @@ export class SqliteStorage implements IStorage {
           // Update all references to this user to null before deleting
           
           // Update bills created by this user (createdBy column exists)
-          tx.update(schema.bills)
-            .set({ createdBy: null })
+          const billsToUpdate = tx.select().from(schema.bills)
             .where(eq(schema.bills.createdBy, id))
-            .run();
+            .all();
+          
+          for (const bill of billsToUpdate) {
+            tx.update(schema.bills)
+              .set({ createdBy: sql`NULL` })
+              .where(eq(schema.bills.id, bill.id))
+              .run();
+          }
 
           // Update admission events created by this user (createdBy column exists)
-          tx.update(schema.admissionEvents)
-            .set({ createdBy: null })
+          const eventsToUpdate = tx.select().from(schema.admissionEvents)
             .where(eq(schema.admissionEvents.createdBy, id))
-            .run();
+            .all();
+          
+          for (const event of eventsToUpdate) {
+            tx.update(schema.admissionEvents)
+              .set({ createdBy: sql`NULL` })
+              .where(eq(schema.admissionEvents.id, event.id))
+              .run();
+          }
 
           // Note: pathology_orders, patient_services, and admissions tables 
           // don't have createdBy columns in the schema, so we skip those updates
