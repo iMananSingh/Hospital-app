@@ -477,6 +477,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
 
@@ -622,8 +623,11 @@ export class SqliteStorage implements IStorage {
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    const user = db.select().from(schema.users).where(eq(schema.users.id, id)).get();
-    return user;
+    return db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(schema.users).all();
   }
 
   async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
@@ -701,7 +705,7 @@ export class SqliteStorage implements IStorage {
       return db.transaction((tx) => {
         try {
           // First, set all references to this doctor to null
-          
+
           // Update patient_visits to set doctorId to null
           tx.update(schema.patientVisits)
             .set({ doctorId: null })
@@ -1615,18 +1619,18 @@ export class SqliteStorage implements IStorage {
     try {
       // Get all room types with their rooms
       const roomTypes = await this.getAllRoomTypes();
-      
+
       const bedOccupancy = await Promise.all(roomTypes.map(async (roomType) => {
         // Get all rooms for this room type
         const rooms = await this.getRoomsByType(roomType.id);
-        
+
         let actualOccupiedBeds = 0;
-        
-        // For each room, check for actual current admissions
+
+        // For each room, check if there's an actual current admission
         const roomsWithOccupancy = await Promise.all(rooms.map(async (room) => {
           let occupyingPatient = null;
           let isActuallyOccupied = false;
-          
+
           // Check if there's a current admission for this room by room number and ward type
           const admission = db.select()
             .from(schema.admissions)
@@ -1642,13 +1646,13 @@ export class SqliteStorage implements IStorage {
           if (admission) {
             isActuallyOccupied = true;
             actualOccupiedBeds++;
-            
+
             // Get patient details
             const patient = db.select()
               .from(schema.patients)
               .where(eq(schema.patients.id, admission.patientId))
               .get();
-              
+
             if (patient) {
               occupyingPatient = {
                 name: patient.name,
@@ -1656,7 +1660,7 @@ export class SqliteStorage implements IStorage {
               };
             }
           }
-          
+
           return {
             ...room,
             isOccupied: isActuallyOccupied,

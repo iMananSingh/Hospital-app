@@ -89,6 +89,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/users", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to fetch all users
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+      
+      const users = await storage.getAllUsers();
+      res.json(users.map(user => ({ 
+        id: user.id, 
+        username: user.username, 
+        fullName: user.fullName, 
+        role: user.role 
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get users" });
+    }
+  });
+
   // Dashboard routes
   app.get("/api/dashboard/stats", requireAuth, async (req, res) => {
     try {

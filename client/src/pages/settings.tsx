@@ -49,6 +49,10 @@ export default function Settings() {
     queryKey: ["/api/settings/hospital"],
   });
 
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
   const saveHospitalSettingsMutation = useMutation({
     mutationFn: async (settingsData: any) => {
       const response = await fetch("/api/settings/hospital", {
@@ -454,10 +458,85 @@ export default function Settings() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">User listing functionality coming soon</p>
-                </div>
+                {usersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                    <p className="text-sm text-muted-foreground mt-2">Loading users...</p>
+                  </div>
+                ) : users?.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No users found</p>
+                    <Button 
+                      onClick={() => setIsNewUserOpen(true)}
+                      className="mt-4"
+                      data-testid="button-first-user"
+                    >
+                      Add your first user
+                    </Button>
+                  </div>
+                ) : (
+                  <Table data-testid="users-table">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.map((user: User) => (
+                        <TableRow key={user.id} data-testid={`user-row-${user.id}`}>
+                          <TableCell className="font-medium" data-testid={`user-name-${user.id}`}>
+                            {user.fullName}
+                          </TableCell>
+                          <TableCell data-testid={`user-username-${user.id}`}>
+                            {user.username}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="secondary" 
+                              className={getRoleColor(user.role)}
+                              data-testid={`user-role-${user.id}`}
+                            >
+                              {user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="default"
+                              className="bg-green-100 text-green-800"
+                              data-testid={`user-status-${user.id}`}
+                            >
+                              Active
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                data-testid={`button-edit-user-${user.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                data-testid={`button-delete-user-${user.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
