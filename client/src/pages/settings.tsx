@@ -26,7 +26,7 @@ import {
   Trash2,
   UserPlus
 } from "lucide-react";
-import { insertServiceSchema, insertUserSchema } from "@shared/schema";
+import { insertServiceSchema, insertUserSchema, insertSystemSettingsSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -55,6 +55,14 @@ export default function Settings() {
 
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["/api/users"],
+  });
+
+  const { data: systemSettings, isLoading: systemSettingsLoading } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  const { data: backupHistory = [], isLoading: backupHistoryLoading } = useQuery({
+    queryKey: ["/api/backup/history"],
   });
 
   const saveHospitalSettingsMutation = useMutation({
@@ -234,6 +242,72 @@ export default function Settings() {
     },
   });
 
+  const saveSystemSettingsMutation = useMutation({
+    mutationFn: async (settingsData: any) => {
+      const response = await fetch("/api/settings/system", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(settingsData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save system settings");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/system"] });
+      toast({
+        title: "Settings saved successfully",
+        description: "System configuration has been updated.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error saving settings",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/backup/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ backupType: 'manual' }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create backup");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/backup/history"] });
+      toast({
+        title: "Backup created successfully",
+        description: "Your data has been backed up securely.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating backup",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const serviceForm = useForm({
     resolver: zodResolver(insertServiceSchema),
     defaultValues: {
@@ -340,6 +414,24 @@ export default function Settings() {
       ...data,
       logoPath: hospitalLogo,
     });
+  };
+
+  const handleSystemSettingChange = (field: string, value: boolean) => {
+    const updatedSettings = {
+      ...systemSettings,
+      [field]: value,
+      // Set default values for auto backup configuration
+      ...(field === 'autoBackup' && value && {
+        backupFrequency: systemSettings?.backupFrequency || 'daily',
+        backupTime: systemSettings?.backupTime || '02:00'
+      })
+    };
+    
+    saveSystemSettingsMutation.mutate(updatedSettings);
+  };
+
+  const handleCreateBackup = () => {
+    createBackupMutation.mutate();
   };
 
   const formatCurrency = (amount: number) => {
@@ -662,37 +754,62 @@ export default function Settings() {
                   <CardTitle>System Configuration</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Send email alerts for important events</p>
+                  {systemSettingsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                      <p className="text-sm text-muted-foreground mt-2">Loading system settings...</p>
                     </div>
-                    <Switch data-testid="switch-email-notifications" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base">SMS Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Send SMS alerts to patients</p>
-                    </div>
-                    <Switch data-testid="switch-sms-notifications" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base">Auto Backup</Label>
-                      <p className="text-sm text-muted-foreground">Automatically backup data daily</p>
-                    </div>
-                    <Switch defaultChecked data-testid="switch-auto-backup" />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-base">Audit Logging</Label>
-                      <p className="text-sm text-muted-foreground">Track all user actions</p>
-                    </div>
-                    <Switch defaultChecked data-testid="switch-audit-logging" />
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">Email Notifications</Label>
+                          <p className="text-sm text-muted-foreground">Send email alerts for important events</p>
+                        </div>
+                        <Switch 
+                          checked={systemSettings?.emailNotifications || false}
+                          onCheckedChange={(checked) => handleSystemSettingChange('emailNotifications', checked)}
+                          data-testid="switch-email-notifications" 
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">SMS Notifications</Label>
+                          <p className="text-sm text-muted-foreground">Send SMS alerts to patients</p>
+                        </div>
+                        <Switch 
+                          checked={systemSettings?.smsNotifications || false}
+                          onCheckedChange={(checked) => handleSystemSettingChange('smsNotifications', checked)}
+                          data-testid="switch-sms-notifications" 
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">Auto Backup</Label>
+                          <p className="text-sm text-muted-foreground">Automatically backup data daily</p>
+                        </div>
+                        <Switch 
+                          checked={systemSettings?.autoBackup || false}
+                          onCheckedChange={(checked) => handleSystemSettingChange('autoBackup', checked)}
+                          data-testid="switch-auto-backup" 
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base">Audit Logging</Label>
+                          <p className="text-sm text-muted-foreground">Track all user actions</p>
+                        </div>
+                        <Switch 
+                          checked={systemSettings?.auditLogging || false}
+                          onCheckedChange={(checked) => handleSystemSettingChange('auditLogging', checked)}
+                          data-testid="switch-audit-logging" 
+                        />
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -812,9 +929,14 @@ export default function Settings() {
                     <p className="text-muted-foreground mb-4">Protect your hospital data with regular backups</p>
                     
                     <div className="space-y-2">
-                      <Button className="w-full" data-testid="button-create-backup">
+                      <Button 
+                        onClick={handleCreateBackup}
+                        disabled={createBackupMutation.isPending}
+                        className="w-full" 
+                        data-testid="button-create-backup"
+                      >
                         <Database className="w-4 h-4 mr-2" />
-                        Create Backup Now
+                        {createBackupMutation.isPending ? "Creating..." : "Create Backup Now"}
                       </Button>
                       <Button variant="outline" className="w-full" data-testid="button-restore-backup">
                         Restore from Backup
@@ -823,34 +945,75 @@ export default function Settings() {
                   </div>
                   
                   <div className="text-xs text-muted-foreground">
-                    <p>Last backup: Never</p>
-                    <p>Next scheduled backup: Tonight at 2:00 AM</p>
+                    <p>Last backup: {backupHistory && backupHistory.length > 0 
+                      ? new Date(backupHistory[0].createdAt).toLocaleString()
+                      : 'Never'
+                    }</p>
+                    <p>Auto backup: {systemSettings?.autoBackup 
+                      ? `${systemSettings.backupFrequency} at ${systemSettings.backupTime}`
+                      : 'Disabled'
+                    }</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Export Data</CardTitle>
+                  <CardTitle>Backup History</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Export hospital data for reporting or compliance purposes
-                  </p>
+                  {backupHistoryLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+                      <p className="text-sm text-muted-foreground mt-2">Loading backup history...</p>
+                    </div>
+                  ) : backupHistory.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">No backups created yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {backupHistory.slice(0, 10).map((backup: any) => (
+                        <div key={backup.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{backup.backupId}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {backup.backupType === 'auto' ? 'Automatic' : 'Manual'} • 
+                              {new Date(backup.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={backup.status === 'completed' ? 'default' : 'secondary'}>
+                              {backup.status}
+                            </Badge>
+                            {backup.size && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {(backup.size / (1024 * 1024)).toFixed(2)} MB
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full" data-testid="button-export-patients">
-                      Export Patient Data
-                    </Button>
-                    <Button variant="outline" className="w-full" data-testid="button-export-bills">
-                      Export Billing Data
-                    </Button>
-                    <Button variant="outline" className="w-full" data-testid="button-export-reports">
-                      Export Lab Reports
-                    </Button>
-                    <Button variant="outline" className="w-full" data-testid="button-export-audit">
-                      Export Audit Logs
-                    </Button>
+                  <div className="pt-4 border-t">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Total Backups</p>
+                        <p className="font-medium">{backupHistory.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Backup Storage</p>
+                        <p className="font-medium">
+                          {backupHistory.length > 0 
+                            ? `${(backupHistory.reduce((sum: number, b: any) => sum + (b.size || 0), 0) / (1024 * 1024)).toFixed(2)} MB`
+                            : '0 MB'
+                          }
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

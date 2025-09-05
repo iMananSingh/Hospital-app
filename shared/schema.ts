@@ -216,6 +216,37 @@ export const hospitalSettings = sqliteTable("hospital_settings", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// System settings for application configuration
+export const systemSettings = sqliteTable("system_settings", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  emailNotifications: integer("email_notifications", { mode: "boolean" }).notNull().default(false),
+  smsNotifications: integer("sms_notifications", { mode: "boolean" }).notNull().default(false),
+  autoBackup: integer("auto_backup", { mode: "boolean" }).notNull().default(true),
+  auditLogging: integer("audit_logging", { mode: "boolean" }).notNull().default(true),
+  backupFrequency: text("backup_frequency").notNull().default("daily"), // daily, weekly, monthly
+  backupTime: text("backup_time").notNull().default("02:00"), // HH:MM format
+  lastBackupDate: text("last_backup_date"),
+  backupRetentionDays: integer("backup_retention_days").notNull().default(30),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Backup logs to track backup history
+export const backupLogs = sqliteTable("backup_logs", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  backupId: text("backup_id").notNull().unique(), // BACKUP-2024-001 format
+  status: text("status").notNull(), // running, completed, failed
+  backupType: text("backup_type").notNull().default("auto"), // auto, manual
+  filePath: text("file_path"),
+  fileSize: integer("file_size"),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time"),
+  errorMessage: text("error_message"),
+  tableCount: integer("table_count"),
+  recordCount: integer("record_count"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Audit log for tracking all user actions
 export const auditLog = sqliteTable("audit_log", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -377,6 +408,20 @@ export const insertHospitalSettingsSchema = createInsertSchema(hospitalSettings)
   updatedAt: true,
 });
 
+// Insert schema for system settings
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Insert schema for backup logs
+export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
+  id: true,
+  backupId: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -408,6 +453,10 @@ export type Room = typeof rooms.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type HospitalSettings = typeof hospitalSettings.$inferSelect;
 export type InsertHospitalSettings = z.infer<typeof insertHospitalSettingsSchema>;
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
+export type BackupLog = typeof backupLogs.$inferSelect;
+export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

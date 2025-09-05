@@ -263,6 +263,35 @@ async function initializeDatabase() {
         user_agent TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS system_settings (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        email_notifications INTEGER NOT NULL DEFAULT 0,
+        sms_notifications INTEGER NOT NULL DEFAULT 0,
+        auto_backup INTEGER NOT NULL DEFAULT 1,
+        audit_logging INTEGER NOT NULL DEFAULT 1,
+        backup_frequency TEXT NOT NULL DEFAULT 'daily',
+        backup_time TEXT NOT NULL DEFAULT '02:00',
+        last_backup_date TEXT,
+        backup_retention_days INTEGER NOT NULL DEFAULT 30,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS backup_logs (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        backup_id TEXT NOT NULL UNIQUE,
+        status TEXT NOT NULL,
+        backup_type TEXT NOT NULL DEFAULT 'auto',
+        file_path TEXT,
+        file_size INTEGER,
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        error_message TEXT,
+        table_count INTEGER,
+        record_count INTEGER,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migrate existing tables to add new columns if they don't exist
@@ -558,6 +587,16 @@ export interface IStorage {
   getHospitalSettings(): Promise<any>;
   saveHospitalSettings(settings: any): Promise<any>;
   saveLogo(logoData: string): Promise<string>;
+
+  // System settings
+  getSystemSettings(): Promise<any>;
+  saveSystemSettings(settings: any): Promise<any>;
+
+  // Backup functionality
+  createBackup(backupType?: string): Promise<any>;
+  getBackupLogs(): Promise<any[]>;
+  getBackupHistory(): Promise<any[]>;
+  cleanOldBackups(): Promise<void>;
 
   // Audit logging
   logAction(log: InsertAuditLog): Promise<void>;
@@ -1922,6 +1961,261 @@ export class SqliteStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching today\'s discharges:', error);
       throw error;
+    }
+  }
+
+  async getSystemSettings(): Promise<any> {
+    try {
+      let settings = db.select().from(schema.systemSettings).get();
+      
+      // Create default settings if none exist
+      if (!settings) {
+        settings = {
+          id: this.generateId(),
+          emailNotifications: false,
+          smsNotifications: false,
+          autoBackup: true,
+          auditLogging: true,
+          backupFrequency: 'daily',
+          backupTime: '02:00',
+          lastBackupDate: null,
+          backupRetentionDays: 30,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        db.insert(schema.systemSettings).values(settings).run();
+      }
+      
+      return settings;
+    } catch (error) {
+      console.error('Error fetching system settings:', error);
+      throw error;
+    }
+  }
+
+  async saveSystemSettings(settings: any): Promise<any> {
+    try {
+      const existingSettings = db.select().from(schema.systemSettings).get();
+      
+      if (existingSettings) {
+        // Update existing settings
+        const updated = db.update(schema.systemSettings)
+          .set({
+            ...settings,
+            updatedAt: new Date().toISOString()
+          })
+          .where(eq(schema.systemSettings.id, existingSettings.id))
+          .returning()
+          .get();
+        return updated;
+      } else {
+        // Create new settings
+        const newSettings = {
+          ...settings,
+          id: this.generateId(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        const created = db.insert(schema.systemSettings)
+          .values(newSettings)
+          .returning()
+          .get();
+        return created;
+      }
+    } catch (error) {
+      console.error('Error saving system settings:', error);
+      throw error;
+    }
+  }
+
+  private generateBackupId(): string {
+    const year = new Date().getFullYear();
+    const count = db.select().from(schema.backupLogs).all().length + 1;
+    return `BACKUP-${year}-${count.toString().padStart(3, '0')}`;
+  }
+
+  async createBackup(backupType: string = 'auto'): Promise<any> {
+    const backupId = this.generateBackupId();
+    const startTime = new Date().toISOString();
+    
+    try {
+      // Log backup start
+      const backupLog = {
+        backupId,
+        status: 'running',
+        backupType,
+        startTime,
+        createdAt: startTime
+      };
+      
+      db.insert(schema.backupLogs).values(backupLog).run();
+      
+      // Create backup directory if it doesn't exist
+      const backupDir = path.join(process.cwd(), 'backups');
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+      
+      // Generate backup filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(backupDir, `hospital-backup-${timestamp}.sql`);
+      
+      // Export database to SQL dump
+      const tables = [
+        'users', 'doctors', 'patients', 'patient_visits', 'services', 
+        'bills', 'bill_items', 'pathology_orders', 'pathology_tests',
+        'patient_services', 'admissions', 'admission_events', 
+        'hospital_settings', 'system_settings', 'room_types', 'rooms'
+      ];
+      
+      let sqlDump = '-- Hospital Management System Database Backup\n';
+      sqlDump += `-- Created: ${new Date().toISOString()}\n`;
+      sqlDump += `-- Backup ID: ${backupId}\n\n`;
+      
+      let totalRecords = 0;
+      
+      for (const tableName of tables) {
+        try {
+          const rows = db.$client.prepare(`SELECT * FROM ${tableName}`).all();
+          totalRecords += rows.length;
+          
+          if (rows.length > 0) {
+            sqlDump += `-- Table: ${tableName}\n`;
+            sqlDump += `DELETE FROM ${tableName};\n`;
+            
+            for (const row of rows) {
+              const columns = Object.keys(row).join(', ');
+              const values = Object.values(row).map(v => 
+                v === null ? 'NULL' : 
+                typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` : 
+                v
+              ).join(', ');
+              
+              sqlDump += `INSERT INTO ${tableName} (${columns}) VALUES (${values});\n`;
+            }
+            sqlDump += '\n';
+          }
+        } catch (tableError) {
+          console.warn(`Warning: Could not backup table ${tableName}:`, tableError);
+        }
+      }
+      
+      // Write backup file
+      fs.writeFileSync(backupPath, sqlDump, 'utf8');
+      const fileStats = fs.statSync(backupPath);
+      const endTime = new Date().toISOString();
+      
+      // Update backup log with success
+      db.update(schema.backupLogs)
+        .set({
+          status: 'completed',
+          filePath: backupPath,
+          fileSize: fileStats.size,
+          endTime,
+          tableCount: tables.length,
+          recordCount: totalRecords
+        })
+        .where(eq(schema.backupLogs.backupId, backupId))
+        .run();
+      
+      // Update system settings with last backup date
+      const systemSettings = await this.getSystemSettings();
+      if (systemSettings) {
+        await this.saveSystemSettings({
+          ...systemSettings,
+          lastBackupDate: new Date().toISOString().split('T')[0]
+        });
+      }
+      
+      return {
+        backupId,
+        filePath: backupPath,
+        fileSize: fileStats.size,
+        recordCount: totalRecords,
+        status: 'completed'
+      };
+      
+    } catch (error) {
+      console.error('Backup creation error:', error);
+      
+      // Update backup log with failure
+      db.update(schema.backupLogs)
+        .set({
+          status: 'failed',
+          endTime: new Date().toISOString(),
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        })
+        .where(eq(schema.backupLogs.backupId, backupId))
+        .run();
+      
+      throw error;
+    }
+  }
+
+  async getBackupLogs(): Promise<any[]> {
+    try {
+      return db.select()
+        .from(schema.backupLogs)
+        .orderBy(desc(schema.backupLogs.createdAt))
+        .limit(50)
+        .all();
+    } catch (error) {
+      console.error('Error fetching backup logs:', error);
+      return [];
+    }
+  }
+
+  async getBackupHistory(): Promise<any[]> {
+    try {
+      return db.select()
+        .from(schema.backupLogs)
+        .where(eq(schema.backupLogs.status, 'completed'))
+        .orderBy(desc(schema.backupLogs.createdAt))
+        .limit(20)
+        .all();
+    } catch (error) {
+      console.error('Error fetching backup history:', error);
+      return [];
+    }
+  }
+
+  async cleanOldBackups(): Promise<void> {
+    try {
+      const systemSettings = await this.getSystemSettings();
+      const retentionDays = systemSettings?.backupRetentionDays || 30;
+      
+      // Calculate cutoff date
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+      const cutoffIso = cutoffDate.toISOString();
+      
+      // Find old backup files
+      const oldBackups = db.select()
+        .from(schema.backupLogs)
+        .where(sql`${schema.backupLogs.createdAt} < ${cutoffIso}`)
+        .all();
+      
+      // Delete files and log entries
+      for (const backup of oldBackups) {
+        try {
+          if (backup.filePath && fs.existsSync(backup.filePath)) {
+            fs.unlinkSync(backup.filePath);
+          }
+          
+          db.delete(schema.backupLogs)
+            .where(eq(schema.backupLogs.id, backup.id))
+            .run();
+            
+        } catch (deleteError) {
+          console.warn(`Failed to delete backup ${backup.backupId}:`, deleteError);
+        }
+      }
+      
+      console.log(`Cleaned up ${oldBackups.length} old backup(s)`);
+    } catch (error) {
+      console.error('Error cleaning old backups:', error);
     }
   }
 }

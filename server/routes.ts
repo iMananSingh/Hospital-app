@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema } from "@shared/schema";
 import { getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, PathologyTestCatalog } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 
@@ -863,6 +864,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ logoPath });
     } catch (error) {
       console.error("Error uploading logo:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // System Settings Routes
+  app.get("/api/settings/system", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to access system settings
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+      
+      const settings = await storage.getSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/settings/system", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to modify system settings
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const settings = await storage.saveSystemSettings(req.body);
+      
+      // Update backup scheduler based on new settings
+      if (settings.autoBackup) {
+        await backupScheduler.enableAutoBackup(settings.backupFrequency, settings.backupTime);
+      } else {
+        await backupScheduler.disableAutoBackup();
+      }
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Error saving system settings:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Backup Routes
+  app.post("/api/backup/create", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to create backups
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { backupType = 'manual' } = req.body;
+      const backup = await storage.createBackup(backupType);
+      res.json(backup);
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      res.status(500).json({ error: "Failed to create backup", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/backup/logs", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to view backup logs
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const logs = await storage.getBackupLogs();
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching backup logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/backup/history", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to view backup history
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const history = await storage.getBackupHistory();
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching backup history:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/backup/cleanup", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to cleanup old backups
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      await storage.cleanOldBackups();
+      res.json({ message: "Old backups cleaned up successfully" });
+    } catch (error) {
+      console.error("Error cleaning up backups:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
