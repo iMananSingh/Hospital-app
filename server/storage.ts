@@ -686,6 +686,39 @@ export class SqliteStorage implements IStorage {
               .run();
           }
 
+          // Check if this user has a doctor profile and delete it first
+          const doctorProfile = tx.select().from(schema.doctors)
+            .where(eq(schema.doctors.userId, id))
+            .get();
+
+          if (doctorProfile) {
+            // First, update all references to this doctor to null
+            tx.update(schema.patientVisits)
+              .set({ doctorId: null })
+              .where(eq(schema.patientVisits.doctorId, doctorProfile.id))
+              .run();
+
+            tx.update(schema.pathologyOrders)
+              .set({ doctorId: null })
+              .where(eq(schema.pathologyOrders.doctorId, doctorProfile.id))
+              .run();
+
+            tx.update(schema.patientServices)
+              .set({ doctorId: null })
+              .where(eq(schema.patientServices.doctorId, doctorProfile.id))
+              .run();
+
+            tx.update(schema.admissions)
+              .set({ doctorId: null })
+              .where(eq(schema.admissions.doctorId, doctorProfile.id))
+              .run();
+
+            // Now delete the doctor profile
+            tx.delete(schema.doctors)
+              .where(eq(schema.doctors.id, doctorProfile.id))
+              .run();
+          }
+
           // Note: pathology_orders, patient_services, and admissions tables 
           // don't have createdBy columns in the schema, so we skip those updates
 
