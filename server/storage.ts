@@ -646,7 +646,7 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async deleteUser(id: string): Promise<boolean> {
+  async deleteUser(id: string): Promise<User | undefined> {
     try {
       // Use transaction to handle foreign key constraints
       return db.transaction((tx) => {
@@ -657,7 +657,7 @@ export class SqliteStorage implements IStorage {
             .get();
 
           if (!userToDelete) {
-            return false;
+            return undefined;
           }
 
           // Update all references to this user to null before deleting
@@ -693,11 +693,11 @@ export class SqliteStorage implements IStorage {
             .run();
 
           // Now delete the user record
-          tx.delete(schema.users)
+          const deleted = tx.delete(schema.users)
             .where(eq(schema.users.id, id))
-            .run();
+            .returning().get();
 
-          return true;
+          return deleted;
         } catch (transactionError) {
           console.error("Transaction error during user delete:", transactionError);
           throw transactionError;
@@ -707,13 +707,6 @@ export class SqliteStorage implements IStorage {
       console.error("Error deleting user:", error);
       throw error;
     }
-  }
-
-  async deleteUser(id: string): Promise<User | undefined> {
-    const deleted = db.delete(schema.users)
-      .where(eq(schema.users.id, id))
-      .returning().get();
-    return deleted;
   }
 
   async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
