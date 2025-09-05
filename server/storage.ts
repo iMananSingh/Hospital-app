@@ -639,8 +639,14 @@ export class SqliteStorage implements IStorage {
   }
 
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
+    // Hash password if it's being updated
+    const updateData = { ...userData };
+    if (updateData.password) {
+      updateData.password = await this.hashPassword(updateData.password);
+    }
+    
     const updated = db.update(schema.users)
-      .set({ ...userData, updatedAt: new Date().toISOString() })
+      .set({ ...updateData, updatedAt: new Date().toISOString() })
       .where(eq(schema.users.id, id))
       .returning().get();
     return updated;

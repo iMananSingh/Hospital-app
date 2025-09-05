@@ -162,13 +162,19 @@ export default function Settings() {
 
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, userData }: { id: string; userData: any }) => {
+      // Filter out empty password field to avoid updating it
+      const filteredData = { ...userData };
+      if (!filteredData.password || filteredData.password.trim() === '') {
+        delete filteredData.password;
+      }
+
       const response = await fetch(`/api/users/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(filteredData),
       });
       
       if (!response.ok) {
@@ -1068,26 +1074,42 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="editRole">Role *</Label>
-              <Select 
-                value={editUserForm.watch("role")} 
-                onValueChange={(value) => editUserForm.setValue("role", value)}
-              >
-                <SelectTrigger data-testid="select-edit-user-role">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {userRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {editUserForm.formState.errors.role && (
-                <p className="text-sm text-destructive">{editUserForm.formState.errors.role.message}</p>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editPassword">New Password (Leave empty to keep current)</Label>
+                <Input
+                  id="editPassword"
+                  type="password"
+                  {...editUserForm.register("password")}
+                  placeholder="••••••••"
+                  data-testid="input-edit-user-password"
+                />
+                {editUserForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.password.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editRole">Role *</Label>
+                <Select 
+                  value={editUserForm.watch("role")} 
+                  onValueChange={(value) => editUserForm.setValue("role", value)}
+                >
+                  <SelectTrigger data-testid="select-edit-user-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {editUserForm.formState.errors.role && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.role.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
