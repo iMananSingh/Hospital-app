@@ -640,6 +640,69 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      // Use transaction to handle foreign key constraints
+      return db.transaction((tx) => {
+        try {
+          // First, get the user to make sure it exists
+          const userToDelete = tx.select().from(schema.users)
+            .where(eq(schema.users.id, id))
+            .get();
+
+          if (!userToDelete) {
+            return false;
+          }
+
+          // Update all references to this user to null before deleting
+          
+          // Update bills created by this user
+          tx.update(schema.bills)
+            .set({ createdBy: null })
+            .where(eq(schema.bills.createdBy, id))
+            .run();
+
+          // Update pathology orders created by this user  
+          tx.update(schema.pathologyOrders)
+            .set({ createdBy: null })
+            .where(eq(schema.pathologyOrders.createdBy, id))
+            .run();
+
+          // Update patient services created by this user
+          tx.update(schema.patientServices)
+            .set({ createdBy: null })
+            .where(eq(schema.patientServices.createdBy, id))
+            .run();
+
+          // Update admissions created by this user
+          tx.update(schema.admissions)
+            .set({ createdBy: null })
+            .where(eq(schema.admissions.createdBy, id))
+            .run();
+
+          // Update admission events created by this user
+          tx.update(schema.admissionEvents)
+            .set({ createdBy: null })
+            .where(eq(schema.admissionEvents.createdBy, id))
+            .run();
+
+          // Now delete the user record
+          tx.delete(schema.users)
+            .where(eq(schema.users.id, id))
+            .run();
+
+          return true;
+        } catch (transactionError) {
+          console.error("Transaction error during user delete:", transactionError);
+          throw transactionError;
+        }
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw error;
+    }
+  }
+
   async deleteUser(id: string): Promise<User | undefined> {
     const deleted = db.delete(schema.users)
       .where(eq(schema.users.id, id))
