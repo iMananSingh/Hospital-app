@@ -2250,67 +2250,67 @@ export class SqliteStorage implements IStorage {
       
       db.insert(schema.backupLogs).values(restoreLog).run();
 
-      // Execute the backup SQL content
-      return db.transaction((tx) => {
-        try {
-          // Split SQL content into individual statements
-          const statements = backupContent
-            .split('\n')
-            .filter(line => 
-              line.trim() && 
-              !line.trim().startsWith('--') && 
-              !line.trim().startsWith('/*')
-            )
-            .join('\n')
-            .split(';')
-            .filter(stmt => stmt.trim());
+      // Split SQL content into individual statements outside of transaction
+      const statements = backupContent
+        .split('\n')
+        .filter(line => 
+          line.trim() && 
+          !line.trim().startsWith('--') && 
+          !line.trim().startsWith('/*')
+        )
+        .join('\n')
+        .split(';')
+        .filter(stmt => stmt.trim());
 
-          let executedStatements = 0;
-          
-          for (const statement of statements) {
-            const trimmedStmt = statement.trim();
-            if (trimmedStmt) {
-              try {
-                tx.$client.exec(trimmedStmt + ';');
-                executedStatements++;
-              } catch (stmtError) {
-                console.warn(`Warning: Failed to execute statement: ${trimmedStmt.substring(0, 100)}...`, stmtError);
-              }
-            }
+      let executedStatements = 0;
+      
+      // Execute statements directly using the SQLite client
+      for (const statement of statements) {
+        const trimmedStmt = statement.trim();
+        if (trimmedStmt) {
+          try {
+            db.$client.exec(trimmedStmt + ';');
+            executedStatements++;
+          } catch (stmtError) {
+            console.warn(`Warning: Failed to execute statement: ${trimmedStmt.substring(0, 100)}...`, stmtError);
           }
-
-          // Update restore log with success
-          tx.update(schema.backupLogs)
-            .set({
-              status: 'completed',
-              endTime: new Date().toISOString(),
-              recordCount: executedStatements
-            })
-            .where(eq(schema.backupLogs.backupId, restoreId))
-            .run();
-
-          return {
-            restoreId,
-            executedStatements,
-            status: 'completed'
-          };
-        } catch (transactionError) {
-          // Update restore log with failure
-          tx.update(schema.backupLogs)
-            .set({
-              status: 'failed',
-              endTime: new Date().toISOString(),
-              errorMessage: transactionError instanceof Error ? transactionError.message : 'Unknown error'
-            })
-            .where(eq(schema.backupLogs.backupId, restoreId))
-            .run();
-          
-          throw transactionError;
         }
-      });
+      }
+
+      // Update restore log with success
+      db.update(schema.backupLogs)
+        .set({
+          status: 'completed',
+          endTime: new Date().toISOString(),
+          recordCount: executedStatements
+        })
+        .where(eq(schema.backupLogs.backupId, restoreId))
+        .run();
+
+      return {
+        restoreId,
+        executedStatements,
+        status: 'completed'
+      };
       
     } catch (error) {
       console.error('Backup restore error:', error);
+      
+      // Update restore log with failure if possible
+      try {
+        const restoreId = this.generateBackupId().replace('BACKUP', 'RESTORE');
+        db.update(schema.backupLogs)
+          .set({
+            status: 'failed',
+            endTime: new Date().toISOString(),
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          })
+          .where(eq(schema.backupLogs.backupId, restoreId))
+          .run();
+      } catch (logError) {
+        console.error('Failed to update restore log:', logError);
+      }
+      
       throw error;
     }
   }
