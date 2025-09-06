@@ -19,7 +19,7 @@ export class BackupScheduler {
   async initializeScheduler(): Promise<void> {
     try {
       const settings = await storage.getSystemSettings();
-
+      
       if (settings?.autoBackup) {
         await this.updateSchedule(settings.backupFrequency, settings.backupTime);
         console.log('Backup scheduler initialized');
@@ -38,14 +38,14 @@ export class BackupScheduler {
 
       // Parse time (format: "HH:MM")
       const [hours, minutes] = time.split(':').map(Number);
-
+      
       if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
         throw new Error('Invalid time format. Expected HH:MM');
       }
 
       // Create cron expression based on frequency
       let cronExpression: string;
-
+      
       switch (frequency) {
         case 'daily':
           cronExpression = `${minutes} ${hours} * * *`;
@@ -76,7 +76,7 @@ export class BackupScheduler {
 
       this.currentSchedule = cronExpression;
       console.log(`Backup scheduled: ${frequency} at ${time} (${cronExpression})`);
-
+      
     } catch (error) {
       console.error('Failed to update backup schedule:', error);
       throw error;
@@ -96,7 +96,7 @@ export class BackupScheduler {
     try {
       // Check if auto backup is still enabled
       const settings = await storage.getSystemSettings();
-
+      
       if (!settings?.autoBackup) {
         console.log('Auto backup is disabled, skipping scheduled backup');
         return;
@@ -110,7 +110,7 @@ export class BackupScheduler {
       // Clean up old backups
       await storage.cleanOldBackups();
       console.log('Old backups cleanup completed');
-
+      
     } catch (error) {
       console.error('Automatic backup failed:', error);
       // Don't throw the error to prevent scheduler from stopping
@@ -132,6 +132,19 @@ export class BackupScheduler {
 
   isRunning(): boolean {
     return scheduledTask !== null;
+  }
+
+  // Manual backup method for testing scheduler functionality
+  async createManualBackup(): Promise<any> {
+    try {
+      console.log('Creating manual backup via scheduler...');
+      const backup = await storage.createBackup('manual');
+      console.log(`Manual backup completed: ${backup.backupId}`);
+      return backup;
+    } catch (error) {
+      console.error('Manual backup via scheduler failed:', error);
+      throw error;
+    }
   }
 }
 
