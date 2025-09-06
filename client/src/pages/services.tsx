@@ -43,7 +43,7 @@ export default function ServiceManagement() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceDoctors, setServiceDoctors] = useState<{id: string, share: number}[]>([]);
-  
+
   // Pathology states
   const [pathologySubTab, setPathologySubTab] = useState("categories");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
@@ -85,8 +85,9 @@ export default function ServiceManagement() {
   });
 
   // Fetch combined pathology data (hardcoded + dynamic)
-  const { data: combinedPathologyData } = useQuery({
+  const { data: combinedPathologyData, isLoading: combinedLoading } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const roomTypeForm = useForm({
@@ -147,7 +148,7 @@ export default function ServiceManagement() {
       const isEditing = editingRoomType !== null;
       const url = isEditing ? `/api/room-types/${editingRoomType.id}` : "/api/room-types";
       const method = isEditing ? "PUT" : "POST";
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -219,7 +220,7 @@ export default function ServiceManagement() {
       const isEditing = editingService !== null;
       const url = isEditing ? `/api/services/${editingService.id}` : "/api/services";
       const method = isEditing ? "PUT" : "POST";
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -558,7 +559,7 @@ export default function ServiceManagement() {
       <TopBar 
         title="Service Management"
       />
-      
+
       <div className="p-6">
         {/* Service Category Navigation */}
         <div className="mb-6">
@@ -706,7 +707,7 @@ export default function ServiceManagement() {
                     Add Room
                   </Button>
                 </CardHeader>
-                
+
                 {/* Sub-navigation for Rooms */}
                 <div className="px-6 pb-4">
                   <div className="flex flex-wrap gap-2">
@@ -738,7 +739,7 @@ export default function ServiceManagement() {
                     const filteredRooms = selectedRoomTypeId 
                       ? rooms.filter(room => room.roomTypeId === selectedRoomTypeId)
                       : rooms;
-                    
+
                     return filteredRooms.length > 0 ? (
                       <div className="grid grid-cols-6 gap-4">
                         {filteredRooms.map((room) => (
@@ -926,10 +927,6 @@ export default function ServiceManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {(() => {
-                    console.log("Debug - combinedPathologyData:", combinedPathologyData);
-                    return null;
-                  })()}
                   {combinedPathologyData && combinedPathologyData.categories && combinedPathologyData.categories.length > 0 ? (
                     <div className="space-y-4">
                       {/* Summary Stats */}
@@ -949,7 +946,7 @@ export default function ServiceManagement() {
                           </div>
                         </div>
                       )}
-                      
+
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -1095,7 +1092,7 @@ export default function ServiceManagement() {
                                 ({category.tests.length} tests)
                               </span>
                             </div>
-                            
+
                             <Table>
                               <TableHeader>
                                 <TableRow>
@@ -1287,7 +1284,7 @@ export default function ServiceManagement() {
                 {editingRoomType ? 'Edit Room Type' : 'Add Room Type'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={roomTypeForm.handleSubmit(onRoomTypeSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1372,7 +1369,7 @@ export default function ServiceManagement() {
                 {editingRoom ? 'Edit Room' : 'Add Room'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={roomForm.handleSubmit(onRoomSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label>Room Number *</Label>
@@ -1441,7 +1438,7 @@ export default function ServiceManagement() {
                 {editingService ? 'Edit Service' : `Add ${serviceCategories.find(cat => cat.key === activeTab)?.label} Service`}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1604,14 +1601,14 @@ export default function ServiceManagement() {
                 {editingCategory ? 'Edit Category' : 'Add Pathology Category'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={categoryForm.handleSubmit(async (data) => {
               try {
                 const url = editingCategory 
                   ? `/api/pathology-categories/${editingCategory.id}`
                   : '/api/pathology-categories';
                 const method = editingCategory ? 'PUT' : 'POST';
-                
+
                 const response = await fetch(url, {
                   method,
                   headers: {
@@ -1620,7 +1617,7 @@ export default function ServiceManagement() {
                   },
                   body: JSON.stringify(data)
                 });
-                
+
                 if (response.ok) {
                   queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
                   queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
@@ -1681,14 +1678,14 @@ export default function ServiceManagement() {
                 {editingTest ? 'Edit Test' : 'Add Pathology Test'}
               </DialogTitle>
             </DialogHeader>
-            
+
             <form onSubmit={testForm.handleSubmit(async (data) => {
               try {
                 const url = editingTest 
                   ? `/api/dynamic-pathology-tests/${editingTest.id}`
                   : '/api/dynamic-pathology-tests';
                 const method = editingTest ? 'PUT' : 'POST';
-                
+
                 const response = await fetch(url, {
                   method,
                   headers: {
@@ -1697,7 +1694,7 @@ export default function ServiceManagement() {
                   },
                   body: JSON.stringify(data)
                 });
-                
+
                 if (response.ok) {
                   queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
                   queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
@@ -1798,7 +1795,7 @@ export default function ServiceManagement() {
                 Upload tests in JSON format. The system will create categories and tests as needed.
               </p>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>JSON Data</Label>
@@ -1814,7 +1811,7 @@ export default function ServiceManagement() {
         {
           "test_name": "Complete Blood Count",
           "price": 500,
-          "normal_range": "4.5-11.0 x10³/μL",
+          "normal_range": "70-100 mg/dL",
           "description": "Full blood analysis"
         }
       ]
@@ -1850,7 +1847,7 @@ export default function ServiceManagement() {
                         },
                         body: JSON.stringify(data)
                       });
-                      
+
                       if (response.ok) {
                         const result = await response.json();
                         queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
