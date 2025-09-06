@@ -48,6 +48,11 @@ export default function Settings() {
 
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [selectedBackupFile, setSelectedBackupFile] = useState<string>("");
+  const [showAutoBackupConfig, setShowAutoBackupConfig] = useState(false);
+  const [autoBackupSettings, setAutoBackupSettings] = useState({
+    frequency: 'daily',
+    time: '02:00'
+  });
 
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
@@ -468,17 +473,34 @@ export default function Settings() {
   };
 
   const handleSystemSettingChange = (field: string, value: boolean) => {
+    if (field === 'autoBackup' && value) {
+      // Show configuration dialog when enabling auto backup
+      setAutoBackupSettings({
+        frequency: systemSettings?.backupFrequency || 'daily',
+        time: systemSettings?.backupTime || '02:00'
+      });
+      setShowAutoBackupConfig(true);
+      return;
+    }
+
     const updatedSettings = {
       ...systemSettings,
       [field]: value,
-      // Set default values for auto backup configuration
-      ...(field === 'autoBackup' && value && {
-        backupFrequency: systemSettings?.backupFrequency || 'daily',
-        backupTime: systemSettings?.backupTime || '02:00'
-      })
     };
 
     saveSystemSettingsMutation.mutate(updatedSettings);
+  };
+
+  const handleAutoBackupConfigSave = () => {
+    const updatedSettings = {
+      ...systemSettings,
+      autoBackup: true,
+      backupFrequency: autoBackupSettings.frequency,
+      backupTime: autoBackupSettings.time
+    };
+
+    saveSystemSettingsMutation.mutate(updatedSettings);
+    setShowAutoBackupConfig(false);
   };
 
   const handleCreateBackup = () => {
@@ -1396,6 +1418,74 @@ export default function Settings() {
               {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Auto Backup Configuration Dialog */}
+      <Dialog open={showAutoBackupConfig} onOpenChange={setShowAutoBackupConfig}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configure Auto Backup</DialogTitle>
+            <DialogDescription>
+              Set up your automatic backup schedule. Backups will run at the specified time.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="backup-frequency">Backup Frequency</Label>
+              <Select 
+                value={autoBackupSettings.frequency} 
+                onValueChange={(value) => setAutoBackupSettings(prev => ({ ...prev, frequency: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly (Sundays)</SelectItem>
+                  <SelectItem value="monthly">Monthly (1st of month)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="backup-time">Backup Time</Label>
+              <Input
+                id="backup-time"
+                type="time"
+                value={autoBackupSettings.time}
+                onChange={(e) => setAutoBackupSettings(prev => ({ ...prev, time: e.target.value }))}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Time is in Indian Standard Time (IST)
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <div className="w-4 h-4 rounded-full bg-blue-500 mt-0.5 flex-shrink-0"></div>
+                <div className="text-sm">
+                  <p className="font-medium text-blue-800">Schedule Preview</p>
+                  <p className="text-blue-700">
+                    Backups will run {autoBackupSettings.frequency} at {autoBackupSettings.time} IST
+                    {autoBackupSettings.frequency === 'weekly' && ' (every Sunday)'}
+                    {autoBackupSettings.frequency === 'monthly' && ' (on the 1st of each month)'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAutoBackupConfig(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAutoBackupConfigSave}>
+              Enable Auto Backup
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
