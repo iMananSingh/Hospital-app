@@ -2171,7 +2171,7 @@ export class SqliteStorage implements IStorage {
 
   async getBackupHistory(): Promise<any[]> {
     try {
-      return db.select()
+      const history = db.select()
         .from(schema.backupLogs)
         .where(
           and(
@@ -2182,6 +2182,11 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.backupLogs.createdAt))
         .limit(20)
         .all();
+      
+      console.log('Backup history query result:', history.length, 'backups found');
+      console.log('Backup types in history:', history.map(h => h.backupType));
+      
+      return history;
     } catch (error) {
       console.error('Error fetching backup history:', error);
       return [];

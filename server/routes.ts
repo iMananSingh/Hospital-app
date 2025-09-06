@@ -916,11 +916,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { backupType = 'manual' } = req.body;
+      console.log(`Creating backup with type: ${backupType}`);
+      
       const backup = await storage.createBackup(backupType);
+      console.log(`Backup created successfully:`, backup);
+      
       res.json(backup);
     } catch (error) {
       console.error("Error creating backup:", error);
       res.status(500).json({ error: "Failed to create backup", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Test endpoint to trigger auto backup manually (for debugging)
+  app.post("/api/backup/test-auto", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      console.log('Triggering test auto backup...');
+      const backup = await backupScheduler.createManualBackup();
+      res.json({ message: "Test auto backup created", backup });
+    } catch (error) {
+      console.error("Error creating test auto backup:", error);
+      res.status(500).json({ error: "Failed to create test auto backup", message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

@@ -104,7 +104,8 @@ export class BackupScheduler {
 
       console.log('Creating automatic backup...');
       const backup = await storage.createBackup('auto');
-      console.log(`Backup completed: ${backup.backupId}`);
+      console.log(`Automatic backup completed: ${backup.backupId}`);
+      console.log(`Backup details:`, backup);
 
       // Clean up old backups
       await storage.cleanOldBackups();
@@ -132,15 +133,15 @@ export class BackupScheduler {
     return scheduledTask !== null;
   }
 
-  // Manual backup method
+  // Manual backup method (actually creates auto-type backup for testing)
   async createManualBackup(): Promise<any> {
     try {
-      console.log('Creating manual backup...');
-      const backup = await storage.createBackup('manual');
-      console.log(`Manual backup completed: ${backup.backupId}`);
+      console.log('Creating test auto backup...');
+      const backup = await storage.createBackup('auto');
+      console.log(`Test auto backup completed: ${backup.backupId}`);
       return backup;
     } catch (error) {
-      console.error('Manual backup failed:', error);
+      console.error('Test auto backup failed:', error);
       throw error;
     }
   }
