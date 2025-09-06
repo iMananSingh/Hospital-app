@@ -314,14 +314,48 @@ export default function Settings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/backup/history"] });
+      refetchAvailableBackups();
       toast({
-        title: "Backup created successfully",
+        title: "Manual backup created successfully",
         description: "Your data has been backed up securely.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error creating backup",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const testAutoBackupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/backup/test-auto", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create test auto backup");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/backup/history"] });
+      refetchAvailableBackups();
+      toast({
+        title: "Auto backup test successful",
+        description: "Test auto backup has been created and should appear in backup history.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error creating test auto backup",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -504,7 +538,11 @@ export default function Settings() {
   };
 
   const handleCreateBackup = () => {
-    createBackupMutation.mutate("manual");
+    createBackupMutation.mutate();
+  };
+
+  const handleTestAutoBackup = () => {
+    testAutoBackupMutation.mutate();
   };
 
   const handleRestoreBackup = () => {
@@ -1020,8 +1058,22 @@ export default function Settings() {
                         data-testid="button-create-backup"
                       >
                         <Database className="w-4 h-4 mr-2" />
-                        {createBackupMutation.isPending ? "Creating..." : "Create Backup Now"}
+                        {createBackupMutation.isPending ? "Creating..." : "Create Manual Backup"}
                       </Button>
+                      
+                      {systemSettings?.autoBackup && (
+                        <Button 
+                          onClick={handleTestAutoBackup}
+                          disabled={testAutoBackupMutation.isPending}
+                          variant="outline"
+                          className="w-full" 
+                          data-testid="button-test-auto-backup"
+                        >
+                          <Database className="w-4 h-4 mr-2" />
+                          {testAutoBackupMutation.isPending ? "Creating..." : "Test Auto Backup"}
+                        </Button>
+                      )}
+                      
                       <Button 
                         variant="outline" 
                         className="w-full" 

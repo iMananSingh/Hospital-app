@@ -2109,6 +2109,8 @@ export class SqliteStorage implements IStorage {
       const fileStats = fs.statSync(backupPath);
       const endTime = new Date().toISOString();
       
+      console.log(`Backup file created: ${backupPath} (${fileStats.size} bytes)`);
+      
       // Update backup log with success
       db.update(schema.backupLogs)
         .set({
@@ -2121,6 +2123,8 @@ export class SqliteStorage implements IStorage {
         })
         .where(eq(schema.backupLogs.backupId, backupId))
         .run();
+      
+      console.log(`Backup log updated for ${backupId} with status: completed`);
       
       // Update system settings with last backup date
       const systemSettings = await this.getSystemSettings();
@@ -2184,7 +2188,7 @@ export class SqliteStorage implements IStorage {
         .all();
       
       console.log('Backup history query result:', history.length, 'backups found');
-      console.log('Backup types in history:', history.map(h => h.backupType));
+      console.log('Backup types in history:', history.map(h => `${h.backupType} - ${h.backupId}`));
       
       return history;
     } catch (error) {
@@ -2339,23 +2343,30 @@ export class SqliteStorage implements IStorage {
           const filePath = path.join(backupDir, file);
           const stats = fs.statSync(filePath);
           
-          // Get backup log info if available
+          // Get backup log info if available by matching file path
           const backupLog = db.select()
             .from(schema.backupLogs)
-            .where(like(schema.backupLogs.filePath, `%${file}`))
+            .where(
+              and(
+                like(schema.backupLogs.filePath, `%${file}`),
+                eq(schema.backupLogs.status, 'completed'),
+                ne(schema.backupLogs.backupType, 'restore')
+              )
+            )
             .get();
 
           return {
             fileName: file,
             filePath,
             fileSize: stats.size,
-            createdAt: stats.birthtime.toISOString(),
+            createdAt: backupLog?.createdAt || stats.birthtime.toISOString(),
             modifiedAt: stats.mtime.toISOString(),
             backupLog: backupLog || null
           };
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+      console.log(`Found ${files.length} backup files, ${files.filter(f => f.backupLog).length} with logs`);
       return files;
     } catch (error) {
       console.error('Error getting available backups:', error);

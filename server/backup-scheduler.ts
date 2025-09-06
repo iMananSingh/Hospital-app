@@ -92,7 +92,7 @@ export class BackupScheduler {
     }
   }
 
-  private async performBackup(): Promise<void> {
+  async performBackup(): Promise<void> {
     try {
       // Check if auto backup is still enabled
       const settings = await storage.getSystemSettings();
@@ -105,7 +105,7 @@ export class BackupScheduler {
       console.log('Creating automatic backup...');
       const backup = await storage.createBackup('auto');
       console.log(`Automatic backup completed: ${backup.backupId}`);
-      console.log(`Backup details:`, backup);
+      console.log(`Backup details:`, JSON.stringify(backup, null, 2));
 
       // Clean up old backups
       await storage.cleanOldBackups();
@@ -113,6 +113,7 @@ export class BackupScheduler {
       
     } catch (error) {
       console.error('Automatic backup failed:', error);
+      // Don't throw the error to prevent scheduler from stopping
     }
   }
 
@@ -133,15 +134,15 @@ export class BackupScheduler {
     return scheduledTask !== null;
   }
 
-  // Manual backup method (actually creates auto-type backup for testing)
+  // Manual backup method for testing scheduler functionality
   async createManualBackup(): Promise<any> {
     try {
-      console.log('Creating test auto backup...');
-      const backup = await storage.createBackup('auto');
-      console.log(`Test auto backup completed: ${backup.backupId}`);
+      console.log('Creating manual backup via scheduler...');
+      const backup = await storage.createBackup('manual');
+      console.log(`Manual backup completed: ${backup.backupId}`);
       return backup;
     } catch (error) {
-      console.error('Test auto backup failed:', error);
+      console.error('Manual backup via scheduler failed:', error);
       throw error;
     }
   }
