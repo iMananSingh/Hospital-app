@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { RoomType, Room, Service } from "@shared/schema";
+import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest } from "@shared/schema";
 
 export default function ServiceManagement() {
   const { toast } = useToast();
@@ -43,6 +43,16 @@ export default function ServiceManagement() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceDoctors, setServiceDoctors] = useState<{id: string, share: number}[]>([]);
+  
+  // Pathology states
+  const [pathologySubTab, setPathologySubTab] = useState("categories");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<PathologyCategory | null>(null);
+  const [editingTest, setEditingTest] = useState<DynamicPathologyTest | null>(null);
+  const [uploadData, setUploadData] = useState<string>("");
 
   // Fetch room types
   const { data: roomTypes = [] } = useQuery<RoomType[]>({
@@ -62,6 +72,16 @@ export default function ServiceManagement() {
   // Fetch doctors for service assignment
   const { data: doctors = [] } = useQuery<any[]>({
     queryKey: ["/api/doctors"],
+  });
+
+  // Fetch pathology categories
+  const { data: pathologyCategories = [] } = useQuery<PathologyCategory[]>({
+    queryKey: ["/api/pathology-categories"],
+  });
+
+  // Fetch dynamic pathology tests
+  const { data: dynamicPathologyTests = [] } = useQuery<DynamicPathologyTest[]>({
+    queryKey: ["/api/dynamic-pathology-tests"],
   });
 
   const roomTypeForm = useForm({
@@ -95,6 +115,25 @@ export default function ServiceManagement() {
       description: "",
       isActive: true,
       doctors: [],
+    },
+  });
+
+  const categoryForm = useForm({
+    defaultValues: {
+      name: "",
+      description: "",
+      isActive: true,
+    },
+  });
+
+  const testForm = useForm({
+    defaultValues: {
+      categoryId: "",
+      testName: "",
+      price: 0,
+      normalRange: "",
+      description: "",
+      isActive: true,
     },
   });
 
@@ -497,6 +536,7 @@ export default function ServiceManagement() {
 
   const serviceCategories = [
     { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2 },
+    { key: 'pathology', label: 'Pathology Tests', icon: Activity },
     { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
     { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
     { key: 'operations', label: 'Surgical Operations', icon: Scissors },
@@ -787,6 +827,313 @@ export default function ServiceManagement() {
                             className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} 
                             variant="secondary"
                           >
+                            {service.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => openServiceDialog(service)}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete "${service.name}"? This action cannot be undone.`)) {
+                                  deleteServiceMutation.mutate(service.id);
+                                }
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={deleteServiceMutation.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  {getServiceCategoryIcon(activeTab)}
+                  <p className="text-gray-500 mt-4">No {activeTab} services defined yet</p>
+                  <Button
+                    onClick={() => openServiceDialog()}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Service
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : activeTab === 'pathology' ? (
+          <div className="space-y-4">
+            {/* Pathology Navigation */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <Button
+                onClick={() => setPathologySubTab("categories")}
+                variant={pathologySubTab === "categories" ? "default" : "outline"}
+                className="flex items-center gap-2"
+              >
+                <Activity className="h-4 w-4" />
+                Categories
+              </Button>
+              <Button
+                onClick={() => setPathologySubTab("tests")}
+                variant={pathologySubTab === "tests" ? "default" : "outline"}
+                className="flex items-center gap-2"
+              >
+                <Syringe className="h-4 w-4" />
+                Tests
+              </Button>
+              <Button
+                onClick={() => setIsUploadDialogOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Upload JSON
+              </Button>
+            </div>
+
+            {/* Categories Section */}
+            {pathologySubTab === "categories" && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Pathology Categories</CardTitle>
+                  <Button
+                    onClick={() => setIsCategoryDialogOpen(true)}
+                    className="flex items-center gap-2"
+                    data-testid="button-add-category"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Category
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {pathologyCategories.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Tests Count</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pathologyCategories.map((category) => {
+                          const testsInCategory = dynamicPathologyTests.filter(t => t.categoryId === category.id);
+                          return (
+                            <TableRow key={category.id}>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell>{category.description || '-'}</TableCell>
+                              <TableCell>{testsInCategory.length}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => {
+                                      setEditingCategory(category);
+                                      categoryForm.reset({
+                                        name: category.name,
+                                        description: category.description || "",
+                                        isActive: category.isActive,
+                                      });
+                                      setIsCategoryDialogOpen(true);
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={async () => {
+                                      if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+                                        const response = await fetch(`/api/pathology-categories/${category.id}`, {
+                                          method: "DELETE",
+                                          headers: {
+                                            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+                                          },
+                                        });
+                                        if (response.ok) {
+                                          queryClient.invalidateQueries({ queryKey: ["/api/pathology-categories"] });
+                                          toast({ title: "Success", description: "Category deleted successfully" });
+                                        } else {
+                                          toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+                                        }
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No pathology categories defined yet</p>
+                      <Button
+                        onClick={() => setIsCategoryDialogOpen(true)}
+                        className="mt-4"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add First Category
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tests Section */}
+            {pathologySubTab === "tests" && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Pathology Tests</CardTitle>
+                  <Button
+                    onClick={() => setIsTestDialogOpen(true)}
+                    className="flex items-center gap-2"
+                    data-testid="button-add-test"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Test
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {dynamicPathologyTests.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Test Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Normal Range</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dynamicPathologyTests.map((test) => {
+                          const category = pathologyCategories.find(c => c.id === test.categoryId);
+                          return (
+                            <TableRow key={test.id}>
+                              <TableCell className="font-medium">{test.testName}</TableCell>
+                              <TableCell>{category?.name || '-'}</TableCell>
+                              <TableCell>₹{test.price}</TableCell>
+                              <TableCell>{test.normalRange || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => {
+                                      setEditingTest(test);
+                                      testForm.reset({
+                                        categoryId: test.categoryId,
+                                        testName: test.testName,
+                                        price: test.price,
+                                        normalRange: test.normalRange || "",
+                                        description: test.description || "",
+                                        isActive: test.isActive,
+                                      });
+                                      setIsTestDialogOpen(true);
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={async () => {
+                                      if (confirm(`Are you sure you want to delete "${test.testName}"? This action cannot be undone.`)) {
+                                        const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
+                                          method: "DELETE",
+                                          headers: {
+                                            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+                                          },
+                                        });
+                                        if (response.ok) {
+                                          queryClient.invalidateQueries({ queryKey: ["/api/dynamic-pathology-tests"] });
+                                          toast({ title: "Success", description: "Test deleted successfully" });
+                                        } else {
+                                          toast({ title: "Error", description: "Failed to delete test", variant: "destructive" });
+                                        }
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Syringe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No pathology tests defined yet</p>
+                      <Button
+                        onClick={() => setIsTestDialogOpen(true)}
+                        className="mt-4"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add First Test
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ) : (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="capitalize">{activeTab} Services</CardTitle>
+              <Button
+                onClick={() => openServiceDialog()}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Service
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {filteredServices.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Service Name</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredServices.map((service) => (
+                      <TableRow key={service.id}>
+                        <TableCell className="font-medium">{service.name}</TableCell>
+                        <TableCell>₹{service.price.toLocaleString()}</TableCell>
+                        <TableCell>{service.description || '-'}</TableCell>
+                        <TableCell>
+                          <Badge className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                             {service.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
