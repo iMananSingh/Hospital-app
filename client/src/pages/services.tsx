@@ -84,6 +84,11 @@ export default function ServiceManagement() {
     queryKey: ["/api/dynamic-pathology-tests"],
   });
 
+  // Fetch combined pathology data (hardcoded + dynamic)
+  const { data: combinedPathologyData } = useQuery<{categories: any[], summary: any}>({
+    queryKey: ["/api/pathology-tests/combined"],
+  });
+
   const roomTypeForm = useForm({
     defaultValues: {
       name: "",
@@ -921,71 +926,105 @@ export default function ServiceManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {pathologyCategories.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Tests Count</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {pathologyCategories.map((category) => {
-                          const testsInCategory = dynamicPathologyTests.filter(t => t.categoryId === category.id);
-                          return (
+                  {combinedPathologyData && combinedPathologyData.categories.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Summary Stats */}
+                      {combinedPathologyData.summary && (
+                        <div className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="text-sm">
+                            <span className="font-medium">Total Categories:</span> {combinedPathologyData.summary.totalCategories}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">Total Tests:</span> {combinedPathologyData.summary.totalTests}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">Dynamic:</span> {combinedPathologyData.summary.dynamicCategories}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium">System:</span> {combinedPathologyData.summary.hardcodedCategories}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Tests Count</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {combinedPathologyData.categories.map((category) => (
                             <TableRow key={category.id}>
                               <TableCell className="font-medium">{category.name}</TableCell>
                               <TableCell>{category.description || '-'}</TableCell>
-                              <TableCell>{testsInCategory.length}</TableCell>
+                              <TableCell>{category.tests?.length || 0}</TableCell>
+                              <TableCell>
+                                <Badge variant={category.isHardcoded ? "secondary" : "default"}>
+                                  {category.isHardcoded ? "System" : "Custom"}
+                                </Badge>
+                              </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setEditingCategory(category);
-                                      categoryForm.reset({
-                                        name: category.name,
-                                        description: category.description || "",
-                                        isActive: category.isActive,
-                                      });
-                                      setIsCategoryDialogOpen(true);
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={async () => {
-                                      if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
-                                        const response = await fetch(`/api/pathology-categories/${category.id}`, {
-                                          method: "DELETE",
-                                          headers: {
-                                            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-                                          },
-                                        });
-                                        if (response.ok) {
-                                          queryClient.invalidateQueries({ queryKey: ["/api/pathology-categories"] });
-                                          toast({ title: "Success", description: "Category deleted successfully" });
-                                        } else {
-                                          toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
-                                        }
-                                      }
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {!category.isHardcoded && (
+                                    <>
+                                      <Button
+                                        onClick={() => {
+                                          const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
+                                          if (dynamicCategory) {
+                                            setEditingCategory(dynamicCategory);
+                                            categoryForm.reset({
+                                              name: dynamicCategory.name,
+                                              description: dynamicCategory.description || "",
+                                              isActive: dynamicCategory.isActive,
+                                            });
+                                            setIsCategoryDialogOpen(true);
+                                          }
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        onClick={async () => {
+                                          if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+                                            const response = await fetch(`/api/pathology-categories/${category.id}`, {
+                                              method: "DELETE",
+                                              headers: {
+                                                "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+                                              },
+                                            });
+                                            if (response.ok) {
+                                              queryClient.invalidateQueries({ queryKey: ["/api/pathology-categories"] });
+                                              queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
+                                              toast({ title: "Success", description: "Category deleted successfully" });
+                                            } else {
+                                              toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+                                            }
+                                          }
+                                        }}
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  )}
+                                  {category.isHardcoded && (
+                                    <span className="text-sm text-gray-500 py-2">System category</span>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1018,76 +1057,124 @@ export default function ServiceManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {dynamicPathologyTests.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Test Name</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Normal Range</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {dynamicPathologyTests.map((test) => {
-                          const category = pathologyCategories.find(c => c.id === test.categoryId);
-                          return (
-                            <TableRow key={test.id}>
-                              <TableCell className="font-medium">{test.testName}</TableCell>
-                              <TableCell>{category?.name || '-'}</TableCell>
-                              <TableCell>₹{test.price}</TableCell>
-                              <TableCell>{test.normalRange || '-'}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    onClick={() => {
-                                      setEditingTest(test);
-                                      testForm.reset({
-                                        categoryId: test.categoryId,
-                                        testName: test.testName,
-                                        price: test.price,
-                                        normalRange: test.normalRange || "",
-                                        description: test.description || "",
-                                        isActive: test.isActive,
-                                      });
-                                      setIsTestDialogOpen(true);
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={async () => {
-                                      if (confirm(`Are you sure you want to delete "${test.testName}"? This action cannot be undone.`)) {
-                                        const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
-                                          method: "DELETE",
-                                          headers: {
-                                            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-                                          },
-                                        });
-                                        if (response.ok) {
-                                          queryClient.invalidateQueries({ queryKey: ["/api/dynamic-pathology-tests"] });
-                                          toast({ title: "Success", description: "Test deleted successfully" });
-                                        } else {
-                                          toast({ title: "Error", description: "Failed to delete test", variant: "destructive" });
-                                        }
-                                      }
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                  {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
+                    <div className="space-y-6">
+                      {/* Category Filter */}
+                      <div className="flex gap-4 items-center">
+                        <label className="text-sm font-medium">Filter by Category:</label>
+                        <select
+                          value={selectedCategoryId}
+                          onChange={(e) => setSelectedCategoryId(e.target.value)}
+                          className="px-3 py-2 border rounded-md"
+                        >
+                          <option value="">All Categories</option>
+                          {combinedPathologyData.categories.map(category => (
+                            <option key={category.id} value={category.id}>
+                              {category.name} ({category.tests?.length || 0} tests)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Tests grouped by category */}
+                      {combinedPathologyData.categories
+                        .filter(category => !selectedCategoryId || category.id === selectedCategoryId)
+                        .filter(category => category.tests && category.tests.length > 0)
+                        .map(category => (
+                          <div key={category.id} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-semibold">{category.name}</h3>
+                              <Badge variant={category.isHardcoded ? "secondary" : "default"}>
+                                {category.isHardcoded ? "System" : "Custom"}
+                              </Badge>
+                              <span className="text-sm text-gray-500">
+                                ({category.tests.length} tests)
+                              </span>
+                            </div>
+                            
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Test Name</TableHead>
+                                  <TableHead>Price</TableHead>
+                                  <TableHead>Normal Range</TableHead>
+                                  <TableHead>Type</TableHead>
+                                  <TableHead>Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {category.tests.map((test) => (
+                                  <TableRow key={test.id}>
+                                    <TableCell className="font-medium">
+                                      {test.name || test.test_name}
+                                    </TableCell>
+                                    <TableCell>₹{test.price}</TableCell>
+                                    <TableCell>{test.normalRange || '-'}</TableCell>
+                                    <TableCell>
+                                      <Badge variant={test.isHardcoded ? "secondary" : "default"}>
+                                        {test.isHardcoded ? "System" : "Custom"}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex gap-2">
+                                        {!test.isHardcoded && (
+                                          <>
+                                            <Button
+                                              onClick={() => {
+                                                setEditingTest(test);
+                                                testForm.reset({
+                                                  categoryId: test.categoryId,
+                                                  testName: test.name,
+                                                  price: test.price,
+                                                  normalRange: test.normalRange || "",
+                                                  description: test.description || "",
+                                                  isActive: test.isActive,
+                                                });
+                                                setIsTestDialogOpen(true);
+                                              }}
+                                              size="sm"
+                                              variant="outline"
+                                            >
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              onClick={async () => {
+                                                if (confirm(`Are you sure you want to delete "${test.name}"? This action cannot be undone.`)) {
+                                                  const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
+                                                    method: "DELETE",
+                                                    headers: {
+                                                      "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+                                                    },
+                                                  });
+                                                  if (response.ok) {
+                                                    queryClient.invalidateQueries({ queryKey: ["/api/dynamic-pathology-tests"] });
+                                                    queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
+                                                    toast({ title: "Success", description: "Test deleted successfully" });
+                                                  } else {
+                                                    toast({ title: "Error", description: "Failed to delete test", variant: "destructive" });
+                                                  }
+                                                }
+                                              }}
+                                              size="sm"
+                                              variant="outline"
+                                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </>
+                                        )}
+                                        {test.isHardcoded && (
+                                          <span className="text-sm text-gray-500 py-2">System test</span>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ))}
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <Syringe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1502,6 +1589,287 @@ export default function ServiceManagement() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pathology Category Dialog */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? 'Edit Category' : 'Add Pathology Category'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={categoryForm.handleSubmit(async (data) => {
+              try {
+                const url = editingCategory 
+                  ? `/api/pathology-categories/${editingCategory.id}`
+                  : '/api/pathology-categories';
+                const method = editingCategory ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                  method,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
+                  },
+                  body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
+                  toast({ title: 'Success', description: `Category ${editingCategory ? 'updated' : 'created'} successfully` });
+                  setIsCategoryDialogOpen(false);
+                  setEditingCategory(null);
+                  categoryForm.reset();
+                } else {
+                  toast({ title: 'Error', description: 'Failed to save category', variant: 'destructive' });
+                }
+              } catch (error) {
+                toast({ title: 'Error', description: 'Failed to save category', variant: 'destructive' });
+              }
+            })} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Category Name *</Label>
+                <Input
+                  {...categoryForm.register("name")}
+                  placeholder="e.g., Cardiology Tests"
+                  data-testid="input-category-name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  {...categoryForm.register("description")}
+                  placeholder="Optional description"
+                  data-testid="textarea-category-description"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsCategoryDialogOpen(false);
+                    setEditingCategory(null);
+                    categoryForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingCategory ? 'Update Category' : 'Add Category'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pathology Test Dialog */}
+        <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingTest ? 'Edit Test' : 'Add Pathology Test'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={testForm.handleSubmit(async (data) => {
+              try {
+                const url = editingTest 
+                  ? `/api/dynamic-pathology-tests/${editingTest.id}`
+                  : '/api/dynamic-pathology-tests';
+                const method = editingTest ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                  method,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
+                  },
+                  body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                  queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
+                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
+                  toast({ title: 'Success', description: `Test ${editingTest ? 'updated' : 'created'} successfully` });
+                  setIsTestDialogOpen(false);
+                  setEditingTest(null);
+                  testForm.reset();
+                } else {
+                  toast({ title: 'Error', description: 'Failed to save test', variant: 'destructive' });
+                }
+              } catch (error) {
+                toast({ title: 'Error', description: 'Failed to save test', variant: 'destructive' });
+              }
+            })} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Category *</Label>
+                <Select
+                  value={testForm.watch("categoryId")}
+                  onValueChange={(value) => testForm.setValue("categoryId", value)}
+                  data-testid="select-test-category"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {combinedPathologyData?.categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name} {category.isHardcoded ? '(System)' : '(Custom)'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Test Name *</Label>
+                <Input
+                  {...testForm.register("testName")}
+                  placeholder="e.g., Blood Glucose Test"
+                  data-testid="input-test-name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Price (₹) *</Label>
+                <Input
+                  type="number"
+                  {...testForm.register("price", { valueAsNumber: true })}
+                  placeholder="Enter test price"
+                  data-testid="input-test-price"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Normal Range</Label>
+                <Input
+                  {...testForm.register("normalRange")}
+                  placeholder="e.g., 70-100 mg/dL"
+                  data-testid="input-test-normal-range"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  {...testForm.register("description")}
+                  placeholder="Optional test description"
+                  data-testid="textarea-test-description"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsTestDialogOpen(false);
+                    setEditingTest(null);
+                    testForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingTest ? 'Update Test' : 'Add Test'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* JSON Upload Dialog */}
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Bulk Upload Pathology Tests</DialogTitle>
+              <p className="text-sm text-gray-600">
+                Upload tests in JSON format. The system will create categories and tests as needed.
+              </p>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>JSON Data</Label>
+                <Textarea
+                  value={uploadData}
+                  onChange={(e) => setUploadData(e.target.value)}
+                  placeholder={`{
+  "categories": [
+    {
+      "name": "Blood Tests",
+      "description": "Blood analysis tests",
+      "tests": [
+        {
+          "test_name": "Complete Blood Count",
+          "price": 500,
+          "normal_range": "4.5-11.0 x10³/μL",
+          "description": "Full blood analysis"
+        }
+      ]
+    }
+  ]
+}`}
+                  rows={12}
+                  className="font-mono text-sm"
+                  data-testid="textarea-upload-json"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsUploadDialogOpen(false);
+                    setUploadData("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const data = JSON.parse(uploadData);
+                      const response = await fetch('/api/pathology-tests/bulk-upload', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
+                        },
+                        body: JSON.stringify(data)
+                      });
+                      
+                      if (response.ok) {
+                        const result = await response.json();
+                        queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
+                        queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
+                        queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
+                        toast({ 
+                          title: 'Success', 
+                          description: `Uploaded ${result.categories?.length || 0} categories and ${result.tests?.length || 0} tests` 
+                        });
+                        setIsUploadDialogOpen(false);
+                        setUploadData("");
+                      } else {
+                        toast({ title: 'Error', description: 'Failed to upload data', variant: 'destructive' });
+                      }
+                    } catch (error) {
+                      toast({ title: 'Error', description: 'Invalid JSON format', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Upload Tests
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

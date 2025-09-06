@@ -623,17 +623,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const hardcodedTests = getAllPathologyTests();
       const dynamicTests = await storage.getDynamicPathologyTests();
-      const categories = await storage.getPathologyCategories();
+      const dynamicCategories = await storage.getPathologyCategories();
       
-      // Combine and format tests
-      const combinedTests = {
-        hardcoded: hardcodedTests,
-        dynamic: dynamicTests,
-        categories: categories
-      };
+      // Import hardcoded catalog
+      const { pathologyCatalog } = await import('./pathology-catalog.js');
       
-      res.json(combinedTests);
+      // Combine categories
+      const hardcodedCategoryNames = pathologyCatalog.categories.map(cat => cat.name);
+      const dynamicCategoryNames = dynamicCategories.map(cat => cat.name);
+      const allCategoryNames = [...new Set([...hardcodedCategoryNames, ...dynamicCategoryNames])];
+      
+      // Combine tests by category
+      const combinedData = allCategoryNames.map(categoryName => {
+        const hardcodedCategory = pathologyCatalog.categories.find(cat => cat.name === categoryName);
+        const dynamicCategory = dynamicCategories.find(cat => cat.name === categoryName);
+        
+        const hardcodedTests = hardcodedCategory ? hardcodedCategory.tests.map(test => ({
+          ...test,
+          id: `hardcoded_${test.test_name.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          categoryId: dynamicCategory?.id || null,
+          categoryName: categoryName,
+          isHardcoded: true,
+          name: test.test_name,
+          normalRange: '',
+          description: ''
+        })) : [];
+        
+        const categoryDynamicTests = dynamicTests.filter(test => 
+          test.categoryId === dynamicCategory?.id
+        ).map(test => ({
+          ...test,
+          isHardcoded: false,
+          test_name: test.name // for compatibility
+        }));
+        
+        return {
+          id: dynamicCategory?.id || categoryName,
+          name: categoryName,
+          description: dynamicCategory?.description || '',
+          isHardcoded: !dynamicCategory,
+          tests: [...hardcodedTests, ...categoryDynamicTests]
+        };
+      });
+      
+      res.json({
+        categories: combinedData,
+        summary: {
+          totalCategories: allCategoryNames.length,
+          hardcodedCategories: hardcodedCategoryNames.length,
+          dynamicCategories: dynamicCategoryNames.length,
+          totalTests: combinedData.reduce((sum, cat) => sum + cat.tests.length, 0)
+        }
+      });
     } catch (error) {
+      console.error('Combined pathology data error:', error);
       res.status(500).json({ message: "Failed to get combined pathology tests" });
     }
   });
