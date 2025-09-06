@@ -867,7 +867,12 @@ export default function Settings() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-base">Auto Backup</Label>
-                          <p className="text-sm text-muted-foreground">Automatically backup data daily</p>
+                          <p className="text-sm text-muted-foreground">
+                            {systemSettings?.autoBackup 
+                              ? `Automatically backup data ${systemSettings.backupFrequency || 'daily'} at ${systemSettings.backupTime || '02:00'}`
+                              : 'Automatically backup data at scheduled intervals'
+                            }
+                          </p>
                         </div>
                         <Switch 
                           checked={systemSettings?.autoBackup || false}
