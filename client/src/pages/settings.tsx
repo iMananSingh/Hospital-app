@@ -77,6 +77,14 @@ export default function Settings() {
     }).then(res => res.json()),
   });
 
+  // Get all backup logs (including restores) for finding last restored
+  const { data: allBackupLogs = [] } = useQuery({
+    queryKey: ["/api/backup/logs"],
+    queryFn: () => fetch("/api/backup/logs", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+    }).then(res => res.json()),
+  });
+
   const { data: availableBackups = [], refetch: refetchAvailableBackups } = useQuery({
     queryKey: ["/api/backup/available"],
     queryFn: () => fetch("/api/backup/available", {
@@ -329,38 +337,7 @@ export default function Settings() {
     },
   });
 
-  const testAutoBackupMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/backup/test-auto", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create test auto backup");
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/backup/history"] });
-      refetchAvailableBackups();
-      toast({
-        title: "Auto backup test successful",
-        description: "Test auto backup has been created and should appear in backup history.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error creating test auto backup",
-        description: error.message || "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  
 
   const restoreBackupMutation = useMutation({
     mutationFn: async (backupFilePath: string) => {
@@ -541,9 +518,7 @@ export default function Settings() {
     createBackupMutation.mutate();
   };
 
-  const handleTestAutoBackup = () => {
-    testAutoBackupMutation.mutate();
-  };
+  
 
   const handleRestoreBackup = () => {
     if (selectedBackupFile) {
@@ -637,121 +612,14 @@ export default function Settings() {
       <TopBar title="System Settings" />
 
       <div className="p-6">
-        <Tabs defaultValue="services" className="space-y-6">
+        <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="services" data-testid="tab-services">Services</TabsTrigger>
             <TabsTrigger value="users" data-testid="tab-users">User Management</TabsTrigger>
             <TabsTrigger value="system" data-testid="tab-system">System</TabsTrigger>
             <TabsTrigger value="backup" data-testid="tab-backup">Backup</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="services">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Service Management</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Manage billable services and their pricing
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => setIsNewServiceOpen(true)}
-                    className="bg-medical-blue hover:bg-medical-blue/90"
-                    data-testid="button-add-service"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Service
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {servicesLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
-                    <p className="text-sm text-muted-foreground mt-2">Loading services...</p>
-                  </div>
-                ) : services?.length === 0 ? (
-                  <div className="text-center py-8">
-                    <SettingsIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No services configured</p>
-                    <Button 
-                      onClick={() => setIsNewServiceOpen(true)}
-                      className="mt-4"
-                      data-testid="button-first-service"
-                    >
-                      Add your first service
-                    </Button>
-                  </div>
-                ) : (
-                  <Table data-testid="services-table">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Service Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {services?.map((service: Service) => (
-                        <TableRow key={service.id} data-testid={`service-row-${service.id}`}>
-                          <TableCell className="font-medium" data-testid={`service-name-${service.id}`}>
-                            {service.name}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="secondary" 
-                              className={getCategoryColor(service.category)}
-                              data-testid={`service-category-${service.id}`}
-                            >
-                              {service.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium" data-testid={`service-price-${service.id}`}>
-                            {formatCurrency(service.price)}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate" data-testid={`service-description-${service.id}`}>
-                            {service.description || "No description"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={service.isActive ? "default" : "secondary"}
-                              data-testid={`service-status-${service.id}`}
-                            >
-                              {service.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => setSelectedService(service)}
-                                data-testid={`button-edit-service-${service.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                data-testid={`button-delete-service-${service.id}`}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
 
           <TabsContent value="users">
             <Card>
@@ -1061,18 +929,7 @@ export default function Settings() {
                         {createBackupMutation.isPending ? "Creating..." : "Create Manual Backup"}
                       </Button>
                       
-                      {systemSettings?.autoBackup && (
-                        <Button 
-                          onClick={handleTestAutoBackup}
-                          disabled={testAutoBackupMutation.isPending}
-                          variant="outline"
-                          className="w-full" 
-                          data-testid="button-test-auto-backup"
-                        >
-                          <Database className="w-4 h-4 mr-2" />
-                          {testAutoBackupMutation.isPending ? "Creating..." : "Test Auto Backup"}
-                        </Button>
-                      )}
+                      
                       
                       <Button 
                         variant="outline" 
@@ -1095,6 +952,15 @@ export default function Settings() {
                       ? `${systemSettings.backupFrequency} at ${systemSettings.backupTime}`
                       : 'Disabled'
                     }</p>
+                    <p>Last restored: {(() => {
+                      // Find the most recent restore operation from all backup logs
+                      const restoreOperations = allBackupLogs
+                        .filter((log: any) => log.backupType === 'restore' && log.status === 'completed')
+                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                      return restoreOperations.length > 0 
+                        ? new Date(restoreOperations[0].createdAt).toLocaleString()
+                        : 'N/A';
+                    })()}</p>
                   </div>
                 </CardContent>
               </Card>

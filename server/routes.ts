@@ -928,40 +928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Test endpoint to trigger auto backup manually (for debugging)
-  app.post("/api/backup/test-auto", authenticateToken, async (req: any, res) => {
-    try {
-      // Only allow admin users
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
-      }
-
-      console.log('Triggering test auto backup...');
-      const backup = await storage.createBackup('auto');
-      res.json({ message: "Test auto backup created", backup });
-    } catch (error) {
-      console.error("Error creating test auto backup:", error);
-      res.status(500).json({ error: "Failed to create test auto backup", message: error instanceof Error ? error.message : "Unknown error" });
-    }
-  });
-
-  // Test endpoint to trigger scheduled backup task manually
-  app.post("/api/backup/test-scheduled", authenticateToken, async (req: any, res) => {
-    try {
-      // Only allow admin users
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
-      }
-
-      console.log('Triggering scheduled backup task...');
-      // This will test the actual scheduler backup method
-      await backupScheduler.performBackup();
-      res.json({ message: "Scheduled backup task triggered" });
-    } catch (error) {
-      console.error("Error triggering scheduled backup:", error);
-      res.status(500).json({ error: "Failed to trigger scheduled backup", message: error instanceof Error ? error.message : "Unknown error" });
-    }
-  });
+  
 
   app.get("/api/backup/logs", authenticateToken, async (req: any, res) => {
     try {
