@@ -621,17 +621,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get combined pathology tests (hardcoded + dynamic)
   app.get("/api/pathology-tests/combined", authenticateToken, async (req, res) => {
     try {
-      const hardcodedTests = getAllPathologyTests();
       const dynamicTests = await storage.getDynamicPathologyTests();
       const dynamicCategories = await storage.getPathologyCategories();
       
-      // Import hardcoded catalog
-      const { pathologyCatalog } = await import('./pathology-catalog.js');
+      // Import hardcoded catalog directly
+      const { pathologyCatalog } = require('./pathology-catalog');
       
       // Combine categories
       const hardcodedCategoryNames = pathologyCatalog.categories.map(cat => cat.name);
       const dynamicCategoryNames = dynamicCategories.map(cat => cat.name);
-      const allCategoryNames = [...new Set([...hardcodedCategoryNames, ...dynamicCategoryNames])];
+      const allCategoryNames = Array.from(new Set([...hardcodedCategoryNames, ...dynamicCategoryNames]));
       
       // Combine tests by category
       const combinedData = allCategoryNames.map(categoryName => {
@@ -654,7 +653,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ).map(test => ({
           ...test,
           isHardcoded: false,
-          test_name: test.name // for compatibility
+          name: test.testName, // map testName to name for compatibility
+          test_name: test.testName // for compatibility
         }));
         
         return {

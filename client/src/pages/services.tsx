@@ -85,7 +85,7 @@ export default function ServiceManagement() {
   });
 
   // Fetch combined pathology data (hardcoded + dynamic)
-  const { data: combinedPathologyData } = useQuery<{categories: any[], summary: any}>({
+  const { data: combinedPathologyData } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
   });
 
@@ -926,7 +926,11 @@ export default function ServiceManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  {combinedPathologyData && combinedPathologyData.categories.length > 0 ? (
+                  {(() => {
+                    console.log("Debug - combinedPathologyData:", combinedPathologyData);
+                    return null;
+                  })()}
+                  {combinedPathologyData && combinedPathologyData.categories && combinedPathologyData.categories.length > 0 ? (
                     <div className="space-y-4">
                       {/* Summary Stats */}
                       {combinedPathologyData.summary && (
