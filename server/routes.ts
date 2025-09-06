@@ -969,6 +969,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/backup/available", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to view available backups
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const backups = await storage.getAvailableBackups();
+      res.json(backups);
+    } catch (error) {
+      console.error("Error fetching available backups:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post("/api/backup/restore", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to restore backups
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const { backupFilePath } = req.body;
+      
+      if (!backupFilePath) {
+        return res.status(400).json({ error: "Backup file path is required" });
+      }
+
+      const result = await storage.restoreBackup(backupFilePath);
+      res.json(result);
+    } catch (error) {
+      console.error("Error restoring backup:", error);
+      res.status(500).json({ 
+        error: "Failed to restore backup", 
+        message: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   // Daily receipt count for receipt numbering
   app.get("/api/receipts/daily-count/:serviceType/:date", authenticateToken, async (req, res) => {
     try {

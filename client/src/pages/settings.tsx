@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -24,7 +24,8 @@ import {
   Plus,
   Edit,
   Trash2,
-  UserPlus
+  UserPlus,
+  RotateCcw
 } from "lucide-react";
 import { insertServiceSchema, insertUserSchema, insertSystemSettingsSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -45,6 +46,9 @@ export default function Settings() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const [showRestoreDialog, setShowRestoreDialog] = useState(false);
+  const [selectedBackupFile, setSelectedBackupFile] = useState<string>("");
+
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
   });
@@ -61,8 +65,19 @@ export default function Settings() {
     queryKey: ["/api/settings/system"],
   });
 
-  const { data: backupHistory = [], isLoading: backupHistoryLoading } = useQuery({
+  const { data: backupHistory = [], isLoading: backupHistoryLoading, refetch: refetchBackupHistory } = useQuery({
     queryKey: ["/api/backup/history"],
+    queryFn: () => fetch("/api/backup/history", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+    }).then(res => res.json()),
+  });
+
+  const { data: availableBackups = [], refetch: refetchAvailableBackups } = useQuery({
+    queryKey: ["/api/backup/available"],
+    queryFn: () => fetch("/api/backup/available", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+    }).then(res => res.json()),
+    enabled: showRestoreDialog,
   });
 
   const saveHospitalSettingsMutation = useMutation({
@@ -75,11 +90,11 @@ export default function Settings() {
         },
         body: JSON.stringify(settingsData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to save hospital settings");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -108,11 +123,11 @@ export default function Settings() {
         },
         body: JSON.stringify(serviceData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create service");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -143,11 +158,11 @@ export default function Settings() {
         },
         body: JSON.stringify(userData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create user");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -184,11 +199,11 @@ export default function Settings() {
         },
         body: JSON.stringify(filteredData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update user");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -217,11 +232,11 @@ export default function Settings() {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to delete user");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -252,11 +267,11 @@ export default function Settings() {
         },
         body: JSON.stringify(settingsData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to save system settings");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -285,11 +300,11 @@ export default function Settings() {
         },
         body: JSON.stringify({ backupType: 'manual' }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create backup");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -303,6 +318,42 @@ export default function Settings() {
       toast({
         title: "Error creating backup",
         description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const restoreBackupMutation = useMutation({
+    mutationFn: async (backupFilePath: string) => {
+      const response = await fetch("/api/backup/restore", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ backupFilePath }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to restore backup");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Backup restored successfully. Please refresh the page to see changes.",
+      });
+      setShowRestoreDialog(false);
+      setSelectedBackupFile("");
+      refetchBackupHistory();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -426,12 +477,18 @@ export default function Settings() {
         backupTime: systemSettings?.backupTime || '02:00'
       })
     };
-    
+
     saveSystemSettingsMutation.mutate(updatedSettings);
   };
 
   const handleCreateBackup = () => {
-    createBackupMutation.mutate();
+    createBackupMutation.mutate("manual");
+  };
+
+  const handleRestoreBackup = () => {
+    if (selectedBackupFile) {
+      restoreBackupMutation.mutate(selectedBackupFile);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -518,7 +575,7 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <TopBar title="System Settings" />
-      
+
       <div className="p-6">
         <Tabs defaultValue="services" className="space-y-6">
           <TabsList>
@@ -772,7 +829,7 @@ export default function Settings() {
                           data-testid="switch-email-notifications" 
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-base">SMS Notifications</Label>
@@ -784,7 +841,7 @@ export default function Settings() {
                           data-testid="switch-sms-notifications" 
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-base">Auto Backup</Label>
@@ -796,7 +853,7 @@ export default function Settings() {
                           data-testid="switch-auto-backup" 
                         />
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-base">Audit Logging</Label>
@@ -867,7 +924,7 @@ export default function Settings() {
                         data-testid="input-hospital-name" 
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Address</Label>
                       <Textarea 
@@ -876,7 +933,7 @@ export default function Settings() {
                         data-testid="input-hospital-address"
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Phone</Label>
@@ -893,7 +950,7 @@ export default function Settings() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label>Registration Number</Label>
                       <Input 
@@ -902,7 +959,7 @@ export default function Settings() {
                         data-testid="input-hospital-registration" 
                       />
                     </div>
-                    
+
                     <Button 
                       type="submit"
                       className="w-full" 
@@ -927,7 +984,7 @@ export default function Settings() {
                   <div className="text-center py-4">
                     <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">Protect your hospital data with regular backups</p>
-                    
+
                     <div className="space-y-2">
                       <Button 
                         onClick={handleCreateBackup}
@@ -938,12 +995,18 @@ export default function Settings() {
                         <Database className="w-4 h-4 mr-2" />
                         {createBackupMutation.isPending ? "Creating..." : "Create Backup Now"}
                       </Button>
-                      <Button variant="outline" className="w-full" data-testid="button-restore-backup">
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        data-testid="button-restore-backup"
+                        onClick={() => setShowRestoreDialog(true)}
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
                         Restore from Backup
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-xs text-muted-foreground">
                     <p>Last backup: {backupHistory && backupHistory.length > 0 
                       ? new Date(backupHistory[0].createdAt).toLocaleString()
@@ -997,7 +1060,7 @@ export default function Settings() {
                       ))}
                     </div>
                   )}
-                  
+
                   <div className="pt-4 border-t">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
@@ -1028,7 +1091,7 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle>Add New Service</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1043,7 +1106,7 @@ export default function Settings() {
                   <p className="text-sm text-destructive">{serviceForm.formState.errors.name.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select onValueChange={(value) => serviceForm.setValue("category", value)}>
@@ -1118,7 +1181,7 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={userForm.handleSubmit(onUserSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1133,7 +1196,7 @@ export default function Settings() {
                   <p className="text-sm text-destructive">{userForm.formState.errors.fullName.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="username">Username *</Label>
                 <Input
@@ -1162,7 +1225,7 @@ export default function Settings() {
                   <p className="text-sm text-destructive">{userForm.formState.errors.password.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="role">Role *</Label>
                 <Select onValueChange={(value) => userForm.setValue("role", value)}>
@@ -1211,7 +1274,7 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle>Edit User: {selectedUser?.fullName}</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={editUserForm.handleSubmit(onEditUserSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1226,7 +1289,7 @@ export default function Settings() {
                   <p className="text-sm text-destructive">{editUserForm.formState.errors.fullName.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="editUsername">Username *</Label>
                 <Input
@@ -1307,7 +1370,7 @@ export default function Settings() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <p>Are you sure you want to delete user <strong>{userToDelete?.fullName}</strong>?</p>
             <p className="text-sm text-muted-foreground">
@@ -1333,6 +1396,89 @@ export default function Settings() {
               {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Backup Dialog */}
+      <Dialog open={showRestoreDialog} onOpenChange={setShowRestoreDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Restore from Backup</DialogTitle>
+            <DialogDescription>
+              Select a backup file to restore your hospital data. This will overwrite all current data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="max-h-64 overflow-y-auto border rounded-lg">
+              {availableBackups.length === 0 ? (
+                <div className="text-center py-8">
+                  <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No backup files found</p>
+                </div>
+              ) : (
+                <div className="space-y-2 p-4">
+                  {availableBackups.map((backup: any) => (
+                    <div 
+                      key={backup.fileName}
+                      className={`flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                        selectedBackupFile === backup.filePath ? 'bg-blue-50 border-blue-200' : ''
+                      }`}
+                      onClick={() => setSelectedBackupFile(backup.filePath)}
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{backup.fileName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Created: {new Date(backup.createdAt).toLocaleString()}
+                        </p>
+                        {backup.backupLog && (
+                          <p className="text-xs text-muted-foreground">
+                            Backup ID: {backup.backupLog.backupId}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">
+                          {(backup.fileSize / (1024 * 1024)).toFixed(2)} MB
+                        </p>
+                        {selectedBackupFile === backup.filePath && (
+                          <Badge variant="default" className="mt-1">Selected</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {selectedBackupFile && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">Warning</p>
+                    <p className="text-sm text-yellow-700">
+                      This action will completely replace all current data with the backup data. 
+                      This cannot be undone. Make sure to create a current backup before proceeding.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRestoreDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleRestoreBackup}
+              disabled={!selectedBackupFile || restoreBackupMutation.isPending}
+              variant="destructive"
+            >
+              {restoreBackupMutation.isPending ? "Restoring..." : "Restore Backup"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
