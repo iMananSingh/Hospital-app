@@ -2173,7 +2173,12 @@ export class SqliteStorage implements IStorage {
     try {
       return db.select()
         .from(schema.backupLogs)
-        .where(eq(schema.backupLogs.status, 'completed'))
+        .where(
+          and(
+            eq(schema.backupLogs.status, 'completed'),
+            ne(schema.backupLogs.backupType, 'restore')
+          )
+        )
         .orderBy(desc(schema.backupLogs.createdAt))
         .limit(20)
         .all();
