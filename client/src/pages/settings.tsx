@@ -77,6 +77,14 @@ export default function Settings() {
     }).then(res => res.json()),
   });
 
+  // Get all backup logs (including restores) for finding last restored
+  const { data: allBackupLogs = [] } = useQuery({
+    queryKey: ["/api/backup/logs"],
+    queryFn: () => fetch("/api/backup/logs", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+    }).then(res => res.json()),
+  });
+
   const { data: availableBackups = [], refetch: refetchAvailableBackups } = useQuery({
     queryKey: ["/api/backup/available"],
     queryFn: () => fetch("/api/backup/available", {
@@ -1051,6 +1059,15 @@ export default function Settings() {
                       ? `${systemSettings.backupFrequency} at ${systemSettings.backupTime}`
                       : 'Disabled'
                     }</p>
+                    <p>Last restored: {(() => {
+                      // Find the most recent restore operation from all backup logs
+                      const restoreOperations = allBackupLogs
+                        .filter((log: any) => log.backupType === 'restore' && log.status === 'completed')
+                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                      return restoreOperations.length > 0 
+                        ? new Date(restoreOperations[0].createdAt).toLocaleString()
+                        : 'N/A';
+                    })()}</p>
                   </div>
                 </CardContent>
               </Card>
