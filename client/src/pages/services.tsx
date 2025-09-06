@@ -873,7 +873,10 @@ export default function ServiceManagement() {
               )}
             </CardContent>
           </Card>
-        ) : activeTab === 'pathology' ? (
+        )}
+
+        {/* Pathology Section */}
+        {activeTab === 'pathology' && (
           <div className="space-y-4">
             {/* Pathology Navigation */}
             <div className="flex flex-wrap gap-2 mb-6">
@@ -1102,7 +1105,10 @@ export default function ServiceManagement() {
               </Card>
             )}
           </div>
-        ) : (
+        )}
+
+        {/* Other Services Section */}
+        {activeTab !== 'rooms' && activeTab !== 'pathology' && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="capitalize">{activeTab} Services</CardTitle>
