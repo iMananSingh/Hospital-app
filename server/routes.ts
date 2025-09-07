@@ -814,47 +814,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Diagnostic Orders routes
-  app.get("/api/diagnostic-orders", authenticateToken, async (req, res) => {
-    try {
-      const orders = await storage.getDiagnosticOrders();
-      res.json(orders);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get diagnostic orders" });
-    }
-  });
-
-  app.post("/api/diagnostic-orders", authenticateToken, async (req, res) => {
-    try {
-      console.log("Received diagnostic order request:", JSON.stringify(req.body, null, 2));
-      const { orderData, tests } = req.body;
-
-      if (!orderData || !tests) {
-        return res.status(400).json({ message: "Missing orderData or tests" });
-      }
-
-      const orderId = await storage.createDiagnosticOrder(orderData, tests);
-      
-      // Log activity
-      if (orderData.patientId) {
-        await storage.logActivity(
-          (req as any).user.id,
-          "diagnostic_order",
-          "Diagnostic Order Created",
-          `Order ${orderId} created for patient`,
-          orderId,
-          "diagnostic_order",
-          { orderId, testCount: tests.length, totalAmount: tests.reduce((sum: number, test: any) => sum + (test.price || 0), 0) }
-        );
-      }
-
-      res.json({ orderId, message: "Diagnostic order created successfully" });
-    } catch (error) {
-      console.error("Error creating diagnostic order:", error);
-      res.status(500).json({ message: "Failed to create diagnostic order" });
-    }
-  });
-
   // Pathology Test Catalog routes
   app.get("/api/pathology/catalog", authenticateToken, async (req, res) => {
     try {
