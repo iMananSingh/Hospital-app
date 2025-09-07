@@ -12,11 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Building2, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Building2,
+  Plus,
+  Edit,
+  Trash2,
   Bed,
   Home,
   Activity,
@@ -54,18 +54,20 @@ export default function ServiceManagement() {
   const [editingTest, setEditingTest] = useState<DynamicPathologyTest | null>(null);
   const [uploadData, setUploadData] = useState<string>("");
 
+  const token = localStorage.getItem("hospital_token");
+
   // Fetch room types
-  const { data: roomTypes = [] } = useQuery<RoomType[]>({
+  const { data: roomTypes = [], refetch: refetchRoomTypes } = useQuery<RoomType[]>({
     queryKey: ["/api/room-types"],
   });
 
   // Fetch rooms
-  const { data: rooms = [] } = useQuery<Room[]>({
+  const { data: rooms = [], refetch: refetchRooms } = useQuery<Room[]>({
     queryKey: ["/api/rooms"],
   });
 
   // Fetch services
-  const { data: services = [] } = useQuery<Service[]>({
+  const { data: services = [], refetch: refetchServices } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
@@ -75,17 +77,17 @@ export default function ServiceManagement() {
   });
 
   // Fetch pathology categories
-  const { data: pathologyCategories = [] } = useQuery<PathologyCategory[]>({
+  const { data: pathologyCategories = [], refetch: refetchCategories } = useQuery<PathologyCategory[]>({
     queryKey: ["/api/pathology-categories"],
   });
 
   // Fetch dynamic pathology tests
-  const { data: dynamicPathologyTests = [] } = useQuery<DynamicPathologyTest[]>({
+  const { data: dynamicPathologyTests = [], refetch: refetchTests } = useQuery<DynamicPathologyTest[]>({
     queryKey: ["/api/dynamic-pathology-tests"],
   });
 
   // Fetch combined pathology data (hardcoded + dynamic)
-  const { data: combinedPathologyData, isLoading: combinedLoading } = useQuery({
+  const { data: combinedPathologyData, isLoading: combinedLoading, refetch: refetchCombined } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
@@ -353,6 +355,90 @@ export default function ServiceManagement() {
     },
   });
 
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      // Check if it's a system category (string ID) or custom category (UUID)
+      const isSystemCategory = typeof categoryId === 'string' && !categoryId.includes('-');
+
+      if (isSystemCategory) {
+        toast({
+          title: "Error",
+          description: "System categories cannot be deleted",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/pathology-categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete category');
+      }
+
+      toast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+
+      // Refresh data
+      refetchCombined();
+      refetchCategories();
+      refetchTests();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete category",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTest = async (testId: string, isSystemTest: boolean = false) => {
+    try {
+      if (isSystemTest) {
+        toast({
+          title: "Error",
+          description: "System tests cannot be deleted from the UI",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/dynamic-pathology-tests/${testId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete test');
+      }
+
+      toast({
+        title: "Success",
+        description: "Test deleted successfully",
+      });
+
+      // Refresh data
+      refetchCombined();
+      refetchTests();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete test",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onRoomTypeSubmit = (data: any) => {
     createRoomTypeMutation.mutate(data);
   };
@@ -454,7 +540,7 @@ export default function ServiceManagement() {
   };
 
   const updateDoctorShare = (index: number, field: "id" | "share", value: string | number) => {
-    setServiceDoctors(prev => prev.map((doctor, i) => 
+    setServiceDoctors(prev => prev.map((doctor, i) =>
       i === index ? { ...doctor, [field]: value } : doctor
     ));
   };
@@ -556,7 +642,7 @@ export default function ServiceManagement() {
 
   return (
     <div className="space-y-6">
-      <TopBar 
+      <TopBar
         title="Service Management"
       />
 
@@ -736,7 +822,7 @@ export default function ServiceManagement() {
                 </div>
                 <CardContent>
                   {(() => {
-                    const filteredRooms = selectedRoomTypeId 
+                    const filteredRooms = selectedRoomTypeId
                       ? rooms.filter(room => room.roomTypeId === selectedRoomTypeId)
                       : rooms;
 
@@ -822,15 +908,15 @@ export default function ServiceManagement() {
                       <TableRow key={service.id}>
                         <TableCell className="font-medium">{service.name}</TableCell>
                         <TableCell>
-                          {(service.category !== 'rooms' && service.price === 0) 
+                          {(service.category !== 'rooms' && service.price === 0)
                             ? <Badge variant="outline" className="text-purple-700 border-purple-300">Variable</Badge>
                             : `₹${service.price.toLocaleString()}`
                           }
                         </TableCell>
                         <TableCell>{service.description || "N/A"}</TableCell>
                         <TableCell>
-                          <Badge 
-                            className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} 
+                          <Badge
+                            className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                             variant="secondary"
                           >
                             {service.isActive ? 'Active' : 'Inactive'}
@@ -898,7 +984,7 @@ export default function ServiceManagement() {
                 Upload JSON
               </Button>
             </CardHeader>
-            
+
             {/* Pathology Navigation */}
             <div className="px-6 pb-4">
               <div className="flex flex-wrap gap-2">
@@ -936,7 +1022,7 @@ export default function ServiceManagement() {
                       Add Category
                     </Button>
                   </div>
-                  
+
                   {combinedPathologyData && combinedPathologyData.categories && combinedPathologyData.categories.length > 0 ? (
                     <div className="space-y-4">
                       {/* Summary Stats */}
@@ -1003,19 +1089,7 @@ export default function ServiceManagement() {
                                       <Button
                                         onClick={async () => {
                                           if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
-                                            const response = await fetch(`/api/pathology-categories/${category.id}`, {
-                                              method: "DELETE",
-                                              headers: {
-                                                "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-                                              },
-                                            });
-                                            if (response.ok) {
-                                              queryClient.invalidateQueries({ queryKey: ["/api/pathology-categories"] });
-                                              queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
-                                              toast({ title: "Success", description: "Category deleted successfully" });
-                                            } else {
-                                              toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
-                                            }
+                                            deleteCategory(category.id);
                                           }
                                         }}
                                         size="sm"
@@ -1066,7 +1140,7 @@ export default function ServiceManagement() {
                       Add Test
                     </Button>
                   </div>
-                  
+
                   {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
                     <div className="space-y-6">
                       {/* Category Filter */}
@@ -1148,26 +1222,21 @@ export default function ServiceManagement() {
                                               <Edit className="h-4 w-4" />
                                             </Button>
                                             <Button
-                                              onClick={async () => {
-                                                if (confirm(`Are you sure you want to delete "${test.name}"? This action cannot be undone.`)) {
-                                                  const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
-                                                    method: "DELETE",
-                                                    headers: {
-                                                      "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-                                                    },
-                                                  });
-                                                  if (response.ok) {
-                                                    queryClient.invalidateQueries({ queryKey: ["/api/dynamic-pathology-tests"] });
-                                                    queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
-                                                    toast({ title: "Success", description: "Test deleted successfully" });
-                                                  } else {
-                                                    toast({ title: "Error", description: "Failed to delete test", variant: "destructive" });
-                                                  }
-                                                }
-                                              }}
                                               size="sm"
                                               variant="outline"
-                                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              onClick={() => {
+                                                // Check if it's a system test (from JSON file) or custom test (from database)
+                                                const isSystemTest = !test.id || test.id.toString().startsWith('system-');
+                                                if (isSystemTest) {
+                                                  toast({
+                                                    title: "Error",
+                                                    description: "System tests cannot be deleted from the UI",
+                                                    variant: "destructive",
+                                                  });
+                                                } else {
+                                                  deleteTest(test.id, false);
+                                                }
+                                              }}
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -1277,10 +1346,10 @@ export default function ServiceManagement() {
                   type="submit"
                   disabled={createRoomTypeMutation.isPending}
                 >
-                  {createRoomTypeMutation.isPending 
-                    ? "Saving..." 
-                    : editingRoomType 
-                      ? "Update Room Type" 
+                  {createRoomTypeMutation.isPending
+                    ? "Saving..."
+                    : editingRoomType
+                      ? "Update Room Type"
                       : "Add Room Type"
                   }
                 </Button>
@@ -1346,10 +1415,10 @@ export default function ServiceManagement() {
                   type="submit"
                   disabled={createRoomMutation.isPending}
                 >
-                  {createRoomMutation.isPending 
-                    ? "Saving..." 
-                    : editingRoom 
-                      ? "Update Room" 
+                  {createRoomMutation.isPending
+                    ? "Saving..."
+                    : editingRoom
+                      ? "Update Room"
                       : "Add Room"
                   }
                 </Button>
@@ -1509,10 +1578,10 @@ export default function ServiceManagement() {
                   type="submit"
                   disabled={createServiceMutation.isPending}
                 >
-                  {createServiceMutation.isPending 
-                    ? "Saving..." 
-                    : editingService 
-                      ? "Update Service" 
+                  {createServiceMutation.isPending
+                    ? "Saving..."
+                    : editingService
+                      ? "Update Service"
                       : "Add Service"
                   }
                 </Button>
@@ -1532,7 +1601,7 @@ export default function ServiceManagement() {
 
             <form onSubmit={categoryForm.handleSubmit(async (data) => {
               try {
-                const url = editingCategory 
+                const url = editingCategory
                   ? `/api/pathology-categories/${editingCategory.id}`
                   : '/api/pathology-categories';
                 const method = editingCategory ? 'PUT' : 'POST';
@@ -1609,7 +1678,7 @@ export default function ServiceManagement() {
 
             <form onSubmit={testForm.handleSubmit(async (data) => {
               try {
-                const url = editingTest 
+                const url = editingTest
                   ? `/api/dynamic-pathology-tests/${editingTest.id}`
                   : '/api/dynamic-pathology-tests';
                 const method = editingTest ? 'PUT' : 'POST';
@@ -1781,9 +1850,9 @@ export default function ServiceManagement() {
                         queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
                         queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
                         queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
-                        toast({ 
-                          title: 'Success', 
-                          description: `Uploaded ${result.categories?.length || 0} categories and ${result.tests?.length || 0} tests` 
+                        toast({
+                          title: 'Success',
+                          description: `Uploaded ${result.categories?.length || 0} categories and ${result.tests?.length || 0} tests`
                         });
                         setIsUploadDialogOpen(false);
                         setUploadData("");
