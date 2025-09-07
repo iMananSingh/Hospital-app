@@ -62,7 +62,7 @@ export default function Diagnostics() {
 
   // Filter patient services to only diagnostic ones
   const diagnosticPatientServices = useMemo(() => {
-    return patientServices.filter((service: PatientService) => {
+    return (patientServices as PatientService[]).filter((service: PatientService) => {
       // Check if the service name or type matches diagnostic services
       return diagnosticServices.some(diagService => 
         diagService.name.toLowerCase() === service.serviceName.toLowerCase() ||
@@ -99,7 +99,7 @@ export default function Diagnostics() {
       return matchesSearch && matchesDoctor && matchesStatus && matchesService && matchesDate;
     });
 
-    const grouped = filtered.reduce((groups, service) => {
+    const grouped = filtered.reduce((groups: Record<string, PatientService[]>, service: PatientService) => {
       const serviceName = service.serviceName;
       if (!groups[serviceName]) {
         groups[serviceName] = [];
@@ -109,8 +109,8 @@ export default function Diagnostics() {
     }, {} as Record<string, PatientService[]>);
 
     // Sort services within each group by scheduled date (most recent first)
-    Object.values(grouped).forEach(services => {
-      services.sort((a, b) => {
+    Object.values(grouped).forEach((services: PatientService[]) => {
+      services.sort((a: PatientService, b: PatientService) => {
         const dateA = new Date(`${a.scheduledDate} ${a.scheduledTime}`).getTime();
         const dateB = new Date(`${b.scheduledDate} ${b.scheduledTime}`).getTime();
         return dateB - dateA; // Most recent first
