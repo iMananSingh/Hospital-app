@@ -1578,11 +1578,28 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.pathologyOrders.orderedDate, today))
         .all().length;
 
-      // Get diagnostics count (pathology tests completed today)
-      const diagnostics = db.select()
-        .from(schema.pathologyTests)
-        .where(eq(schema.pathologyTests.status, 'completed'))
-        .all().length;
+      // Get diagnostics count (diagnostic services scheduled today)
+      const diagnosticServices = db.select()
+        .from(schema.patientServices)
+        .where(
+          and(
+            eq(schema.patientServices.scheduledDate, today),
+            sql`(
+              ${schema.patientServices.serviceType} = 'xray' OR 
+              ${schema.patientServices.serviceType} = 'ecg' OR 
+              ${schema.patientServices.serviceType} = 'ultrasound' OR 
+              ${schema.patientServices.serviceType} = 'diagnostic' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%ecg%' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%usg%' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%x-ray%' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%xray%' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%ultrasound%' OR
+              LOWER(${schema.patientServices.serviceName}) LIKE '%endoscopy%'
+            )`
+          )
+        )
+        .all();
+      const diagnostics = diagnosticServices.length;
 
       return {
         opdPatients: todayOpdServices.length,

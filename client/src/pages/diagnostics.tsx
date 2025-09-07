@@ -30,7 +30,9 @@ export default function Diagnostics() {
   // Fetch all patient services
   const { data: patientServices = [], isLoading } = useQuery({
     queryKey: ["/api/patient-services"],
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch patients for service details
@@ -92,7 +94,7 @@ export default function Diagnostics() {
       const matchesStatus = selectedStatus === "all" || service.status === selectedStatus;
       
       const matchesService = selectedService === "all" || 
-        service.serviceName.toLowerCase().includes(selectedService.toLowerCase());
+        service.serviceName.toLowerCase() === selectedService.toLowerCase();
       
       const matchesDate = selectedDate === "" || service.scheduledDate === selectedDate;
 
