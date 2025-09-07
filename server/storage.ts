@@ -660,6 +660,14 @@ export interface IStorage {
   updateDynamicPathologyTest(id: string, test: Partial<InsertDynamicPathologyTest>): Promise<DynamicPathologyTest | undefined>;
   deleteDynamicPathologyTest(id: string): Promise<boolean>;
   bulkCreateDynamicPathologyTests(tests: InsertDynamicPathologyTest[]): Promise<DynamicPathologyTest[]>;
+
+  // Schedule Event Management
+  getAllScheduleEvents(): Promise<ScheduleEvent[]>;
+  createScheduleEvent(event: InsertScheduleEvent): Promise<ScheduleEvent>;
+  updateScheduleEvent(id: string, event: Partial<InsertScheduleEvent>): Promise<ScheduleEvent | undefined>;
+  deleteScheduleEvent(id: string): Promise<void>;
+  getScheduleEventsByDateRange(startDate: string, endDate: string): Promise<ScheduleEvent[]>;
+  getScheduleEventsByDoctor(doctorId: string): Promise<ScheduleEvent[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2556,6 +2564,48 @@ export class SqliteStorage implements IStorage {
       console.error('Error getting daily receipt count sync:', error);
       return 1;
     }
+  }
+
+  // Schedule Event Management
+  async getAllScheduleEvents(): Promise<ScheduleEvent[]> {
+    return db.select().from(schema.scheduleEvents).orderBy(schema.scheduleEvents.startTime).all();
+  }
+
+  async createScheduleEvent(event: InsertScheduleEvent): Promise<ScheduleEvent> {
+    return db.insert(schema.scheduleEvents).values(event).returning().get();
+  }
+
+  async updateScheduleEvent(id: string, event: Partial<InsertScheduleEvent>): Promise<ScheduleEvent | undefined> {
+    return db.update(schema.scheduleEvents)
+      .set({ ...event, updatedAt: new Date().toISOString() })
+      .where(eq(schema.scheduleEvents.id, id))
+      .returning()
+      .get();
+  }
+
+  async deleteScheduleEvent(id: string): Promise<void> {
+    await db.delete(schema.scheduleEvents).where(eq(schema.scheduleEvents.id, id)).run();
+  }
+
+  async getScheduleEventsByDateRange(startDate: string, endDate: string): Promise<ScheduleEvent[]> {
+    return db.select()
+      .from(schema.scheduleEvents)
+      .where(
+        and(
+          sql`${schema.scheduleEvents.startTime} >= ${startDate}`,
+          sql`${schema.scheduleEvents.startTime} <= ${endDate}`
+        )
+      )
+      .orderBy(schema.scheduleEvents.startTime)
+      .all();
+  }
+
+  async getScheduleEventsByDoctor(doctorId: string): Promise<ScheduleEvent[]> {
+    return db.select()
+      .from(schema.scheduleEvents)
+      .where(eq(schema.scheduleEvents.doctorId, doctorId))
+      .orderBy(schema.scheduleEvents.startTime)
+      .all();
   }
 }
 
