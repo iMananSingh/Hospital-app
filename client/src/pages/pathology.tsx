@@ -256,13 +256,19 @@ export default function Pathology() {
     queryKey: ["/api/pathology"],
   });
 
-  const { data: testCatalog = [] } = useQuery({
-    queryKey: ["/api/pathology/catalog"],
+  const { data: combinedTestData } = useQuery({
+    queryKey: ["/api/pathology-tests/combined"],
   });
 
-  const { data: categories } = useQuery({
-    queryKey: ["/api/pathology/catalog/categories"],
-  });
+  // Extract tests and categories from combined data
+  const testCatalog = combinedTestData?.categories?.flatMap(cat => 
+    cat.tests?.map(test => ({
+      ...test,
+      category: cat.name
+    })) || []
+  ) || [];
+
+  const categories = combinedTestData?.categories?.map(cat => cat.name) || [];
 
   const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients"],
