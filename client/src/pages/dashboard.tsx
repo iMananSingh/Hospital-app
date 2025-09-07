@@ -124,6 +124,22 @@ export default function Dashboard() {
                           return { icon: 'L', color: 'bg-purple-500' };
                         case 'lab_test_completed':
                           return { icon: 'T', color: 'bg-orange-500' };
+                        case 'opd_scheduled':
+                          return { icon: 'O', color: 'bg-blue-500' };
+                        case 'service_scheduled':
+                          return { icon: 'S', color: 'bg-indigo-500' };
+                        case 'room_type_created':
+                        case 'room_type_updated':
+                        case 'room_type_deleted':
+                          return { icon: 'RT', color: 'bg-green-500' };
+                        case 'room_created':
+                        case 'room_updated':
+                        case 'room_deleted':
+                          return { icon: 'R', color: 'bg-teal-500' };
+                        case 'service_created':
+                        case 'service_updated':
+                        case 'service_deleted':
+                          return { icon: 'SV', color: 'bg-pink-500' };
                         default:
                           return { icon: 'A', color: 'bg-gray-500' };
                       }

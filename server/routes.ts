@@ -433,20 +433,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", authenticateToken, async (req, res) => {
+  app.post("/api/services", authenticateToken, async (req: any, res) => {
     try {
       const serviceData = insertServiceSchema.parse(req.body);
-      const service = await storage.createService(serviceData);
+      const service = await storage.createService(serviceData, req.user.id);
       res.json(service);
     } catch (error) {
       res.status(400).json({ message: "Failed to create service" });
     }
   });
 
-  app.put("/api/services/:id", authenticateToken, async (req, res) => {
+  app.put("/api/services/:id", authenticateToken, async (req: any, res) => {
     try {
       const serviceData = insertServiceSchema.parse(req.body);
-      const service = await storage.updateService(req.params.id, serviceData);
+      const service = await storage.updateService(req.params.id, serviceData, req.user.id);
       if (!service) {
         return res.status(404).json({ message: "Service not found" });
       }
@@ -456,9 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/services/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/services/:id", authenticateToken, async (req: any, res) => {
     try {
-      const deleted = await storage.deleteService(req.params.id);
+      const deleted = await storage.deleteService(req.params.id, req.user.id);
       if (!deleted) {
         return res.status(404).json({ message: "Service not found" });
       }
@@ -944,12 +944,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patient Services Management
-  app.post("/api/patient-services", authenticateToken, async (req, res) => {
+  app.post("/api/patient-services", authenticateToken, async (req: any, res) => {
     try {
       const serviceData = req.body;
 
       console.log('Creating patient service with data:', serviceData);
-      const service = await storage.createPatientService(serviceData);
+      const service = await storage.createPatientService(serviceData, req.user.id);
       console.log('Created patient service:', service);
       res.json(service);
     } catch (error) {
@@ -1062,9 +1062,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/room-types", authenticateToken, async (req, res) => {
+  app.post("/api/room-types", authenticateToken, async (req: any, res) => {
     try {
-      const roomType = await storage.createRoomType(req.body);
+      const roomType = await storage.createRoomType(req.body, req.user.id);
       res.status(201).json(roomType);
     } catch (error) {
       console.error("Error creating room type:", error);
@@ -1072,9 +1072,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/room-types/:id", authenticateToken, async (req, res) => {
+  app.put("/api/room-types/:id", authenticateToken, async (req: any, res) => {
     try {
-      const updated = await storage.updateRoomType(req.params.id, req.body);
+      const updated = await storage.updateRoomType(req.params.id, req.body, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room type not found" });
       }
@@ -1085,9 +1085,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/room-types/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/room-types/:id", authenticateToken, async (req: any, res) => {
     try {
-      await storage.deleteRoomType(req.params.id);
+      await storage.deleteRoomType(req.params.id, req.user.id);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting room type:", error);
@@ -1106,9 +1106,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rooms", authenticateToken, async (req, res) => {
+  app.post("/api/rooms", authenticateToken, async (req: any, res) => {
     try {
-      const room = await storage.createRoom(req.body);
+      const room = await storage.createRoom(req.body, req.user.id);
       res.status(201).json(room);
     } catch (error) {
       console.error("Error creating room:", error);
@@ -1116,9 +1116,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/rooms/:id", authenticateToken, async (req, res) => {
+  app.put("/api/rooms/:id", authenticateToken, async (req: any, res) => {
     try {
-      const updated = await storage.updateRoom(req.params.id, req.body);
+      const updated = await storage.updateRoom(req.params.id, req.body, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room not found" });
       }
@@ -1129,9 +1129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/rooms/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/rooms/:id", authenticateToken, async (req: any, res) => {
     try {
-      await storage.deleteRoom(req.params.id);
+      await storage.deleteRoom(req.params.id, req.user.id);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting room:", error);
