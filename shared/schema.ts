@@ -139,37 +139,6 @@ export const pathologyTests = sqliteTable("pathology_tests", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Diagnostic orders table
-export const diagnosticOrders = sqliteTable("diagnostic_orders", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  orderId: text("order_id").notNull().unique(),
-  patientId: text("patient_id").notNull().references(() => patients.id),
-  visitId: text("visit_id").references(() => visits.id),
-  doctorId: text("doctor_id").references(() => doctors.id),
-  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
-  scheduledDate: text("scheduled_date"),
-  scheduledTime: text("scheduled_time"),
-  completedDate: text("completed_date"),
-  remarks: text("remarks").default(""),
-  totalPrice: real("total_price").notNull().default(0),
-  receiptNumber: text("receipt_number"),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
-});
-
-// Individual diagnostic tests within an order
-export const diagnosticTests = sqliteTable("diagnostic_tests", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  orderId: text("order_id").notNull().references(() => diagnosticOrders.id),
-  testName: text("test_name").notNull(),
-  testCategory: text("test_category").notNull(),
-  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed
-  results: text("results"),
-  price: real("price").notNull(),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
-});
-
 // Patient Services (OPD, Lab tests, X-ray, ECG, etc.)
 export const patientServices = sqliteTable("patient_services", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -319,7 +288,7 @@ export const rooms = sqliteTable("rooms", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Pathology Categories for dynamic test management  
+// Pathology Categories for dynamic test management
 export const pathologyCategories = sqliteTable("pathology_categories", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull().unique(),
@@ -341,6 +310,20 @@ export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
+
+// Activities table for tracking user actions
+export const activities = sqliteTable("activities", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  userId: text("user_id").references(() => users.id),
+  activityType: text("activity_type").notNull(), // e.g., 'login', 'create_patient', 'update_bill'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  entityId: text("entity_id"),
+  entityType: text("entity_type"),
+  metadata: text("metadata"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -443,36 +426,8 @@ export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
   createdAt: true,
 });
 
-export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
+export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertRoomSchema = createInsertSchema(rooms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Insert schema for hospital settings
-export const insertHospitalSettingsSchema = createInsertSchema(hospitalSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Insert schema for system settings
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Insert schema for backup logs
-export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
-  id: true,
-  backupId: true,
   createdAt: true,
 });
 
@@ -531,7 +486,8 @@ export type InsertDynamicPathologyTest = z.infer<typeof insertDynamicPathologyTe
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
-
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
 // Update schema for PATCH (partial updates allowed)
 export const updatePatientSchema = insertPatientSchema.partial();
