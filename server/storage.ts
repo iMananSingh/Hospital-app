@@ -9,7 +9,7 @@ import type {
   PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest,
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog,
-  PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity
+  PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest
 } from "@shared/schema";
 import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -148,6 +148,35 @@ async function initializeDatabase() {
         status TEXT NOT NULL DEFAULT 'ordered',
         results TEXT,
         normal_range TEXT,
+        price REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS diagnostic_orders (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        visit_id TEXT REFERENCES visits(id),
+        doctor_id TEXT REFERENCES doctors(id),
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        scheduled_date TEXT,
+        scheduled_time TEXT,
+        completed_date TEXT,
+        remarks TEXT DEFAULT '',
+        total_price REAL NOT NULL DEFAULT 0,
+        receipt_number TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS diagnostic_tests (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT NOT NULL REFERENCES diagnostic_orders(id),
+        test_name TEXT NOT NULL,
+        test_category TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        results TEXT,
         price REAL NOT NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -312,18 +341,6 @@ async function initializeDatabase() {
         error_message TEXT,
         table_count INTEGER,
         record_count INTEGER,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-
-      CREATE TABLE IF NOT EXISTS activities (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        user_id TEXT NOT NULL REFERENCES users(id),
-        activity_type TEXT NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT,
-        entity_id TEXT,
-        entity_type TEXT,
-        metadata TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
@@ -562,7 +579,7 @@ export interface IStorage {
   permanentlyDeleteDoctor(id: string): Promise<Doctor | undefined>;
 
   // Patient management
-  createPatient(patient: InsertPatient, userId?: string): Promise<Patient>;
+  createPatient(patient: InsertPatient): Promise<Patient>;
   getPatients(): Promise<Patient[]>;
   getPatientById(id: string): Promise<Patient | undefined>;
   searchPatients(query: string): Promise<Patient[]>;
@@ -574,30 +591,30 @@ export interface IStorage {
   getPatientVisitById(id: string): Promise<PatientVisit | undefined>;
 
   // Services
-  createService(service: InsertService, userId?: string): Promise<Service>;
+  createService(service: InsertService): Promise<Service>;
   getServices(): Promise<Service[]>;
   getServiceById(id: string): Promise<Service | undefined>;
   searchServices(query: string): Promise<Service[]>;
-  updateService(id: string, service: InsertService, userId?: string): Promise<Service | undefined>;
-  deleteService(id: string, userId?: string): Promise<boolean>;
+  updateService(id: string, service: InsertService): Promise<Service | undefined>;
+  deleteService(id: string): Promise<boolean>;
 
   // Billing
-  createBill(bill: InsertBill, items: InsertBillItem[], userId?: string): Promise<Bill>;
+  createBill(bill: InsertBill, items: InsertBillItem[]): Promise<Bill>;
   getBills(): Promise<Bill[]>;
   getBillById(id: string): Promise<Bill | undefined>;
   getBillItems(billId: string): Promise<BillItem[]>;
   getBillsWithPatients(): Promise<any[]>;
 
   // Pathology order and test management
-  createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[], userId?: string): Promise<PathologyOrder>;
+  createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder>;
   getPathologyOrders(): Promise<any[]>;
   getPathologyOrderById(id: string): Promise<any>;
   getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]>;
   updatePathologyOrderStatus(id: string, status: string): Promise<PathologyOrder | undefined>;
-  updatePathologyTestStatus(id: string, status: string, results?: string, userId?: string): Promise<PathologyTest | undefined>;
+  updatePathologyTestStatus(id: string, status: string, results?: string): Promise<PathologyTest | undefined>;
 
   // Patient Services
-  createPatientService(service: InsertPatientService, userId?: string): Promise<PatientService>;
+  createPatientService(service: InsertPatientService): Promise<PatientService>;
   getPatientServices(patientId?: string): Promise<PatientService[]>;
   getPatientServiceById(id: string): Promise<PatientService | undefined>;
   updatePatientService(id: string, service: Partial<InsertPatientService>): Promise<PatientService | undefined>;
@@ -637,13 +654,8 @@ export interface IStorage {
   // Audit logging
   logAction(log: InsertAuditLog): Promise<void>;
 
-  // Activity logging
-  logActivity(userId: string, activityType: string, title: string, description: string, entityId?: string, entityType?: string, metadata?: any): Promise<void>;
-  getRecentActivities(limit?: number): Promise<any[]>;
-
   // Receipt numbering
   getDailyReceiptCount(serviceType: string, date: string): Promise<number>;
-  getDailyReceiptCountSync(serviceType: string, date: string): number;
 
   // Pathology category management
   createPathologyCategory(category: InsertPathologyCategory): Promise<PathologyCategory>;
@@ -740,7 +752,7 @@ export class SqliteStorage implements IStorage {
     if (updateData.password) {
       updateData.password = await this.hashPassword(updateData.password);
     }
-
+    
     const updated = db.update(schema.users)
       .set({ ...updateData, updatedAt: new Date().toISOString() })
       .where(eq(schema.users.id, id))
@@ -763,12 +775,12 @@ export class SqliteStorage implements IStorage {
           }
 
           // Update all references to this user to null before deleting
-
+          
           // Update bills created by this user (createdBy column exists)
           const billsToUpdate = tx.select().from(schema.bills)
             .where(eq(schema.bills.createdBy, id))
             .all();
-
+          
           for (const bill of billsToUpdate) {
             tx.update(schema.bills)
               .set({ createdBy: sql`NULL` })
@@ -780,7 +792,7 @@ export class SqliteStorage implements IStorage {
           const eventsToUpdate = tx.select().from(schema.admissionEvents)
             .where(eq(schema.admissionEvents.createdBy, id))
             .all();
-
+          
           for (const event of eventsToUpdate) {
             tx.update(schema.admissionEvents)
               .set({ createdBy: sql`NULL` })
@@ -958,42 +970,13 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getDailyPatientCount(): Promise<number> {
-    try {
-      const count = db.select().from(schema.patients).all().length;
-      return count;
-    } catch (error) {
-      console.error('Error getting daily patient count:', error);
-      return 0;
-    }
-  }
-
-  async createPatient(patientData: InsertPatient, userId?: string): Promise<Patient> {
-    // Generate patient ID
-    const today = new Date();
-    const year = today.getFullYear();
-    const patientCount = await this.getDailyPatientCount();
-    const patientId = `PAT-${year}-${String(patientCount + 1).padStart(3, '0')}`;
-
-    const patient = db.insert(schema.patients).values({
-      ...patientData,
+  async createPatient(patient: InsertPatient): Promise<Patient> {
+    const patientId = this.generatePatientId();
+    const created = db.insert(schema.patients).values({
+      ...patient,
       patientId,
     }).returning().get();
-
-    // Log activity
-    if (userId) {
-      this.logActivity(
-        userId,
-        'patient_registered',
-        'New patient registered',
-        `${patient.name} - ${patient.patientId}`,
-        patient.id,
-        'patient',
-        { patientId: patient.patientId, age: patient.age, gender: patient.gender }
-      );
-    }
-
-    return patient;
+    return created;
   }
 
   async getPatients(): Promise<Patient[]> {
@@ -1052,21 +1035,8 @@ export class SqliteStorage implements IStorage {
     return db.select().from(schema.patientVisits).where(eq(schema.patientVisits.id, id)).get();
   }
 
-  async createService(service: InsertService, userId?: string): Promise<Service> {
+  async createService(service: InsertService): Promise<Service> {
     const created = db.insert(schema.services).values(service).returning().get();
-
-    if (userId) {
-      this.logActivity(
-        userId,
-        'service_created',
-        'Service created',
-        `${service.name} - ${service.category}`,
-        created.id,
-        'service',
-        { serviceName: service.name, category: service.category, price: service.price }
-      );
-    }
-
     return created;
   }
 
@@ -1093,76 +1063,35 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async updateService(id: string, service: InsertService, userId?: string): Promise<Service | undefined> {
+  async updateService(id: string, service: InsertService): Promise<Service | undefined> {
     const updated = db.update(schema.services)
       .set(service)
       .where(eq(schema.services.id, id))
       .returning()
       .get();
-
-    if (userId && updated) {
-      this.logActivity(
-        userId,
-        'service_updated',
-        'Service updated',
-        `${updated.name} - ${updated.category}`,
-        updated.id,
-        'service',
-        { serviceName: updated.name, category: updated.category }
-      );
-    }
-
     return updated;
   }
 
-  async deleteService(id: string, userId?: string): Promise<boolean> {
-    const service = db.select().from(schema.services).where(eq(schema.services.id, id)).get();
+  async deleteService(id: string): Promise<boolean> {
     const result = db.delete(schema.services).where(eq(schema.services.id, id)).run();
-
-    if (userId && service && result.changes > 0) {
-      this.logActivity(
-        userId,
-        'service_deleted',
-        'Service deleted',
-        `${service.name} - ${service.category}`,
-        id,
-        'service',
-        { serviceName: service.name, category: service.category }
-      );
-    }
-
     return result.changes > 0;
   }
 
-  async createBill(billData: InsertBill, itemsData: InsertBillItem[], userId?: string): Promise<Bill> {
+  async createBill(bill: InsertBill, items: InsertBillItem[]): Promise<Bill> {
     const billNumber = this.generateBillNumber();
 
     return db.transaction((tx) => {
       const created = tx.insert(schema.bills).values({
-        ...billData,
+        ...bill,
         billNumber,
       }).returning().get();
 
-      const billItems = itemsData.map(item => ({
+      const billItems = items.map(item => ({
         ...item,
         billId: created.id,
       }));
 
       tx.insert(schema.billItems).values(billItems);
-
-      // Log activity
-      if (userId) {
-        const patient = tx.select().from(schema.patients).where(eq(schema.patients.id, billData.patientId)).get();
-        this.logActivity(
-          userId,
-          'bill_created',
-          'New bill generated',
-          `${billNumber} for ${patient?.name || 'Unknown Patient'}`,
-          created.id,
-          'bill',
-          { amount: billData.totalAmount, patientName: patient?.name }
-        );
-      }
 
       return created;
     });
@@ -1195,7 +1124,7 @@ export class SqliteStorage implements IStorage {
     .all();
   }
 
-  async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[], userId?: string): Promise<PathologyOrder> {
+  async createPathologyOrder(orderData: InsertPathologyOrder, tests: InsertPathologyTest[]): Promise<PathologyOrder> {
     const generatedOrderId = this.generateOrderId();
     const totalPrice = tests.reduce((total, test) => total + test.price, 0);
     const orderedDate = orderData.orderedDate || new Date().toISOString().split('T')[0];
@@ -1226,22 +1155,91 @@ export class SqliteStorage implements IStorage {
         }).run();
       });
 
-      // Log activity
-      if (userId) {
-        const patient = tx.select().from(schema.patients).where(eq(schema.patients.id, orderData.patientId)).get();
-        this.logActivity(
-          userId,
-          'lab_test_ordered',
-          'Lab test ordered',
-          `${orderId} for ${patient?.name || 'Unknown Patient'}`,
-          created.id,
-          'pathology_order',
-          { testCount: tests.length, patientName: patient?.name }
-        );
-      }
-
       return created;
     });
+  }
+
+  async getDiagnosticOrders(): Promise<any[]> {
+    try {
+      const orders = db.$client.prepare(`
+        SELECT 
+          do.*,
+          p.full_name as patientName,
+          p.phone as patientPhone,
+          d.full_name as doctorName
+        FROM diagnostic_orders do
+        LEFT JOIN patients p ON do.patient_id = p.id
+        LEFT JOIN doctors d ON do.doctor_id = d.id
+        ORDER BY do.created_at DESC
+      `).all();
+
+      // Get tests for each order
+      const ordersWithTests = [];
+      for (const order of orders as any[]) {
+        const tests = db.$client.prepare(`
+          SELECT * FROM diagnostic_tests 
+          WHERE order_id = ?
+          ORDER BY created_at ASC
+        `).all(order.id);
+
+        ordersWithTests.push({
+          ...order,
+          tests: tests
+        });
+      }
+
+      return ordersWithTests;
+    } catch (error) {
+      console.error('Error fetching diagnostic orders:', error);
+      return [];
+    }
+  }
+
+  async createDiagnosticOrder(orderData: any, tests: any[]): Promise<string> {
+    const orderId = this.generateOrderId('DIAG');
+    const totalPrice = tests.reduce((sum, test) => sum + (test.price || 0), 0);
+    
+    const orderRecord = {
+      orderId,
+      patientId: orderData.patientId,
+      doctorId: orderData.doctorId,
+      status: orderData.status || 'scheduled',
+      scheduledDate: orderData.scheduledDate,
+      remarks: orderData.remarks || '',
+      totalPrice,
+    };
+
+    // Insert order
+    const orderInsertResult = db.$client.prepare(`
+      INSERT INTO diagnostic_orders (order_id, patient_id, doctor_id, status, scheduled_date, remarks, total_price, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).run(
+      orderRecord.orderId,
+      orderRecord.patientId,
+      orderRecord.doctorId,
+      orderRecord.status,
+      orderRecord.scheduledDate,
+      orderRecord.remarks,
+      orderRecord.totalPrice
+    );
+
+    const newOrderId = orderInsertResult.lastInsertRowid as string;
+
+    // Insert tests
+    for (const test of tests) {
+      db.$client.prepare(`
+        INSERT INTO diagnostic_tests (order_id, test_name, test_category, status, price, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `).run(
+        newOrderId,
+        test.testName,
+        test.testCategory,
+        test.status || 'scheduled',
+        test.price
+      );
+    }
+
+    return orderId;
   }
 
   async getPathologyOrders(): Promise<any[]> {
@@ -1273,12 +1271,31 @@ export class SqliteStorage implements IStorage {
     };
   }
 
-  async updatePathologyOrderStatus(orderId: string, status: string): Promise<PathologyOrder | undefined> {
-    const updated = db.update(schema.pathologyOrders)
-      .set({ status, updatedAt: new Date().toISOString() })
+  async updatePathologyOrderStatus(orderId: string, status: string): Promise<any> {
+    const updatedOrder = db.update(schema.pathologyOrders)
+      .set({
+        status,
+        updatedAt: new Date().toISOString(),
+        ...(status === 'completed' ? { completedDate: new Date().toISOString() } : {})
+      })
       .where(eq(schema.pathologyOrders.id, orderId))
-      .returning().get();
-    return updated;
+      .returning()
+      .get();
+
+    if (!updatedOrder) {
+      throw new Error("Order not found");
+    }
+
+    // Also update all tests in this order to the same status
+    db.update(schema.pathologyTests)
+      .set({
+        status,
+        updatedAt: new Date().toISOString()
+      })
+      .where(eq(schema.pathologyTests.orderId, orderId))
+      .run();
+
+    return updatedOrder;
   }
 
   async getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]> {
@@ -1288,57 +1305,29 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async updatePathologyTestStatus(testId: string, status: string, results?: string, userId?: string): Promise<PathologyTest | undefined> {
-    const updated = db.update(schema.pathologyTests)
-      .set({
-        status,
-        results,
-        updatedAt: new Date().toISOString()
-      })
-      .where(eq(schema.pathologyTests.id, testId))
+  async updatePathologyOrderStatus(id: string, status: string): Promise<PathologyOrder | undefined> {
+    const updated = db.update(schema.pathologyOrders)
+      .set({ status, updatedAt: new Date().toISOString() })
+      .where(eq(schema.pathologyOrders.id, id))
       .returning().get();
-
-    // Log activity when test is completed
-    if (status === 'completed' && userId) {
-      const test = db.select().from(schema.pathologyTests).where(eq(schema.pathologyTests.id, testId)).get();
-      const order = db.select().from(schema.pathologyOrders).where(eq(schema.pathologyOrders.id, test?.orderId || '')).get();
-      const patient = db.select().from(schema.patients).where(eq(schema.patients.id, order?.patientId || '')).get();
-
-      this.logActivity(
-        userId,
-        'lab_test_completed',
-        'Lab test completed',
-        `${test?.testName} for ${patient?.name || 'Unknown Patient'}`,
-        testId,
-        'pathology_test',
-        { testName: test?.testName, patientName: patient?.name }
-      );
-    }
-
     return updated;
   }
 
-  async createPatientService(serviceData: InsertPatientService, userId?: string): Promise<PatientService> {
+  async updatePathologyTestStatus(id: string, status: string, results?: string): Promise<PathologyTest | undefined> {
+    const updated = db.update(schema.pathologyTests)
+      .set({ status, results, updatedAt: new Date().toISOString() })
+      .where(eq(schema.pathologyTests.id, id))
+      .returning().get();
+    return updated;
+  }
+
+  async createPatientService(serviceData: any): Promise<any> {
     try {
       const created = db.insert(schema.patientServices).values({
         ...serviceData,
         serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
         receiptNumber: serviceData.receiptNumber || null,
       }).returning().get();
-
-      // Log activity for OPD appointments
-      if (userId && serviceData.serviceType === 'opd') {
-        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, serviceData.patientId)).get();
-        this.logActivity(
-          userId,
-          'opd_scheduled',
-          'OPD appointment scheduled',
-          `${serviceData.serviceName} for ${patient?.name || 'Unknown Patient'}`,
-          created.id,
-          'patient_service',
-          { serviceName: serviceData.serviceName, patientName: patient?.name, scheduledDate: serviceData.scheduledDate }
-        );
-      }
 
       return created;
     } catch (error) {
@@ -1445,22 +1434,6 @@ export class SqliteStorage implements IStorage {
             .run();
         }
       }
-
-      // Log admission activity (do this after transaction to avoid issues)
-      setImmediate(() => {
-        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, admission.patientId)).get();
-        if (patient) {
-          this.logActivity(
-            'system',
-            'patient_admitted',
-            'Patient admitted',
-            `${patient.name} - ${admissionId}`,
-            created.id,
-            'admission',
-            { admissionId, patientName: patient.name, roomNumber: admission.currentRoomNumber, wardType: admission.currentWardType }
-          );
-        }
-      });
 
       return created;
     });
@@ -1766,22 +1739,6 @@ export class SqliteStorage implements IStorage {
         }
       }
 
-      // Log discharge activity (do this after transaction to avoid issues)
-      setImmediate(() => {
-        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, currentAdmission.patientId)).get();
-        if (patient) {
-          this.logActivity(
-            userId,
-            'patient_discharged',
-            'Patient discharged',
-            `${patient.name} - ${currentAdmission.admissionId}`,
-            admissionId,
-            'admission',
-            { admissionId: currentAdmission.admissionId, patientName: patient.name }
-          );
-        }
-      });
-
       return updated;
     });
   }
@@ -1879,11 +1836,290 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  // System settings
+  // Synchronous version for use within transactions
+  private getDailyReceiptCountSync(serviceType: string, date: string): number {
+    try {
+      let count = 0;
+
+      switch (serviceType.toLowerCase()) {
+        case 'opd':
+          count = db.select().from(schema.patientServices)
+            .where(and(
+              eq(schema.patientServices.scheduledDate, date),
+              eq(schema.patientServices.serviceType, 'opd')
+            ))
+            .all().length;
+          break;
+
+        case 'service':
+        case 'ser':
+          count = db.select().from(schema.patientServices)
+            .where(and(
+              eq(schema.patientServices.scheduledDate, date),
+              ne(schema.patientServices.serviceType, 'opd')
+            ))
+            .all().length;
+          break;
+
+        case 'pathology':
+        case 'pat':
+          count = db.select().from(schema.pathologyOrders)
+            .where(eq(schema.pathologyOrders.orderedDate, date))
+            .all().length;
+          break;
+
+        case 'admission':
+        case 'adm':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'admit')
+            ))
+            .all().length;
+          break;
+
+        case 'discharge':
+        case 'dis':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'discharge')
+            ))
+            .all().length;
+          break;
+
+        case 'room_transfer':
+        case 'rts':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              like(schema.admissionEvents.eventTime, `${date}%`),
+              eq(schema.admissionEvents.eventType, 'room_change')
+            ))
+            .all().length;
+          break;
+
+        case 'payment':
+        case 'pay':
+          count = db.select().from(schema.admissions)
+            .where(like(schema.admissions.lastPaymentDate, `${date}%`))
+            .all().length;
+          break;
+
+        default:
+          count = 0;
+      }
+
+      return count + 1;
+    } catch (error) {
+      console.error('Error getting daily receipt count sync:', error);
+      return 1;
+    }
+  }
+
+  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
+    return this.getDailyReceiptCountSync(serviceType, date);
+  }
+
+  // Inpatient Management Detail Methods (IST-based calculations)
+  async getBedOccupancyDetails(): Promise<any> {
+    try {
+      // Get all room types with their rooms
+      const roomTypes = await this.getAllRoomTypes();
+
+      const bedOccupancy = await Promise.all(roomTypes.map(async (roomType) => {
+        // Get all rooms for this room type
+        const rooms = await this.getRoomsByType(roomType.id);
+
+        let actualOccupiedBeds = 0;
+
+        // For each room, check if there's an actual current admission
+        const roomsWithOccupancy = await Promise.all(rooms.map(async (room) => {
+          let occupyingPatient = null;
+          let isActuallyOccupied = false;
+
+          // Check if there's a current admission for this room by room number and ward type
+          const admission = db.select()
+            .from(schema.admissions)
+            .where(
+              and(
+                eq(schema.admissions.currentRoomNumber, room.roomNumber),
+                eq(schema.admissions.currentWardType, roomType.name),
+                eq(schema.admissions.status, 'admitted')
+              )
+            )
+            .get();
+
+          if (admission) {
+            isActuallyOccupied = true;
+            actualOccupiedBeds++;
+
+            // Get patient details
+            const patient = db.select()
+              .from(schema.patients)
+              .where(eq(schema.patients.id, admission.patientId))
+              .get();
+
+            if (patient) {
+              occupyingPatient = {
+                name: patient.name,
+                patientId: patient.patientId
+              };
+            }
+          }
+
+          return {
+            ...room,
+            isOccupied: isActuallyOccupied,
+            occupyingPatient
+          };
+        }));
+
+        // Return the room type with corrected occupied bed count
+        return {
+          ...roomType,
+          occupiedBeds: actualOccupiedBeds, // Use actual count instead of stored value
+          rooms: roomsWithOccupancy
+        };
+      }));
+
+      return bedOccupancy;
+    } catch (error) {
+      console.error('Error fetching bed occupancy details:', error);
+      throw error;
+    }
+  }
+
+  async getCurrentlyAdmittedPatients(): Promise<any[]> {
+    try {
+      // Get all currently admitted patients with their details
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.status, 'admitted'))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
+
+      const patientsWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return patientsWithDetails;
+    } catch (error) {
+      console.error('Error fetching currently admitted patients:', error);
+      throw error;
+    }
+  }
+
+  async getTodayAdmissions(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      // Get admissions for today
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.admissionDate, today))
+        .orderBy(desc(schema.admissions.createdAt))
+        .all();
+
+      const admissionsWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return admissionsWithDetails;
+    } catch (error) {
+      console.error('Error fetching today\'s admissions:', error);
+      throw error;
+    }
+  }
+
+  async getTodayDischarges(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      // Get discharges for today
+      const admissions = db.select()
+        .from(schema.admissions)
+        .where(
+          and(
+            eq(schema.admissions.dischargeDate, today),
+            eq(schema.admissions.status, 'discharged')
+          )
+        )
+        .orderBy(desc(schema.admissions.updatedAt))
+        .all();
+
+      const dischargesWithDetails = await Promise.all(admissions.map(async (admission) => {
+        // Get patient details
+        const patient = db.select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, admission.patientId))
+          .get();
+
+        // Get doctor details
+        const doctor = admission.doctorId ? db.select()
+          .from(schema.doctors)
+          .where(eq(schema.doctors.id, admission.doctorId))
+          .get() : null;
+
+        return {
+          ...admission,
+          patient,
+          doctor
+        };
+      }));
+
+      return dischargesWithDetails;
+    } catch (error) {
+      console.error('Error fetching today\'s discharges:', error);
+      throw error;
+    }
+  }
+
   async getSystemSettings(): Promise<any> {
     try {
       let settings = db.select().from(schema.systemSettings).get();
-
+      
       // Create default settings if none exist
       if (!settings) {
         settings = {
@@ -1899,10 +2135,10 @@ export class SqliteStorage implements IStorage {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-
+        
         db.insert(schema.systemSettings).values(settings).run();
       }
-
+      
       return settings;
     } catch (error) {
       console.error('Error fetching system settings:', error);
@@ -1913,7 +2149,7 @@ export class SqliteStorage implements IStorage {
   async saveSystemSettings(settings: any): Promise<any> {
     try {
       const existingSettings = db.select().from(schema.systemSettings).get();
-
+      
       if (existingSettings) {
         // Update existing settings
         const updated = db.update(schema.systemSettings)
@@ -1933,7 +2169,7 @@ export class SqliteStorage implements IStorage {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-
+        
         const created = db.insert(schema.systemSettings)
           .values(newSettings)
           .returning()
@@ -1946,7 +2182,6 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  // Backup functionality
   private generateBackupId(): string {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.backupLogs).all().length + 1;
@@ -1956,7 +2191,7 @@ export class SqliteStorage implements IStorage {
   async createBackup(backupType: string = 'auto'): Promise<any> {
     const backupId = this.generateBackupId();
     const startTime = new Date().toISOString();
-
+    
     try {
       // Log backup start
       const backupLog = {
@@ -1966,19 +2201,19 @@ export class SqliteStorage implements IStorage {
         startTime,
         createdAt: startTime
       };
-
+      
       db.insert(schema.backupLogs).values(backupLog).run();
-
+      
       // Create backup directory if it doesn't exist
       const backupDir = path.join(process.cwd(), 'backups');
       if (!fs.existsSync(backupDir)) {
         fs.mkdirSync(backupDir, { recursive: true });
       }
-
+      
       // Generate backup filename with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const backupPath = path.join(backupDir, `hospital-backup-${timestamp}.sql`);
-
+      
       // Export database to SQL dump
       const tables = [
         'users', 'doctors', 'patients', 'patient_visits', 'services', 
@@ -1986,22 +2221,22 @@ export class SqliteStorage implements IStorage {
         'patient_services', 'admissions', 'admission_events', 
         'hospital_settings', 'system_settings', 'room_types', 'rooms'
       ];
-
+      
       let sqlDump = '-- Hospital Management System Database Backup\n';
       sqlDump += `-- Created: ${new Date().toISOString()}\n`;
       sqlDump += `-- Backup ID: ${backupId}\n\n`;
-
+      
       let totalRecords = 0;
-
+      
       for (const tableName of tables) {
         try {
           const rows = db.$client.prepare(`SELECT * FROM ${tableName}`).all();
           totalRecords += rows.length;
-
+          
           if (rows.length > 0) {
             sqlDump += `-- Table: ${tableName}\n`;
             sqlDump += `DELETE FROM ${tableName};\n`;
-
+            
             for (const row of rows) {
               const columns = Object.keys(row).join(', ');
               const values = Object.values(row).map(v => 
@@ -2009,7 +2244,7 @@ export class SqliteStorage implements IStorage {
                 typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` : 
                 v
               ).join(', ');
-
+              
               sqlDump += `INSERT INTO ${tableName} (${columns}) VALUES (${values});\n`;
             }
             sqlDump += '\n';
@@ -2018,14 +2253,14 @@ export class SqliteStorage implements IStorage {
           console.warn(`Warning: Could not backup table ${tableName}:`, tableError);
         }
       }
-
+      
       // Write backup file
       fs.writeFileSync(backupPath, sqlDump, 'utf8');
       const fileStats = fs.statSync(backupPath);
       const endTime = new Date().toISOString();
-
+      
       console.log(`Backup file created: ${backupPath} (${fileStats.size} bytes)`);
-
+      
       // Update backup log with success
       db.update(schema.backupLogs)
         .set({
@@ -2038,9 +2273,9 @@ export class SqliteStorage implements IStorage {
         })
         .where(eq(schema.backupLogs.backupId, backupId))
         .run();
-
+      
       console.log(`Backup log updated for ${backupId} with status: completed`);
-
+      
       // Update system settings with last backup date
       const systemSettings = await this.getSystemSettings();
       if (systemSettings) {
@@ -2049,7 +2284,7 @@ export class SqliteStorage implements IStorage {
           lastBackupDate: new Date().toISOString().split('T')[0]
         });
       }
-
+      
       return {
         backupId,
         filePath: backupPath,
@@ -2057,10 +2292,10 @@ export class SqliteStorage implements IStorage {
         recordCount: totalRecords,
         status: 'completed'
       };
-
+      
     } catch (error) {
       console.error('Backup creation error:', error);
-
+      
       // Update backup log with failure
       db.update(schema.backupLogs)
         .set({
@@ -2070,7 +2305,7 @@ export class SqliteStorage implements IStorage {
         })
         .where(eq(schema.backupLogs.backupId, backupId))
         .run();
-
+      
       throw error;
     }
   }
@@ -2088,7 +2323,7 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getBackupHistory(): Promise<any[]>{
+  async getBackupHistory(): Promise<any[]> {
     try {
       const history = db.select()
         .from(schema.backupLogs)
@@ -2101,10 +2336,10 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.backupLogs.createdAt))
         .limit(20)
         .all();
-
+      
       console.log('Backup history query result:', history.length, 'backups found');
       console.log('Backup types in history:', history.map(h => `${h.backupType} - ${h.backupId}`));
-
+      
       return history;
     } catch (error) {
       console.error('Error fetching backup history:', error);
@@ -2116,34 +2351,34 @@ export class SqliteStorage implements IStorage {
     try {
       const systemSettings = await this.getSystemSettings();
       const retentionDays = systemSettings?.backupRetentionDays || 30;
-
+      
       // Calculate cutoff date
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
       const cutoffIso = cutoffDate.toISOString();
-
+      
       // Find old backup files
       const oldBackups = db.select()
         .from(schema.backupLogs)
         .where(sql`${schema.backupLogs.createdAt} < ${cutoffIso}`)
         .all();
-
+      
       // Delete files and log entries
       for (const backup of oldBackups) {
         try {
           if (backup.filePath && fs.existsSync(backup.filePath)) {
             fs.unlinkSync(backup.filePath);
           }
-
+          
           db.delete(schema.backupLogs)
             .where(eq(schema.backupLogs.id, backup.id))
             .run();
-
+            
         } catch (deleteError) {
           console.warn(`Failed to delete backup ${backup.backupId}:`, deleteError);
         }
       }
-
+      
       console.log(`Cleaned up ${oldBackups.length} old backup(s)`);
     } catch (error) {
       console.error('Error cleaning old backups:', error);
@@ -2152,7 +2387,7 @@ export class SqliteStorage implements IStorage {
 
   async restoreBackup(backupFilePath: string): Promise<any> {
     const startTime = new Date().toISOString();
-
+    
     try {
       // Validate backup file exists
       if (!fs.existsSync(backupFilePath)) {
@@ -2161,7 +2396,7 @@ export class SqliteStorage implements IStorage {
 
       // Read backup file content
       const backupContent = fs.readFileSync(backupFilePath, 'utf8');
-
+      
       if (!backupContent || backupContent.trim().length === 0) {
         throw new Error('Backup file is empty or corrupted');
       }
@@ -2176,7 +2411,7 @@ export class SqliteStorage implements IStorage {
         startTime,
         createdAt: startTime
       };
-
+      
       db.insert(schema.backupLogs).values(restoreLog).run();
 
       // Split SQL content into individual statements outside of transaction
@@ -2192,7 +2427,7 @@ export class SqliteStorage implements IStorage {
         .filter(stmt => stmt.trim());
 
       let executedStatements = 0;
-
+      
       // Execute statements directly using the SQLite client
       for (const statement of statements) {
         const trimmedStmt = statement.trim();
@@ -2221,10 +2456,10 @@ export class SqliteStorage implements IStorage {
         executedStatements,
         status: 'completed'
       };
-
+      
     } catch (error) {
       console.error('Backup restore error:', error);
-
+      
       // Update restore log with failure if possible
       try {
         const restoreId = this.generateBackupId().replace('BACKUP', 'RESTORE');
@@ -2239,7 +2474,7 @@ export class SqliteStorage implements IStorage {
       } catch (logError) {
         console.error('Failed to update restore log:', logError);
       }
-
+      
       throw error;
     }
   }
@@ -2247,7 +2482,7 @@ export class SqliteStorage implements IStorage {
   async getAvailableBackups(): Promise<any[]> {
     try {
       const backupDir = path.join(process.cwd(), 'backups');
-
+      
       if (!fs.existsSync(backupDir)) {
         return [];
       }
@@ -2257,7 +2492,7 @@ export class SqliteStorage implements IStorage {
         .map(file => {
           const filePath = path.join(backupDir, file);
           const stats = fs.statSync(filePath);
-
+          
           // Get backup log info if available by matching file path
           const backupLog = db.select()
             .from(schema.backupLogs)
@@ -2390,7 +2625,7 @@ export class SqliteStorage implements IStorage {
 
   async bulkCreateDynamicPathologyTests(tests: InsertDynamicPathologyTest[]): Promise<DynamicPathologyTest[]> {
     const createdTests: DynamicPathologyTest[] = [];
-
+    
     const transaction = db.transaction(() => {
       for (const test of tests) {
         const created = db.insert(schema.dynamicPathologyTests).values(test).returning().get();
@@ -2400,145 +2635,6 @@ export class SqliteStorage implements IStorage {
 
     transaction();
     return createdTests;
-  }
-
-  async logActivity(userId: string, activityType: string, title: string, description: string, entityId?: string, entityType?: string, metadata?: any): Promise<void> {
-    try {
-      db.$client.prepare(`
-        INSERT INTO activities (user_id, activity_type, title, description, entity_id, entity_type, metadata, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `).run(userId, activityType, title, description, entityId || null, entityType || null, metadata ? JSON.stringify(metadata) : null);
-    } catch (error) {
-      console.error('Failed to log activity:', error);
-    }
-  }
-
-  async getRecentActivities(limit: number = 10): Promise<any[]> {
-    try {
-      const activities = db.$client.prepare(`
-        SELECT 
-          a.id,
-          a.activity_type as activityType,
-          a.title,
-          a.description,
-          a.entity_id as entityId,
-          a.entity_type as entityType,
-          a.metadata,
-          a.created_at as createdAt,
-          u.full_name as userName
-        FROM activities a
-        LEFT JOIN users u ON a.user_id = u.id
-        ORDER BY a.created_at DESC
-        LIMIT ?
-      `).all(limit);
-
-      return (activities as any[]).map(activity => ({
-        ...activity,
-        metadata: activity.metadata ? JSON.parse(activity.metadata) : null,
-      }));
-    } catch (error) {
-      console.error('Error fetching recent activities:', error);
-      return [];
-    }
-  }
-
-  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
-    try {
-      let count = 0;
-      
-      switch (serviceType) {
-        case 'pathology':
-          count = db.select().from(schema.pathologyOrders)
-            .where(eq(schema.pathologyOrders.orderedDate, date))
-            .all().length;
-          break;
-        case 'admission':
-          count = db.select().from(schema.admissionEvents)
-            .where(and(
-              eq(schema.admissionEvents.eventType, 'admit'),
-              like(schema.admissionEvents.eventTime, `${date}%`)
-            ))
-            .all().length;
-          break;
-        case 'room_transfer':
-          count = db.select().from(schema.admissionEvents)
-            .where(and(
-              eq(schema.admissionEvents.eventType, 'room_change'),
-              like(schema.admissionEvents.eventTime, `${date}%`)
-            ))
-            .all().length;
-          break;
-        case 'discharge':
-          count = db.select().from(schema.admissionEvents)
-            .where(and(
-              eq(schema.admissionEvents.eventType, 'discharge'),
-              like(schema.admissionEvents.eventTime, `${date}%`)
-            ))
-            .all().length;
-          break;
-        case 'opd':
-          count = db.select().from(schema.patientServices)
-            .where(and(
-              eq(schema.patientServices.serviceType, 'opd'),
-              eq(schema.patientServices.scheduledDate, date)
-            ))
-            .all().length;
-          break;
-        default:
-          count = 0;
-      }
-      
-      return count + 1;
-    } catch (error) {
-      console.error('Error getting daily receipt count:', error);
-      return 1;
-    }
-  }
-
-  getDailyReceiptCountSync(serviceType: string, date: string): number {
-    try {
-      let count = 0;
-      
-      switch (serviceType) {
-        case 'pathology':
-          count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM pathology_orders 
-            WHERE ordered_date = ?
-          `).get(date)?.count || 0;
-          break;
-        case 'admission':
-          count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
-            WHERE event_type = 'admit' AND event_time LIKE ?
-          `).get(`${date}%`)?.count || 0;
-          break;
-        case 'room_transfer':
-          count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
-            WHERE event_type = 'room_change' AND event_time LIKE ?
-          `).get(`${date}%`)?.count || 0;
-          break;
-        case 'discharge':
-          count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
-            WHERE event_type = 'discharge' AND event_time LIKE ?
-          `).get(`${date}%`)?.count || 0;
-          break;
-        case 'opd':
-          count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM patient_services 
-            WHERE service_type = 'opd' AND scheduled_date = ?
-          `).get(date)?.count || 0;
-          break;
-        default:
-          count = 0;
-      }
-      
-      return count + 1;
-    } catch (error) {
-      console.error('Error getting daily receipt count sync:', error);
-      return 1;
-    }
   }
 }
 
