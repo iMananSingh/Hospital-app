@@ -10,6 +10,7 @@ import Billing from "@/pages/billing";
 import Patients from "@/pages/patients";
 import PatientDetail from "@/pages/patient-detail";
 import Pathology from "@/pages/pathology";
+import Diagnostics from "@/pages/diagnostics";
 import Doctors from "@/pages/doctors";
 import ServiceManagement from "@/pages/services";
 import OpdList from "@/pages/opd-list";
@@ -61,8 +62,7 @@ function Router() {
       <Route path="/patients" component={() => <ProtectedRoute component={Patients} />} />
       <Route path="/patients/:id" component={() => <ProtectedRoute component={PatientDetail} />} />
       <Route path="/pathology" component={() => <ProtectedRoute component={Pathology} />} />
-      <Route path="/doctors" component={() => <ProtectedRoute component={Doctors} />} />
-      <Route path="/services" component={() => <ProtectedRoute component={ServiceManagement} />} />
+      <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route path="/admissions" component={() => <ProtectedRoute component={Admissions} />} />
       <Route path="/bed-occupancy" component={() => <ProtectedRoute component={BedOccupancy} />} />
       <Route path="/currently-admitted" component={() => <ProtectedRoute component={CurrentlyAdmitted} />} />

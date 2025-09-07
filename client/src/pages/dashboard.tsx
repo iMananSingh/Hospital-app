@@ -3,6 +3,7 @@ import TopBar from "@/components/layout/topbar";
 import StatsCards from "@/components/stats-cards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "wouter";
 
 interface DashboardStats {
   opdPatients: number;
@@ -125,12 +126,14 @@ export default function Dashboard() {
                   </div>
                 </button>
                 
-                <button className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" data-testid="quick-new-test">
-                  <div className="text-center">
-                    <div className="text-lg font-semibold">Lab Test</div>
-                    <div className="text-sm opacity-90">Order test</div>
-                  </div>
-                </button>
+                <Link href="/diagnostics">
+                  <button className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" data-testid="quick-diagnostics">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold">Diagnostics</div>
+                      <div className="text-sm opacity-90">Schedule test</div>
+                    </div>
+                  </button>
+                </Link>
                 
                 <button className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" data-testid="quick-view-pending">
                   <div className="text-center">
