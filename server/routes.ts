@@ -572,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         // Check if custom category exists
-        const customCategories = await db.getPathologyCategories();
+        const customCategories = await storage.getPathologyCategories();
         const categoryExists = customCategories.some(cat => cat.id === categoryId);
 
         if (!categoryExists) {
@@ -580,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Add test to database for custom categories
-        const test = await db.createDynamicPathologyTest({
+        const test = await storage.createDynamicPathologyTest({
           testName,
           price,
           categoryId,
@@ -691,8 +691,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/pathology-tests/combined", authenticateToken, async (req, res) => {
     try {
       const systemCategories = getCategories();
-      const customCategories = await db.getPathologyCategories();
-      const customTests = await db.getDynamicPathologyTests();
+      const customCategories = await storage.getPathologyCategories();
+      const customTests = await storage.getDynamicPathologyTests();
 
       // Create combined categories structure
       const combinedCategories = [...systemCategories.map(name => ({
