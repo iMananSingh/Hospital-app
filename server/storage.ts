@@ -8,8 +8,7 @@ import type {
   Bill, InsertBill, BillItem, InsertBillItem,
   PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest,
   PatientService, InsertPatientService, Admission, InsertAdmission,
-  AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog,
-  PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest
+  AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog
 } from "@shared/schema";
 import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -248,27 +247,6 @@ async function initializeDatabase() {
         is_occupied INTEGER NOT NULL DEFAULT 0,
         is_active INTEGER NOT NULL DEFAULT 1,
         notes TEXT,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-
-      CREATE TABLE IF NOT EXISTS pathology_categories (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        name TEXT NOT NULL UNIQUE,
-        description TEXT,
-        is_active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-
-      CREATE TABLE IF NOT EXISTS dynamic_pathology_tests (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        category_id TEXT NOT NULL REFERENCES pathology_categories(id),
-        test_name TEXT NOT NULL,
-        price REAL NOT NULL DEFAULT 0,
-        normal_range TEXT,
-        description TEXT,
-        is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -627,22 +605,6 @@ export interface IStorage {
 
   // Receipt numbering
   getDailyReceiptCount(serviceType: string, date: string): Promise<number>;
-
-  // Pathology category management
-  createPathologyCategory(category: InsertPathologyCategory): Promise<PathologyCategory>;
-  getPathologyCategories(): Promise<PathologyCategory[]>;
-  getPathologyCategoryById(id: string): Promise<PathologyCategory | undefined>;
-  updatePathologyCategory(id: string, category: Partial<InsertPathologyCategory>): Promise<PathologyCategory | undefined>;
-  deletePathologyCategory(id: string): Promise<boolean>;
-
-  // Dynamic pathology test management
-  createDynamicPathologyTest(test: InsertDynamicPathologyTest): Promise<DynamicPathologyTest>;
-  getDynamicPathologyTests(): Promise<DynamicPathologyTest[]>;
-  getDynamicPathologyTestsByCategory(categoryId: string): Promise<DynamicPathologyTest[]>;
-  getDynamicPathologyTestById(id: string): Promise<DynamicPathologyTest | undefined>;
-  updateDynamicPathologyTest(id: string, test: Partial<InsertDynamicPathologyTest>): Promise<DynamicPathologyTest | undefined>;
-  deleteDynamicPathologyTest(id: string): Promise<boolean>;
-  bulkCreateDynamicPathologyTests(tests: InsertDynamicPathologyTest[]): Promise<DynamicPathologyTest[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2410,119 +2372,6 @@ export class SqliteStorage implements IStorage {
       console.error('Error getting available backups:', error);
       return [];
     }
-  }
-
-  // Pathology category management
-  async createPathologyCategory(category: InsertPathologyCategory): Promise<PathologyCategory> {
-    const created = db.insert(schema.pathologyCategories).values(category).returning().get();
-    return created;
-  }
-
-  async getPathologyCategories(): Promise<PathologyCategory[]> {
-    return db.select().from(schema.pathologyCategories)
-      .where(eq(schema.pathologyCategories.isActive, true))
-      .orderBy(asc(schema.pathologyCategories.name))
-      .all();
-  }
-
-  async getPathologyCategoryById(id: string): Promise<PathologyCategory | undefined> {
-    return db.select().from(schema.pathologyCategories)
-      .where(eq(schema.pathologyCategories.id, id))
-      .get();
-  }
-
-  async updatePathologyCategory(id: string, category: Partial<InsertPathologyCategory>): Promise<PathologyCategory | undefined> {
-    const updated = db.update(schema.pathologyCategories)
-      .set({ ...category, updatedAt: sql`datetime('now')` })
-      .where(eq(schema.pathologyCategories.id, id))
-      .returning()
-      .get();
-    return updated;
-  }
-
-  async deletePathologyCategory(id: string): Promise<boolean> {
-    try {
-      // Check if category has any tests first
-      const testsCount = db.select().from(schema.dynamicPathologyTests)
-        .where(eq(schema.dynamicPathologyTests.categoryId, id))
-        .all().length;
-
-      if (testsCount > 0) {
-        return false; // Cannot delete category with tests
-      }
-
-      const result = db.delete(schema.pathologyCategories)
-        .where(eq(schema.pathologyCategories.id, id))
-        .run();
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error deleting pathology category:', error);
-      return false;
-    }
-  }
-
-  // Dynamic pathology test management
-  async createDynamicPathologyTest(test: InsertDynamicPathologyTest): Promise<DynamicPathologyTest> {
-    const created = db.insert(schema.dynamicPathologyTests).values(test).returning().get();
-    return created;
-  }
-
-  async getDynamicPathologyTests(): Promise<DynamicPathologyTest[]> {
-    return db.select().from(schema.dynamicPathologyTests)
-      .where(eq(schema.dynamicPathologyTests.isActive, true))
-      .orderBy(asc(schema.dynamicPathologyTests.testName))
-      .all();
-  }
-
-  async getDynamicPathologyTestsByCategory(categoryId: string): Promise<DynamicPathologyTest[]> {
-    return db.select().from(schema.dynamicPathologyTests)
-      .where(and(
-        eq(schema.dynamicPathologyTests.categoryId, categoryId),
-        eq(schema.dynamicPathologyTests.isActive, true)
-      ))
-      .orderBy(asc(schema.dynamicPathologyTests.testName))
-      .all();
-  }
-
-  async getDynamicPathologyTestById(id: string): Promise<DynamicPathologyTest | undefined> {
-    return db.select().from(schema.dynamicPathologyTests)
-      .where(eq(schema.dynamicPathologyTests.id, id))
-      .get();
-  }
-
-  async updateDynamicPathologyTest(id: string, test: Partial<InsertDynamicPathologyTest>): Promise<DynamicPathologyTest | undefined> {
-    const updated = db.update(schema.dynamicPathologyTests)
-      .set({ ...test, updatedAt: sql`datetime('now')` })
-      .where(eq(schema.dynamicPathologyTests.id, id))
-      .returning()
-      .get();
-    return updated;
-  }
-
-  async deleteDynamicPathologyTest(id: string): Promise<boolean> {
-    try {
-      const result = db.delete(schema.dynamicPathologyTests)
-        .where(eq(schema.dynamicPathologyTests.id, id))
-        .run();
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Error deleting dynamic pathology test:', error);
-      return false;
-    }
-  }
-
-  async bulkCreateDynamicPathologyTests(tests: InsertDynamicPathologyTest[]): Promise<DynamicPathologyTest[]> {
-    const createdTests: DynamicPathologyTest[] = [];
-    
-    const transaction = db.transaction(() => {
-      for (const test of tests) {
-        const created = db.insert(schema.dynamicPathologyTests).values(test).returning().get();
-        createdTests.push(created);
-      }
-    });
-
-    transaction();
-    return createdTests;
   }
 }
 

@@ -288,29 +288,6 @@ export const rooms = sqliteTable("rooms", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Pathology Categories for dynamic test management  
-export const pathologyCategories = sqliteTable("pathology_categories", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
-});
-
-// Dynamic Pathology Tests
-export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  categoryId: text("category_id").notNull().references(() => pathologyCategories.id),
-  testName: text("test_name").notNull(),
-  price: real("price").notNull().default(0),
-  normalRange: text("normal_range"),
-  description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
-});
-
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -445,18 +422,6 @@ export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
   createdAt: true,
 });
 
-export const insertPathologyCategorySchema = createInsertSchema(pathologyCategories).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertDynamicPathologyTestSchema = createInsertSchema(dynamicPathologyTests).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -492,10 +457,6 @@ export type SystemSettings = typeof systemSettings.$inferSelect;
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
 export type BackupLog = typeof backupLogs.$inferSelect;
 export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
-export type PathologyCategory = typeof pathologyCategories.$inferSelect;
-export type InsertPathologyCategory = z.infer<typeof insertPathologyCategorySchema>;
-export type DynamicPathologyTest = typeof dynamicPathologyTests.$inferSelect;
-export type InsertDynamicPathologyTest = z.infer<typeof insertDynamicPathologyTestSchema>;
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
