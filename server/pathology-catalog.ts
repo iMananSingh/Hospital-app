@@ -1,93 +1,19 @@
-// Pathology Test Catalog
-export const pathologyCatalog = {
-  "categories": [
-    {
-      "name": "Biochemistry",
-      "tests": [
-        { "test_name": "Amylase", "price": 700, "subtests": [] },
-        { "test_name": "Bilirubin", "price": 150, "subtests": [] },
-        { "test_name": "Blood Urea", "price": 150, "subtests": [] },
-        { "test_name": "CRP (C-Reactive Protein)", "price": 600, "subtests": [] },
-        { "test_name": "Folic Acid", "price": 500, "subtests": [] },
-        { "test_name": "G6PD", "price": 800, "subtests": [] },
-        { "test_name": "HbA1c", "price": 450, "subtests": [] },
-        { "test_name": "LFT (Liver Function Test)", "price": 500, "subtests": [] },
-        { "test_name": "Lipase", "price": 800, "subtests": [] },
-        { "test_name": "Lipid Profile", "price": 600, "subtests": [] },
-        { "test_name": "RFT (Renal Function Test)", "price": 350, "subtests": [] },
-        { "test_name": "Serum Calcium", "price": 200, "subtests": [] },
-        { "test_name": "Serum Creatinine", "price": 150, "subtests": [] },
-        { "test_name": "Serum Electrolytes", "price": 600, "subtests": [] },
-        { "test_name": "Sodium Potassium", "price": 600, "subtests": [] },
-        { "test_name": "Troponin 1", "price": 1500, "subtests": [] },
-        { "test_name": "Uric Acid", "price": 200, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Endocrinology",
-      "tests": [
-        { "test_name": "BSF (Blood Sugar Fasting)", "price": 60, "subtests": [] },
-        { "test_name": "CA125", "price": 1400, "subtests": [] },
-        { "test_name": "FSH (Follicle-Stimulating Hormone)", "price": 450, "subtests": [] },
-        { "test_name": "LH (Luteinizing Hormone)", "price": 450, "subtests": [] },
-        { "test_name": "PP Blood (Post Prandial Blood Sugar)", "price": 60, "subtests": [] },
-        { "test_name": "PSA (Prostate-Specific Antigen)", "price": 500, "subtests": [] },
-        { "test_name": "RBS (Random Blood Sugar)", "price": 0, "subtests": [] },
-        { "test_name": "Thyroid Profile (T3, T4, TSH)", "price": 700, "subtests": [] },
-        { "test_name": "TSH (Thyroid-Stimulating Hormone)", "price": 250, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Hematology",
-      "tests": [
-        { "test_name": "Blood Group", "price": 80, "subtests": [] },
-        { "test_name": "BT/CT (Bleeding Time / Clotting Time)", "price": 150, "subtests": [] },
-        { "test_name": "CBC (Complete Blood Count)", "price": 300, "subtests": [] },
-        { "test_name": "ESR (Erythrocyte Sedimentation Rate)", "price": 100, "subtests": [] },
-        { "test_name": "HB (Hemoglobin)", "price": 50, "subtests": [] },
-        { "test_name": "Platelet Count", "price": 200, "subtests": [] },
-        { "test_name": "Sickling Test", "price": 200, "subtests": [] },
-        { "test_name": "TLC (Total Leukocyte Count)", "price": 200, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Immunology",
-      "tests": [
-        { "test_name": "ASO Titre (Anti-Streptolysin O Titre)", "price": 200, "subtests": [] },
-        { "test_name": "IGE (Immunoglobulin E)", "price": 650, "subtests": [] },
-        { "test_name": "RA Factor (Rheumatoid Arthritis Factor)", "price": 200, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Microbiology",
-      "tests": [
-        { "test_name": "Dengue NS1 Antigen", "price": 800, "subtests": [] },
-        { "test_name": "HBsAg (Hepatitis B Surface Antigen)", "price": 200, "subtests": [] },
-        { "test_name": "HCV (Hepatitis C Virus)", "price": 300, "subtests": [] },
-        { "test_name": "HIV", "price": 300, "subtests": [] },
-        { "test_name": "MT (Mantoux Test)", "price": 200, "subtests": [] },
-        { "test_name": "PS for MP Test (Peripheral Smear for Malaria Parasite)", "price": 80, "subtests": [] },
-        { "test_name": "VDRL (Venereal Disease Research Laboratory)", "price": 200, "subtests": [] },
-        { "test_name": "Widal Test", "price": 80, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Stool Analysis",
-      "tests": [
-        { "test_name": "Stool RM (Routine Microscopic)", "price": 300, "subtests": [] }
-      ]
-    },
-    {
-      "name": "Urine Analysis",
-      "tests": [
-        { "test_name": "UPT (Urine Pregnancy Test)", "price": 80, "subtests": [] },
-        { "test_name": "Urine Culture", "price": 550, "subtests": [] },
-        { "test_name": "Urine Ketone", "price": 80, "subtests": [] },
-        { "test_name": "Urine RM (Routine Microscopic)", "price": 80, "subtests": [] }
-      ]
-    }
-  ]
-};
+import fs from 'fs';
+import path from 'path';
+
+// Load pathology catalog from JSON file
+const catalogPath = path.join(__dirname, 'pathology-catalog.json');
+let pathologyCatalogData: any;
+
+try {
+  const catalogJson = fs.readFileSync(catalogPath, 'utf8');
+  pathologyCatalogData = JSON.parse(catalogJson);
+} catch (error) {
+  console.error('Error loading pathology catalog:', error);
+  pathologyCatalogData = { categories: [] };
+}
+
+export const pathologyCatalog = pathologyCatalogData;
 
 export interface PathologyTestCatalog {
   test_name: string;
@@ -98,24 +24,24 @@ export interface PathologyTestCatalog {
 
 export function getAllPathologyTests(): PathologyTestCatalog[] {
   const allTests: PathologyTestCatalog[] = [];
-  
-  pathologyCatalog.categories.forEach(category => {
-    category.tests.forEach(test => {
+
+  pathologyCatalog.categories.forEach((category: any) => {
+    category.tests.forEach((test: any) => {
       allTests.push({
         ...test,
         category: category.name
       });
     });
   });
-  
+
   return allTests;
 }
 
 export function getTestsByCategory(categoryName: string): PathologyTestCatalog[] {
-  const category = pathologyCatalog.categories.find(cat => cat.name === categoryName);
+  const category = pathologyCatalog.categories.find((cat: any) => cat.name === categoryName);
   if (!category) return [];
-  
-  return category.tests.map(test => ({
+
+  return category.tests.map((test: any) => ({
     ...test,
     category: categoryName
   }));
@@ -123,7 +49,7 @@ export function getTestsByCategory(categoryName: string): PathologyTestCatalog[]
 
 export function getTestByName(testName: string): PathologyTestCatalog | undefined {
   for (const category of pathologyCatalog.categories) {
-    const test = category.tests.find(t => t.test_name === testName);
+    const test = category.tests.find((t: any) => t.test_name === testName);
     if (test) {
       return {
         ...test,
@@ -135,5 +61,45 @@ export function getTestByName(testName: string): PathologyTestCatalog | undefine
 }
 
 export function getCategories(): string[] {
-  return pathologyCatalog.categories.map(cat => cat.name);
+  return pathologyCatalog.categories.map((cat: any) => cat.name);
+}
+
+// Function to add a new category to the JSON file
+export function addCategoryToFile(categoryName: string, description?: string): void {
+  try {
+    const newCategory = {
+      name: categoryName,
+      description: description || '',
+      tests: []
+    };
+
+    pathologyCatalog.categories.push(newCategory);
+
+    fs.writeFileSync(catalogPath, JSON.stringify(pathologyCatalog, null, 2));
+  } catch (error) {
+    console.error('Error adding category to file:', error);
+    throw error;
+  }
+}
+
+// Function to add a new test to a category in the JSON file
+export function addTestToFile(categoryName: string, testData: any): void {
+  try {
+    const categoryIndex = pathologyCatalog.categories.findIndex((cat: any) => cat.name === categoryName);
+
+    if (categoryIndex === -1) {
+      throw new Error(`Category "${categoryName}" not found`);
+    }
+
+    pathologyCatalog.categories[categoryIndex].tests.push({
+      test_name: testData.test_name,
+      price: testData.price,
+      subtests: testData.subtests || []
+    });
+
+    fs.writeFileSync(catalogPath, JSON.stringify(pathologyCatalog, null, 2));
+  } catch (error) {
+    console.error('Error adding test to file:', error);
+    throw error;
+  }
 }

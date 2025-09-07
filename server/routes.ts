@@ -5,8 +5,9 @@ import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema } from "@shared/schema";
-import { getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, PathologyTestCatalog } from "./pathology-catalog";
+import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
+import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -47,20 +48,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const token = jwt.sign({ 
-        id: user.id, 
-        username: user.username, 
-        role: user.role 
+      const token = jwt.sign({
+        id: user.id,
+        username: user.username,
+        role: user.role
       }, JWT_SECRET, { expiresIn: '8h' });
 
-      res.json({ 
-        token, 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          fullName: user.fullName, 
-          role: user.role 
-        } 
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role
+        }
       });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
@@ -96,13 +97,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
-      
+
       const users = await storage.getAllUsers();
-      res.json(users.map(user => ({ 
-        id: user.id, 
-        username: user.username, 
-        fullName: user.fullName, 
-        role: user.role 
+      res.json(users.map(user => ({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        role: user.role
       })));
     } catch (error) {
       res.status(500).json({ message: "Failed to get users" });
@@ -140,11 +141,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      res.json({ 
-        id: updatedUser.id, 
-        username: updatedUser.username, 
-        fullName: updatedUser.fullName, 
-        role: updatedUser.role 
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update user" });
@@ -466,13 +467,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create pathology category (creates custom categories in database)
   app.post("/api/pathology-categories", authenticateToken, async (req, res) => {
     try {
-      const categoryData = insertPathologyCategorySchema.parse(req.body);
-      const category = await storage.createPathologyCategory(categoryData);
+      const { name, description } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Category name is required" });
+      }
+
+      // Check if system category with same name exists
+      const systemCategories = getCategories();
+      if (systemCategories.includes(name)) {
+        return res.status(400).json({ message: "A system category with this name already exists" });
+      }
+
+      const category = await storage.createPathologyCategory({
+        name,
+        description: description || '',
+        isActive: true
+      });
+
       res.json(category);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create pathology category" });
+      console.error("Error creating pathology category:", error);
+      res.status(500).json({ message: "Failed to create pathology category" });
     }
   });
 
@@ -517,15 +536,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create dynamic pathology test (works for both system and custom categories)
   app.post("/api/dynamic-pathology-tests", authenticateToken, async (req, res) => {
     try {
-      const testData = insertDynamicPathologyTestSchema.parse(req.body);
-      const test = await storage.createDynamicPathologyTest(testData);
-      res.json(test);
+      const { testName, price, categoryId } = req.body;
+
+      if (!testName || typeof price !== 'number' || !categoryId) {
+        return res.status(400).json({ message: "Missing required fields: testName, price, categoryId" });
+      }
+
+      // Check if it's a system category (categoryId is a string that matches system category name)
+      const systemCategories = getCategories();
+      const isSystemCategory = systemCategories.includes(categoryId);
+
+      if (isSystemCategory) {
+        // Add test to the JSON file for system categories
+        try {
+          addTestToFile(categoryId, {
+            test_name: testName,
+            price: price,
+            subtests: []
+          });
+
+          // Return a mock response that matches the expected format
+          res.json({
+            id: `system-${Date.now()}`,
+            testName,
+            price,
+            categoryId,
+            isActive: true
+          });
+        } catch (fileError) {
+          console.error("Error adding test to system category:", fileError);
+          res.status(500).json({ message: "Failed to add test to system category" });
+        }
+      } else {
+        // Check if custom category exists
+        const customCategories = await db.getPathologyCategories();
+        const categoryExists = customCategories.some(cat => cat.id === categoryId);
+
+        if (!categoryExists) {
+          return res.status(400).json({ message: "Category not found" });
+        }
+
+        // Add test to database for custom categories
+        const test = await db.createDynamicPathologyTest({
+          testName,
+          price,
+          categoryId,
+          isActive: true
+        });
+
+        res.json(test);
+      }
     } catch (error) {
+      console.error("Error creating dynamic pathology test:", error);
       res.status(400).json({ message: "Failed to create dynamic pathology test" });
     }
   });
+
 
   app.put("/api/dynamic-pathology-tests/:id", authenticateToken, async (req, res) => {
     try {
@@ -556,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pathology-tests/bulk-upload", authenticateToken, async (req, res) => {
     try {
       const { categories } = req.body;
-      
+
       if (!categories || !Array.isArray(categories)) {
         return res.status(400).json({ message: "Invalid data format. Expected categories array." });
       }
@@ -594,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Create tests for this category
-          const testsToCreate = categoryData.tests.map((test: any) => 
+          const testsToCreate = categoryData.tests.map((test: any) =>
             insertDynamicPathologyTestSchema.parse({
               categoryId: category.id,
               testName: test.test_name || test.name,
@@ -618,68 +687,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get combined pathology tests (hardcoded + dynamic)
+  // Get combined pathology tests (system + custom)
   app.get("/api/pathology-tests/combined", authenticateToken, async (req, res) => {
     try {
-      const dynamicTests = await storage.getDynamicPathologyTests();
-      const dynamicCategories = await storage.getPathologyCategories();
-      
-      // Import hardcoded catalog using ES module syntax
-      const { pathologyCatalog } = await import('./pathology-catalog.js');
-      
-      // Combine categories
-      const hardcodedCategoryNames = pathologyCatalog.categories.map(cat => cat.name);
-      const dynamicCategoryNames = dynamicCategories.map(cat => cat.name);
-      const allCategoryNames = Array.from(new Set([...hardcodedCategoryNames, ...dynamicCategoryNames]));
-      
-      // Combine tests by category
-      const combinedData = allCategoryNames.map(categoryName => {
-        const hardcodedCategory = pathologyCatalog.categories.find(cat => cat.name === categoryName);
-        const dynamicCategory = dynamicCategories.find(cat => cat.name === categoryName);
-        
-        const hardcodedTests = hardcodedCategory ? hardcodedCategory.tests.map(test => ({
-          ...test,
-          id: `hardcoded_${test.test_name.replace(/[^a-zA-Z0-9]/g, '_')}`,
-          categoryId: dynamicCategory?.id || categoryName,
-          categoryName: categoryName,
-          isHardcoded: true,
-          name: test.test_name,
-          normalRange: '',
-          description: '',
-          testName: test.test_name
-        })) : [];
-        
-        const categoryDynamicTests = dynamicTests.filter(test => 
-          test.categoryId === dynamicCategory?.id
-        ).map(test => ({
-          ...test,
-          isHardcoded: false,
-          name: test.testName,
-          test_name: test.testName,
-          categoryName: categoryName
-        }));
-        
-        return {
-          id: dynamicCategory?.id || categoryName,
-          name: categoryName,
-          description: dynamicCategory?.description || '',
-          isHardcoded: !dynamicCategory,
-          tests: [...hardcodedTests, ...categoryDynamicTests]
-        };
-      });
-      
-      res.json({
-        categories: combinedData,
-        summary: {
-          totalCategories: allCategoryNames.length,
-          hardcodedCategories: hardcodedCategoryNames.length,
-          dynamicCategories: dynamicCategoryNames.length,
-          totalTests: combinedData.reduce((sum, cat) => sum + cat.tests.length, 0)
-        }
-      });
+      const systemCategories = getCategories();
+      const customCategories = await db.getPathologyCategories();
+      const customTests = await db.getDynamicPathologyTests();
+
+      // Create combined categories structure
+      const combinedCategories = [...systemCategories.map(name => ({
+        id: name,
+        name,
+        description: '',
+        isSystem: true,
+        tests: getTestsByCategory(name)
+      }))];
+
+      // Add custom categories
+      for (const customCat of customCategories) {
+        const testsInCategory = customTests.filter(test => test.categoryId === customCat.id);
+        combinedCategories.push({
+          id: customCat.id,
+          name: customCat.name,
+          description: customCat.description || '',
+          isSystem: false,
+          tests: testsInCategory.map(test => ({
+            test_name: test.testName,
+            price: test.price,
+            category: customCat.name,
+            subtests: []
+          }))
+        });
+      }
+
+      res.json({ categories: combinedCategories });
     } catch (error) {
-      console.error('Combined pathology data error:', error);
-      res.status(500).json({ message: "Failed to get combined pathology tests" });
+      console.error("Error fetching combined pathology tests:", error);
+      res.status(500).json({ message: "Failed to fetch pathology tests" });
     }
   });
 
@@ -1102,7 +1146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
-      
+
       const settings = await storage.getSystemSettings();
       res.json(settings);
     } catch (error) {
@@ -1119,14 +1163,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const settings = await storage.saveSystemSettings(req.body);
-      
+
       // Update backup scheduler based on new settings
       if (settings.autoBackup) {
         await backupScheduler.enableAutoBackup(settings.backupFrequency, settings.backupTime);
       } else {
         await backupScheduler.disableAutoBackup();
       }
-      
+
       res.json(settings);
     } catch (error) {
       console.error("Error saving system settings:", error);
@@ -1144,10 +1188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { backupType = 'manual' } = req.body;
       console.log(`Creating backup with type: ${backupType}`);
-      
+
       const backup = await storage.createBackup(backupType);
       console.log(`Backup created successfully:`, backup);
-      
+
       res.json(backup);
     } catch (error) {
       console.error("Error creating backup:", error);
@@ -1155,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+
 
   app.get("/api/backup/logs", authenticateToken, async (req: any, res) => {
     try {
@@ -1225,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { backupFilePath } = req.body;
-      
+
       if (!backupFilePath) {
         return res.status(400).json({ error: "Backup file path is required" });
       }
@@ -1234,9 +1278,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       console.error("Error restoring backup:", error);
-      res.status(500).json({ 
-        error: "Failed to restore backup", 
-        message: error instanceof Error ? error.message : "Unknown error" 
+      res.status(500).json({
+        error: "Failed to restore backup",
+        message: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
