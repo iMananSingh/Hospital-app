@@ -883,25 +883,12 @@ export default function ServiceManagement() {
 
         {/* Pathology Section */}
         {activeTab === 'pathology' && (
-          <div className="space-y-4">
-            {/* Pathology Navigation */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              <Button
-                onClick={() => setPathologySubTab("categories")}
-                variant={pathologySubTab === "categories" ? "default" : "outline"}
-                className="flex items-center gap-2"
-              >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
                 <Activity className="h-4 w-4" />
-                Categories
-              </Button>
-              <Button
-                onClick={() => setPathologySubTab("tests")}
-                variant={pathologySubTab === "tests" ? "default" : "outline"}
-                className="flex items-center gap-2"
-              >
-                <Syringe className="h-4 w-4" />
-                Tests
-              </Button>
+                Pathology Tests
+              </CardTitle>
               <Button
                 onClick={() => setIsUploadDialogOpen(true)}
                 variant="outline"
@@ -910,23 +897,46 @@ export default function ServiceManagement() {
                 <Plus className="h-4 w-4" />
                 Upload JSON
               </Button>
+            </CardHeader>
+            
+            {/* Pathology Navigation */}
+            <div className="px-6 pb-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => setPathologySubTab("categories")}
+                  variant={pathologySubTab === "categories" ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Activity className="h-4 w-4" />
+                  Categories
+                </Button>
+                <Button
+                  onClick={() => setPathologySubTab("tests")}
+                  variant={pathologySubTab === "tests" ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Syringe className="h-4 w-4" />
+                  Tests
+                </Button>
+              </div>
             </div>
 
-            {/* Categories Section */}
-            {pathologySubTab === "categories" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Pathology Categories</CardTitle>
-                  <Button
-                    onClick={() => setIsCategoryDialogOpen(true)}
-                    className="flex items-center gap-2"
-                    data-testid="button-add-category"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Category
-                  </Button>
-                </CardHeader>
-                <CardContent>
+            <CardContent>
+              {/* Categories Section */}
+              {pathologySubTab === "categories" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Pathology Categories</h3>
+                    <Button
+                      onClick={() => setIsCategoryDialogOpen(true)}
+                      className="flex items-center gap-2"
+                      data-testid="button-add-category"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Category
+                    </Button>
+                  </div>
+                  
                   {combinedPathologyData && combinedPathologyData.categories && combinedPathologyData.categories.length > 0 ? (
                     <div className="space-y-4">
                       {/* Summary Stats */}
@@ -1039,25 +1049,24 @@ export default function ServiceManagement() {
                       </Button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              )}
 
-            {/* Tests Section */}
-            {pathologySubTab === "tests" && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Pathology Tests</CardTitle>
-                  <Button
-                    onClick={() => setIsTestDialogOpen(true)}
-                    className="flex items-center gap-2"
-                    data-testid="button-add-test"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Test
-                  </Button>
-                </CardHeader>
-                <CardContent>
+              {/* Tests Section */}
+              {pathologySubTab === "tests" && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Pathology Tests</h3>
+                    <Button
+                      onClick={() => setIsTestDialogOpen(true)}
+                      className="flex items-center gap-2"
+                      data-testid="button-add-test"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Test
+                    </Button>
+                  </div>
+                  
                   {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
                     <div className="space-y-6">
                       {/* Category Filter */}
@@ -1189,10 +1198,10 @@ export default function ServiceManagement() {
                       </Button>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Other Services Section */}
