@@ -22,6 +22,7 @@ import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
+import Diagnostics from "@/pages/diagnostics";
 import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -70,6 +71,7 @@ function Router() {
       <Route path="/discharged-today" component={() => <ProtectedRoute component={DischargedToday} />} />
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
+      <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route component={NotFound} />
     </Switch>
