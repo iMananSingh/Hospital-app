@@ -789,7 +789,7 @@ export default function ServiceManagement() {
               </Card>
             )}
           </div>
-        ) : (
+        ) : activeTab !== 'pathology' ? (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -879,7 +879,7 @@ export default function ServiceManagement() {
               )}
             </CardContent>
           </Card>
-        )}
+        ) : null}
 
         {/* Pathology Section */}
         {activeTab === 'pathology' && (
@@ -1198,87 +1198,6 @@ export default function ServiceManagement() {
                       </Button>
                     </div>
                   )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Other Services Section */}
-        {activeTab !== 'rooms' && activeTab !== 'pathology' && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="capitalize">{activeTab} Services</CardTitle>
-              <Button
-                onClick={() => openServiceDialog()}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Service
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {filteredServices.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredServices.map((service) => (
-                      <TableRow key={service.id}>
-                        <TableCell className="font-medium">{service.name}</TableCell>
-                        <TableCell>₹{service.price.toLocaleString()}</TableCell>
-                        <TableCell>{service.description || '-'}</TableCell>
-                        <TableCell>
-                          <Badge className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {service.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => openServiceDialog(service)}
-                              size="sm"
-                              variant="outline"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                if (confirm(`Are you sure you want to delete "${service.name}"? This action cannot be undone.`)) {
-                                  deleteServiceMutation.mutate(service.id);
-                                }
-                              }}
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              disabled={deleteServiceMutation.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8">
-                  {getServiceCategoryIcon(activeTab)}
-                  <p className="text-gray-500 mt-4">No {activeTab} services defined yet</p>
-                  <Button
-                    onClick={() => openServiceDialog()}
-                    className="mt-4"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Service
-                  </Button>
                 </div>
               )}
             </CardContent>
