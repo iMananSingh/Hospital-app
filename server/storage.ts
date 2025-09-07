@@ -317,12 +317,12 @@ async function initializeDatabase() {
 
       CREATE TABLE IF NOT EXISTS activities (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        userId TEXT NOT NULL REFERENCES users(id),
-        activityType TEXT NOT NULL,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        activity_type TEXT NOT NULL,
         title TEXT NOT NULL,
         description TEXT,
-        entityId TEXT,
-        entityType TEXT,
+        entity_id TEXT,
+        entity_type TEXT,
         metadata TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -2595,43 +2595,42 @@ export class SqliteStorage implements IStorage {
 
   async logActivity(userId: string, activityType: string, title: string, description: string, entityId?: string, entityType?: string, metadata?: any): Promise<void> {
     try {
-      db.insert(schema.activities).values({
-        userId,
-        activityType,
-        title,
-        description,
-        entityId,
-        entityType,
-        metadata: metadata ? JSON.stringify(metadata) : null,
-      }).run();
+      db.$client.prepare(`
+        INSERT INTO activities (user_id, activity_type, title, description, entity_id, entity_type, metadata, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `).run(userId, activityType, title, description, entityId || null, entityType || null, metadata ? JSON.stringify(metadata) : null);
     } catch (error) {
       console.error('Failed to log activity:', error);
     }
   }
 
   async getRecentActivities(limit: number = 10): Promise<any[]> {
-    const activities = db
-      .select({
-        id: schema.activities.id,
-        activityType: schema.activities.activityType,
-        title: schema.activities.title,
-        description: schema.activities.description,
-        entityId: schema.activities.entityId,
-        entityType: schema.activities.entityType,
-        metadata: schema.activities.metadata,
-        createdAt: schema.activities.createdAt,
-        userName: schema.users.fullName,
-      })
-      .from(schema.activities)
-      .leftJoin(schema.users, eq(schema.activities.userId, schema.users.id))
-      .orderBy(desc(schema.activities.createdAt))
-      .limit(limit)
-      .all();
+    try {
+      const activities = db.$client.prepare(`
+        SELECT 
+          a.id,
+          a.activity_type as activityType,
+          a.title,
+          a.description,
+          a.entity_id as entityId,
+          a.entity_type as entityType,
+          a.metadata,
+          a.created_at as createdAt,
+          u.full_name as userName
+        FROM activities a
+        LEFT JOIN users u ON a.user_id = u.id
+        ORDER BY a.created_at DESC
+        LIMIT ?
+      `).all(limit);
 
-    return activities.map(activity => ({
-      ...activity,
-      metadata: activity.metadata ? JSON.parse(activity.metadata) : null,
-    }));
+      return (activities as any[]).map(activity => ({
+        ...activity,
+        metadata: activity.metadata ? JSON.parse(activity.metadata) : null,
+      }));
+    } catch (error) {
+      console.error('Error fetching recent activities:', error);
+      return [];
+    }
   }
 }
 
