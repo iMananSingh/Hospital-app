@@ -204,6 +204,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/dashboard/recent-activities", requireAuth, async (req, res) => {
+    try {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const activities = await storage.getRecentActivities(5);
+      res.json(activities);
+    } catch (error) {
+      console.error('Recent activities error:', error);
+      res.status(500).json({ error: "Failed to fetch recent activities" });
+    }
+  });
+
   // Patient routes
   app.get("/api/patients", authenticateToken, async (req, res) => {
     try {
@@ -227,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/patients", authenticateToken, async (req, res) => {
+  app.post("/api/patients", authenticateToken, async (req: any, res) => {
     try {
       const patientData = insertPatientSchema.parse(req.body);
       // Set createdAt to current time in Indian timezone (UTC+5:30)
@@ -237,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
         patientData.createdAt = indianTime.toISOString();
       }
-      const patient = await storage.createPatient(patientData);
+      const patient = await storage.createPatient(patientData, req.user.id);
       res.json(patient);
     } catch (error) {
       console.error("Patient creation error:", error);
@@ -794,7 +805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const itemsData = items.map((item: any) => insertBillItemSchema.parse(item));
 
-      const createdBill = await storage.createBill(billData, itemsData);
+      const createdBill = await storage.createBill(billData, itemsData, req.user.id);
       res.json(createdBill);
     } catch (error) {
       res.status(400).json({ message: "Failed to create bill" });
@@ -852,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/pathology", authenticateToken, async (req, res) => {
+  app.post("/api/pathology", authenticateToken, async (req: any, res) => {
     try {
       console.log("Received pathology order request:", JSON.stringify(req.body, null, 2));
       const { orderData, tests } = req.body;
@@ -867,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doctorId: orderData.doctorId === "" || orderData.doctorId === "external" ? null : orderData.doctorId
       };
 
-      const order = await storage.createPathologyOrder(processedOrderData, tests);
+      const order = await storage.createPathologyOrder(processedOrderData, tests, req.user.id);
       res.json(order);
     } catch (error: any) {
       console.error("Error creating pathology order:", error);
@@ -1027,10 +1038,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/pathology/test/:id/status", authenticateToken, async (req, res) => {
+  app.patch("/api/pathology/test/:id/status", authenticateToken, async (req: any, res) => {
     try {
       const { status, results } = req.body;
-      const updated = await storage.updatePathologyTestStatus(req.params.id, status, results);
+      const updated = await storage.updatePathologyTestStatus(req.params.id, status, results, req.user.id);
       if (!updated) {
         return res.status(404).json({ message: "Pathology test not found" });
       }

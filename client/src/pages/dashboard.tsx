@@ -11,6 +11,16 @@ interface DashboardStats {
   diagnostics: number;
 }
 
+interface Activity {
+  id: string;
+  activityType: string;
+  title: string;
+  description: string;
+  entityType: string;
+  createdAt: string;
+  userName: string;
+}
+
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -24,6 +34,22 @@ export default function Dashboard() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch dashboard stats");
+      return response.json();
+    },
+  });
+
+  const { data: recentActivities = [], isLoading: activitiesLoading } = useQuery<Activity[]>({
+    queryKey: ["/api/dashboard/recent-activities"],
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const response = await fetch("/api/dashboard/recent-activities", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch recent activities");
       return response.json();
     },
   });
@@ -68,40 +94,72 @@ export default function Dashboard() {
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                  <div className="w-8 h-8 bg-medical-blue rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">B</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">New bill generated</p>
-                    <p className="text-xs text-text-muted">BILL-2024-0089 for Rajesh Kumar</p>
-                  </div>
-                  <p className="text-xs text-text-muted">2 min ago</p>
+              {activitiesLoading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                      <Skeleton className="w-8 h-8 rounded-full" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                  <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">P</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">New patient registered</p>
-                    <p className="text-xs text-text-muted">Priya Sharma - OPD</p>
-                  </div>
-                  <p className="text-xs text-text-muted">15 min ago</p>
+              ) : recentActivities.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No recent activities</p>
                 </div>
-                
-                <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">L</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Lab test completed</p>
-                    <p className="text-xs text-text-muted">Blood test for Amit Singh</p>
-                  </div>
-                  <p className="text-xs text-text-muted">1 hour ago</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentActivities.map((activity) => {
+                    const getActivityIcon = (type: string) => {
+                      switch (type) {
+                        case 'bill_created':
+                          return { icon: 'B', color: 'bg-medical-blue' };
+                        case 'patient_registered':
+                          return { icon: 'P', color: 'bg-healthcare-green' };
+                        case 'lab_test_ordered':
+                          return { icon: 'L', color: 'bg-purple-500' };
+                        case 'lab_test_completed':
+                          return { icon: 'T', color: 'bg-orange-500' };
+                        default:
+                          return { icon: 'A', color: 'bg-gray-500' };
+                      }
+                    };
+
+                    const formatTimeAgo = (dateString: string) => {
+                      const now = new Date();
+                      const date = new Date(dateString);
+                      const diffInMs = now.getTime() - date.getTime();
+                      const diffInMins = Math.floor(diffInMs / (1000 * 60));
+                      const diffInHours = Math.floor(diffInMins / 60);
+                      const diffInDays = Math.floor(diffInHours / 24);
+
+                      if (diffInDays > 0) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+                      if (diffInHours > 0) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+                      if (diffInMins > 0) return `${diffInMins} min${diffInMins > 1 ? 's' : ''} ago`;
+                      return 'Just now';
+                    };
+
+                    const { icon, color } = getActivityIcon(activity.activityType);
+
+                    return (
+                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                        <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
+                          <span className="text-white text-xs">{icon}</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{activity.title}</p>
+                          <p className="text-xs text-text-muted">{activity.description}</p>
+                        </div>
+                        <p className="text-xs text-text-muted">{formatTimeAgo(activity.createdAt)}</p>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
           
