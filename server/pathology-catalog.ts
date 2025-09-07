@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load pathology catalog from JSON file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const catalogPath = path.join(__dirname, 'pathology-catalog.json');
 let pathologyCatalogData: any;
 
