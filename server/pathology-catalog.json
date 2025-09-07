@@ -257,11 +257,6 @@
           "test_name": "Stool RM (Routine Microscopic)",
           "price": 300,
           "subtests": []
-        },
-        {
-          "test_name": "stooltststs",
-          "price": 5000,
-          "subtests": []
         }
       ]
     },
@@ -286,11 +281,6 @@
         {
           "test_name": "Urine RM (Routine Microscopic)",
           "price": 80,
-          "subtests": []
-        },
-        {
-          "test_name": "stoolteststst",
-          "price": 10000,
           "subtests": []
         }
       ]
