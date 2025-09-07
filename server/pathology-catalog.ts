@@ -106,3 +106,43 @@ export function addTestToFile(categoryName: string, testData: any): void {
     throw error;
   }
 }
+
+// Function to delete a category from the JSON file
+export function deleteCategoryFromFile(categoryName: string): void {
+  try {
+    const categoryIndex = pathologyCatalog.categories.findIndex((cat: any) => cat.name === categoryName);
+
+    if (categoryIndex === -1) {
+      throw new Error(`Category "${categoryName}" not found`);
+    }
+
+    pathologyCatalog.categories.splice(categoryIndex, 1);
+    fs.writeFileSync(catalogPath, JSON.stringify(pathologyCatalog, null, 2));
+  } catch (error) {
+    console.error('Error deleting category from file:', error);
+    throw error;
+  }
+}
+
+// Function to delete a test from a category in the JSON file
+export function deleteTestFromFile(categoryName: string, testName: string): void {
+  try {
+    const categoryIndex = pathologyCatalog.categories.findIndex((cat: any) => cat.name === categoryName);
+
+    if (categoryIndex === -1) {
+      throw new Error(`Category "${categoryName}" not found`);
+    }
+
+    const testIndex = pathologyCatalog.categories[categoryIndex].tests.findIndex((test: any) => test.test_name === testName);
+
+    if (testIndex === -1) {
+      throw new Error(`Test "${testName}" not found in category "${categoryName}"`);
+    }
+
+    pathologyCatalog.categories[categoryIndex].tests.splice(testIndex, 1);
+    fs.writeFileSync(catalogPath, JSON.stringify(pathologyCatalog, null, 2));
+  } catch (error) {
+    console.error('Error deleting test from file:', error);
+    throw error;
+  }
+}

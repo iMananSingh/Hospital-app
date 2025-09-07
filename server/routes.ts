@@ -5,7 +5,7 @@ import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema } from "@shared/schema";
-import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile } from "./pathology-catalog";
+import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
 
@@ -510,11 +510,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/pathology-categories/:id", authenticateToken, async (req, res) => {
     try {
-      const deleted = await storage.deletePathologyCategory(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ message: "Pathology category not found or has associated tests" });
+      const { id } = req.params;
+      
+      // Check if it's a system category (string ID that matches system category names)
+      const systemCategories = getCategories();
+      const isSystemCategory = systemCategories.includes(id);
+      
+      if (isSystemCategory) {
+        try {
+          deleteCategoryFromFile(id);
+          res.json({ message: "System pathology category deleted successfully" });
+        } catch (error) {
+          res.status(500).json({ message: "Failed to delete system pathology category" });
+        }
+      } else {
+        // Handle custom category deletion
+        const deleted = await storage.deletePathologyCategory(id);
+        if (!deleted) {
+          return res.status(404).json({ message: "Pathology category not found or has associated tests" });
+        }
+        res.json({ message: "Pathology category deleted successfully" });
       }
-      res.json({ message: "Pathology category deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete pathology category" });
     }
@@ -618,6 +634,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Dynamic pathology test deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete dynamic pathology test" });
+    }
+  });
+
+  // Delete system pathology test
+  app.delete("/api/pathology-tests/system/:categoryName/:testName", authenticateToken, async (req, res) => {
+    try {
+      const { categoryName, testName } = req.params;
+      
+      deleteTestFromFile(categoryName, testName);
+      res.json({ message: "System pathology test deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting system pathology test:", error);
+      res.status(500).json({ message: "Failed to delete system pathology test" });
     }
   });
 

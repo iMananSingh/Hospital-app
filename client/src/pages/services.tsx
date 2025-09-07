@@ -357,18 +357,6 @@ export default function ServiceManagement() {
 
   const deleteCategory = async (categoryId: string) => {
     try {
-      // Check if it's a system category (string ID) or custom category (UUID)
-      const isSystemCategory = typeof categoryId === 'string' && !categoryId.includes('-');
-
-      if (isSystemCategory) {
-        toast({
-          title: "Error",
-          description: "System categories cannot be deleted",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const response = await fetch(`/api/pathology-categories/${categoryId}`, {
         method: 'DELETE',
         headers: {
@@ -399,23 +387,28 @@ export default function ServiceManagement() {
     }
   };
 
-  const deleteTest = async (testId: string, isSystemTest: boolean = false) => {
+  const deleteTest = async (test: any, categoryName: string) => {
     try {
-      if (isSystemTest) {
-        toast({
-          title: "Error",
-          description: "System tests cannot be deleted from the UI",
-          variant: "destructive",
+      let response;
+      
+      // Check if it's a system test (from JSON file) or custom test (from database)
+      if (test.isHardcoded || !test.id || test.id.toString().startsWith('system-')) {
+        // Delete from system (JSON file)
+        response = await fetch(`/api/pathology-tests/system/${encodeURIComponent(categoryName)}/${encodeURIComponent(test.test_name || test.name)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         });
-        return;
+      } else {
+        // Delete custom test from database
+        response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
       }
-
-      const response = await fetch(`/api/dynamic-pathology-tests/${testId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -1067,42 +1060,37 @@ export default function ServiceManagement() {
                               <TableCell>
                                 <div className="flex gap-2">
                                   {!category.isHardcoded && (
-                                    <>
-                                      <Button
-                                        onClick={() => {
-                                          const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
-                                          if (dynamicCategory) {
-                                            setEditingCategory(dynamicCategory);
-                                            categoryForm.reset({
-                                              name: dynamicCategory.name,
-                                              description: dynamicCategory.description || "",
-                                              isActive: dynamicCategory.isActive,
-                                            });
-                                            setIsCategoryDialogOpen(true);
-                                          }
-                                        }}
-                                        size="sm"
-                                        variant="outline"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        onClick={async () => {
-                                          if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
-                                            deleteCategory(category.id);
-                                          }
-                                        }}
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </>
+                                    <Button
+                                      onClick={() => {
+                                        const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
+                                        if (dynamicCategory) {
+                                          setEditingCategory(dynamicCategory);
+                                          categoryForm.reset({
+                                            name: dynamicCategory.name,
+                                            description: dynamicCategory.description || "",
+                                            isActive: dynamicCategory.isActive,
+                                          });
+                                          setIsCategoryDialogOpen(true);
+                                        }
+                                      }}
+                                      size="sm"
+                                      variant="outline"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
                                   )}
-                                  {category.isHardcoded && (
-                                    <span className="text-sm text-gray-500 py-2">System category</span>
-                                  )}
+                                  <Button
+                                    onClick={async () => {
+                                      if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+                                        deleteCategory(category.id);
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1202,49 +1190,37 @@ export default function ServiceManagement() {
                                     <TableCell>
                                       <div className="flex gap-2">
                                         {!test.isHardcoded && (
-                                          <>
-                                            <Button
-                                              onClick={() => {
-                                                setEditingTest(test);
-                                                testForm.reset({
-                                                  categoryId: test.categoryId,
-                                                  testName: test.name,
-                                                  price: test.price,
-                                                  normalRange: test.normalRange || "",
-                                                  description: test.description || "",
-                                                  isActive: test.isActive,
-                                                });
-                                                setIsTestDialogOpen(true);
-                                              }}
-                                              size="sm"
-                                              variant="outline"
-                                            >
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => {
-                                                // Check if it's a system test (from JSON file) or custom test (from database)
-                                                const isSystemTest = !test.id || test.id.toString().startsWith('system-');
-                                                if (isSystemTest) {
-                                                  toast({
-                                                    title: "Error",
-                                                    description: "System tests cannot be deleted from the UI",
-                                                    variant: "destructive",
-                                                  });
-                                                } else {
-                                                  deleteTest(test.id, false);
-                                                }
-                                              }}
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </>
+                                          <Button
+                                            onClick={() => {
+                                              setEditingTest(test);
+                                              testForm.reset({
+                                                categoryId: test.categoryId,
+                                                testName: test.name,
+                                                price: test.price,
+                                                normalRange: test.normalRange || "",
+                                                description: test.description || "",
+                                                isActive: test.isActive,
+                                              });
+                                              setIsTestDialogOpen(true);
+                                            }}
+                                            size="sm"
+                                            variant="outline"
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
                                         )}
-                                        {test.isHardcoded && (
-                                          <span className="text-sm text-gray-500 py-2">System test</span>
-                                        )}
+                                        <Button
+                                          onClick={() => {
+                                            if (confirm(`Are you sure you want to delete "${test.name || test.test_name}"? This action cannot be undone.`)) {
+                                              deleteTest(test, category.name);
+                                            }
+                                          }}
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
                                       </div>
                                     </TableCell>
                                   </TableRow>
