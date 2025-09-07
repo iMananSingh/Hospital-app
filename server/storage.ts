@@ -597,7 +597,7 @@ export interface IStorage {
   updatePathologyTestStatus(id: string, status: string, results?: string, userId?: string): Promise<PathologyTest | undefined>;
 
   // Patient Services
-  createPatientService(service: InsertPatientService): Promise<PatientService>;
+  createPatientService(service: InsertPatientService, userId?: string): Promise<PatientService>;
   getPatientServices(patientId?: string): Promise<PatientService[]>;
   getPatientServiceById(id: string): Promise<PatientService | undefined>;
   updatePatientService(id: string, service: Partial<InsertPatientService>): Promise<PatientService | undefined>;
@@ -643,6 +643,7 @@ export interface IStorage {
 
   // Receipt numbering
   getDailyReceiptCount(serviceType: string, date: string): Promise<number>;
+  getDailyReceiptCountSync(serviceType: string, date: string): number;
 
   // Pathology category management
   createPathologyCategory(category: InsertPathologyCategory): Promise<PathologyCategory>;
@@ -1317,13 +1318,27 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async createPatientService(serviceData: InsertPatientService): Promise<PatientService> {
+  async createPatientService(serviceData: InsertPatientService, userId?: string): Promise<PatientService> {
     try {
       const created = db.insert(schema.patientServices).values({
         ...serviceData,
         serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
         receiptNumber: serviceData.receiptNumber || null,
       }).returning().get();
+
+      // Log activity for OPD appointments
+      if (userId && serviceData.serviceType === 'opd') {
+        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, serviceData.patientId)).get();
+        this.logActivity(
+          userId,
+          'opd_scheduled',
+          'OPD appointment scheduled',
+          `${serviceData.serviceName} for ${patient?.name || 'Unknown Patient'}`,
+          created.id,
+          'patient_service',
+          { serviceName: serviceData.serviceName, patientName: patient?.name, scheduledDate: serviceData.scheduledDate }
+        );
+      }
 
       return created;
     } catch (error) {
@@ -1430,6 +1445,22 @@ export class SqliteStorage implements IStorage {
             .run();
         }
       }
+
+      // Log admission activity (do this after transaction to avoid issues)
+      setImmediate(() => {
+        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, admission.patientId)).get();
+        if (patient) {
+          this.logActivity(
+            'system',
+            'patient_admitted',
+            'Patient admitted',
+            `${patient.name} - ${admissionId}`,
+            created.id,
+            'admission',
+            { admissionId, patientName: patient.name, roomNumber: admission.currentRoomNumber, wardType: admission.currentWardType }
+          );
+        }
+      });
 
       return created;
     });
@@ -1734,6 +1765,22 @@ export class SqliteStorage implements IStorage {
             .run();
         }
       }
+
+      // Log discharge activity (do this after transaction to avoid issues)
+      setImmediate(() => {
+        const patient = db.select().from(schema.patients).where(eq(schema.patients.id, currentAdmission.patientId)).get();
+        if (patient) {
+          this.logActivity(
+            userId,
+            'patient_discharged',
+            'Patient discharged',
+            `${patient.name} - ${currentAdmission.admissionId}`,
+            admissionId,
+            'admission',
+            { admissionId: currentAdmission.admissionId, patientName: patient.name }
+          );
+        }
+      });
 
       return updated;
     });
@@ -2392,6 +2439,105 @@ export class SqliteStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching recent activities:', error);
       return [];
+    }
+  }
+
+  async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
+    try {
+      let count = 0;
+      
+      switch (serviceType) {
+        case 'pathology':
+          count = db.select().from(schema.pathologyOrders)
+            .where(eq(schema.pathologyOrders.orderedDate, date))
+            .all().length;
+          break;
+        case 'admission':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              eq(schema.admissionEvents.eventType, 'admit'),
+              like(schema.admissionEvents.eventTime, `${date}%`)
+            ))
+            .all().length;
+          break;
+        case 'room_transfer':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              eq(schema.admissionEvents.eventType, 'room_change'),
+              like(schema.admissionEvents.eventTime, `${date}%`)
+            ))
+            .all().length;
+          break;
+        case 'discharge':
+          count = db.select().from(schema.admissionEvents)
+            .where(and(
+              eq(schema.admissionEvents.eventType, 'discharge'),
+              like(schema.admissionEvents.eventTime, `${date}%`)
+            ))
+            .all().length;
+          break;
+        case 'opd':
+          count = db.select().from(schema.patientServices)
+            .where(and(
+              eq(schema.patientServices.serviceType, 'opd'),
+              eq(schema.patientServices.scheduledDate, date)
+            ))
+            .all().length;
+          break;
+        default:
+          count = 0;
+      }
+      
+      return count + 1;
+    } catch (error) {
+      console.error('Error getting daily receipt count:', error);
+      return 1;
+    }
+  }
+
+  getDailyReceiptCountSync(serviceType: string, date: string): number {
+    try {
+      let count = 0;
+      
+      switch (serviceType) {
+        case 'pathology':
+          count = db.$client.prepare(`
+            SELECT COUNT(*) as count FROM pathology_orders 
+            WHERE ordered_date = ?
+          `).get(date)?.count || 0;
+          break;
+        case 'admission':
+          count = db.$client.prepare(`
+            SELECT COUNT(*) as count FROM admission_events 
+            WHERE event_type = 'admit' AND event_time LIKE ?
+          `).get(`${date}%`)?.count || 0;
+          break;
+        case 'room_transfer':
+          count = db.$client.prepare(`
+            SELECT COUNT(*) as count FROM admission_events 
+            WHERE event_type = 'room_change' AND event_time LIKE ?
+          `).get(`${date}%`)?.count || 0;
+          break;
+        case 'discharge':
+          count = db.$client.prepare(`
+            SELECT COUNT(*) as count FROM admission_events 
+            WHERE event_type = 'discharge' AND event_time LIKE ?
+          `).get(`${date}%`)?.count || 0;
+          break;
+        case 'opd':
+          count = db.$client.prepare(`
+            SELECT COUNT(*) as count FROM patient_services 
+            WHERE service_type = 'opd' AND scheduled_date = ?
+          `).get(date)?.count || 0;
+          break;
+        default:
+          count = 0;
+      }
+      
+      return count + 1;
+    } catch (error) {
+      console.error('Error getting daily receipt count sync:', error);
+      return 1;
     }
   }
 }
