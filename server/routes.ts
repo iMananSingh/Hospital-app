@@ -728,8 +728,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: name,
         name,
         description: '',
+        isHardcoded: true,
         isSystem: true,
-        tests: getTestsByCategory(name)
+        tests: getTestsByCategory(name).map(test => ({
+          ...test,
+          id: `system-${name}-${test.test_name}`,
+          isHardcoded: true,
+          name: test.test_name,
+          testName: test.test_name
+        }))
       }))];
 
       // Add custom categories
@@ -739,11 +746,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: customCat.id,
           name: customCat.name,
           description: customCat.description || '',
+          isHardcoded: false,
           isSystem: false,
           tests: testsInCategory.map(test => ({
+            id: test.id,
             test_name: test.testName,
+            testName: test.testName,
+            name: test.testName,
             price: test.price,
             category: customCat.name,
+            categoryId: test.categoryId,
+            normalRange: test.normalRange,
+            description: test.description,
+            isActive: test.isActive,
+            isHardcoded: false,
             subtests: []
           }))
         });

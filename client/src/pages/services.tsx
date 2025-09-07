@@ -392,9 +392,13 @@ export default function ServiceManagement() {
       let response;
       
       // Check if it's a system test (from JSON file) or custom test (from database)
-      if (test.isHardcoded || !test.id || test.id.toString().startsWith('system-')) {
+      // System tests don't have an id or have an id that starts with 'system-'
+      const isSystemTest = !test.id || test.id.toString().startsWith('system-') || typeof test.id === 'string' && test.id.includes('system');
+      
+      if (isSystemTest) {
         // Delete from system (JSON file)
-        response = await fetch(`/api/pathology-tests/system/${encodeURIComponent(categoryName)}/${encodeURIComponent(test.test_name || test.name)}`, {
+        const testName = test.test_name || test.testName || test.name;
+        response = await fetch(`/api/pathology-tests/system/${encodeURIComponent(categoryName)}/${encodeURIComponent(testName)}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
