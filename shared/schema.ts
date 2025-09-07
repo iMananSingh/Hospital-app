@@ -316,8 +316,12 @@ export const activities = sqliteTable("activities", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   userId: text("user_id").references(() => users.id),
   activityType: text("activity_type").notNull(), // e.g., 'login', 'create_patient', 'update_bill'
+  title: text("title").notNull(),
   description: text("description").notNull(),
-  timestamp: text("timestamp").notNull().default(sql`(datetime('now'))`),
+  entityId: text("entity_id"),
+  entityType: text("entity_type"),
+  metadata: text("metadata"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
 

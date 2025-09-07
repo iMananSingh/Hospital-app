@@ -957,6 +957,16 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  async getDailyPatientCount(): Promise<number> {
+    try {
+      const count = db.select().from(schema.patients).all().length;
+      return count;
+    } catch (error) {
+      console.error('Error getting daily patient count:', error);
+      return 0;
+    }
+  }
+
   async createPatient(patientData: InsertPatient, userId?: string): Promise<Patient> {
     // Generate patient ID
     const today = new Date();
@@ -964,10 +974,10 @@ export class SqliteStorage implements IStorage {
     const patientCount = await this.getDailyPatientCount();
     const patientId = `PAT-${year}-${String(patientCount + 1).padStart(3, '0')}`;
 
-    const [patient] = this.db.insert(schema.patients).values({
+    const patient = db.insert(schema.patients).values({
       ...patientData,
       patientId,
-    }).returning();
+    }).returning().get();
 
     // Log activity
     if (userId) {
@@ -1238,20 +1248,20 @@ export class SqliteStorage implements IStorage {
   }
 
   async updatePathologyTestStatus(testId: string, status: string, results?: string, userId?: string): Promise<PathologyTest | undefined> {
-    const [updated] = this.db.update(schema.pathologyTests)
+    const updated = db.update(schema.pathologyTests)
       .set({
         status,
         results,
         updatedAt: new Date().toISOString()
       })
       .where(eq(schema.pathologyTests.id, testId))
-      .returning();
+      .returning().get();
 
     // Log activity when test is completed
     if (status === 'completed' && userId) {
-      const test = this.db.select().from(schema.pathologyTests).where(eq(schema.pathologyTests.id, testId)).get();
-      const order = this.db.select().from(schema.pathologyOrders).where(eq(schema.pathologyOrders.id, test?.orderId || '')).get();
-      const patient = this.db.select().from(schema.patients).where(eq(schema.patients.id, order?.patientId || '')).get();
+      const test = db.select().from(schema.pathologyTests).where(eq(schema.pathologyTests.id, testId)).get();
+      const order = db.select().from(schema.pathologyOrders).where(eq(schema.pathologyOrders.id, test?.orderId || '')).get();
+      const patient = db.select().from(schema.patients).where(eq(schema.patients.id, order?.patientId || '')).get();
 
       this.logActivity(
         userId,
@@ -2585,7 +2595,7 @@ export class SqliteStorage implements IStorage {
 
   async logActivity(userId: string, activityType: string, title: string, description: string, entityId?: string, entityType?: string, metadata?: any): Promise<void> {
     try {
-      this.db.insert(schema.activities).values({
+      db.insert(schema.activities).values({
         userId,
         activityType,
         title,
@@ -2600,7 +2610,7 @@ export class SqliteStorage implements IStorage {
   }
 
   async getRecentActivities(limit: number = 10): Promise<any[]> {
-    const activities = this.db
+    const activities = db
       .select({
         id: schema.activities.id,
         activityType: schema.activities.activityType,
