@@ -153,6 +153,35 @@ async function initializeDatabase() {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS diagnostic_orders (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        visit_id TEXT REFERENCES visits(id),
+        doctor_id TEXT REFERENCES doctors(id),
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        scheduled_date TEXT,
+        scheduled_time TEXT,
+        completed_date TEXT,
+        remarks TEXT DEFAULT '',
+        total_price REAL NOT NULL DEFAULT 0,
+        receipt_number TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS diagnostic_tests (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT NOT NULL REFERENCES diagnostic_orders(id),
+        test_name TEXT NOT NULL,
+        test_category TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        results TEXT,
+        price REAL NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS patient_services (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         service_id TEXT NOT NULL,
@@ -1128,6 +1157,89 @@ export class SqliteStorage implements IStorage {
 
       return created;
     });
+  }
+
+  async getDiagnosticOrders(): Promise<any[]> {
+    try {
+      const orders = db.$client.prepare(`
+        SELECT 
+          do.*,
+          p.full_name as patientName,
+          p.phone as patientPhone,
+          d.full_name as doctorName
+        FROM diagnostic_orders do
+        LEFT JOIN patients p ON do.patient_id = p.id
+        LEFT JOIN doctors d ON do.doctor_id = d.id
+        ORDER BY do.created_at DESC
+      `).all();
+
+      // Get tests for each order
+      const ordersWithTests = [];
+      for (const order of orders as any[]) {
+        const tests = db.$client.prepare(`
+          SELECT * FROM diagnostic_tests 
+          WHERE order_id = ?
+          ORDER BY created_at ASC
+        `).all(order.id);
+
+        ordersWithTests.push({
+          ...order,
+          tests: tests
+        });
+      }
+
+      return ordersWithTests;
+    } catch (error) {
+      console.error('Error fetching diagnostic orders:', error);
+      return [];
+    }
+  }
+
+  async createDiagnosticOrder(orderData: any, tests: any[]): Promise<string> {
+    const orderId = this.generateOrderId('DIAG');
+    const totalPrice = tests.reduce((sum, test) => sum + (test.price || 0), 0);
+    
+    const orderRecord = {
+      orderId,
+      patientId: orderData.patientId,
+      doctorId: orderData.doctorId,
+      status: orderData.status || 'scheduled',
+      scheduledDate: orderData.scheduledDate,
+      remarks: orderData.remarks || '',
+      totalPrice,
+    };
+
+    // Insert order
+    const orderInsertResult = db.$client.prepare(`
+      INSERT INTO diagnostic_orders (order_id, patient_id, doctor_id, status, scheduled_date, remarks, total_price, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).run(
+      orderRecord.orderId,
+      orderRecord.patientId,
+      orderRecord.doctorId,
+      orderRecord.status,
+      orderRecord.scheduledDate,
+      orderRecord.remarks,
+      orderRecord.totalPrice
+    );
+
+    const newOrderId = orderInsertResult.lastInsertRowid as string;
+
+    // Insert tests
+    for (const test of tests) {
+      db.$client.prepare(`
+        INSERT INTO diagnostic_tests (order_id, test_name, test_category, status, price, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `).run(
+        newOrderId,
+        test.testName,
+        test.testCategory,
+        test.status || 'scheduled',
+        test.price
+      );
+    }
+
+    return orderId;
   }
 
   async getPathologyOrders(): Promise<any[]> {

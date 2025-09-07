@@ -139,6 +139,37 @@ export const pathologyTests = sqliteTable("pathology_tests", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Diagnostic orders table
+export const diagnosticOrders = sqliteTable("diagnostic_orders", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  orderId: text("order_id").notNull().unique(),
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  visitId: text("visit_id").references(() => visits.id),
+  doctorId: text("doctor_id").references(() => doctors.id),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  scheduledDate: text("scheduled_date"),
+  scheduledTime: text("scheduled_time"),
+  completedDate: text("completed_date"),
+  remarks: text("remarks").default(""),
+  totalPrice: real("total_price").notNull().default(0),
+  receiptNumber: text("receipt_number"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Individual diagnostic tests within an order
+export const diagnosticTests = sqliteTable("diagnostic_tests", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  orderId: text("order_id").notNull().references(() => diagnosticOrders.id),
+  testName: text("test_name").notNull(),
+  testCategory: text("test_category").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed
+  results: text("results"),
+  price: real("price").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Patient Services (OPD, Lab tests, X-ray, ECG, etc.)
 export const patientServices = sqliteTable("patient_services", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),

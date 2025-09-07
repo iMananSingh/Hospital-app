@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -37,6 +36,13 @@ export default function Diagnostics() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
 
+  // State for the new diagnostic order form
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedTests, setSelectedTests] = useState<Service[]>([]);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [isNewOrderOpen, setIsNewOrderOpen] = useState(false);
+
+
   // Fetch diagnostic services (category = "diagnostics")
   const { data: allServices = [], isLoading: servicesLoading } = useQuery<Service[]>({
     queryKey: ["/api/services"],
@@ -66,6 +72,12 @@ export default function Diagnostics() {
   const { data: doctors = [] } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
   });
+
+  // Fetch diagnostic orders
+  const { data: diagnosticOrders = [], isLoading: ordersLoading } = useQuery({
+    queryKey: ["/api/diagnostic-orders"],
+  });
+
 
   const serviceForm = useForm({
     defaultValues: {
@@ -221,12 +233,12 @@ export default function Diagnostics() {
   const filteredPatientServices = diagnosticPatientServices.filter(service => {
     const patient = patients.find(p => p.id === service.patientId);
     const doctor = doctors.find(d => d.id === service.doctorId);
-    
+
     const matchesSearch = searchQuery === "" || 
       patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       service.serviceName.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || service.status === statusFilter;
     const matchesDate = dateFilter === "" || service.scheduledDate === dateFilter;
 
@@ -241,7 +253,74 @@ export default function Diagnostics() {
     updateServiceMutation.mutate({ id: serviceId, ...updateData });
   };
 
-  if (servicesLoading || patientServicesLoading) {
+  const handleOrderTests = async () => {
+    if (!selectedPatient || selectedTests.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a patient and at least one test",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const orderData = {
+        patientId: selectedPatient.id,
+        doctorId: selectedDoctor || null,
+        status: "scheduled",
+        scheduledDate: new Date().toISOString().split('T')[0],
+        remarks: "",
+        serviceType: "diagnostic"
+      };
+
+      const tests = selectedTests.map(test => ({
+        testName: test.name,
+        testCategory: test.category || "Diagnostic Services",
+        price: test.price,
+        status: "scheduled"
+      }));
+
+      const response = await fetch("/api/diagnostic-orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ orderData, tests }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create diagnostic order");
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Success",
+        description: `Diagnostic order ${result.orderId} created successfully`,
+      });
+
+      // Reset form
+      setSelectedPatient(null);
+      setSelectedTests([]);
+      setSelectedDoctor("");
+      setIsNewOrderOpen(false);
+
+      // Refresh orders list
+      queryClient.invalidateQueries({ queryKey: ["/api/diagnostic-orders"] });
+
+    } catch (error) {
+      console.error("Error creating diagnostic order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create diagnostic order",
+        variant: "destructive",
+      });
+    }
+  };
+
+
+  if (servicesLoading || patientServicesLoading || ordersLoading) {
     return (
       <div className="space-y-6">
         <TopBar title="Diagnostic Services" />
@@ -311,7 +390,7 @@ export default function Diagnostics() {
               <Calendar className="h-5 w-5" />
               Scheduled Diagnostic Services
             </CardTitle>
-            
+
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-64">
@@ -325,7 +404,7 @@ export default function Diagnostics() {
                   />
                 </div>
               </div>
-              
+
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by status" />
@@ -366,7 +445,7 @@ export default function Diagnostics() {
                   {filteredPatientServices.map((service) => {
                     const patient = patients.find(p => p.id === service.patientId);
                     const doctor = doctors.find(d => d.id === service.doctorId);
-                    
+
                     return (
                       <TableRow key={service.id}>
                         <TableCell>
@@ -556,6 +635,139 @@ export default function Diagnostics() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* New Diagnostic Order Form (Example) */}
+        <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Create New Diagnostic Order</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Patient Selection */}
+              <div className="space-y-2">
+                <Label>Select Patient *</Label>
+                <Select
+                  onValueChange={(value) => {
+                    const patient = patients.find(p => p.id === value) || null;
+                    setSelectedPatient(patient);
+                  }}
+                  value={selectedPatient?.id || ""}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select patient" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {patients.map((patient) => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.name} ({patient.patientId})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Doctor Selection */}
+              <div className="space-y-2">
+                <Label>Select Doctor (Optional)</Label>
+                <Select onValueChange={setSelectedDoctor} value={selectedDoctor}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select doctor (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No doctor assigned</SelectItem>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name} - {doctor.specialization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Selection */}
+              <div className="space-y-2">
+                <Label>Scheduled Date *</Label>
+                <Input
+                  type="date"
+                  value={new Date().toISOString().split('T')[0]} // Default to today
+                  onChange={(e) => {
+                    // This value is used directly in handleOrderTests, so no state needed here
+                  }}
+                  readOnly // Date is determined in handleOrderTests
+                />
+              </div>
+            </div>
+
+            {/* Test Selection */}
+            <div className="mt-4 border-t pt-4">
+              <h3 className="font-semibold mb-3">Select Tests *</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {diagnosticServices.map((service) => (
+                  <Card
+                    key={service.id}
+                    className={`p-3 cursor-pointer transition-colors ${
+                      selectedTests.some(test => test.id === service.id)
+                        ? "border-2 border-blue-500 bg-blue-50"
+                        : "border border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() => {
+                      setSelectedTests((prev) =>
+                        prev.some(test => test.id === service.id)
+                          ? prev.filter(test => test.id !== service.id)
+                          : [...prev, service]
+                      );
+                    }}
+                  >
+                    <CardHeader className="p-0 mb-2">
+                      <CardTitle className="text-base truncate">{service.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 text-sm text-muted-foreground">
+                      {service.description || "No description"}
+                    </CardContent>
+                    <div className="text-lg font-semibold text-green-600 mt-2">
+                      ₹{service.price}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              {selectedTests.length === 0 && (
+                <p className="text-sm text-gray-500 mt-4">Please select at least one diagnostic service.</p>
+              )}
+            </div>
+
+            {/* Order Summary and Actions */}
+            <div className="mt-6 border-t pt-4">
+              <h3 className="font-semibold mb-3">Order Summary</h3>
+              {selectedPatient && selectedTests.length > 0 && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <p><strong>Patient:</strong> {selectedPatient.name}</p>
+                  <p><strong>Tests:</strong> {selectedTests.map(t => t.name).join(', ')}</p>
+                  <p><strong>Total Price:</strong> ₹{selectedTests.reduce((sum, test) => sum + test.price, 0)}</p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedPatient(null);
+                    setSelectedTests([]);
+                    setSelectedDoctor("");
+                    setIsNewOrderOpen(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleOrderTests}
+                  className="bg-medical-blue hover:bg-medical-blue/90"
+                >
+                  Create Order
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
