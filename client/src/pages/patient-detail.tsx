@@ -549,7 +549,7 @@ export default function PatientDetail() {
       serviceForm.clearErrors("doctorId");
     }
 
-    // For non-OPD services, validate service selection and price
+    // For non-OPD services, validate service selection
     if (selectedServiceType !== "opd") {
       if (!data.serviceType || !data.serviceName) {
         serviceForm.setError("serviceType", { 
@@ -559,17 +559,6 @@ export default function PatientDetail() {
         hasErrors = true;
       } else {
         serviceForm.clearErrors("serviceType");
-      }
-
-      // Validate price field for non-OPD services
-      if (!data.price || data.price <= 0) {
-        serviceForm.setError("price", { 
-          type: "required", 
-          message: "Price is required and must be greater than 0" 
-        });
-        hasErrors = true;
-      } else {
-        serviceForm.clearErrors("price");
       }
     }
 
@@ -593,11 +582,16 @@ export default function PatientDetail() {
         doctorId: data.doctorId,
       };
     } else {
+      // Get price from the selected service
+      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === data.serviceType);
+      const servicePrice = selectedService ? selectedService.price || 0 : 0;
+
       serviceData = {
         ...data,
         serviceId: `SRV-${Date.now()}`,
         // Convert "none" back to empty string for the API
         doctorId: data.doctorId === "none" ? "" : data.doctorId,
+        price: servicePrice,
       };
     }
 
@@ -2020,7 +2014,7 @@ export default function PatientDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
@@ -2066,9 +2060,7 @@ export default function PatientDetail() {
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Scheduled Time *</Label>
                 <Input
@@ -2082,34 +2074,6 @@ export default function PatientDetail() {
                   </p>
                 )}
               </div>
-
-              {selectedServiceType !== "opd" && (
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    {...serviceForm.register("price", { 
-                      valueAsNumber: true, 
-                      required: "Price is required",
-                      min: { value: 0, message: "Price must be at least 0" }
-                    })}
-                    data-testid="input-service-price"
-                    readOnly={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0;
-                    })()}
-                    className={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
-                    })()}
-                  />
-                  {serviceForm.formState.errors.price && (
-                    <p className="text-sm text-red-600">
-                      {serviceForm.formState.errors.price.message}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
 
             {selectedServiceType !== "opd" && (
@@ -2172,7 +2136,7 @@ export default function PatientDetail() {
                       <TableRow>
                         <TableHead className="w-12">Select</TableHead>
                         <TableHead>Service Name</TableHead>
-                        <TableHead>Price (₹)</TableHead>
+                        <TableHead>Category</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -2205,7 +2169,9 @@ export default function PatientDetail() {
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{service.name}</TableCell>
-                              <TableCell>₹{service.price || 0}</TableCell>
+                              <TableCell className="capitalize">
+                                {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
+                              </TableCell>
                             </TableRow>
                           );
                         })
@@ -2219,7 +2185,11 @@ export default function PatientDetail() {
                     <h4 className="font-medium text-blue-900 mb-2">Selected Service</h4>
                     <div className="text-sm">
                       <span className="font-medium">{serviceForm.watch("serviceName")}</span>
-                      <span className="text-blue-600 ml-2">₹{serviceForm.watch("price")}</span>
+                      {(() => {
+                        const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
+                        const category = selectedService ? serviceCategories.find(cat => cat.key === selectedService.category)?.label || selectedService.category : '';
+                        return category ? <span className="text-blue-600 ml-2">({category})</span> : null;
+                      })()}
                     </div>
                   </div>
                 )}
