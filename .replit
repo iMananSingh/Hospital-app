@@ -6,7 +6,7 @@ channel = "stable-25_05"
 packages = ["sqlite"]
 
 [deployment]
-run = ["npm", "start"]
+run = ["npm", "run", "start"]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
 
