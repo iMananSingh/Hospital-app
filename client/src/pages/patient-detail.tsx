@@ -2423,7 +2423,6 @@ export default function PatientDetail() {
             <div className="space-y-2">
               <Label>Reason for Admission</Label>
               <Input
-<Input
                 {...admissionForm.register("reason")}
                 placeholder="Brief reason for admission (optional)"
                 data-testid="input-admission-reason"
