@@ -2066,8 +2066,8 @@ export default function PatientDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="space-y-2 md:col-span-3">
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
                   value={serviceForm.watch("doctorId")}
@@ -2099,7 +2099,7 @@ export default function PatientDetail() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label>Scheduled Date *</Label>
                 <Input
                   type="date"
@@ -2113,7 +2113,7 @@ export default function PatientDetail() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-1">
                 <Label>Scheduled Time *</Label>
                 <Input
                   type="time"
