@@ -392,7 +392,7 @@ export default function PatientDetail() {
       scheduledTime: "", // Will be set dynamically when dialog opens
       doctorId: "",
       notes: "",
-      price: 0,
+      price: 0, // This price field is intended for form submission logic, not direct user input in the table
     },
   });
 
@@ -2137,12 +2137,13 @@ export default function PatientDetail() {
                         <TableHead className="w-12">Select</TableHead>
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
+                        <TableHead>Price (₹)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {getFilteredServices(selectedServiceCategory).length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                             No services found. Try adjusting your search or category filter.
                           </TableCell>
                         </TableRow>
@@ -2172,6 +2173,7 @@ export default function PatientDetail() {
                               <TableCell className="capitalize">
                                 {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
                               </TableCell>
+                              <TableCell>₹{service.price || 0}</TableCell>
                             </TableRow>
                           );
                         })
