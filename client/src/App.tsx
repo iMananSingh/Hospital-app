@@ -20,6 +20,7 @@ import CurrentlyAdmitted from "@/pages/currently-admitted";
 import AdmittedToday from "@/pages/admitted-today";
 import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
+import Diagnostics from "@/pages/diagnostics";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import Scheduler from "@/pages/scheduler";
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
       <Route path="/scheduler" component={() => <ProtectedRoute component={Scheduler} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route component={NotFound} />
     </Switch>
   );
