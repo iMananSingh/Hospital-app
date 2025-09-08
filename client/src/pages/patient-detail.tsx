@@ -2172,15 +2172,13 @@ export default function PatientDetail() {
                       <TableRow>
                         <TableHead className="w-12">Select</TableHead>
                         <TableHead>Service Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Description</TableHead>
                         <TableHead>Price (₹)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {getFilteredServices(selectedServiceCategory).length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                             No services found. Try adjusting your search or category filter.
                           </TableCell>
                         </TableRow>
@@ -2207,12 +2205,6 @@ export default function PatientDetail() {
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{service.name}</TableCell>
-                              <TableCell className="capitalize">
-                                {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {service.description || "No description"}
-                              </TableCell>
                               <TableCell>₹{service.price || 0}</TableCell>
                             </TableRow>
                           );
