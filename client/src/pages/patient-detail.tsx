@@ -2151,6 +2151,34 @@ export default function PatientDetail() {
                   </p>
                 )}
               </div>
+
+              {selectedServiceType !== "opd" && (
+                <div className="space-y-2">
+                  <Label>Price (₹) *</Label>
+                  <Input
+                    type="number"
+                    {...serviceForm.register("price", { 
+                      valueAsNumber: true, 
+                      required: "Price is required",
+                      min: { value: 0, message: "Price must be at least 0" }
+                    })}
+                    data-testid="input-service-price"
+                    readOnly={(() => {
+                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
+                      return selectedService && selectedService.price > 0;
+                    })()}
+                    className={(() => {
+                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
+                      return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
+                    })()}
+                  />
+                  {serviceForm.formState.errors.price && (
+                    <p className="text-sm text-red-600">
+                      {serviceForm.formState.errors.price.message}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2183,35 +2211,7 @@ export default function PatientDetail() {
               </div>
             </div>
 
-            {selectedServiceType !== "opd" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    {...serviceForm.register("price", { 
-                      valueAsNumber: true, 
-                      required: "Price is required",
-                      min: { value: 0, message: "Price must be at least 0" }
-                    })}
-                    data-testid="input-service-price"
-                    readOnly={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0;
-                    })()}
-                    className={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
-                    })()}
-                  />
-                  {serviceForm.formState.errors.price && (
-                    <p className="text-sm text-red-600">
-                      {serviceForm.formState.errors.price.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+            
 
             <div className="space-y-2">
               <Label>Notes</Label>
