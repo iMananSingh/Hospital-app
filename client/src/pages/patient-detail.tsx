@@ -56,8 +56,9 @@ export default function PatientDetail() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
-  const [selectedServiceType, setSelectedServiceType] = useState<string>("");
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
+  const [selectedServiceType, setSelectedServiceType] = useState("");
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
@@ -383,16 +384,15 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
-    mode: "onChange",
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
       serviceName: "",
-      scheduledDate: "", // Will be set dynamically when dialog opens
+      scheduledDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
       scheduledTime: "", // Will be set dynamically when dialog opens
       doctorId: "",
       notes: "",
-      price: 0,
+      price: 0, // This price field is intended for form submission logic, not direct user input in the table
     },
   });
 
@@ -509,7 +509,7 @@ export default function PatientDetail() {
     },
     onError: (error: any) => {
       console.error("Admission creation error:", error);
-      
+
       // Handle room occupancy error specifically
       let errorMessage = "Please try again.";
       if (error.message && error.message.includes("already occupied")) {
@@ -517,7 +517,7 @@ export default function PatientDetail() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: "Error creating admission",
         description: errorMessage,
@@ -526,92 +526,107 @@ export default function PatientDetail() {
     },
   });
 
-  const onServiceSubmit = (data: any) => {
-    console.log("=== FORM SUBMISSION DEBUG ===");
-    console.log("Form submitted with data:", data);
-    console.log("Selected service type:", selectedServiceType);
-    console.log("Selected service category:", selectedServiceCategory);
-    console.log("Form errors:", serviceForm.formState.errors);
-    console.log("Form is valid:", serviceForm.formState.isValid);
-    console.log("Doctors available:", doctors);
-
-    // Custom validation for Select fields that aren't properly registered
-    let hasErrors = false;
-
-    // Validate doctor selection
-    if (!data.doctorId || data.doctorId === "none") {
-      serviceForm.setError("doctorId", { 
-        type: "required", 
-        message: selectedServiceType === "opd" ? "Doctor Required - please select a consulting doctor" : "Doctor Required - please select a doctor" 
-      });
-      hasErrors = true;
-    } else {
-      serviceForm.clearErrors("doctorId");
-    }
-
-    // For non-OPD services, validate service selection and price
-    if (selectedServiceType !== "opd") {
-      if (!data.serviceType || !data.serviceName) {
-        serviceForm.setError("serviceType", { 
-          type: "required", 
-          message: "Service Required - please select a service" 
-        });
-        hasErrors = true;
-      } else {
-        serviceForm.clearErrors("serviceType");
-      }
-
-      // Validate price field for non-OPD services
-      if (!data.price || data.price <= 0) {
-        serviceForm.setError("price", { 
-          type: "required", 
-          message: "Price is required and must be greater than 0" 
-        });
-        hasErrors = true;
-      } else {
-        serviceForm.clearErrors("price");
-      }
-    }
-
-    // If there are validation errors, don't submit
-    if (hasErrors) {
-      return;
-    }
-
-    let serviceData;
-
-    if (selectedServiceType === "opd") {
-      const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
-      const consultationFee = selectedDoctor?.consultationFee || 0;
-
-      serviceData = {
-        ...data,
-        serviceId: `SRV-${Date.now()}`,
-        serviceName: "OPD Consultation",
-        serviceType: "opd",
-        price: consultationFee,
-        doctorId: data.doctorId,
-      };
-    } else {
-      serviceData = {
-        ...data,
-        serviceId: `SRV-${Date.now()}`,
-        // Convert "none" back to empty string for the API
-        doctorId: data.doctorId === "none" ? "" : data.doctorId,
-      };
-    }
-
-    console.log("Final service data to submit:", serviceData);
-    console.log("About to call mutation...");
-
+  const onServiceSubmit = async (data: any) => {
     try {
-      createServiceMutation.mutate(serviceData);
-      console.log("Mutation called successfully");
+      if (selectedServiceType === "opd") {
+        // Handle OPD consultation
+        const selectedDoctorId = data.doctorId;
+        const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
+        const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
+
+        const serviceData = {
+          patientId: patient.id,
+          serviceId: "opd-consultation",
+          serviceName: "OPD Consultation",
+          category: "consultation",
+          price: consultationFee,
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
+          doctorId: selectedDoctorId !== "none" ? selectedDoctorId : null,
+          notes: data.notes,
+          status: "scheduled",
+        };
+
+        const response = await fetch("/api/patient-services", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+          body: JSON.stringify(serviceData),
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Success",
+            description: "OPD consultation scheduled successfully",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+          setIsServiceDialogOpen(false);
+          serviceForm.reset();
+          setSelectedServiceType("");
+          setSelectedServices([]);
+        } else {
+          throw new Error("Failed to schedule OPD consultation");
+        }
+      } else {
+        // Handle multiple services
+        if (selectedServices.length === 0) {
+          toast({
+            title: "Error",
+            description: "Please select at least one service",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Schedule all selected services
+        const responses = await Promise.all(
+          selectedServices.map(service => {
+            const serviceData = {
+              patientId: patient.id,
+              serviceId: service.id,
+              serviceName: service.name,
+              serviceType: service.category, // Map category to serviceType for database
+              price: service.price || 0,
+              scheduledDate: data.scheduledDate,
+              scheduledTime: data.scheduledTime,
+              doctorId: data.doctorId || null,
+              notes: data.notes,
+              status: "scheduled",
+            };
+
+            return fetch("/api/patient-services", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+              },
+              body: JSON.stringify(serviceData),
+            });
+          })
+        );
+
+        const failedRequests = responses.filter(response => !response.ok);
+
+        if (failedRequests.length === 0) {
+          toast({
+            title: "Success",
+            description: `${selectedServices.length} service(s) scheduled successfully`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+          setIsServiceDialogOpen(false);
+          serviceForm.reset();
+          setSelectedServiceType("");
+          setSelectedServices([]);
+        } else {
+          throw new Error(`Failed to schedule ${failedRequests.length} service(s)`);
+        }
+      }
     } catch (error) {
-      console.error("Error calling mutation:", error);
       toast({
-        title: "Submission Error",
-        description: "Failed to submit form. Please try again.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to schedule service",
         variant: "destructive",
       });
     }
@@ -849,14 +864,14 @@ export default function PatientDetail() {
   // Filter services by category and search query
   const getFilteredServices = (category: string) => {
     if (!allServices) return [];
-    
+
     let filtered = allServices.filter(s => s.isActive);
-    
+
     // Filter by category
     if (category && category !== "all") {
       filtered = filtered.filter(s => s.category === category);
     }
-    
+
     // Filter by search query
     if (serviceSearchQuery.trim()) {
       filtered = filtered.filter(s => 
@@ -864,8 +879,20 @@ export default function PatientDetail() {
         (s.description && s.description.toLowerCase().includes(serviceSearchQuery.toLowerCase()))
       );
     }
-    
+
     return filtered;
+  };
+
+  const openServiceDialog = (serviceType: string) => {
+    setSelectedServiceType(serviceType);
+    setSelectedServices([]);
+    setSelectedServiceCategory("");
+    setIsServiceDialogOpen(true);
+
+    // Set the current time as default
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 5); // HH:MM format
+    serviceForm.setValue("scheduledTime", timeString);
   };
 
 
@@ -1940,7 +1967,7 @@ export default function PatientDetail() {
                                   const displayTimestamp = event.type === 'registration' 
                                     ? event.sortTimestamp  // Already IST-corrected above
                                     : event.sortTimestamp;
-                                  
+
                                   return new Date(displayTimestamp).toLocaleString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
@@ -1994,112 +2021,14 @@ export default function PatientDetail() {
 
       {/* Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedServiceType === "opd" ? "Schedule OPD Consultation" : "Schedule Patient Service"}
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
-            {selectedServiceType !== "opd" && (
-              <div className="space-y-4">
-                {/* Search and Category Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Search Services</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="Search services by name..."
-                        value={serviceSearchQuery}
-                        onChange={(e) => {
-                          setServiceSearchQuery(e.target.value);
-                          // Reset service selection when search changes
-                          serviceForm.setValue("serviceType", "");
-                          serviceForm.setValue("serviceName", "");
-                          serviceForm.setValue("price", 0);
-                        }}
-                        className="pl-10"
-                        data-testid="search-services"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Service Category</Label>
-                    <Select 
-                      value={selectedServiceCategory || "all"}
-                      onValueChange={(value) => {
-                        setSelectedServiceCategory(value === "all" ? "" : value);
-                        // Reset service selection when category changes
-                        serviceForm.setValue("serviceType", "");
-                        serviceForm.setValue("serviceName", "");
-                        serviceForm.setValue("price", 0);
-                      }}
-                      data-testid="select-service-category"
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service category (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {serviceCategories.map((category) => (
-                          <SelectItem key={category.key} value={category.key}>
-                            <div className="flex items-center gap-2">
-                              <category.icon className="h-4 w-4" />
-                              {category.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Service Name *</Label>
-                  <Select 
-                    value={serviceForm.watch("serviceType")}
-                    onValueChange={(value) => {
-                      serviceForm.setValue("serviceType", value);
-
-                      // Check if it's from API services or legacy services
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === value);
-                      if (selectedService) {
-                        serviceForm.setValue("serviceName", selectedService.name);
-                        serviceForm.setValue("price", selectedService.price || 0);
-                        // Clear the error when a valid service is selected
-                        serviceForm.clearErrors("serviceType");
-                      }
-                    }}
-                    data-testid="select-service-name"
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getFilteredServices(selectedServiceCategory).map((service) => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.name}
-                          {service.description && (
-                            <span className="text-muted-foreground ml-2">
-                              - {service.description}
-                            </span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {serviceForm.formState.errors.serviceType && (
-                    <p className="text-sm text-red-600">
-                      {serviceForm.formState.errors.serviceType.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-
+          <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-6">
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
@@ -2118,7 +2047,7 @@ export default function PatientDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
@@ -2150,9 +2079,7 @@ export default function PatientDetail() {
                   </p>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Scheduled Date *</Label>
                 <Input
@@ -2183,32 +2110,131 @@ export default function PatientDetail() {
             </div>
 
             {selectedServiceType !== "opd" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    {...serviceForm.register("price", { 
-                      valueAsNumber: true, 
-                      required: "Price is required",
-                      min: { value: 0, message: "Price must be at least 0" }
-                    })}
-                    data-testid="input-service-price"
-                    readOnly={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0;
-                    })()}
-                    className={(() => {
-                      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                      return selectedService && selectedService.price > 0 ? "bg-gray-50" : "";
-                    })()}
-                  />
-                  {serviceForm.formState.errors.price && (
-                    <p className="text-sm text-red-600">
-                      {serviceForm.formState.errors.price.message}
-                    </p>
-                  )}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Select Service from Catalog</Label>
+                  <div className="flex items-center space-x-2">
+                    <Select 
+                      value={selectedServiceCategory || "all"} 
+                      onValueChange={(value) => {
+                        setSelectedServiceCategory(value === "all" ? "" : value);
+                        // Reset service selection when category changes
+                        serviceForm.setValue("serviceType", "");
+                        serviceForm.setValue("serviceName", "");
+                        serviceForm.setValue("price", 0);
+                      }}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {serviceCategories.map((category) => (
+                          <SelectItem key={category.key} value={category.key}>
+                            <div className="flex items-center gap-2">
+                              <category.icon className="h-4 w-4" />
+                              {category.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search services by name..."
+                        value={serviceSearchQuery}
+                        onChange={(e) => {
+                          setServiceSearchQuery(e.target.value);
+                          // Reset service selection when search changes
+                          serviceForm.setValue("serviceType", "");
+                          serviceForm.setValue("serviceName", "");
+                          serviceForm.setValue("price", 0);
+                        }}
+                        className="pl-10"
+                        data-testid="search-services"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">Select</TableHead>
+                        <TableHead>Service Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Price (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getFilteredServices(selectedServiceCategory).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            No services found. Try adjusting your search or category filter.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        getFilteredServices(selectedServiceCategory).map((service: any) => {
+                          const isSelected = selectedServices.some(s => s.id === service.id);
+                          return (
+                            <TableRow 
+                              key={service.id}
+                              className={isSelected ? "bg-blue-50" : ""}
+                            >
+                              <TableCell>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedServices(prev => [...prev, service]);
+                                    } else {
+                                      setSelectedServices(prev => prev.filter(s => s.id !== service.id));
+                                    }
+                                  }}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">{service.name}</TableCell>
+                              <TableCell className="capitalize">
+                                {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
+                              </TableCell>
+                              <TableCell>₹{service.price || 0}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Services Summary */}
+                {selectedServices.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Services Summary</h4>
+                    <div className="space-y-2">
+                      {selectedServices.map((service, index) => (
+                        <div key={service.id} className="flex justify-between items-center text-sm">
+                          <span className="font-medium">{service.name}</span>
+                          <span>₹{service.price || 0}</span>
+                        </div>
+                      ))}
+                      <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
+                        <span>Total ({selectedServices.length} services)</span>
+                        <span>₹{selectedServices.reduce((total, service) => total + (service.price || 0), 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Form Fields */}
               </div>
             )}
 
@@ -2247,14 +2273,16 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending}
+                disabled={createServiceMutation.isPending || (selectedServiceType !== "opd" && selectedServices.length === 0)}
                 data-testid="button-schedule-service"
               >
                 {createServiceMutation.isPending 
                   ? "Scheduling..." 
                   : selectedServiceType === "opd" 
                     ? "Schedule OPD" 
-                    : "Schedule Service"
+                    : selectedServices.length > 0
+                      ? `Schedule ${selectedServices.length} Service(s)` 
+                      : "Schedule Service"
                 }
               </Button>
             </div>
@@ -2365,7 +2393,7 @@ export default function PatientDetail() {
 
                       return allRoomsForType.map((room: any) => {
                         const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
-                        
+
                         return (
                           <SelectItem 
                             key={room.id} 
@@ -2578,7 +2606,7 @@ export default function PatientDetail() {
 
                     return allRoomsForType.map((room: any) => {
                       const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
-                      
+
                       return (
                         <SelectItem 
                           key={room.id} 
