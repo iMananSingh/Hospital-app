@@ -1241,7 +1241,7 @@ export class SqliteStorage implements IStorage {
           userId,
           'lab_test_ordered',
           'Lab test ordered',
-          `${orderId} for ${patient?.name || 'Unknown Patient'}`,
+          `${generatedOrderId} for ${patient?.name || 'Unknown Patient'}`,
           created.id,
           'pathology_order',
           { testCount: tests.length, patientName: patient?.name }
