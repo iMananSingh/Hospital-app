@@ -587,7 +587,7 @@ export default function PatientDetail() {
               patientId: patient.id,
               serviceId: service.id,
               serviceName: service.name,
-              serviceType: service.category, // Map category to serviceType for database
+              serviceType: mapCategoryToServiceType(service.category) || 'service', // Map category to valid serviceType
               price: service.price || 0,
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
@@ -881,6 +881,24 @@ export default function PatientDetail() {
     }
 
     return filtered;
+  };
+
+  // Map service categories to valid database service types
+  const mapCategoryToServiceType = (category: string) => {
+    switch (category) {
+      case 'diagnostics':
+        return 'diagnostic';
+      case 'procedures':
+        return 'procedure';
+      case 'operations':
+        return 'operation';
+      case 'consultation':
+        return 'opd';
+      case 'misc':
+        return 'service';
+      default:
+        return 'service';
+    }
   };
 
   const openServiceDialog = (serviceType: string) => {
@@ -2047,7 +2065,7 @@ export default function PatientDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
