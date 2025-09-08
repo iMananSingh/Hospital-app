@@ -1994,113 +1994,14 @@ export default function PatientDetail() {
 
       {/* Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedServiceType === "opd" ? "Schedule OPD Consultation" : "Schedule Patient Service"}
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
-            {selectedServiceType !== "opd" && (
-              <>
-                {/* Service Category and Service Name in the first row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Service Category</Label>
-                    <Select
-                      value={selectedServiceCategory || "all"}
-                      onValueChange={(value) => {
-                        setSelectedServiceCategory(value === "all" ? "" : value);
-                        // Reset service selection when category changes
-                        serviceForm.setValue("serviceType", "");
-                        serviceForm.setValue("serviceName", "");
-                        serviceForm.setValue("price", 0);
-                      }}
-                      data-testid="select-service-category"
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service category (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {serviceCategories.map((category) => (
-                          <SelectItem key={category.key} value={category.key}>
-                            <div className="flex items-center gap-2">
-                              <category.icon className="h-4 w-4" />
-                              {category.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Service Name *</Label>
-                    <Select
-                      value={serviceForm.watch("serviceType")}
-                      onValueChange={(value) => {
-                        serviceForm.setValue("serviceType", value);
-
-                        // Check if it's from API services or legacy services
-                        const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === value);
-                        if (selectedService) {
-                          serviceForm.setValue("serviceName", selectedService.name);
-                          serviceForm.setValue("price", selectedService.price || 0);
-                          // Clear the error when a valid service is selected
-                          serviceForm.clearErrors("serviceType");
-                        }
-                      }}
-                      data-testid="select-service-name"
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getFilteredServices(selectedServiceCategory).map((service) => (
-                          <SelectItem key={service.id} value={service.id}>
-                            {service.name}
-                            {service.description && (
-                              <span className="text-muted-foreground ml-2">
-                                - {service.description}
-                              </span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {serviceForm.formState.errors.serviceType && (
-                      <p className="text-sm text-red-600">
-                        {serviceForm.formState.errors.serviceType.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Search bar in the second row, occupying the full width */}
-                <div className="space-y-2">
-                  <Label>Search Services</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search services by name..."
-                      value={serviceSearchQuery}
-                      onChange={(e) => {
-                        setServiceSearchQuery(e.target.value);
-                        // Reset service selection when search changes
-                        serviceForm.setValue("serviceType", "");
-                        serviceForm.setValue("serviceName", "");
-                        serviceForm.setValue("price", 0);
-                      }}
-                      className="pl-10"
-                      data-testid="search-services"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
+          <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-6">
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
@@ -2152,6 +2053,36 @@ export default function PatientDetail() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label>Scheduled Date *</Label>
+                <Input
+                  type="date"
+                  {...serviceForm.register("scheduledDate", { required: "Scheduled date is required" })}
+                  data-testid="input-service-date"
+                />
+                {serviceForm.formState.errors.scheduledDate && (
+                  <p className="text-sm text-red-600">
+                    {serviceForm.formState.errors.scheduledDate.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Scheduled Time *</Label>
+                <Input
+                  type="time"
+                  {...serviceForm.register("scheduledTime", { required: "Scheduled time is required" })}
+                  data-testid="input-service-time"
+                />
+                {serviceForm.formState.errors.scheduledTime && (
+                  <p className="text-sm text-red-600">
+                    {serviceForm.formState.errors.scheduledTime.message}
+                  </p>
+                )}
+              </div>
+
               {selectedServiceType !== "opd" && (
                 <div className="space-y-2">
                   <Label>Price (₹) *</Label>
@@ -2181,37 +2112,133 @@ export default function PatientDetail() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Scheduled Date *</Label>
-                <Input
-                  type="date"
-                  {...serviceForm.register("scheduledDate", { required: "Scheduled date is required" })}
-                  data-testid="input-service-date"
-                />
-                {serviceForm.formState.errors.scheduledDate && (
+            {selectedServiceType !== "opd" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Select Service from Catalog</Label>
+                  <div className="flex items-center space-x-2">
+                    <Select 
+                      value={selectedServiceCategory || "all"} 
+                      onValueChange={(value) => {
+                        setSelectedServiceCategory(value === "all" ? "" : value);
+                        // Reset service selection when category changes
+                        serviceForm.setValue("serviceType", "");
+                        serviceForm.setValue("serviceName", "");
+                        serviceForm.setValue("price", 0);
+                      }}
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {serviceCategories.map((category) => (
+                          <SelectItem key={category.key} value={category.key}>
+                            <div className="flex items-center gap-2">
+                              <category.icon className="h-4 w-4" />
+                              {category.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search services by name..."
+                        value={serviceSearchQuery}
+                        onChange={(e) => {
+                          setServiceSearchQuery(e.target.value);
+                          // Reset service selection when search changes
+                          serviceForm.setValue("serviceType", "");
+                          serviceForm.setValue("serviceName", "");
+                          serviceForm.setValue("price", 0);
+                        }}
+                        className="pl-10"
+                        data-testid="search-services"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">Select</TableHead>
+                        <TableHead>Service Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Price (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getFilteredServices(selectedServiceCategory).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                            No services found. Try adjusting your search or category filter.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        getFilteredServices(selectedServiceCategory).map((service: any) => {
+                          const isSelected = serviceForm.watch("serviceType") === service.id;
+                          return (
+                            <TableRow 
+                              key={service.id}
+                              className={isSelected ? "bg-blue-50" : ""}
+                            >
+                              <TableCell>
+                                <input
+                                  type="radio"
+                                  name="selectedService"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    serviceForm.setValue("serviceType", service.id);
+                                    serviceForm.setValue("serviceName", service.name);
+                                    serviceForm.setValue("price", service.price || 0);
+                                    serviceForm.clearErrors("serviceType");
+                                  }}
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">{service.name}</TableCell>
+                              <TableCell className="capitalize">
+                                {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {service.description || "No description"}
+                              </TableCell>
+                              <TableCell>₹{service.price || 0}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {serviceForm.watch("serviceType") && (
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Selected Service</h4>
+                    <div className="text-sm">
+                      <span className="font-medium">{serviceForm.watch("serviceName")}</span>
+                      <span className="text-blue-600 ml-2">₹{serviceForm.watch("price")}</span>
+                    </div>
+                  </div>
+                )}
+
+                {serviceForm.formState.errors.serviceType && (
                   <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.scheduledDate.message}
+                    {serviceForm.formState.errors.serviceType.message}
                   </p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label>Scheduled Time *</Label>
-                <Input
-                  type="time"
-                  {...serviceForm.register("scheduledTime", { required: "Scheduled time is required" })}
-                  data-testid="input-service-time"
-                />
-                {serviceForm.formState.errors.scheduledTime && (
-                  <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.scheduledTime.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            
+            )}
 
             <div className="space-y-2">
               <Label>Notes</Label>
@@ -2248,14 +2275,16 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending}
+                disabled={createServiceMutation.isPending || (selectedServiceType !== "opd" && !serviceForm.watch("serviceType"))}
                 data-testid="button-schedule-service"
               >
                 {createServiceMutation.isPending 
                   ? "Scheduling..." 
                   : selectedServiceType === "opd" 
                     ? "Schedule OPD" 
-                    : "Schedule Service"
+                    : serviceForm.watch("serviceType") 
+                      ? `Schedule ${serviceForm.watch("serviceName")}` 
+                      : "Schedule Service"
                 }
               </Button>
             </div>
