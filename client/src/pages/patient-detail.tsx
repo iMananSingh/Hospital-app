@@ -56,8 +56,9 @@ export default function PatientDetail() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
-  const [selectedServiceType, setSelectedServiceType] = useState<string>("");
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
+  const [selectedServiceType, setSelectedServiceType] = useState("");
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
@@ -383,12 +384,11 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
-    mode: "onChange",
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
       serviceName: "",
-      scheduledDate: "", // Will be set dynamically when dialog opens
+      scheduledDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
       scheduledTime: "", // Will be set dynamically when dialog opens
       doctorId: "",
       notes: "",
@@ -526,86 +526,107 @@ export default function PatientDetail() {
     },
   });
 
-  const onServiceSubmit = (data: any) => {
-    console.log("=== FORM SUBMISSION DEBUG ===");
-    console.log("Form submitted with data:", data);
-    console.log("Selected service type:", selectedServiceType);
-    console.log("Selected service category:", selectedServiceCategory);
-    console.log("Form errors:", serviceForm.formState.errors);
-    console.log("Form is valid:", serviceForm.formState.isValid);
-    console.log("Doctors available:", doctors);
-
-    // Custom validation for Select fields that aren't properly registered
-    let hasErrors = false;
-
-    // Validate doctor selection
-    if (!data.doctorId || data.doctorId === "none") {
-      serviceForm.setError("doctorId", { 
-        type: "required", 
-        message: selectedServiceType === "opd" ? "Doctor Required - please select a consulting doctor" : "Doctor Required - please select a doctor" 
-      });
-      hasErrors = true;
-    } else {
-      serviceForm.clearErrors("doctorId");
-    }
-
-    // For non-OPD services, validate service selection
-    if (selectedServiceType !== "opd") {
-      if (!data.serviceType || !data.serviceName) {
-        serviceForm.setError("serviceType", { 
-          type: "required", 
-          message: "Service Required - please select a service" 
-        });
-        hasErrors = true;
-      } else {
-        serviceForm.clearErrors("serviceType");
-      }
-    }
-
-    // If there are validation errors, don't submit
-    if (hasErrors) {
-      return;
-    }
-
-    let serviceData;
-
-    if (selectedServiceType === "opd") {
-      const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
-      const consultationFee = selectedDoctor?.consultationFee || 0;
-
-      serviceData = {
-        ...data,
-        serviceId: `SRV-${Date.now()}`,
-        serviceName: "OPD Consultation",
-        serviceType: "opd",
-        price: consultationFee,
-        doctorId: data.doctorId,
-      };
-    } else {
-      // Get price from the selected service
-      const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === data.serviceType);
-      const servicePrice = selectedService ? selectedService.price || 0 : 0;
-
-      serviceData = {
-        ...data,
-        serviceId: `SRV-${Date.now()}`,
-        // Convert "none" back to empty string for the API
-        doctorId: data.doctorId === "none" ? "" : data.doctorId,
-        price: servicePrice,
-      };
-    }
-
-    console.log("Final service data to submit:", serviceData);
-    console.log("About to call mutation...");
-
+  const onServiceSubmit = async (data: any) => {
     try {
-      createServiceMutation.mutate(serviceData);
-      console.log("Mutation called successfully");
+      if (selectedServiceType === "opd") {
+        // Handle OPD consultation
+        const selectedDoctorId = data.doctorId;
+        const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
+        const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
+
+        const serviceData = {
+          patientId: patient.id,
+          serviceId: "opd-consultation",
+          serviceName: "OPD Consultation",
+          category: "consultation",
+          price: consultationFee,
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
+          doctorId: selectedDoctorId !== "none" ? selectedDoctorId : null,
+          notes: data.notes,
+          status: "scheduled",
+        };
+
+        const response = await fetch("/api/patient-services", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+          body: JSON.stringify(serviceData),
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Success",
+            description: "OPD consultation scheduled successfully",
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+          setIsServiceDialogOpen(false);
+          serviceForm.reset();
+          setSelectedServiceType("");
+          setSelectedServices([]);
+        } else {
+          throw new Error("Failed to schedule OPD consultation");
+        }
+      } else {
+        // Handle multiple services
+        if (selectedServices.length === 0) {
+          toast({
+            title: "Error",
+            description: "Please select at least one service",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Schedule all selected services
+        const responses = await Promise.all(
+          selectedServices.map(service => {
+            const serviceData = {
+              patientId: patient.id,
+              serviceId: service.id,
+              serviceName: service.name,
+              category: service.category,
+              price: service.price || 0,
+              scheduledDate: data.scheduledDate,
+              scheduledTime: data.scheduledTime,
+              doctorId: data.doctorId || null,
+              notes: data.notes,
+              status: "scheduled",
+            };
+
+            return fetch("/api/patient-services", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+              },
+              body: JSON.stringify(serviceData),
+            });
+          })
+        );
+
+        const failedRequests = responses.filter(response => !response.ok);
+
+        if (failedRequests.length === 0) {
+          toast({
+            title: "Success",
+            description: `${selectedServices.length} service(s) scheduled successfully`,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+          setIsServiceDialogOpen(false);
+          serviceForm.reset();
+          setSelectedServiceType("");
+          setSelectedServices([]);
+        } else {
+          throw new Error(`Failed to schedule ${failedRequests.length} service(s)`);
+        }
+      }
     } catch (error) {
-      console.error("Error calling mutation:", error);
       toast({
-        title: "Submission Error",
-        description: "Failed to submit form. Please try again.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to schedule service",
         variant: "destructive",
       });
     }
@@ -860,6 +881,18 @@ export default function PatientDetail() {
     }
 
     return filtered;
+  };
+
+  const openServiceDialog = (serviceType: string) => {
+    setSelectedServiceType(serviceType);
+    setSelectedServices([]);
+    setSelectedServiceCategory("");
+    setIsServiceDialogOpen(true);
+
+    // Set the current time as default
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 5); // HH:MM format
+    serviceForm.setValue("scheduledTime", timeString);
   };
 
 
@@ -2149,7 +2182,7 @@ export default function PatientDetail() {
                         </TableRow>
                       ) : (
                         getFilteredServices(selectedServiceCategory).map((service: any) => {
-                          const isSelected = serviceForm.watch("serviceType") === service.id;
+                          const isSelected = selectedServices.some(s => s.id === service.id);
                           return (
                             <TableRow 
                               key={service.id}
@@ -2157,16 +2190,16 @@ export default function PatientDetail() {
                             >
                               <TableCell>
                                 <input
-                                  type="radio"
-                                  name="selectedService"
+                                  type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => {
-                                    serviceForm.setValue("serviceType", service.id);
-                                    serviceForm.setValue("serviceName", service.name);
-                                    serviceForm.setValue("price", service.price || 0);
-                                    serviceForm.clearErrors("serviceType");
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedServices(prev => [...prev, service]);
+                                    } else {
+                                      setSelectedServices(prev => prev.filter(s => s.id !== service.id));
+                                    }
                                   }}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{service.name}</TableCell>
@@ -2182,25 +2215,26 @@ export default function PatientDetail() {
                   </Table>
                 </div>
 
-                {serviceForm.watch("serviceType") && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">Selected Service</h4>
-                    <div className="text-sm">
-                      <span className="font-medium">{serviceForm.watch("serviceName")}</span>
-                      {(() => {
-                        const selectedService = getFilteredServices(selectedServiceCategory).find(s => s.id === serviceForm.watch("serviceType"));
-                        const category = selectedService ? serviceCategories.find(cat => cat.key === selectedService.category)?.label || selectedService.category : '';
-                        return category ? <span className="text-blue-600 ml-2">({category})</span> : null;
-                      })()}
+                {/* Services Summary */}
+                {selectedServices.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Services Summary</h4>
+                    <div className="space-y-2">
+                      {selectedServices.map((service, index) => (
+                        <div key={service.id} className="flex justify-between items-center text-sm">
+                          <span className="font-medium">{service.name}</span>
+                          <span>₹{service.price || 0}</span>
+                        </div>
+                      ))}
+                      <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
+                        <span>Total ({selectedServices.length} services)</span>
+                        <span>₹{selectedServices.reduce((total, service) => total + (service.price || 0), 0)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {serviceForm.formState.errors.serviceType && (
-                  <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.serviceType.message}
-                  </p>
-                )}
+                {/* Form Fields */}
               </div>
             )}
 
@@ -2239,15 +2273,15 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending || (selectedServiceType !== "opd" && !serviceForm.watch("serviceType"))}
+                disabled={createServiceMutation.isPending || (selectedServiceType !== "opd" && selectedServices.length === 0)}
                 data-testid="button-schedule-service"
               >
                 {createServiceMutation.isPending 
                   ? "Scheduling..." 
                   : selectedServiceType === "opd" 
                     ? "Schedule OPD" 
-                    : serviceForm.watch("serviceType") 
-                      ? `Schedule ${serviceForm.watch("serviceName")}` 
+                    : selectedServices.length > 0
+                      ? `Schedule ${selectedServices.length} Service(s)` 
                       : "Schedule Service"
                 }
               </Button>
@@ -2389,6 +2423,7 @@ export default function PatientDetail() {
             <div className="space-y-2">
               <Label>Reason for Admission</Label>
               <Input
+<Input
                 {...admissionForm.register("reason")}
                 placeholder="Brief reason for admission (optional)"
                 data-testid="input-admission-reason"
