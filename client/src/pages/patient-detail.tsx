@@ -2066,7 +2066,7 @@ export default function PatientDetail() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
                 <Select 
