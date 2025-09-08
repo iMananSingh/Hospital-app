@@ -538,6 +538,7 @@ export default function PatientDetail() {
           patientId: patient.id,
           serviceId: "opd-consultation",
           serviceName: "OPD Consultation",
+          serviceType: "opd",
           category: "consultation",
           price: consultationFee,
           scheduledDate: data.scheduledDate,
