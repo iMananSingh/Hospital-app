@@ -587,7 +587,7 @@ export default function PatientDetail() {
               patientId: patient.id,
               serviceId: service.id,
               serviceName: service.name,
-              category: service.category,
+              serviceType: service.category, // Map category to serviceType for database
               price: service.price || 0,
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
