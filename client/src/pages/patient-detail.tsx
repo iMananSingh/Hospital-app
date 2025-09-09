@@ -1150,7 +1150,18 @@ export default function PatientDetail() {
                   // Patient is admitted - show discharge button
                   return (
                     <Button 
-                      onClick={() => setIsDischargeDialogOpen(true)}
+                      onClick={() => {
+                        // Set current LOCAL date and time when opening discharge dialog
+                        const now = new Date();
+                        const currentDateTime = now.getFullYear() + '-' +
+                          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                          String(now.getDate()).padStart(2, '0') + 'T' +
+                          String(now.getHours()).padStart(2, '0') + ':' +
+                          String(now.getMinutes()).padStart(2, '0');
+
+                        setDischargeDateTime(currentDateTime);
+                        setIsDischargeDialogOpen(true);
+                      }}
                       className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
                       data-testid="button-discharge-patient"
                     >
@@ -2677,7 +2688,7 @@ export default function PatientDetail() {
               }
               return null;
             })()}
-            
+
             <div className="mt-4">
               <Label htmlFor="discharge-datetime">Discharge Date & Time</Label>
               <Input

@@ -1974,7 +1974,43 @@ export class SqliteStorage implements IStorage {
       }
 
       // Use provided discharge date/time or current time
-      const dischargeDate = dischargeDateTime ? new Date(dischargeDateTime) : new Date();
+      let dischargeDate: Date;
+      let dischargeDateString: string;
+
+      if (dischargeDateTime) {
+        // Handle datetime-local format "YYYY-MM-DDTHH:MM" as local time
+        if (dischargeDateTime.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+          const parts = dischargeDateTime.split('T');
+          const dateParts = parts[0].split('-');
+          const timeParts = parts[1].split(':');
+          
+          // Create date in local timezone (don't add Z)
+          dischargeDate = new Date(
+            parseInt(dateParts[0]), // year
+            parseInt(dateParts[1]) - 1, // month (0-indexed)
+            parseInt(dateParts[2]), // day
+            parseInt(timeParts[0]), // hour
+            parseInt(timeParts[1]) // minute
+          );
+          
+          // Store as local datetime string for SQLite
+          dischargeDateString = dischargeDate.getFullYear() + '-' +
+            String(dischargeDate.getMonth() + 1).padStart(2, '0') + '-' +
+            String(dischargeDate.getDate()).padStart(2, '0') + ' ' +
+            String(dischargeDate.getHours()).padStart(2, '0') + ':' +
+            String(dischargeDate.getMinutes()).padStart(2, '0') + ':' +
+            String(dischargeDate.getSeconds()).padStart(2, '0');
+        } else {
+          // Fallback for other formats
+          dischargeDate = new Date(dischargeDateTime);
+          dischargeDateString = dischargeDate.toISOString();
+        }
+      } else {
+        // Default to current time
+        dischargeDate = new Date();
+        dischargeDateString = dischargeDate.toISOString();
+      }
+
       const eventDate = dischargeDate.getFullYear() + '-' +
         String(dischargeDate.getMonth() + 1).padStart(2, '0') + '-' +
         String(dischargeDate.getDate()).padStart(2, '0');
@@ -1989,7 +2025,7 @@ export class SqliteStorage implements IStorage {
       const updated = tx.update(schema.admissions)
         .set({
           status: "discharged",
-          dischargeDate: dischargeDate.toISOString(),
+          dischargeDate: dischargeDateString,
           updatedAt: new Date().toISOString()
         })
         .where(eq(schema.admissions.id, admissionId))
@@ -1999,7 +2035,7 @@ export class SqliteStorage implements IStorage {
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
         eventType: "discharge",
-        eventTime: dischargeDate.toISOString(),
+        eventTime: dischargeDateString,
         notes: `Patient discharged`,
         createdBy: userId,
         receiptNumber: receiptNumber,
