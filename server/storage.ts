@@ -1441,12 +1441,11 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
-    // Use Indian timezone (UTC+5:30) for consistent date calculation
+    // Use local system time for admission recording
     const now = new Date();
-    const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-    const eventDate = indianTime.getFullYear() + '-' +
-      String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-      String(indianTime.getDate()).padStart(2, '0');
+    const eventDate = now.getFullYear() + '-' +
+      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+      String(now.getDate()).padStart(2, '0');
     const admissionDate = eventDate; // Store just the date part for easier querying
 
     return db.transaction((tx) => {
@@ -1488,7 +1487,7 @@ export class SqliteStorage implements IStorage {
       tx.insert(schema.admissionEvents).values({
         admissionId: created.id,
         eventType: "admit",
-        eventTime: admissionDate,
+        eventTime: now.toISOString(),
         roomNumber: admission.currentRoomNumber,
         wardType: admission.currentWardType,
         notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
@@ -1737,16 +1736,14 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
-      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      // Use local system time for dashboard statistics
       const now = new Date();
-      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' +
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-        String(indianTime.getDate()).padStart(2, '0');
+      const today = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
 
-      console.log('Dashboard stats - Today date (Indian time):', today);
-      console.log('Dashboard stats - Raw now:', now);
-      console.log('Dashboard stats - Indian time:', indianTime);
+      console.log('Dashboard stats - Today date (local time):', today);
+      console.log('Dashboard stats - Current time:', now);
 
       // Get ALL OPD services first to debug
       const allOpdServices = db.select().from(schema.patientServices)
@@ -1938,12 +1935,11 @@ export class SqliteStorage implements IStorage {
 
       if (!currentAdmission) return undefined;
 
-      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      // Use local system time for discharge recording
       const now = new Date();
-      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const eventDate = indianTime.getFullYear() + '-' +
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-        String(indianTime.getDate()).padStart(2, '0');
+      const eventDate = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
       const dischargeDate = eventDate; // Store just the date part for easier querying
 
       // Generate receipt number for discharge
@@ -2902,12 +2898,11 @@ export class SqliteStorage implements IStorage {
 
   async getTodayAdmissions(): Promise<any[]> {
     try {
-      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      // Use local system time for date calculation
       const now = new Date();
-      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' +
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-        String(indianTime.getDate()).padStart(2, '0');
+      const today = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
 
       const todayAdmissions = db.select({
         admission: schema.admissions,
@@ -2934,12 +2929,11 @@ export class SqliteStorage implements IStorage {
 
   async getTodayDischarges(): Promise<any[]> {
     try {
-      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      // Use local system time for date calculation
       const now = new Date();
-      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' +
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-        String(indianTime.getDate()).padStart(2, '0');
+      const today = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
 
       const todayDischarges = db.select({
         admission: schema.admissions,
