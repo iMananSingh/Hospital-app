@@ -1418,10 +1418,11 @@ export default function PatientDetail() {
                               <span className="text-muted-foreground">Admission Date:</span>
                               <div className="font-medium">
                                 {(() => {
-                                  // Handle SQLite datetime format as local time (no timezone conversion)
                                   let admissionDateStr = admission.admissionDate;
+                                  
+                                  // Handle different date formats
                                   if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                    // Parse as local time without adding 'Z' or timezone info
+                                    // Full datetime format: "YYYY-MM-DD HH:MM:SS"
                                     const parts = admissionDateStr.split(' ');
                                     const dateParts = parts[0].split('-');
                                     const timeParts = parts[1].split(':');
@@ -1444,17 +1445,36 @@ export default function PatientDetail() {
                                       minute: '2-digit',
                                       hour12: true
                                     });
+                                  } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                    // Date only format: "YYYY-MM-DD" 
+                                    const dateParts = admissionDateStr.split('-');
+                                    const localDate = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]) // day
+                                    );
+                                    
+                                    return localDate.toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    });
                                   }
                                   
-                                  // Fallback for other formats
-                                  return new Date(admissionDateStr).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                  });
+                                  // Fallback for other formats (including ISO strings)
+                                  const date = new Date(admissionDateStr);
+                                  if (!isNaN(date.getTime())) {
+                                    return date.toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  }
+                                  
+                                  return admissionDateStr; // Return as-is if parsing fails
                                 })()}
                               </div>
                             </div>

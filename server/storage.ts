@@ -1447,12 +1447,20 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
-    // Use local system time for admission recording
+    // Use the provided admission date, or current system time if not provided
     const now = new Date();
-    const eventDate = now.getFullYear() + '-' +
-      String(now.getMonth() + 1).padStart(2, '0') + '-' +
-      String(now.getDate()).padStart(2, '0');
-    const admissionDate = eventDate; // Store just the date part for easier querying
+    let admissionDate: string;
+    
+    if (admission.admissionDate) {
+      // Use the provided admission date
+      admissionDate = admission.admissionDate;
+    } else {
+      // Fallback to current system date
+      const eventDate = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+      admissionDate = eventDate;
+    }
 
     return db.transaction((tx) => {
       // CRITICAL VALIDATION: Check if room is already occupied
