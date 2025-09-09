@@ -1450,13 +1450,21 @@ export class SqliteStorage implements IStorage {
     // Use the provided admission date, or current system time if not provided
     const now = new Date();
     let admissionDate: string;
+    let eventDate: string;
     
     if (admission.admissionDate) {
       // Use the provided admission date
       admissionDate = admission.admissionDate;
+      // Extract just the date part for receipt generation
+      if (admission.admissionDate.includes('T')) {
+        // datetime-local format: "YYYY-MM-DDTHH:MM"
+        eventDate = admission.admissionDate.split('T')[0];
+      } else {
+        eventDate = admission.admissionDate;
+      }
     } else {
       // Fallback to current system date
-      const eventDate = now.getFullYear() + '-' +
+      eventDate = now.getFullYear() + '-' +
         String(now.getMonth() + 1).padStart(2, '0') + '-' +
         String(now.getDate()).padStart(2, '0');
       admissionDate = eventDate;
