@@ -1458,33 +1458,6 @@ export default function PatientDetail() {
                                 })()}
                               </div>
                             </div>
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]), // minute
-                                      parseInt(timeParts[2]) // second
-                                    );
-                                    
-                                    return localDate.toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  }
-                                  
-                                  // Fallback for other formats
-                                  return new Date(admissionDateStr).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                  });
-                                })()}
-                              </div>
-                            </div>
                             <div>
                               <span className="text-muted-foreground">
                                 {admission.status === 'discharged' ? 'Discharge Date:' : 'Days Admitted:'}

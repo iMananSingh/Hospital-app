@@ -544,18 +544,24 @@ async function createDemoData() {
     // Check and create demo doctor profile
     const existingDoctor = db.select().from(schema.doctors).where(eq(schema.doctors.id, 'doctor-profile-id')).get();
     if (!existingDoctor) {
-      db.insert(schema.doctors).values({
-        id: 'doctor-profile-id',
-        userId: 'doctor-user-id',
-        name: 'Dr. John Smith',
-        specialization: 'General Medicine',
-        qualification: 'MBBS, MD',
-        consultationFee: 500,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }).run();
-      console.log("Created demo doctor profile");
+      // Ensure the doctor user exists first
+      const doctorUser = db.select().from(schema.users).where(eq(schema.users.id, 'doctor-user-id')).get();
+      if (doctorUser) {
+        db.insert(schema.doctors).values({
+          id: 'doctor-profile-id',
+          userId: 'doctor-user-id',
+          name: 'Dr. John Smith',
+          specialization: 'General Medicine',
+          qualification: 'MBBS, MD',
+          consultationFee: 500,
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }).run();
+        console.log("Created demo doctor profile");
+      } else {
+        console.log("Skipping demo doctor profile creation - doctor user not found");
+      }
     }
 
     console.log("Demo data verification completed");
