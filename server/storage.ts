@@ -9,7 +9,8 @@ import type {
   PathologyOrder, InsertPathologyOrder, PathologyTest, InsertPathologyTest,
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog,
-  PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity
+  PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity,
+  PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount
 } from "@shared/schema";
 import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -325,6 +326,33 @@ async function initializeDatabase() {
         entity_type TEXT,
         metadata TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS patient_payments (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        payment_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        amount REAL NOT NULL,
+        payment_method TEXT NOT NULL,
+        payment_date TEXT NOT NULL,
+        reason TEXT,
+        receipt_number TEXT,
+        processed_by TEXT NOT NULL REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS patient_discounts (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        discount_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        amount REAL NOT NULL,
+        discount_type TEXT NOT NULL DEFAULT 'manual',
+        reason TEXT NOT NULL,
+        discount_date TEXT NOT NULL,
+        approved_by TEXT NOT NULL REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
 
@@ -709,6 +737,30 @@ export class SqliteStorage implements IStorage {
       // Fallback to timestamp-based ID if table query fails
       const timestamp = Date.now().toString().slice(-6);
       return `ADM-${year}-${timestamp}`;
+    }
+  }
+
+  private generatePaymentId(): string {
+    const year = new Date().getFullYear();
+    try {
+      const count = db.select().from(schema.patientPayments).all().length + 1;
+      return `PAY-${year}-${count.toString().padStart(3, '0')}`;
+    } catch (error) {
+      console.error('Error querying patient_payments table:', error);
+      const timestamp = Date.now().toString().slice(-6);
+      return `PAY-${year}-${timestamp}`;
+    }
+  }
+
+  private generateDiscountId(): string {
+    const year = new Date().getFullYear();
+    try {
+      const count = db.select().from(schema.patientDiscounts).all().length + 1;
+      return `DISC-${year}-${count.toString().padStart(3, '0')}`;
+    } catch (error) {
+      console.error('Error querying patient_discounts table:', error);
+      const timestamp = Date.now().toString().slice(-6);
+      return `DISC-${year}-${timestamp}`;
     }
   }
 
@@ -1531,6 +1583,142 @@ export class SqliteStorage implements IStorage {
 
 
     return updated;
+  }
+
+  // Patient Payment Methods
+  async createPatientPayment(paymentData: InsertPatientPayment, userId: string): Promise<PatientPayment> {
+    const paymentId = this.generatePaymentId();
+    
+    const created = db.insert(schema.patientPayments).values({
+      ...paymentData,
+      paymentId,
+      processedBy: userId,
+    }).returning().get();
+
+    // Log activity
+    const patient = db.select().from(schema.patients).where(eq(schema.patients.id, paymentData.patientId)).get();
+    this.logActivity(
+      userId,
+      'payment_added',
+      'Payment added',
+      `₹${paymentData.amount} payment for ${patient?.name || 'Unknown Patient'}`,
+      created.id,
+      'patient_payment',
+      { amount: paymentData.amount, paymentMethod: paymentData.paymentMethod, patientName: patient?.name }
+    );
+
+    return created;
+  }
+
+  async getPatientPayments(patientId: string): Promise<PatientPayment[]> {
+    return db.select().from(schema.patientPayments)
+      .where(eq(schema.patientPayments.patientId, patientId))
+      .orderBy(desc(schema.patientPayments.paymentDate))
+      .all();
+  }
+
+  async getPatientPaymentById(id: string): Promise<PatientPayment | undefined> {
+    return db.select().from(schema.patientPayments)
+      .where(eq(schema.patientPayments.id, id))
+      .get();
+  }
+
+  // Patient Discount Methods
+  async createPatientDiscount(discountData: InsertPatientDiscount, userId: string): Promise<PatientDiscount> {
+    const discountId = this.generateDiscountId();
+    
+    const created = db.insert(schema.patientDiscounts).values({
+      ...discountData,
+      discountId,
+      approvedBy: userId,
+    }).returning().get();
+
+    // Log activity
+    const patient = db.select().from(schema.patients).where(eq(schema.patients.id, discountData.patientId)).get();
+    this.logActivity(
+      userId,
+      'discount_added',
+      'Discount added',
+      `₹${discountData.amount} discount for ${patient?.name || 'Unknown Patient'}`,
+      created.id,
+      'patient_discount',
+      { amount: discountData.amount, discountType: discountData.discountType, reason: discountData.reason, patientName: patient?.name }
+    );
+
+    return created;
+  }
+
+  async getPatientDiscounts(patientId: string): Promise<PatientDiscount[]> {
+    return db.select().from(schema.patientDiscounts)
+      .where(eq(schema.patientDiscounts.patientId, patientId))
+      .orderBy(desc(schema.patientDiscounts.discountDate))
+      .all();
+  }
+
+  async getPatientDiscountById(id: string): Promise<PatientDiscount | undefined> {
+    return db.select().from(schema.patientDiscounts)
+      .where(eq(schema.patientDiscounts.id, id))
+      .get();
+  }
+
+  // Calculate patient financial summary
+  async getPatientFinancialSummary(patientId: string): Promise<{
+    totalCharges: number;
+    totalPaid: number;
+    totalDiscounts: number;
+    balance: number;
+  }> {
+    // Calculate total charges from admissions, services, and pathology orders
+    let totalCharges = 0;
+
+    // Admission charges
+    const admissions = await this.getAdmissions(patientId);
+    admissions.forEach(admission => {
+      if (admission.status === 'admitted' || admission.status === 'discharged') {
+        const admissionDate = new Date(admission.admissionDate);
+        const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+        const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+        totalCharges += (admission.dailyCost || 0) * daysDiff;
+        totalCharges += admission.initialDeposit || 0;
+      }
+    });
+
+    // Service charges
+    const services = await this.getPatientServices(patientId);
+    totalCharges += services.reduce((sum, service) => sum + (service.price || 0), 0);
+
+    // Pathology order charges
+    const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
+    totalCharges += pathologyOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+
+    // Calculate total payments
+    const payments = await this.getPatientPayments(patientId);
+    const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+    // Add admission payments for backwards compatibility
+    const admissionPayments = admissions.reduce((sum, admission) => {
+      return sum + (admission.additionalPayments || 0);
+    }, 0);
+
+    // Calculate total discounts
+    const discounts = await this.getPatientDiscounts(patientId);
+    const totalDiscounts = discounts.reduce((sum, discount) => sum + discount.amount, 0);
+
+    // Add admission discounts for backwards compatibility
+    const admissionDiscounts = admissions.reduce((sum, admission) => {
+      return sum + (admission.totalDiscount || 0);
+    }, 0);
+
+    const finalTotalPaid = totalPaid + admissionPayments;
+    const finalTotalDiscounts = totalDiscounts + admissionDiscounts;
+    const balance = totalCharges - finalTotalPaid - finalTotalDiscounts;
+
+    return {
+      totalCharges,
+      totalPaid: finalTotalPaid,
+      totalDiscounts: finalTotalDiscounts,
+      balance: Math.max(0, balance)
+    };
   }
 
   async logAction(log: InsertAuditLog): Promise<void> {

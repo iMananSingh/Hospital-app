@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema } from "@shared/schema";
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
@@ -1496,6 +1496,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting schedule event:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Patient Payment Routes
+  app.post("/api/patients/:patientId/payments", authenticateToken, async (req: any, res) => {
+    try {
+      const { patientId } = req.params;
+      const paymentData = insertPatientPaymentSchema.parse({
+        ...req.body,
+        patientId,
+        paymentDate: req.body.paymentDate || new Date().toISOString(),
+      });
+      
+      const payment = await storage.createPatientPayment(paymentData, req.user.id);
+      res.json(payment);
+    } catch (error: any) {
+      console.error("Error creating patient payment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create payment", error: error.message });
+    }
+  });
+
+  app.get("/api/patients/:patientId/payments", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const payments = await storage.getPatientPayments(patientId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching patient payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
+  app.get("/api/patients/:patientId/financial-summary", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const summary = await storage.getPatientFinancialSummary(patientId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching patient financial summary:", error);
+      res.status(500).json({ message: "Failed to fetch financial summary" });
+    }
+  });
+
+  // Patient Discount Routes
+  app.post("/api/patients/:patientId/discounts", authenticateToken, async (req: any, res) => {
+    try {
+      const { patientId } = req.params;
+      const discountData = insertPatientDiscountSchema.parse({
+        ...req.body,
+        patientId,
+        discountDate: req.body.discountDate || new Date().toISOString(),
+      });
+      
+      const discount = await storage.createPatientDiscount(discountData, req.user.id);
+      res.json(discount);
+    } catch (error: any) {
+      console.error("Error creating patient discount:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create discount", error: error.message });
+    }
+  });
+
+  app.get("/api/patients/:patientId/discounts", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const discounts = await storage.getPatientDiscounts(patientId);
+      res.json(discounts);
+    } catch (error) {
+      console.error("Error fetching patient discounts:", error);
+      res.status(500).json({ message: "Failed to fetch discounts" });
     }
   });
 
