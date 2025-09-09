@@ -1510,7 +1510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedBy: req.user.id, // Use authenticated user ID
       });
       
-      const payment = await storage.createPatientPayment(paymentData);
+      const payment = await storage.createPatientPayment(paymentData, req.user.id);
       res.json(payment);
     } catch (error: any) {
       console.error("Error creating patient payment:", error);
@@ -1554,7 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         approvedBy: req.user.id, // Use authenticated user ID
       });
       
-      const discount = await storage.createPatientDiscount(discountData);
+      const discount = await storage.createPatientDiscount(discountData, req.user.id);
       res.json(discount);
     } catch (error: any) {
       console.error("Error creating patient discount:", error);

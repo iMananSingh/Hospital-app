@@ -1166,7 +1166,7 @@ export default function PatientDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
                 <p className="text-2xl font-bold text-blue-700">
@@ -1185,17 +1185,6 @@ export default function PatientDetail() {
                     <span className="text-sm">Loading...</span>
                   ) : (
                     `₹${(financialSummary?.totalPaid || 0).toLocaleString()}`
-                  )}
-                </p>
-              </div>
-
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Discounts</p>
-                <p className="text-2xl font-bold text-red-700">
-                  {isFinancialLoading ? (
-                    <span className="text-sm">Loading...</span>
-                  ) : (
-                    `₹${(financialSummary?.totalDiscounts || 0).toLocaleString()}`
                   )}
                 </p>
               </div>

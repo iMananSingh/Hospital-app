@@ -588,11 +588,6 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
 
-export type PatientPayment = typeof patientPayments.$inferSelect;
-export type InsertPatientPayment = z.infer<typeof insertPatientPaymentSchema>;
-
-export type PatientDiscount = typeof patientDiscounts.$inferSelect;
-export type InsertPatientDiscount = z.infer<typeof insertPatientDiscountSchema>;
 
 // Update schema for PATCH (partial updates allowed)
 export const updatePatientSchema = insertPatientSchema.partial();
