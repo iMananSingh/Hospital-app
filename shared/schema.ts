@@ -536,6 +536,35 @@ export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts).
   approvedBy: z.string().min(1, "Approved by user ID is required"),
 });
 
+export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoomSchema = createInsertSchema(rooms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertHospitalSettingsSchema = createInsertSchema(hospitalSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
