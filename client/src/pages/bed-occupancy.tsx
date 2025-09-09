@@ -119,7 +119,7 @@ export default function BedOccupancyPage() {
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    {roomType.occupiedBeds} of {roomType.totalBeds} beds occupied • ₹{roomType.dailyCost.toLocaleString()} per day
+                    {roomType.occupiedBeds || 0} of {roomType.totalBeds || 0} beds occupied • ₹{roomType.dailyCost.toLocaleString()} per day
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -2852,11 +2852,19 @@ export class SqliteStorage implements IStorage {
           };
         });
 
+        // Calculate actual occupied beds from rooms that are occupied
+        const actualOccupiedBeds = roomsWithOccupancy.filter(room => room.isOccupied).length;
+        
+        // Calculate total beds from all active rooms for this room type
+        const totalBeds = rooms.reduce((sum, room) => sum + (room.capacity || 1), 0);
+
         return {
           ...roomType,
           rooms: roomsWithOccupancy,
-          actualOccupiedBeds: currentAdmissions.length,
-          totalBeds: rooms.length
+          occupiedBeds: actualOccupiedBeds,
+          totalBeds: totalBeds,
+          // Keep these for backwards compatibility
+          actualOccupiedBeds: actualOccupiedBeds
         };
       });
 
