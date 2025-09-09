@@ -736,6 +736,8 @@ export default function PatientDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
       setSelectedAdmissionForPayment("");
@@ -779,6 +781,7 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsDiscountDialogOpen(false);
