@@ -1105,13 +1105,15 @@ export default function PatientDetail() {
                   return (
                     <Button 
                       onClick={() => {
-                        // Set current LOCAL date when opening admission dialog
+                        // Set current LOCAL date and time when opening admission dialog
                         const now = new Date();
-                        const currentDate = now.getFullYear() + '-' + 
+                        const currentDateTime = now.getFullYear() + '-' + 
                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                          String(now.getDate()).padStart(2, '0');
+                          String(now.getDate()).padStart(2, '0') + 'T' +
+                          String(now.getHours()).padStart(2, '0') + ':' +
+                          String(now.getMinutes()).padStart(2, '0');
 
-                        admissionForm.setValue("admissionDate", currentDate);
+                        admissionForm.setValue("admissionDate", currentDateTime);
                         setIsAdmissionDialogOpen(true);
                       }}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -1353,13 +1355,15 @@ export default function PatientDetail() {
                       return (
                         <Button
                           onClick={() => {
-                            // Set current LOCAL date when opening admission dialog  
+                            // Set current LOCAL date and time when opening admission dialog  
                             const now = new Date();
-                            const currentDate = now.getFullYear() + '-' + 
+                            const currentDateTime = now.getFullYear() + '-' + 
                               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                              String(now.getDate()).padStart(2, '0');
+                              String(now.getDate()).padStart(2, '0') + 'T' +
+                              String(now.getHours()).padStart(2, '0') + ':' +
+                              String(now.getMinutes()).padStart(2, '0');
 
-                            admissionForm.setValue("admissionDate", currentDate);
+                            admissionForm.setValue("admissionDate", currentDateTime);
                             setIsAdmissionDialogOpen(true);
                           }}
                           size="sm"
@@ -2478,9 +2482,9 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label>Admission Date *</Label>
+                <Label>Admission Date & Time *</Label>
                 <Input
-                  type="date"
+                  type="datetime-local"
                   {...admissionForm.register("admissionDate")}
                   data-testid="input-admission-date"
                 />
