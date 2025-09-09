@@ -1711,13 +1711,17 @@ export class SqliteStorage implements IStorage {
 
     const finalTotalPaid = totalPaid + admissionPayments;
     const finalTotalDiscounts = totalDiscounts + admissionDiscounts;
-    const balance = totalCharges - finalTotalPaid - finalTotalDiscounts;
+    
+    // Calculate balance: totalCharges - totalDiscounts - totalPaid
+    // Positive balance = amount patient owes
+    // Negative balance = amount hospital owes patient (overpayment)
+    const balance = totalCharges - finalTotalDiscounts - finalTotalPaid;
 
     return {
       totalCharges,
       totalPaid: finalTotalPaid,
       totalDiscounts: finalTotalDiscounts,
-      balance: Math.max(0, balance)
+      balance // Allow negative balances to show overpayments
     };
   }
 

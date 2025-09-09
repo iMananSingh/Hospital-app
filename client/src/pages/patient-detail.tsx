@@ -1166,7 +1166,7 @@ export default function PatientDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
                 <p className="text-2xl font-bold text-blue-700">
@@ -1189,16 +1189,30 @@ export default function PatientDetail() {
                 </p>
               </div>
 
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Discounts</p>
+                <p className="text-2xl font-bold text-purple-700">
+                  {isFinancialLoading ? (
+                    <span className="text-sm">Loading...</span>
+                  ) : (
+                    `₹${(financialSummary?.totalDiscounts || 0).toLocaleString()}`
+                  )}
+                </p>
+              </div>
+
+              <div className={`text-center p-4 rounded-lg ${(financialSummary?.balance || 0) < 0 ? 'bg-red-50' : 'bg-orange-50'}`}>
                 <p className="text-sm text-muted-foreground mb-1">Balance</p>
-                <p className="text-2xl font-bold text-orange-700">
+                <p className={`text-2xl font-bold ${(financialSummary?.balance || 0) < 0 ? 'text-red-700' : 'text-orange-700'}`}>
                   {isFinancialLoading ? (
                     <span className="text-sm">Loading...</span>
                   ) : (
                     `₹${(financialSummary?.balance || 0).toLocaleString()}`
                   )}
                 </p>
-              </div>
+                {(financialSummary?.balance || 0) < 0 && (
+                  <p className="text-xs text-red-600 mt-1">Hospital owes patient</p>
+                )}
+              </div></div>
             </div>
           </CardContent>
         </Card>
