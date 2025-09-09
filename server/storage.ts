@@ -1677,7 +1677,7 @@ export class SqliteStorage implements IStorage {
     // Calculate total charges from admissions, services, and pathology orders
     let totalCharges = 0;
 
-    // Admission charges
+    // Admission charges (daily cost only, not initial deposit)
     const admissions = await this.getAdmissions(patientId);
     admissions.forEach(admission => {
       if (admission.status === 'admitted' || admission.status === 'discharged') {
@@ -1685,7 +1685,7 @@ export class SqliteStorage implements IStorage {
         const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
         const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
         totalCharges += (admission.dailyCost || 0) * daysDiff;
-        totalCharges += admission.initialDeposit || 0;
+        // Initial deposit is NOT added to charges - it's a payment
       }
     });
 
@@ -1701,9 +1701,9 @@ export class SqliteStorage implements IStorage {
     const payments = await this.getPatientPayments(patientId);
     const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
-    // Add admission payments for backwards compatibility
+    // Add admission payments (initial deposits and additional payments)
     const admissionPayments = admissions.reduce((sum, admission) => {
-      return sum + (admission.additionalPayments || 0);
+      return sum + (admission.initialDeposit || 0) + (admission.additionalPayments || 0);
     }, 0);
 
     // Calculate total discounts
