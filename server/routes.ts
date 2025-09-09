@@ -1506,10 +1506,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentData = insertPatientPaymentSchema.parse({
         ...req.body,
         patientId,
-        paymentDate: req.body.paymentDate || new Date().toISOString(),
+        paymentDate: req.body.paymentDate || new Date().toISOString().split('T')[0],
+        processedBy: req.user.id, // Use authenticated user ID
       });
       
-      const payment = await storage.createPatientPayment(paymentData, req.user.id);
+      const payment = await storage.createPatientPayment(paymentData);
       res.json(payment);
     } catch (error: any) {
       console.error("Error creating patient payment:", error);
@@ -1549,10 +1550,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const discountData = insertPatientDiscountSchema.parse({
         ...req.body,
         patientId,
-        discountDate: req.body.discountDate || new Date().toISOString(),
+        discountDate: req.body.discountDate || new Date().toISOString().split('T')[0],
+        approvedBy: req.user.id, // Use authenticated user ID
       });
       
-      const discount = await storage.createPatientDiscount(discountData, req.user.id);
+      const discount = await storage.createPatientDiscount(discountData);
       res.json(discount);
     } catch (error: any) {
       console.error("Error creating patient discount:", error);
