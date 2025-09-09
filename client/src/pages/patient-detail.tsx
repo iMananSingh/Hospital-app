@@ -332,6 +332,22 @@ export default function PatientDetail() {
     refetchInterval: 5000, // Refetch every 5 seconds to get latest orders
   });
 
+  // Patient financial summary query
+  const { data: financialSummary, isLoading: isFinancialLoading } = useQuery({
+    queryKey: ["/api/patients", patientId, "financial-summary"],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/financial-summary`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch financial summary");
+      return response.json();
+    },
+    enabled: !!patientId,
+    refetchInterval: 10000, // Refetch every 10 seconds for financial updates
+  });
+
   // Fetch admission events for detailed history
   const { data: admissionEventsMap = {} } = useQuery({
     queryKey: ["/api/admission-events", patientId],
@@ -711,23 +727,18 @@ export default function PatientDetail() {
   });
 
   const addPaymentMutation = useMutation({
-    mutationFn: async (data: { admissionId: string, amount: number }) => {
-      const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
-      if (!admission) throw new Error("Admission not found");
-
-      const currentAdditionalPayments = admission.additionalPayments || 0;
-      const newTotal = currentAdditionalPayments + data.amount;
-
-      const response = await fetch(`/api/admissions/${data.admissionId}`, {
-        method: "PATCH",
+    mutationFn: async (data: { amount: number, paymentMethod: string, reason?: string }) => {
+      const response = await fetch(`/api/patients/${patientId}/payments`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify({ 
-          additionalPayments: newTotal,
-          lastPaymentDate: new Date().toISOString(),
-          lastPaymentAmount: data.amount
+        body: JSON.stringify({
+          amount: data.amount,
+          paymentMethod: data.paymentMethod,
+          reason: data.reason || "Payment",
+          paymentDate: new Date().toISOString(),
         }),
       });
 
@@ -735,8 +746,8 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "payments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
@@ -756,24 +767,18 @@ export default function PatientDetail() {
   });
 
   const addDiscountMutation = useMutation({
-    mutationFn: async (data: { admissionId: string, amount: number, reason: string }) => {
-      const admission = admissions?.find((adm: any) => adm.id === data.admissionId);
-      if (!admission) throw new Error("Admission not found");
-
-      const currentDiscounts = admission.totalDiscount || 0;
-      const newTotal = currentDiscounts + data.amount;
-
-      const response = await fetch(`/api/admissions/${data.admissionId}`, {
-        method: "PATCH",
+    mutationFn: async (data: { amount: number, reason: string, discountType?: string }) => {
+      const response = await fetch(`/api/patients/${patientId}/discounts`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify({ 
-          totalDiscount: newTotal,
-          lastDiscountDate: new Date().toISOString(),
-          lastDiscountAmount: data.amount,
-          lastDiscountReason: data.reason
+        body: JSON.stringify({
+          amount: data.amount,
+          reason: data.reason,
+          discountType: data.discountType || "manual",
+          discountDate: new Date().toISOString(),
         }),
       });
 
@@ -781,8 +786,8 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "discounts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
@@ -1161,95 +1166,48 @@ export default function PatientDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
                 <p className="text-2xl font-bold text-blue-700">
-                  ₹{(() => {
-                    let totalCharges = 0;
-                    const allAdmissions = admissions || [];
-
-                    // Add room charges from all admissions
-                    allAdmissions.forEach((admission: any) => {
-                      const admissionDate = new Date(admission.admissionDate);
-                      const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
-                      const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
-                      totalCharges += (admission.dailyCost || 0) * daysDiff;
-                    });
-
-                    // Add service charges
-                    if (services) {
-                      totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
-                    }
-
-                    // Add pathology order charges
-                    if (pathologyOrders) {
-                      totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
-                        const order = orderData.order || orderData;
-                        return sum + (order.totalPrice || 0);
-                      }, 0);
-                    }
-
-                    return totalCharges.toLocaleString();
-                  })()}
+                  {isFinancialLoading ? (
+                    <span className="text-sm">Loading...</span>
+                  ) : (
+                    `₹${(financialSummary?.totalCharges || 0).toLocaleString()}`
+                  )}
                 </p>
               </div>
 
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Paid</p>
                 <p className="text-2xl font-bold text-green-700">
-                  ₹{(() => {
-                    // Get all admissions for this patient (including discharged ones)
-                    const allAdmissions = admissions || [];
-                    const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
-                      return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
-                    }, 0);
-                    return totalPaid.toLocaleString();
-                  })()}
+                  {isFinancialLoading ? (
+                    <span className="text-sm">Loading...</span>
+                  ) : (
+                    `₹${(financialSummary?.totalPaid || 0).toLocaleString()}`
+                  )}
+                </p>
+              </div>
+
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Discounts</p>
+                <p className="text-2xl font-bold text-red-700">
+                  {isFinancialLoading ? (
+                    <span className="text-sm">Loading...</span>
+                  ) : (
+                    `₹${(financialSummary?.totalDiscounts || 0).toLocaleString()}`
+                  )}
                 </p>
               </div>
 
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Balance</p>
                 <p className="text-2xl font-bold text-orange-700">
-                  ₹{(() => {
-                    let totalCharges = 0;
-                    const allAdmissions = admissions || [];
-
-                    // Calculate total charges from all admissions
-                    allAdmissions.forEach((admission: any) => {
-                      const admissionDate = new Date(admission.admissionDate);
-                      const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
-                      const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
-                      totalCharges += (admission.dailyCost || 0) * daysDiff;
-                    });
-
-                    if (services) {
-                      totalCharges += services.reduce((sum: number, service: any) => sum + (service.price || 0), 0);
-                    }
-
-                    // Add pathology order charges
-                    if (pathologyOrders) {
-                      totalCharges += pathologyOrders.reduce((sum: number, orderData: any) => {
-                        const order = orderData.order || orderData;
-                        return sum + (order.totalPrice || 0);
-                      }, 0);
-                    }
-
-                    // Calculate total paid from all admissions
-                    const totalPaid = allAdmissions.reduce((sum: number, adm: any) => {
-                      return sum + (adm.initialDeposit || 0) + (adm.additionalPayments || 0);
-                    }, 0);
-
-                    // Calculate total discounts from all admissions
-                    const totalDiscounts = allAdmissions.reduce((sum: number, adm: any) => {
-                      return sum + (adm.totalDiscount || 0);
-                    }, 0);
-
-                    const balance = totalCharges - totalPaid - totalDiscounts;
-
-                    return balance.toLocaleString();
-                  })()}
+                  {isFinancialLoading ? (
+                    <span className="text-sm">Loading...</span>
+                  ) : (
+                    `₹${(financialSummary?.balance || 0).toLocaleString()}`
+                  )}
                 </p>
               </div>
             </div>
@@ -2713,12 +2671,12 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
-                const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(paymentAmount);
-                if (selectedAdmissionId && amount > 0) {
+                if (amount > 0) {
                   addPaymentMutation.mutate({ 
-                    admissionId: selectedAdmissionId, 
-                    amount: amount 
+                    amount: amount,
+                    paymentMethod: "cash", // Default to cash, can be extended with a dropdown
+                    reason: "Payment"
                   });
                 }
               }}
@@ -2776,29 +2734,18 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
-                console.log("Discount button clicked");
-                console.log("Available admissions:", admissions);
-                console.log("Discount amount:", discountAmount);
-                console.log("Discount reason:", discountReason);
-
-                const selectedAdmissionId = admissions?.find((adm: any) => adm.status === 'admitted')?.id || admissions?.[0]?.id;
                 const amount = parseFloat(discountAmount);
 
-                console.log("Selected admission ID:", selectedAdmissionId);
-                console.log("Parsed amount:", amount);
-
-                if (selectedAdmissionId && amount > 0) {
-                  console.log("Calling discount mutation");
+                if (amount > 0) {
                   addDiscountMutation.mutate({ 
-                    admissionId: selectedAdmissionId, 
                     amount: amount,
-                    reason: discountReason.trim() || "Manual discount"
+                    reason: discountReason.trim() || "Manual discount",
+                    discountType: "manual"
                   });
                 } else {
-                  console.log("Invalid data for discount");
                   toast({
                     title: "Error",
-                    description: "Please enter a valid discount amount and ensure there's an admission record.",
+                    description: "Please enter a valid discount amount.",
                     variant: "destructive",
                   });
                 }
