@@ -10,7 +10,7 @@ import type {
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog,
   PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity,
-  PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount
+  PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount, ScheduleEvent, InsertScheduleEvent
 } from "@shared/schema";
 import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -354,6 +354,18 @@ async function initializeDatabase() {
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS schedule_events (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        title TEXT NOT NULL,
+        description TEXT,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        doctor_id TEXT REFERENCES doctors(id),
+        patient_id TEXT REFERENCES patients(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migrate existing tables to add new columns if they don't exist
@@ -538,9 +550,6 @@ async function createDemoData() {
       }
     }
 
-    // Check and create demo services
-    // Demo services removed - only use services created through the service management system
-
     // Check and create demo doctor profile
     const existingDoctor = db.select().from(schema.doctors).where(eq(schema.doctors.id, 'doctor-profile-id')).get();
     if (!existingDoctor) {
@@ -646,7 +655,7 @@ export interface IStorage {
   createAdmissionEvent(event: InsertAdmissionEvent): Promise<AdmissionEvent>;
   getAdmissionEvents(admissionId: string): Promise<AdmissionEvent[]>;
   transferRoom(admissionId: string, roomData: { roomNumber: string, wardType: string }, userId: string): Promise<Admission | undefined>;
-  dischargePatient(admissionId: string, userId: string): Promise<Admission | undefined>;
+  dischargePatient(admissionId: string, userId: string, dischargeDateTime?: string): Promise<Admission | undefined>;
 
   // Dashboard stats
   getDashboardStats(): Promise<any>;
@@ -1451,7 +1460,7 @@ export class SqliteStorage implements IStorage {
     const now = new Date();
     let admissionDate: string;
     let eventDate: string;
-    
+
     if (admission.admissionDate) {
       // Use the provided admission date
       admissionDate = admission.admissionDate;
@@ -1615,7 +1624,7 @@ export class SqliteStorage implements IStorage {
   // Patient Payment Methods
   async createPatientPayment(paymentData: InsertPatientPayment, userId: string): Promise<PatientPayment> {
     const paymentId = this.generatePaymentId();
-    
+
     const created = db.insert(schema.patientPayments).values({
       ...paymentData,
       paymentId,
@@ -1653,7 +1662,7 @@ export class SqliteStorage implements IStorage {
   // Patient Discount Methods
   async createPatientDiscount(discountData: InsertPatientDiscount, userId: string): Promise<PatientDiscount> {
     const discountId = this.generateDiscountId();
-    
+
     const created = db.insert(schema.patientDiscounts).values({
       ...discountData,
       discountId,
@@ -1738,7 +1747,7 @@ export class SqliteStorage implements IStorage {
 
     const finalTotalPaid = totalPaid + admissionPayments;
     const finalTotalDiscounts = totalDiscounts + admissionDiscounts;
-    
+
     // Calculate balance: totalCharges - totalDiscounts - totalPaid
     // Positive balance = amount patient owes
     // Negative balance = amount hospital owes patient (overpayment)
@@ -1949,20 +1958,26 @@ export class SqliteStorage implements IStorage {
     });
   }
 
-  async dischargePatient(admissionId: string, userId: string): Promise<Admission | undefined> {
+  async dischargePatient(admissionId: string, userId: string, dischargeDateTime?: string): Promise<Admission | undefined> {
     return db.transaction((tx) => {
+      // Get current admission
       const currentAdmission = tx.select().from(schema.admissions)
         .where(eq(schema.admissions.id, admissionId))
         .get();
 
-      if (!currentAdmission) return undefined;
+      if (!currentAdmission) {
+        throw new Error("Admission not found");
+      }
 
-      // Use local system time for discharge recording
-      const now = new Date();
-      const eventDate = now.getFullYear() + '-' +
-        String(now.getMonth() + 1).padStart(2, '0') + '-' +
-        String(now.getDate()).padStart(2, '0');
-      const dischargeDate = eventDate; // Store just the date part for easier querying
+      if (currentAdmission.status === "discharged") {
+        throw new Error("Patient is already discharged");
+      }
+
+      // Use provided discharge date/time or current time
+      const dischargeDate = dischargeDateTime ? new Date(dischargeDateTime) : new Date();
+      const eventDate = dischargeDate.getFullYear() + '-' +
+        String(dischargeDate.getMonth() + 1).padStart(2, '0') + '-' +
+        String(dischargeDate.getDate()).padStart(2, '0');
 
       // Generate receipt number for discharge
       const dischargeCount = this.getDailyReceiptCountSync('discharge', eventDate);
@@ -1970,11 +1985,11 @@ export class SqliteStorage implements IStorage {
       const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
       const receiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, '0')}`;
 
-      // Update admission status
+      // Update admission status with provided discharge date/time
       const updated = tx.update(schema.admissions)
         .set({
           status: "discharged",
-          dischargeDate: dischargeDate,
+          dischargeDate: dischargeDate.toISOString(),
           updatedAt: new Date().toISOString()
         })
         .where(eq(schema.admissions.id, admissionId))
@@ -1984,7 +1999,7 @@ export class SqliteStorage implements IStorage {
       tx.insert(schema.admissionEvents).values({
         admissionId: admissionId,
         eventType: "discharge",
-        eventTime: new Date().toISOString(),
+        eventTime: dischargeDate.toISOString(),
         notes: `Patient discharged`,
         createdBy: userId,
         receiptNumber: receiptNumber,
@@ -2222,9 +2237,9 @@ export class SqliteStorage implements IStorage {
 
       // Export database to SQL dump
       const tables = [
-        'users', 'doctors', 'patients', 'patient_visits', 'services', 
+        'users', 'doctors', 'patients', 'patient_visits', 'services',
         'bills', 'bill_items', 'pathology_orders', 'pathology_tests',
-        'patient_services', 'admissions', 'admission_events', 
+        'patient_services', 'admissions', 'admission_events',
         'hospital_settings', 'system_settings', 'room_types', 'rooms'
       ];
 
@@ -2245,9 +2260,9 @@ export class SqliteStorage implements IStorage {
 
             for (const row of rows) {
               const columns = Object.keys(row).join(', ');
-              const values = Object.values(row).map(v => 
-                v === null ? 'NULL' : 
-                typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` : 
+              const values = Object.values(row).map(v =>
+                v === null ? 'NULL' :
+                typeof v === 'string' ? `'${v.replace(/'/g, "''")}'` :
                 v
               ).join(', ');
 
@@ -2423,9 +2438,9 @@ export class SqliteStorage implements IStorage {
       // Split SQL content into individual statements outside of transaction
       const statements = backupContent
         .split('\n')
-        .filter(line => 
-          line.trim() && 
-          !line.trim().startsWith('--') && 
+        .filter(line =>
+          line.trim() &&
+          !line.trim().startsWith('--') &&
           !line.trim().startsWith('/*')
         )
         .join('\n')
@@ -2657,7 +2672,7 @@ export class SqliteStorage implements IStorage {
   async getRecentActivities(limit: number = 10): Promise<any[]> {
     try {
       const activities = db.$client.prepare(`
-        SELECT 
+        SELECT
           a.id,
           a.activity_type as activityType,
           a.title,
@@ -2686,7 +2701,7 @@ export class SqliteStorage implements IStorage {
   async getDailyReceiptCount(serviceType: string, date: string): Promise<number> {
     try {
       let count = 0;
-      
+
       switch (serviceType) {
         case 'pathology':
           count = db.select().from(schema.pathologyOrders)
@@ -2728,7 +2743,7 @@ export class SqliteStorage implements IStorage {
         default:
           count = 0;
       }
-      
+
       return count + 1;
     } catch (error) {
       console.error('Error getting daily receipt count:', error);
@@ -2739,42 +2754,42 @@ export class SqliteStorage implements IStorage {
   getDailyReceiptCountSync(serviceType: string, date: string): number {
     try {
       let count = 0;
-      
+
       switch (serviceType) {
         case 'pathology':
           count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM pathology_orders 
+            SELECT COUNT(*) as count FROM pathology_orders
             WHERE ordered_date = ?
           `).get(date)?.count || 0;
           break;
         case 'admission':
           count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
+            SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'admit' AND event_time LIKE ?
           `).get(`${date}%`)?.count || 0;
           break;
         case 'room_transfer':
           count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
+            SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'room_change' AND event_time LIKE ?
           `).get(`${date}%`)?.count || 0;
           break;
         case 'discharge':
           count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM admission_events 
+            SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'discharge' AND event_time LIKE ?
           `).get(`${date}%`)?.count || 0;
           break;
         case 'opd':
           count = db.$client.prepare(`
-            SELECT COUNT(*) as count FROM patient_services 
+            SELECT COUNT(*) as count FROM patient_services
             WHERE service_type = 'opd' AND scheduled_date = ?
           `).get(date)?.count || 0;
           break;
         default:
           count = 0;
       }
-      
+
       return count + 1;
     } catch (error) {
       console.error('Error getting daily receipt count sync:', error);
@@ -2872,7 +2887,7 @@ export class SqliteStorage implements IStorage {
 
         // Calculate actual occupied beds from rooms that are occupied
         const actualOccupiedBeds = roomsWithOccupancy.filter(room => room.isOccupied).length;
-        
+
         // Calculate total beds from all active rooms for this room type
         const totalBeds = rooms.reduce((sum, room) => sum + (room.capacity || 1), 0);
 

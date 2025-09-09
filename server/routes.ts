@@ -1380,7 +1380,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admissions/:id/discharge", authenticateToken, async (req: any, res) => {
     try {
-      const updated = await storage.dischargePatient(req.params.id, req.user.id);
+      const { dischargeDateTime } = req.body;
+      const updated = await storage.dischargePatient(req.params.id, req.user.id, dischargeDateTime);
       if (!updated) {
         return res.status(404).json({ error: "Admission not found" });
       }

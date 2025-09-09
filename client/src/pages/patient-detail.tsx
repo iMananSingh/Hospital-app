@@ -63,6 +63,7 @@ export default function PatientDetail() {
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
+  const [dischargeDateTime, setDischargeDateTime] = useState("");
 
   // Fetch hospital settings for receipts
   const { data: hospitalSettings } = useQuery({
@@ -671,13 +672,14 @@ export default function PatientDetail() {
   };
 
   const dischargePatientMutation = useMutation({
-    mutationFn: async (currentAdmissionId: string) => {
-      const response = await fetch(`/api/admissions/${currentAdmissionId}/discharge`, {
+    mutationFn: async (data: { currentAdmissionId: string; dischargeDateTime: string }) => {
+      const response = await fetch(`/api/admissions/${data.currentAdmissionId}/discharge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
+        body: JSON.stringify({ dischargeDateTime: data.dischargeDateTime }),
       });
 
       if (!response.ok) throw new Error("Failed to discharge patient");
@@ -687,9 +689,17 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admission-events"] });
       setIsDischargeDialogOpen(false);
+      setDischargeDateTime(""); // Reset the date/time state
       toast({
         title: "Patient discharged successfully",
         description: "The patient has been discharged and the event has been recorded.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error discharging patient",
+        description: "Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -806,11 +816,30 @@ export default function PatientDetail() {
     },
   });
 
-  const onDischargePatient = () => {
+  const onDischargePatient = (dischargeDateTime: string) => {
     const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
-    if (currentAdmission) {
-      dischargePatientMutation.mutate(currentAdmission.id);
+    if (!currentAdmission) {
+      toast({
+        title: "Error",
+        description: "No active admission found to discharge.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    if (!dischargeDateTime) {
+      toast({
+        title: "Error",
+        description: "Please select a discharge date and time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    dischargePatientMutation.mutate({ 
+      currentAdmissionId: currentAdmission.id, 
+      dischargeDateTime 
+    });
   };
 
   const onRoomUpdate = (data: any) => {
@@ -847,13 +876,13 @@ export default function PatientDetail() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
-    
+
     // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
     if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
       const parts = dateString.split('T');
       const dateParts = parts[0].split('-');
       const timeParts = parts[1].split(':');
-      
+
       // Create date object in local timezone
       const localDate = new Date(
         parseInt(dateParts[0]), // year
@@ -862,10 +891,10 @@ export default function PatientDetail() {
         parseInt(timeParts[0]), // hour
         parseInt(timeParts[1]) // minute
       );
-      
+
       // Check if date is valid
       if (isNaN(localDate.getTime())) return "N/A";
-      
+
       return localDate.toLocaleString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -1134,7 +1163,7 @@ export default function PatientDetail() {
                   return (
                     <Button 
                       onClick={() => {
-                        // Set current LOCAL date and time when opening admission dialog
+                        // Set current LOCAL date and time when opening admission dialog  
                         const now = new Date();
                         const currentDateTime = now.getFullYear() + '-' + 
                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -1452,14 +1481,14 @@ export default function PatientDetail() {
                               <div className="font-medium">
                                 {(() => {
                                   let admissionDateStr = admission.admissionDate;
-                                  
+
                                   // Handle different date formats
                                   if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
                                     // Datetime-local format: "YYYY-MM-DDTHH:MM"
                                     const parts = admissionDateStr.split('T');
                                     const dateParts = parts[0].split('-');
                                     const timeParts = parts[1].split(':');
-                                    
+
                                     // Create date object in local timezone
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
@@ -1468,7 +1497,7 @@ export default function PatientDetail() {
                                       parseInt(timeParts[0]), // hour
                                       parseInt(timeParts[1]) // minute
                                     );
-                                    
+
                                     return localDate.toLocaleString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
@@ -1482,7 +1511,7 @@ export default function PatientDetail() {
                                     const parts = admissionDateStr.split(' ');
                                     const dateParts = parts[0].split('-');
                                     const timeParts = parts[1].split(':');
-                                    
+
                                     // Create date object in local timezone
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
@@ -1492,7 +1521,7 @@ export default function PatientDetail() {
                                       parseInt(timeParts[1]), // minute
                                       parseInt(timeParts[2]) // second
                                     );
-                                    
+
                                     return localDate.toLocaleString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
@@ -1509,14 +1538,14 @@ export default function PatientDetail() {
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
                                       parseInt(dateParts[2]) // day
                                     );
-                                    
+
                                     return localDate.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
                                       day: 'numeric'
                                     });
                                   }
-                                  
+
                                   // Fallback for other formats (including ISO strings)
                                   const date = new Date(admissionDateStr);
                                   if (!isNaN(date.getTime())) {
@@ -1529,7 +1558,7 @@ export default function PatientDetail() {
                                       hour12: true
                                     });
                                   }
-                                  
+
                                   return admissionDateStr; // Return as-is if parsing fails
                                 })()}
                               </div>
@@ -1548,7 +1577,7 @@ export default function PatientDetail() {
                                       const parts = dischargeDateStr.split(' ');
                                       const dateParts = parts[0].split('-');
                                       const timeParts = parts[1].split(':');
-                                      
+
                                       // Create date object in local timezone
                                       const localDate = new Date(
                                         parseInt(dateParts[0]), // year
@@ -1558,7 +1587,7 @@ export default function PatientDetail() {
                                         parseInt(timeParts[1]), // minute
                                         parseInt(timeParts[2]) // second
                                       );
-                                      
+
                                       return localDate.toLocaleString('en-US', {
                                         year: 'numeric',
                                         month: 'short',
@@ -1568,7 +1597,7 @@ export default function PatientDetail() {
                                         hour12: true
                                       });
                                     }
-                                    
+
                                     // Fallback for other formats
                                     return new Date(dischargeDateStr).toLocaleString('en-US', {
                                       year: 'numeric',
@@ -1587,7 +1616,7 @@ export default function PatientDetail() {
                                       const parts = admissionDateStr.split('T');
                                       const dateParts = parts[0].split('-');
                                       const timeParts = parts[1].split(':');
-                                      
+
                                       const admissionDate = new Date(
                                         parseInt(dateParts[0]), // year
                                         parseInt(dateParts[1]) - 1, // month (0-indexed)
@@ -1595,14 +1624,14 @@ export default function PatientDetail() {
                                         parseInt(timeParts[0]), // hour
                                         parseInt(timeParts[1]) // minute
                                       );
-                                      
+
                                       return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
                                     } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                       // Parse as local time for day calculation
                                       const parts = admissionDateStr.split(' ');
                                       const dateParts = parts[0].split('-');
                                       const timeParts = parts[1].split(':');
-                                      
+
                                       const admissionDate = new Date(
                                         parseInt(dateParts[0]), // year
                                         parseInt(dateParts[1]) - 1, // month (0-indexed)
@@ -1611,10 +1640,10 @@ export default function PatientDetail() {
                                         parseInt(timeParts[1]), // minute
                                         parseInt(timeParts[2]) // second
                                       );
-                                      
+
                                       return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
                                     }
-                                    
+
                                     // Fallback for other formats
                                     return Math.ceil((new Date().getTime() - new Date(admissionDateStr).getTime()) / (1000 * 3600 * 24));
                                   })()
@@ -2648,6 +2677,17 @@ export default function PatientDetail() {
               }
               return null;
             })()}
+            
+            <div className="mt-4">
+              <Label htmlFor="discharge-datetime">Discharge Date & Time</Label>
+              <Input
+                id="discharge-datetime"
+                type="datetime-local"
+                value={dischargeDateTime}
+                onChange={(e) => setDischargeDateTime(e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -2659,7 +2699,7 @@ export default function PatientDetail() {
               Cancel
             </Button>
             <Button
-              onClick={onDischargePatient}
+              onClick={() => onDischargePatient(dischargeDateTime)}
               disabled={dischargePatientMutation.isPending}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
