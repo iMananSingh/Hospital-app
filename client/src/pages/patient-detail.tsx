@@ -1457,10 +1457,7 @@ export default function PatientDetail() {
                                   });
                                 })()}
                               </div>
-                            </div>plit(':');
-                                    
-                                    // Create date object in local timezone
-                                    const localDate = new Date(
+                            </div>
                                       parseInt(dateParts[0]), // year
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
                                       parseInt(dateParts[2]), // day
