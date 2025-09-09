@@ -327,6 +327,35 @@ export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Patient Payments - Independent of admissions
+export const patientPayments = sqliteTable("patient_payments", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  paymentId: text("payment_id").notNull().unique(), // PAY-2024-001 format
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  amount: real("amount").notNull(),
+  paymentMethod: text("payment_method").notNull(), // cash, card, upi, bank_transfer
+  paymentDate: text("payment_date").notNull(),
+  reason: text("reason"), // Optional reason/notes for payment
+  receiptNumber: text("receipt_number"),
+  processedBy: text("processed_by").notNull().references(() => users.id),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Patient Discounts - Independent of admissions
+export const patientDiscounts = sqliteTable("patient_discounts", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  discountId: text("discount_id").notNull().unique(), // DISC-2024-001 format
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  amount: real("amount").notNull(),
+  discountType: text("discount_type").notNull().default("manual"), // manual, insurance, senior_citizen, employee
+  reason: text("reason").notNull(),
+  discountDate: text("discount_date").notNull(),
+  approvedBy: text("approved_by").notNull().references(() => users.id),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Activities table for tracking user actions
 export const activities = sqliteTable("activities", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -476,6 +505,37 @@ export const insertDynamicPathologyTestSchema = createInsertSchema(dynamicPathol
   updatedAt: true,
 });
 
+export const insertPatientPaymentSchema = createInsertSchema(patientPayments).omit({
+  id: true,
+  paymentId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  patientId: z.string().min(1, "Patient ID is required"),
+  amount: z.number().min(0.01, "Payment amount must be greater than 0"),
+  paymentMethod: z.enum(["cash", "card", "upi", "bank_transfer"], {
+    errorMap: () => ({ message: "Payment method must be cash, card, upi, or bank_transfer" })
+  }),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  processedBy: z.string().min(1, "Processed by user ID is required"),
+});
+
+export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts).omit({
+  id: true,
+  discountId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  patientId: z.string().min(1, "Patient ID is required"),
+  amount: z.number().min(0.01, "Discount amount must be greater than 0"),
+  discountType: z.enum(["manual", "insurance", "senior_citizen", "employee"], {
+    errorMap: () => ({ message: "Discount type must be manual, insurance, senior_citizen, or employee" })
+  }),
+  reason: z.string().min(1, "Discount reason is required"),
+  discountDate: z.string().min(1, "Discount date is required"),
+  approvedBy: z.string().min(1, "Approved by user ID is required"),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -523,6 +583,12 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+export type PatientPayment = typeof patientPayments.$inferSelect;
+export type InsertPatientPayment = z.infer<typeof insertPatientPaymentSchema>;
+
+export type PatientDiscount = typeof patientDiscounts.$inferSelect;
+export type InsertPatientDiscount = z.infer<typeof insertPatientDiscountSchema>;
 
 // Update schema for PATCH (partial updates allowed)
 export const updatePatientSchema = insertPatientSchema.partial();
