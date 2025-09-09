@@ -1458,9 +1458,6 @@ export default function PatientDetail() {
                                 })()}
                               </div>
                             </div>
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
                                       parseInt(timeParts[0]), // hour
                                       parseInt(timeParts[1]), // minute
                                       parseInt(timeParts[2]) // second
