@@ -1212,7 +1212,7 @@ export default function PatientDetail() {
                 {(financialSummary?.balance || 0) < 0 && (
                   <p className="text-xs text-red-600 mt-1">Hospital owes patient</p>
                 )}
-              </div></div>
+              </div>
             </div>
           </CardContent>
         </Card>
