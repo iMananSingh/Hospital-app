@@ -696,6 +696,12 @@ export interface IStorage {
   deleteScheduleEvent(id: string): Promise<void>;
   getScheduleEventsByDateRange(startDate: string, endDate: string): Promise<ScheduleEvent[]>;
   getScheduleEventsByDoctor(doctorId: string): Promise<ScheduleEvent[]>;
+
+  // Inpatient Management Detail Methods
+  getBedOccupancyDetails(): Promise<any[]>;
+  getCurrentlyAdmittedPatients(): Promise<any[]>;
+  getTodayAdmissions(): Promise<any[]>;
+  getTodayDischarges(): Promise<any[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2798,6 +2804,159 @@ export class SqliteStorage implements IStorage {
       .where(eq(schema.scheduleEvents.doctorId, doctorId))
       .orderBy(schema.scheduleEvents.startTime)
       .all();
+  }
+
+  // Inpatient Management Detail Methods (IST-based calculations)
+  async getBedOccupancyDetails(): Promise<any[]> {
+    try {
+      // Get room types with occupancy details
+      const roomTypes = db.select().from(schema.roomTypes)
+        .where(eq(schema.roomTypes.isActive, true))
+        .all();
+
+      const bedOccupancyData = roomTypes.map(roomType => {
+        // Get rooms for this room type
+        const rooms = db.select().from(schema.rooms)
+          .where(and(
+            eq(schema.rooms.roomTypeId, roomType.id),
+            eq(schema.rooms.isActive, true)
+          ))
+          .all();
+
+        // Get current admissions for rooms of this type
+        const currentAdmissions = db.select({
+          admission: schema.admissions,
+          patient: schema.patients
+        })
+        .from(schema.admissions)
+        .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
+        .where(and(
+          eq(schema.admissions.status, 'admitted'),
+          eq(schema.admissions.currentWardType, roomType.name)
+        ))
+        .all();
+
+        // Map rooms with occupancy info
+        const roomsWithOccupancy = rooms.map(room => {
+          const occupyingAdmission = currentAdmissions.find(
+            admission => admission.admission.currentRoomNumber === room.roomNumber
+          );
+
+          return {
+            ...room,
+            isOccupied: !!occupyingAdmission,
+            occupyingPatient: occupyingAdmission ? {
+              name: occupyingAdmission.patient?.name || 'Unknown',
+              patientId: occupyingAdmission.patient?.patientId || 'Unknown'
+            } : null
+          };
+        });
+
+        return {
+          ...roomType,
+          rooms: roomsWithOccupancy,
+          actualOccupiedBeds: currentAdmissions.length,
+          totalBeds: rooms.length
+        };
+      });
+
+      return bedOccupancyData;
+    } catch (error) {
+      console.error('Error getting bed occupancy details:', error);
+      return [];
+    }
+  }
+
+  async getCurrentlyAdmittedPatients(): Promise<any[]> {
+    try {
+      const currentAdmissions = db.select({
+        admission: schema.admissions,
+        patient: schema.patients,
+        doctor: schema.doctors
+      })
+      .from(schema.admissions)
+      .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id))
+      .where(eq(schema.admissions.status, 'admitted'))
+      .orderBy(desc(schema.admissions.admissionDate))
+      .all();
+
+      return currentAdmissions.map(admission => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor
+      }));
+    } catch (error) {
+      console.error('Error getting currently admitted patients:', error);
+      return [];
+    }
+  }
+
+  async getTodayAdmissions(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      const todayAdmissions = db.select({
+        admission: schema.admissions,
+        patient: schema.patients,
+        doctor: schema.doctors
+      })
+      .from(schema.admissions)
+      .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id))
+      .where(eq(schema.admissions.admissionDate, today))
+      .orderBy(desc(schema.admissions.createdAt))
+      .all();
+
+      return todayAdmissions.map(admission => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor
+      }));
+    } catch (error) {
+      console.error('Error getting today\'s admissions:', error);
+      return [];
+    }
+  }
+
+  async getTodayDischarges(): Promise<any[]> {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
+        String(indianTime.getDate()).padStart(2, '0');
+
+      const todayDischarges = db.select({
+        admission: schema.admissions,
+        patient: schema.patients,
+        doctor: schema.doctors
+      })
+      .from(schema.admissions)
+      .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id))
+      .where(and(
+        eq(schema.admissions.status, 'discharged'),
+        eq(schema.admissions.dischargeDate, today)
+      ))
+      .orderBy(desc(schema.admissions.updatedAt))
+      .all();
+
+      return todayDischarges.map(admission => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor
+      }));
+    } catch (error) {
+      console.error('Error getting today\'s discharges:', error);
+      return [];
+    }
   }
 }
 
