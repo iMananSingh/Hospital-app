@@ -1418,11 +1418,35 @@ export default function PatientDetail() {
                               <span className="text-muted-foreground">Admission Date:</span>
                               <div className="font-medium">
                                 {(() => {
-                                  // Handle SQLite datetime format as local time
+                                  // Handle SQLite datetime format as local time (no timezone conversion)
                                   let admissionDateStr = admission.admissionDate;
                                   if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                    admissionDateStr = admissionDateStr.replace(' ', 'T');
+                                    // Parse as local time without adding 'Z' or timezone info
+                                    const parts = admissionDateStr.split(' ');
+                                    const dateParts = parts[0].split('-');
+                                    const timeParts = parts[1].split(':');
+                                    
+                                    // Create date object in local timezone
+                                    const localDate = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]), // day
+                                      parseInt(timeParts[0]), // hour
+                                      parseInt(timeParts[1]), // minute
+                                      parseInt(timeParts[2]) // second
+                                    );
+                                    
+                                    return localDate.toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
                                   }
+                                  
+                                  // Fallback for other formats
                                   return new Date(admissionDateStr).toLocaleString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
@@ -1441,11 +1465,35 @@ export default function PatientDetail() {
                               <div className="font-medium">
                                 {admission.dischargeDate ? 
                                   (() => {
-                                    // Handle SQLite datetime format as local time
+                                    // Handle SQLite datetime format as local time (no timezone conversion)
                                     let dischargeDateStr = admission.dischargeDate;
                                     if (dischargeDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                      dischargeDateStr = dischargeDateStr.replace(' ', 'T');
+                                      // Parse as local time without adding 'Z' or timezone info
+                                      const parts = dischargeDateStr.split(' ');
+                                      const dateParts = parts[0].split('-');
+                                      const timeParts = parts[1].split(':');
+                                      
+                                      // Create date object in local timezone
+                                      const localDate = new Date(
+                                        parseInt(dateParts[0]), // year
+                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                        parseInt(dateParts[2]), // day
+                                        parseInt(timeParts[0]), // hour
+                                        parseInt(timeParts[1]), // minute
+                                        parseInt(timeParts[2]) // second
+                                      );
+                                      
+                                      return localDate.toLocaleString('en-US', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      });
                                     }
+                                    
+                                    // Fallback for other formats
                                     return new Date(dischargeDateStr).toLocaleString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
@@ -1459,8 +1507,24 @@ export default function PatientDetail() {
                                     // Calculate days using local time
                                     let admissionDateStr = admission.admissionDate;
                                     if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                      admissionDateStr = admissionDateStr.replace(' ', 'T');
+                                      // Parse as local time for day calculation
+                                      const parts = admissionDateStr.split(' ');
+                                      const dateParts = parts[0].split('-');
+                                      const timeParts = parts[1].split(':');
+                                      
+                                      const admissionDate = new Date(
+                                        parseInt(dateParts[0]), // year
+                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                        parseInt(dateParts[2]), // day
+                                        parseInt(timeParts[0]), // hour
+                                        parseInt(timeParts[1]), // minute
+                                        parseInt(timeParts[2]) // second
+                                      );
+                                      
+                                      return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
                                     }
+                                    
+                                    // Fallback for other formats
                                     return Math.ceil((new Date().getTime() - new Date(admissionDateStr).getTime()) / (1000 * 3600 * 24));
                                   })()
                                 }
