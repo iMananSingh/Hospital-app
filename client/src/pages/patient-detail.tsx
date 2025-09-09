@@ -847,6 +847,35 @@ export default function PatientDetail() {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
+    
+    // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+      const parts = dateString.split('T');
+      const dateParts = parts[0].split('-');
+      const timeParts = parts[1].split(':');
+      
+      // Create date object in local timezone
+      const localDate = new Date(
+        parseInt(dateParts[0]), // year
+        parseInt(dateParts[1]) - 1, // month (0-indexed)
+        parseInt(dateParts[2]), // day
+        parseInt(timeParts[0]), // hour
+        parseInt(timeParts[1]) // minute
+      );
+      
+      // Check if date is valid
+      if (isNaN(localDate.getTime())) return "N/A";
+      
+      return localDate.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+    }
 
     // Handle different date formats and ensure local timezone
     const date = new Date(dateString);
@@ -1425,7 +1454,30 @@ export default function PatientDetail() {
                                   let admissionDateStr = admission.admissionDate;
                                   
                                   // Handle different date formats
-                                  if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                  if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                    // Datetime-local format: "YYYY-MM-DDTHH:MM"
+                                    const parts = admissionDateStr.split('T');
+                                    const dateParts = parts[0].split('-');
+                                    const timeParts = parts[1].split(':');
+                                    
+                                    // Create date object in local timezone
+                                    const localDate = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]), // day
+                                      parseInt(timeParts[0]), // hour
+                                      parseInt(timeParts[1]) // minute
+                                    );
+                                    
+                                    return localDate.toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                     // Full datetime format: "YYYY-MM-DD HH:MM:SS"
                                     const parts = admissionDateStr.split(' ');
                                     const dateParts = parts[0].split('-');
@@ -1530,7 +1582,22 @@ export default function PatientDetail() {
                                   (() => {
                                     // Calculate days using local time
                                     let admissionDateStr = admission.admissionDate;
-                                    if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                    if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                      // Datetime-local format: "YYYY-MM-DDTHH:MM"
+                                      const parts = admissionDateStr.split('T');
+                                      const dateParts = parts[0].split('-');
+                                      const timeParts = parts[1].split(':');
+                                      
+                                      const admissionDate = new Date(
+                                        parseInt(dateParts[0]), // year
+                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                        parseInt(dateParts[2]), // day
+                                        parseInt(timeParts[0]), // hour
+                                        parseInt(timeParts[1]) // minute
+                                      );
+                                      
+                                      return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
+                                    } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                       // Parse as local time for day calculation
                                       const parts = admissionDateStr.split(' ');
                                       const dateParts = parts[0].split('-');
