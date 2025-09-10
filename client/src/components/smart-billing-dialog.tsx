@@ -138,7 +138,9 @@ export default function SmartBillingDialog({
       billingType: selectedService.billingType || "per_instance",
       billingQuantity: billingPreview.quantity,
       billingParameters: selectedService.billingType === "composite" ? 
-        JSON.stringify({ distance: data.distance }) : null,
+        JSON.stringify({ distance: data.distance }) : 
+        selectedService.billingType === "per_hour" ? 
+        JSON.stringify({ hours: data.hours }) : null,
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
@@ -254,11 +256,14 @@ export default function SmartBillingDialog({
                   <Label>Number of Hours</Label>
                   <Input
                     type="number"
-                    min="1"
+                    min="0.5"
                     step="0.5"
                     {...form.register("hours", { valueAsNumber: true })}
                     data-testid="input-hours"
                   />
+                  <p className="text-sm text-gray-500">
+                    Service will be charged at ₹{selectedService.price} per hour
+                  </p>
                 </div>
               )}
 

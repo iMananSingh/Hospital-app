@@ -34,7 +34,8 @@ import {
   Edit,
   Settings,
   Printer,
-  Search
+  Search,
+  DollarSign
 } from "lucide-react";
 import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
 import { z } from "zod";

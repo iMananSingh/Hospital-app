@@ -271,9 +271,14 @@ export default function ServiceManagement() {
       });
     },
     onError: (error: any) => {
+      console.error("Service creation/update error:", error);
+      let errorMessage = "Failed to save service";
+      if (error.message) {
+        errorMessage = error.message;
+      }
       toast({
         title: "Error",
-        description: error.message || "Failed to save service",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -538,11 +543,15 @@ export default function ServiceManagement() {
   const onServiceSubmit = (data: any) => {
     // For non-rooms services, allow price to be 0 if not provided
     const serviceData = {
-      ...data,
+      name: data.name,
       category: activeTab,
-      price: activeTab !== 'rooms' && (!data.price || data.price === '') ? 0 : data.price,
-      // Remove doctors field from service data as it's not part of the service schema
+      price: activeTab !== 'rooms' && (!data.price || data.price === '') ? 0 : Number(data.price) || 0,
+      description: data.description || '',
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      billingType: data.billingType || 'per_instance',
+      billingParameters: data.billingParameters || null
     };
+    console.log('Submitting service data:', serviceData);
     createServiceMutation.mutate(serviceData);
   };
 

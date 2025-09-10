@@ -433,26 +433,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", authenticateToken, async (req: any, res) => {
+  // Services
+  app.post("/api/services", async (req: Request, res: Response) => {
     try {
-      const serviceData = insertServiceSchema.parse(req.body);
-      const service = await storage.createService(serviceData, req.user.id);
+      console.log("Creating service with data:", req.body);
+
+      // Ensure all required fields are present with defaults
+      const serviceData = {
+        name: req.body.name,
+        category: req.body.category || 'misc',
+        price: req.body.price || 0,
+        description: req.body.description || '',
+        isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+        billingType: req.body.billingType || 'per_instance',
+        billingParameters: req.body.billingParameters || null
+      };
+
+      console.log("Processed service data:", serviceData);
+
+      // Validate with schema
+      const validatedData = insertServiceSchema.parse(serviceData);
+      const service = await storage.createService(validatedData, req.user?.id);
       res.json(service);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create service" });
+      console.error("Create service error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to create service" });
     }
   });
 
-  app.put("/api/services/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/services/:id", async (req: Request, res: Response) => {
     try {
-      const serviceData = insertServiceSchema.parse(req.body);
-      const service = await storage.updateService(req.params.id, serviceData, req.user.id);
+      console.log("Updating service with data:", req.body);
+
+      // Ensure all required fields are present with defaults
+      const serviceData = {
+        name: req.body.name,
+        category: req.body.category || 'misc',
+        price: req.body.price || 0,
+        description: req.body.description || '',
+        isActive: req.body.isActive !== undefined ? req.body.isActive : true,
+        billingType: req.body.billingType || 'per_instance',
+        billingParameters: req.body.billingParameters || null
+      };
+
+      console.log("Processed service update data:", serviceData);
+
+      // Validate with schema
+      const validatedData = insertServiceSchema.parse(serviceData);
+      const service = await storage.updateService(req.params.id, validatedData, req.user?.id);
+
       if (!service) {
         return res.status(404).json({ message: "Service not found" });
       }
+
       res.json(service);
     } catch (error) {
-      res.status(400).json({ message: "Failed to update service" });
+      console.error("Update service error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to update service" });
     }
   });
 
@@ -522,11 +571,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/pathology-categories/:id", authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       // Check if it's a system category (string ID that matches system category names)
       const systemCategories = getCategories();
       const isSystemCategory = systemCategories.includes(id);
-      
+
       if (isSystemCategory) {
         try {
           deleteCategoryFromFile(id);
@@ -652,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/pathology-tests/system/:categoryName/:testName", authenticateToken, async (req, res) => {
     try {
       const { categoryName, testName } = req.params;
-      
+
       deleteTestFromFile(categoryName, testName);
       res.json({ message: "System pathology test deleted successfully" });
     } catch (error) {
@@ -1442,7 +1491,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       const { startDate, endDate, doctorId } = req.query;
-      
+
       let events;
       if (startDate && endDate) {
         events = await storage.getScheduleEventsByDateRange(startDate as string, endDate as string);
@@ -1451,7 +1500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         events = await storage.getAllScheduleEvents();
       }
-      
+
       res.json(events);
     } catch (error) {
       console.error("Error fetching schedule events:", error);
@@ -1510,7 +1559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentDate: req.body.paymentDate || new Date().toISOString().split('T')[0],
         processedBy: req.user.id, // Use authenticated user ID
       });
-      
+
       const payment = await storage.createPatientPayment(paymentData, req.user.id);
       res.json(payment);
     } catch (error: any) {
@@ -1554,7 +1603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         discountDate: req.body.discountDate || new Date().toISOString().split('T')[0],
         approvedBy: req.user.id, // Use authenticated user ID
       });
-      
+
       const discount = await storage.createPatientDiscount(discountData, req.user.id);
       res.json(discount);
     } catch (error: any) {
