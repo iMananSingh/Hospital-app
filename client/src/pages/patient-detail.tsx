@@ -44,6 +44,20 @@ import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
 import SmartBillingDialog from "@/components/smart-billing-dialog";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
+import { Checkbox } from "@/components/ui/checkbox";
+
+// Define Service interface with quantity
+interface Service {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description?: string;
+  isActive?: boolean;
+  billingType?: string;
+  billingParameters?: string;
+  quantity?: number; // Added quantity property
+}
 
 export default function PatientDetail() {
   const params = useParams();
@@ -61,7 +75,7 @@ export default function PatientDetail() {
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
   const [selectedServiceType, setSelectedServiceType] = useState("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
-  const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]); // Use Service interface
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
@@ -294,7 +308,7 @@ export default function PatientDetail() {
   });
 
   // Fetch all services for service selection
-  const { data: allServices } = useQuery<any[]>({
+  const { data: allServices } = useQuery<Service[]>({ // Use Service interface
     queryKey: ["/api/services"],
     queryFn: async () => {
       const response = await fetch("/api/services", {
@@ -602,30 +616,41 @@ export default function PatientDetail() {
         }
 
         // Schedule all selected services
-        const responses = await Promise.all(
-          selectedServices.map(service => {
-            const serviceData = {
-              patientId: patient.id,
-              serviceId: service.id,
-              serviceName: service.name,
-              serviceType: mapCategoryToServiceType(service.category) || 'service', // Map category to valid serviceType
-              price: service.price || 0,
-              scheduledDate: data.scheduledDate,
-              scheduledTime: data.scheduledTime,
-              doctorId: data.doctorId || null,
-              notes: data.notes,
-              status: "scheduled",
-            };
+        const serviceData = selectedServices.map(service => {
+          const quantity = service.quantity || 1;
+          const unitPrice = service.price || parseFloat(data.customPrice as string) || 0;
+          const calculatedAmount = unitPrice * quantity;
 
-            return fetch("/api/patient-services", {
+          return {
+            serviceId: service.id,
+            serviceName: service.name,
+            serviceType: selectedServiceType,
+            price: unitPrice,
+            billingType: service.billingType || "per_instance",
+            billingQuantity: quantity,
+            billingParameters: service.billingType === "per_hour" ? 
+              JSON.stringify({ hours: quantity }) : 
+              service.billingType === "per_24_hours" ? 
+              JSON.stringify({ days: quantity }) : null,
+            calculatedAmount: calculatedAmount,
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            doctorId: data.doctorId || null,
+            notes: data.notes,
+            status: "scheduled",
+          };
+        });
+
+        const responses = await Promise.all(
+          serviceData.map(srvc => fetch("/api/patient-services", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
               },
-              body: JSON.stringify(serviceData),
-            });
-          })
+              body: JSON.stringify(srvc),
+            })
+          )
         );
 
         const failedRequests = responses.filter(response => !response.ok);
@@ -2362,18 +2387,19 @@ export default function PatientDetail() {
                         <TableHead className="w-12">Select</TableHead>
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Price (₹)</TableHead>
+                        <TableHead className="text-right">Price (₹)</TableHead>
+                        <TableHead className="text-right w-24">Quantity</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {getFilteredServices(selectedServiceCategory).length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                             No services found. Try adjusting your search or category filter.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        getFilteredServices(selectedServiceCategory).map((service: any) => {
+                        getFilteredServices(selectedServiceCategory).map((service) => {
                           const isSelected = selectedServices.some(s => s.id === service.id);
                           return (
                             <TableRow 
@@ -2381,24 +2407,49 @@ export default function PatientDetail() {
                               className={isSelected ? "bg-blue-50" : ""}
                             >
                               <TableCell>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedServices(prev => [...prev, service]);
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedServices([...selectedServices, { ...service, quantity: 1 }]);
                                     } else {
-                                      setSelectedServices(prev => prev.filter(s => s.id !== service.id));
+                                      setSelectedServices(selectedServices.filter(s => s.id !== service.id));
                                     }
                                   }}
-                                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{service.name}</TableCell>
-                              <TableCell className="capitalize">
-                                {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
+                                </Badge>
                               </TableCell>
-                              <TableCell>₹{service.price || 0}</TableCell>
+                              <TableCell className="text-right">
+                                {service.price === 0 ? (
+                                  <Badge variant="secondary">Variable</Badge>
+                                ) : (
+                                  `₹${service.price}`
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {isSelected ? (
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    step={service.billingType === 'per_hour' ? "0.5" : "1"}
+                                    value={selectedServices.find(s => s.id === service.id)?.quantity || 1}
+                                    onChange={(e) => {
+                                      const quantity = parseFloat(e.target.value) || 1;
+                                      setSelectedServices(selectedServices.map(s => 
+                                        s.id === service.id ? { ...s, quantity } : s
+                                      ));
+                                    }}
+                                    className="w-20 h-8"
+                                  />
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </TableCell>
                             </TableRow>
                           );
                         })
@@ -2412,15 +2463,25 @@ export default function PatientDetail() {
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-medium mb-3">Selected Services Summary</h4>
                     <div className="space-y-2">
-                      {selectedServices.map((service, index) => (
+                      {selectedServices.map((service) => (
                         <div key={service.id} className="flex justify-between items-center text-sm">
                           <span className="font-medium">{service.name}</span>
-                          <span>₹{service.price || 0}</span>
+                          <span>
+                            {service.price === 0 ? (
+                              <Badge variant="secondary">Variable</Badge>
+                            ) : (
+                              `₹${(service.price * (service.quantity || 1)).toLocaleString()}`
+                            )}
+                          </span>
                         </div>
                       ))}
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total ({selectedServices.length} services)</span>
-                        <span>₹{selectedServices.reduce((total, service) => total + (service.price || 0), 0)}</span>
+                        <span>
+                          ₹{selectedServices.reduce((total, service) => 
+                            total + (service.price * (service.quantity || 1)), 0
+                          ).toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
