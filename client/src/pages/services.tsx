@@ -132,6 +132,8 @@ export default function ServiceManagement() {
       description: "",
       isActive: true,
       doctors: [],
+      billingType: "per_instance", // Default billing type
+      billingParameters: null, // For composite billing
     },
   });
 
@@ -479,11 +481,11 @@ export default function ServiceManagement() {
   const deleteTest = async (test: any, categoryName: string) => {
     try {
       let response;
-      
+
       // Check if it's a system test (from JSON file) or custom test (from database)
       // System tests don't have an id or have an id that starts with 'system-'
       const isSystemTest = !test.id || test.id.toString().startsWith('system-') || typeof test.id === 'string' && test.id.includes('system');
-      
+
       if (isSystemTest) {
         // Delete from system (JSON file)
         const testName = test.test_name || test.testName || test.name;
@@ -599,9 +601,16 @@ export default function ServiceManagement() {
         price: service.price,
         description: service.description || "",
         isActive: service.isActive,
-        doctors: [],
+        doctors: [], // Reset doctors when editing
+        billingType: service.billingType || "per_instance",
+        billingParameters: service.billingParameters || null,
       });
-      setServiceDoctors([]);
+      // If editing, pre-fill doctors if available in the service data
+      if (service.doctors && service.doctors.length > 0) {
+        setServiceDoctors(service.doctors);
+      } else {
+        setServiceDoctors([]);
+      }
     } else {
       setEditingService(null);
       serviceForm.reset({
@@ -611,6 +620,8 @@ export default function ServiceManagement() {
         description: "",
         isActive: true,
         doctors: [],
+        billingType: "per_instance",
+        billingParameters: null,
       });
       setServiceDoctors([]);
     }
@@ -1614,6 +1625,47 @@ export default function ServiceManagement() {
                   data-testid="textarea-service-description"
                 />
               </div>
+
+              {/* Billing Type Selection */}
+              <div className="space-y-2">
+                <Label>Billing Type</Label>
+                <Select
+                  value={serviceForm.watch("billingType") || "per_instance"}
+                  onValueChange={(value) => serviceForm.setValue("billingType", value)}
+                  data-testid="select-billing-type"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select billing type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="per_instance">Per Instance (Default)</SelectItem>
+                    <SelectItem value="per_24_hours">Per 24 Hours (Room Charges)</SelectItem>
+                    <SelectItem value="per_hour">Per Hour (Oxygen, etc.)</SelectItem>
+                    <SelectItem value="composite">Composite (Fixed + Variable)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">
+                  {serviceForm.watch("billingType") === "per_instance" && "Charged once per service instance"}
+                  {serviceForm.watch("billingType") === "per_24_hours" && "Charged per day (room stays)"}
+                  {serviceForm.watch("billingType") === "per_hour" && "Charged per hour of usage"}
+                  {serviceForm.watch("billingType") === "composite" && "Fixed charge + variable component"}
+                </p>
+              </div>
+
+              {/* Billing Parameters for Composite Type */}
+              {serviceForm.watch("billingType") === "composite" && (
+                <div className="space-y-2">
+                  <Label>Billing Parameters (JSON)</Label>
+                  <Textarea
+                    {...serviceForm.register("billingParameters")}
+                    placeholder='{"fixedCharge": 500, "perKmRate": 15}'
+                    data-testid="textarea-billing-parameters"
+                  />
+                  <p className="text-sm text-gray-500">
+                    For ambulance: fixedCharge (base fee) + perKmRate (per km charge)
+                  </p>
+                </div>
+              )}
 
               {/* Doctor Assignment Section */}
               <div className="space-y-4">

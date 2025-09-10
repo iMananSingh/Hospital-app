@@ -86,6 +86,8 @@ export const services = sqliteTable("services", {
   category: text("category").notNull(), // consultation, pathology, radiology, procedure
   price: real("price").notNull(),
   description: text("description"),
+  billingType: text("billing_type").notNull().default("per_instance"), // per_instance, per_24_hours, per_hour, composite
+  billingParameters: text("billing_parameters"), // JSON string for additional parameters
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
@@ -170,6 +172,10 @@ export const patientServices = sqliteTable("patient_services", {
   completedDate: text("completed_date"),
   notes: text("notes"),
   price: real("price").notNull().default(0),
+  billingType: text("billing_type").notNull().default("per_instance"),
+  billingQuantity: real("billing_quantity").default(1), // hours, days, km, etc.
+  billingParameters: text("billing_parameters"), // JSON for composite billing
+  calculatedAmount: real("calculated_amount").notNull().default(0),
   receiptNumber: text("receipt_number"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
@@ -436,6 +442,9 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite"]).default("per_instance"),
+  billingParameters: z.string().optional(),
 });
 
 export const insertBillSchema = createInsertSchema(bills).omit({
@@ -467,6 +476,10 @@ export const insertPatientServiceSchema = createInsertSchema(patientServices).om
   serviceName: z.string().min(1, "Service name is required"),
   scheduledDate: z.string().min(1, "Scheduled date is required"),
   scheduledTime: z.string().min(1, "Scheduled time is required"),
+  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite"]).default("per_instance"),
+  billingQuantity: z.number().optional().default(1),
+  billingParameters: z.string().optional(),
+  calculatedAmount: z.number().default(0),
   receiptNumber: z.string().optional(),
 });
 

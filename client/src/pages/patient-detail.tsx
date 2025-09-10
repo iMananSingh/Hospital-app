@@ -41,6 +41,7 @@ import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
+import SmartBillingDialog from "@/components/smart-billing-dialog";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 
 export default function PatientDetail() {
@@ -50,6 +51,7 @@ export default function PatientDetail() {
   const patientId = params.id;
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [isSmartBillingDialogOpen, setIsSmartBillingDialogOpen] = useState(false);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
@@ -1194,6 +1196,17 @@ export default function PatientDetail() {
                   );
                 }
               })()}
+
+              {/* Smart Billing Button */}
+              <Button 
+                onClick={() => setIsSmartBillingDialogOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white"
+                data-testid="button-smart-billing"
+              >
+                <DollarSign className="h-4 w-4" />
+                Smart Billing
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -2965,6 +2978,16 @@ export default function PatientDetail() {
               {addDiscountMutation.isPending ? "Adding Discount..." : "Add Discount"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Smart Billing Dialog */}
+      <Dialog open={isSmartBillingDialogOpen} onOpenChange={setIsSmartBillingDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Smart Billing</DialogTitle>
+          </DialogHeader>
+          <SmartBillingDialog patientId={patientId} onClose={() => setIsSmartBillingDialogOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>

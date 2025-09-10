@@ -89,6 +89,8 @@ async function initializeDatabase() {
         category TEXT NOT NULL,
         price REAL NOT NULL,
         description TEXT,
+        billing_type TEXT NOT NULL DEFAULT 'per_instance',
+        billing_parameters TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -168,6 +170,10 @@ async function initializeDatabase() {
         completed_date TEXT,
         notes TEXT,
         price REAL NOT NULL DEFAULT 0,
+        billing_type TEXT NOT NULL DEFAULT 'per_instance',
+        billing_quantity REAL DEFAULT 1,
+        billing_parameters TEXT,
+        calculated_amount REAL NOT NULL DEFAULT 0,
         receipt_number TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -538,6 +544,56 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE admission_events ADD COLUMN receipt_number TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add billing columns to services table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE services ADD COLUMN billing_type TEXT DEFAULT 'per_instance';
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE services ADD COLUMN billing_parameters TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add billing columns to patient_services table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_services ADD COLUMN billing_type TEXT DEFAULT 'per_instance';
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_services ADD COLUMN billing_quantity REAL DEFAULT 1;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_services ADD COLUMN billing_parameters TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_services ADD COLUMN calculated_amount REAL DEFAULT 0;
       `);
     } catch (error) {
       // Column already exists, ignore error
@@ -1444,10 +1500,45 @@ export class SqliteStorage implements IStorage {
 
   async createPatientService(serviceData: InsertPatientService, userId?: string): Promise<PatientService> {
     try {
+      // Import smart costing here to avoid circular dependencies
+      const { SmartCostingEngine } = await import('./smart-costing');
+      
+      // Get service details for billing calculation
+      let service = null;
+      let calculatedAmount = serviceData.price || 0;
+      let billingType = serviceData.billingType || 'per_instance';
+      let billingQuantity = serviceData.billingQuantity || 1;
+      
+      if (serviceData.serviceId && serviceData.serviceId !== `SRV-${Date.now()}`) {
+        service = db.select().from(schema.services).where(eq(schema.services.id, serviceData.serviceId)).get();
+        
+        if (service) {
+          // Calculate billing using smart costing
+          const billingResult = SmartCostingEngine.calculateBilling({
+            service: {
+              id: service.id,
+              name: service.name,
+              price: service.price,
+              billingType: service.billingType as any,
+              billingParameters: service.billingParameters || undefined
+            },
+            quantity: serviceData.billingQuantity || 1,
+            customParameters: serviceData.billingParameters ? JSON.parse(serviceData.billingParameters) : {}
+          });
+          
+          calculatedAmount = billingResult.totalAmount;
+          billingType = service.billingType || 'per_instance';
+          billingQuantity = billingResult.billingQuantity;
+        }
+      }
+
       const created = db.insert(schema.patientServices).values({
         ...serviceData,
         serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
         receiptNumber: serviceData.receiptNumber || null,
+        billingType,
+        billingQuantity,
+        calculatedAmount,
       }).returning().get();
 
       // Log activity for OPD appointments
@@ -1762,9 +1853,12 @@ export class SqliteStorage implements IStorage {
       }
     });
 
-    // Service charges
+    // Service charges - use calculated amount if available, otherwise use price
     const services = await this.getPatientServices(patientId);
-    totalCharges += services.reduce((sum, service) => sum + (service.price || 0), 0);
+    totalCharges += services.reduce((sum, service) => {
+      const amount = (service as any).calculatedAmount || service.price || 0;
+      return sum + amount;
+    }, 0);
 
     // Pathology order charges
     const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
