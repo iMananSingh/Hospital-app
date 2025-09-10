@@ -622,6 +622,7 @@ export default function PatientDetail() {
           const calculatedAmount = unitPrice * quantity;
 
           return {
+            patientId: patient.id,
             serviceId: service.id,
             serviceName: service.name,
             serviceType: selectedServiceType,
