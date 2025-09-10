@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Services
-  app.post("/api/services", async (req: Request, res: Response) => {
+  app.post("/api/services", authenticateToken, async (req: any, res) => {
     try {
       console.log("Creating service with data:", req.body);
 
@@ -467,7 +467,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/services/:id", async (req: Request, res: Response) => {
+  app.put("/api/services/:id", authenticateToken, async (req: any, res) => {
     try {
       console.log("Updating service with data:", req.body);
 

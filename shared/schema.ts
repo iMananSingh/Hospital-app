@@ -444,7 +444,7 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   updatedAt: true,
 }).extend({
   billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite"]).default("per_instance"),
-  billingParameters: z.string().optional(),
+  billingParameters: z.string().nullable().optional(),
 });
 
 export const insertBillSchema = createInsertSchema(bills).omit({
