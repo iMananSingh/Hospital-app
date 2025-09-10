@@ -370,8 +370,11 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS service_categories (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         name TEXT NOT NULL UNIQUE,
+        label TEXT NOT NULL,
         description TEXT,
+        icon TEXT NOT NULL DEFAULT 'Settings',
         is_active INTEGER NOT NULL DEFAULT 1,
+        is_system INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -408,6 +411,31 @@ async function initializeDatabase() {
     try {
       db.$client.exec(`
         ALTER TABLE hospital_settings ADD COLUMN registration_number TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add missing columns to service_categories table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE service_categories ADD COLUMN label TEXT;
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE service_categories ADD COLUMN icon TEXT DEFAULT 'Settings';
+      `);
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE service_categories ADD COLUMN is_system INTEGER DEFAULT 0;
       `);
     } catch (error) {
       // Column already exists, ignore error
