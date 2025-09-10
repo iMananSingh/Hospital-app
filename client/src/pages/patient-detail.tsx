@@ -1385,7 +1385,7 @@ export default function PatientDetail() {
                         <TableHead>Type</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>Scheduled Date</TableHead>
-                        <TableHead>Price</TableHead>
+                        <TableHead>Cost</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1393,6 +1393,9 @@ export default function PatientDetail() {
                         // Find doctor name from doctors array using doctorId
                         const doctor = doctors.find((d: Doctor) => d.id === service.doctorId);
                         const doctorName = doctor ? doctor.name : (service.doctorId ? "Unknown Doctor" : "No Doctor Assigned");
+
+                        // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
+                        const totalCost = service.calculatedAmount || (service.price * (service.billingQuantity || 1));
 
                         return (
                           <TableRow key={service.id}>
@@ -1407,7 +1410,7 @@ export default function PatientDetail() {
                                 </span>
                               )}
                             </TableCell>
-                            <TableCell>₹{service.price}</TableCell>
+                            <TableCell>₹{totalCost}</TableCell>
                           </TableRow>
                         );
                       })}
@@ -1942,12 +1945,15 @@ export default function PatientDetail() {
 
                         const serviceNormalized = normalizeDate(primaryDate, 'service', service.id);
 
+                        // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
+                        const totalCost = service.calculatedAmount || (service.price * (service.billingQuantity || 1));
+
                         timelineEvents.push({
                           id: service.id,
                           type: 'service',
                           title: service.serviceName,
                           date: serviceNormalized.date,
-                          description: `Status: ${service.status} • Cost: ₹${service.price || 0}`,
+                          description: `Status: ${service.status} • Cost: ₹${totalCost}`,
                           color: 'bg-green-500',
                           sortTimestamp: serviceNormalized.timestamp,
                           rawData: { service, primaryDate }, // Debug info
