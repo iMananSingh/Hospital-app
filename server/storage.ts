@@ -10,7 +10,7 @@ import type {
   PatientService, InsertPatientService, Admission, InsertAdmission,
   AdmissionEvent, InsertAdmissionEvent, AuditLog, InsertAuditLog,
   PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity,
-  PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount, ScheduleEvent, InsertScheduleEvent
+  PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount, ScheduleEvent, InsertScheduleEvent, ServiceCategory, InsertServiceCategory
 } from "@shared/schema";
 import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -366,6 +366,15 @@ async function initializeDatabase() {
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS service_categories (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migrate existing tables to add new columns if they don't exist
@@ -717,6 +726,12 @@ export interface IStorage {
   getCurrentlyAdmittedPatients(): Promise<any[]>;
   getTodayAdmissions(): Promise<any[]>;
   getTodayDischarges(): Promise<any[]>;
+
+  // Service Category Management
+  getServiceCategories(): Promise<ServiceCategory[]>;
+  createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory>;
+  updateServiceCategory(id: string, category: Partial<InsertServiceCategory>): Promise<ServiceCategory | undefined>;
+  deleteServiceCategory(id: string): Promise<boolean>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -1983,7 +1998,7 @@ export class SqliteStorage implements IStorage {
           const parts = dischargeDateTime.split('T');
           const dateParts = parts[0].split('-');
           const timeParts = parts[1].split(':');
-          
+
           // Create date in local timezone (don't add Z)
           dischargeDate = new Date(
             parseInt(dateParts[0]), // year
@@ -1992,7 +2007,7 @@ export class SqliteStorage implements IStorage {
             parseInt(timeParts[0]), // hour
             parseInt(timeParts[1]) // minute
           );
-          
+
           // Store as local datetime string for SQLite
           dischargeDateString = dischargeDate.getFullYear() + '-' +
             String(dischargeDate.getMonth() + 1).padStart(2, '0') + '-' +
@@ -3032,6 +3047,43 @@ export class SqliteStorage implements IStorage {
       console.error('Error getting today\'s discharges:', error);
       return [];
     }
+  }
+
+  // Service Category Management
+  async getServiceCategories(): Promise<ServiceCategory[]> {
+    return await db.select().from(schema.serviceCategories)
+      .where(eq(schema.serviceCategories.isActive, true))
+      .orderBy(schema.serviceCategories.name);
+  }
+
+  async createServiceCategory(category: InsertServiceCategory): Promise<ServiceCategory> {
+    const [serviceCategory] = await db.insert(schema.serviceCategories).values(category).returning();
+    return serviceCategory;
+  }
+
+  async updateServiceCategory(id: string, category: Partial<InsertServiceCategory>): Promise<ServiceCategory | undefined> {
+    const [updated] = await db.update(schema.serviceCategories)
+      .set({ ...category, updatedAt: new Date().toISOString() })
+      .where(eq(schema.serviceCategories.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteServiceCategory(id: string): Promise<boolean> {
+    // Check if category has services
+    const servicesInCategory = await db.select().from(schema.services)
+      .where(eq(schema.services.category, id))
+      .limit(1);
+
+    if (servicesInCategory.length > 0) {
+      throw new Error("Cannot delete category that has services");
+    }
+
+    const [deleted] = await db.update(schema.serviceCategories)
+      .set({ isActive: false, updatedAt: new Date().toISOString() })
+      .where(eq(schema.serviceCategories.id, id))
+      .returning();
+    return !!deleted;
   }
 }
 

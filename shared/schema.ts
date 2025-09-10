@@ -327,6 +327,19 @@ export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Service Categories for dynamic category management
+export const serviceCategories = sqliteTable("service_categories", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  name: text("name").notNull().unique(),
+  label: text("label").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default("Settings"), // Lucide icon name
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  isSystem: integer("is_system", { mode: "boolean" }).notNull().default(false), // true for predefined categories
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 // Patient Payments - Independent of admissions
 export const patientPayments = sqliteTable("patient_payments", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -505,6 +518,12 @@ export const insertDynamicPathologyTestSchema = createInsertSchema(dynamicPathol
   updatedAt: true,
 });
 
+export const insertServiceCategorySchema = createInsertSchema(serviceCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertPatientPaymentSchema = createInsertSchema(patientPayments).omit({
   id: true,
   paymentId: true,
@@ -610,6 +629,8 @@ export type PathologyCategory = typeof pathologyCategories.$inferSelect;
 export type InsertPathologyCategory = z.infer<typeof insertPathologyCategorySchema>;
 export type DynamicPathologyTest = typeof dynamicPathologyTests.$inferSelect;
 export type InsertDynamicPathologyTest = z.infer<typeof insertDynamicPathologyTestSchema>;
+export type ServiceCategory = typeof serviceCategories.$inferSelect;
+export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

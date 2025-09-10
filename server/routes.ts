@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema } from "@shared/schema";
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
@@ -1574,6 +1574,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching patient discounts:", error);
       res.status(500).json({ message: "Failed to fetch discounts" });
+    }
+  });
+
+  // Service Categories Routes
+  app.get("/api/service-categories", authenticateToken, async (req, res) => {
+    try {
+      const categories = await storage.getServiceCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching service categories:", error);
+      res.status(500).json({ message: "Failed to fetch service categories" });
+    }
+  });
+
+  app.post("/api/service-categories", authenticateToken, async (req: any, res) => {
+    try {
+      const categoryData = insertServiceCategorySchema.parse(req.body);
+      const category = await storage.createServiceCategory(categoryData);
+      res.json(category);
+    } catch (error: any) {
+      console.error("Error creating service category:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create service category", error: error.message });
+    }
+  });
+
+  app.put("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const categoryData = insertServiceCategorySchema.partial().parse(req.body);
+      const category = await storage.updateServiceCategory(req.params.id, categoryData);
+      if (!category) {
+        return res.status(404).json({ message: "Service category not found" });
+      }
+      res.json(category);
+    } catch (error: any) {
+      console.error("Error updating service category:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", details: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update service category", error: error.message });
+    }
+  });
+
+  app.delete("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const deleted = await storage.deleteServiceCategory(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Service category not found" });
+      }
+      res.json({ message: "Service category deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting service category:", error);
+      res.status(500).json({ message: error.message || "Failed to delete service category" });
     }
   });
 

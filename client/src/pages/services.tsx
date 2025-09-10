@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest } from "@shared/schema";
+import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest, ServiceCategory } from "@shared/schema";
 
 export default function ServiceManagement() {
   const { toast } = useToast();
@@ -53,6 +53,10 @@ export default function ServiceManagement() {
   const [editingCategory, setEditingCategory] = useState<PathologyCategory | null>(null);
   const [editingTest, setEditingTest] = useState<DynamicPathologyTest | null>(null);
   const [uploadData, setUploadData] = useState<string>("");
+
+  // Service Category states
+  const [isServiceCategoryDialogOpen, setIsServiceCategoryDialogOpen] = useState(false);
+  const [editingServiceCategory, setEditingServiceCategory] = useState<ServiceCategory | null>(null);
 
   const token = localStorage.getItem("hospital_token");
 
@@ -90,6 +94,11 @@ export default function ServiceManagement() {
   const { data: combinedPathologyData, isLoading: combinedLoading, refetch: refetchCombined } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Fetch service categories
+  const { data: customServiceCategories = [], refetch: refetchServiceCategories } = useQuery<ServiceCategory[]>({
+    queryKey: ["/api/service-categories"],
   });
 
   const roomTypeForm = useForm({
@@ -141,6 +150,16 @@ export default function ServiceManagement() {
       price: 0,
       normalRange: "",
       description: "",
+      isActive: true,
+    },
+  });
+
+  const serviceCategoryForm = useForm({
+    defaultValues: {
+      name: "",
+      label: "",
+      description: "",
+      icon: "Settings",
       isActive: true,
     },
   });
@@ -355,6 +374,76 @@ export default function ServiceManagement() {
     },
   });
 
+  const createServiceCategoryMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const isEditing = editingServiceCategory !== null;
+      const url = isEditing ? `/api/service-categories/${editingServiceCategory.id}` : "/api/service-categories";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} service category: ${errorText}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories"] });
+      setIsServiceCategoryDialogOpen(false);
+      serviceCategoryForm.reset();
+      const wasEditing = editingServiceCategory !== null;
+      setEditingServiceCategory(null);
+      toast({
+        title: "Success",
+        description: `Service category ${wasEditing ? 'updated' : 'created'} successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save service category",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteServiceCategoryMutation = useMutation({
+    mutationFn: async (categoryId: string) => {
+      const response = await fetch(`/api/service-categories/${categoryId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete service category: ${errorText}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/service-categories"] });
+      toast({
+        title: "Success",
+        description: "Service category deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service category",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteCategory = async (categoryId: string) => {
     try {
       const response = await fetch(`/api/pathology-categories/${categoryId}`, {
@@ -542,6 +631,27 @@ export default function ServiceManagement() {
     ));
   };
 
+  const openServiceCategoryDialog = (category?: ServiceCategory) => {
+    if (category) {
+      setEditingServiceCategory(category);
+      serviceCategoryForm.reset({
+        name: category.name,
+        label: category.label,
+        description: category.description || "",
+        icon: category.icon,
+        isActive: category.isActive,
+      });
+    } else {
+      setEditingServiceCategory(null);
+      serviceCategoryForm.reset();
+    }
+    setIsServiceCategoryDialogOpen(true);
+  };
+
+  const onServiceCategorySubmit = (data: any) => {
+    createServiceCategoryMutation.mutate(data);
+  };
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'ward':
@@ -623,13 +733,38 @@ export default function ServiceManagement() {
     }
   };
 
+  // Combine predefined and custom service categories
+  const predefinedCategories = [
+    { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2, isSystem: true },
+    { key: 'pathology', label: 'Pathology Tests', icon: Activity, isSystem: true },
+    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart, isSystem: true },
+    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope, isSystem: true },
+    { key: 'operations', label: 'Surgical Operations', icon: Scissors, isSystem: true },
+    { key: 'misc', label: 'Miscellaneous Services', icon: Settings, isSystem: true }
+  ];
+
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'Building2': return Building2;
+      case 'Activity': return Activity;
+      case 'Heart': return Heart;
+      case 'Stethoscope': return Stethoscope;
+      case 'Scissors': return Scissors;
+      case 'Settings': return Settings;
+      case 'Syringe': return Syringe;
+      default: return Settings;
+    }
+  };
+
   const serviceCategories = [
-    { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2 },
-    { key: 'pathology', label: 'Pathology Tests', icon: Activity },
-    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
-    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
-    { key: 'operations', label: 'Surgical Operations', icon: Scissors },
-    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
+    ...predefinedCategories,
+    ...customServiceCategories.map(cat => ({
+      key: cat.name,
+      label: cat.label,
+      icon: getIconComponent(cat.icon),
+      isSystem: false,
+      id: cat.id
+    }))
   ];
 
   const filteredServices = services.filter(service => service.category === activeTab);
@@ -646,20 +781,50 @@ export default function ServiceManagement() {
       <div className="p-6">
         {/* Service Category Navigation */}
         <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Service Categories</h2>
+            <Button
+              onClick={() => openServiceCategoryDialog()}
+              className="flex items-center gap-2"
+              data-testid="button-add-service-category"
+            >
+              <Plus className="h-4 w-4" />
+              Add Service Category
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {serviceCategories.map((category) => {
               const Icon = category.icon;
               return (
-                <Button
-                  key={category.key}
-                  onClick={() => setActiveTab(category.key)}
-                  variant={activeTab === category.key ? "default" : "outline"}
-                  className="flex items-center gap-2"
-                  data-testid={`tab-${category.key}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {category.label}
-                </Button>
+                <div key={category.key} className="relative group">
+                  <Button
+                    onClick={() => setActiveTab(category.key)}
+                    variant={activeTab === category.key ? "default" : "outline"}
+                    className="flex items-center gap-2"
+                    data-testid={`tab-${category.key}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {category.label}
+                  </Button>
+                  {!category.isSystem && (
+                    <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete "${category.label}"? This action cannot be undone.`)) {
+                            deleteServiceCategoryMutation.mutate(category.id);
+                          }
+                        }}
+                        size="sm"
+                        variant="destructive"
+                        className="h-6 w-6 p-0 rounded-full"
+                        disabled={deleteServiceCategoryMutation.isPending}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -1848,6 +2013,93 @@ export default function ServiceManagement() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Service Category Dialog */}
+        <Dialog open={isServiceCategoryDialogOpen} onOpenChange={setIsServiceCategoryDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingServiceCategory ? 'Edit Service Category' : 'Add Service Category'}
+              </DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={serviceCategoryForm.handleSubmit(onServiceCategorySubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Category Name *</Label>
+                <Input
+                  {...serviceCategoryForm.register("name")}
+                  placeholder="e.g., pharmacy"
+                  data-testid="input-category-name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Display Label *</Label>
+                <Input
+                  {...serviceCategoryForm.register("label")}
+                  placeholder="e.g., Pharmacy Services"
+                  data-testid="input-category-label"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Icon</Label>
+                <Select
+                  value={serviceCategoryForm.watch("icon")}
+                  onValueChange={(value) => serviceCategoryForm.setValue("icon", value)}
+                  data-testid="select-category-icon"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select icon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Settings">Settings</SelectItem>
+                    <SelectItem value="Activity">Activity</SelectItem>
+                    <SelectItem value="Heart">Heart</SelectItem>
+                    <SelectItem value="Stethoscope">Stethoscope</SelectItem>
+                    <SelectItem value="Syringe">Syringe</SelectItem>
+                    <SelectItem value="Building2">Building</SelectItem>
+                    <SelectItem value="Scissors">Scissors</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  {...serviceCategoryForm.register("description")}
+                  placeholder="Optional description"
+                  data-testid="textarea-category-description"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsServiceCategoryDialogOpen(false);
+                    setEditingServiceCategory(null);
+                    serviceCategoryForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createServiceCategoryMutation.isPending}
+                >
+                  {createServiceCategoryMutation.isPending
+                    ? "Saving..."
+                    : editingServiceCategory
+                      ? "Update Category"
+                      : "Add Category"
+                  }
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
