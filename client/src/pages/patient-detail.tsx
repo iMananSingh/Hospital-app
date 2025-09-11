@@ -1763,56 +1763,87 @@ export default function PatientDetail() {
           <TabsContent value="pathology">
             <Card>
               <CardHeader>
-                <CardTitle>Pathology Orders</CardTitle>
+                <CardTitle>Pathology Tests</CardTitle>
               </CardHeader>
               <CardContent>
-                {pathologyOrders && pathologyOrders.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Ordered Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Total Price</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pathologyOrders.map((orderData: any) => {
-                        // Handle both direct order objects and nested order structure
-                        const order = orderData.order || orderData;
-                        if (!order || !order.orderId) return null;
+                {(() => {
+                  // Extract individual tests from all orders
+                  const allTests: any[] = [];
+                  
+                  if (pathologyOrders && pathologyOrders.length > 0) {
+                    pathologyOrders.forEach((orderData: any) => {
+                      const order = orderData.order || orderData;
+                      if (!order || !order.orderId) return;
 
-                        return (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">{order.orderId}</TableCell>
-                            <TableCell>{formatDate(order.orderedDate)}</TableCell>
+                      // Get tests from the order data
+                      let tests = [];
+                      if (orderData.tests && Array.isArray(orderData.tests)) {
+                        tests = orderData.tests;
+                      } else if (order.tests && Array.isArray(order.tests)) {
+                        tests = order.tests;
+                      }
+
+                      // Add each test with order context
+                      tests.forEach((test: any) => {
+                        allTests.push({
+                          ...test,
+                          orderId: order.orderId,
+                          orderDate: order.orderedDate,
+                          orderStatus: order.status,
+                          receiptNumber: order.receiptNumber
+                        });
+                      });
+                    });
+                  }
+
+                  return allTests.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Test Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Order ID</TableHead>
+                          <TableHead>Ordered Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allTests.map((test: any, index: number) => (
+                          <TableRow key={`${test.orderId}-${test.id || index}`}>
+                            <TableCell className="font-medium">{test.testName}</TableCell>
                             <TableCell>
-                              <Badge className={getStatusColor(order.status)} variant="secondary">
-                                {order.status}
+                              <Badge variant="outline">{test.testCategory}</Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
+                            <TableCell>{formatDate(test.orderDate)}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(test.status || test.orderStatus)} variant="secondary">
+                                {test.status || test.orderStatus}
                               </Badge>
                             </TableCell>
-                            <TableCell>₹{order.totalPrice || 0}</TableCell>
+                            <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => navigate(`/pathology`)}
-                                data-testid={`view-pathology-${order.id}`}
+                                data-testid={`view-test-${test.id || index}`}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">No pathology orders found</p>
-                  </div>
-                )}
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-muted-foreground">No pathology tests found</p>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
