@@ -158,6 +158,7 @@ async function initializeDatabase() {
 
       CREATE TABLE IF NOT EXISTS patient_services (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        order_id TEXT,
         service_id TEXT NOT NULL,
         patient_id TEXT NOT NULL REFERENCES patients(id),
         visit_id TEXT REFERENCES patient_visits(id),
@@ -178,6 +179,21 @@ async function initializeDatabase() {
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      -- Add order_id column to existing patient_services table if it doesn't exist
+      PRAGMA table_info(patient_services);
+    `);
+
+    // Check if order_id column exists and add it if it doesn't
+    const columns = sqlite.prepare("PRAGMA table_info(patient_services)").all();
+    const hasOrderId = columns.some((col: any) => col.name === 'order_id');
+    
+    if (!hasOrderId) {
+      sqlite.exec('ALTER TABLE patient_services ADD COLUMN order_id TEXT;');
+      console.log('Added order_id column to patient_services table');
+    }
+
+    sqlite.exec(`
 
       CREATE TABLE IF NOT EXISTS admissions (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
