@@ -605,7 +605,7 @@ export default function PatientDetail() {
           throw new Error("Failed to schedule OPD consultation");
         }
       } else {
-        // Handle multiple services
+        // Handle multiple services - generate single receipt number for the batch
         if (selectedServices.length === 0) {
           toast({
             title: "Error",
@@ -615,7 +615,25 @@ export default function PatientDetail() {
           return;
         }
 
-        // Schedule all selected services
+        // Generate a single receipt number for all services in this batch
+        const serviceType = getServiceType('service', data);
+        const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
+        const count = await getDailyCountFromAPI('service', eventDate, data);
+
+        // Format: YYMMDD-TYPE-NNNN (correct format)
+        const dateObj = new Date(eventDate);
+        const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+
+        let typeCode = '';
+        if (serviceType === 'opd') {
+          typeCode = 'OPD';
+        } else {
+          typeCode = 'SER';
+        }
+
+        const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, '0')}`;
+
+        // Schedule all selected services with the same receipt number
         const serviceData = selectedServices.map(service => {
           const quantity = service.quantity || 1;
           const unitPrice = service.price || parseFloat(data.customPrice as string) || 0;
@@ -639,6 +657,7 @@ export default function PatientDetail() {
             doctorId: data.doctorId || null,
             notes: data.notes,
             status: "scheduled",
+            receiptNumber: receiptNumber, // Same receipt number for all services
           };
         });
 
