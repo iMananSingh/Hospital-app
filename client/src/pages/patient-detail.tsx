@@ -1835,7 +1835,33 @@ export default function PatientDetail() {
                             <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
                             <TableCell>
-                              {test.orderDate ? formatDate(test.orderDate) : "N/A"}
+                              {(() => {
+                                if (test.orderDate) {
+                                  const date = new Date(test.orderDate);
+                                  if (!isNaN(date.getTime())) {
+                                    const dateStr = date.toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    });
+                                    const timeStr = date.toLocaleTimeString('en-US', {
+                                      hour: 'numeric',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                    
+                                    return (
+                                      <>
+                                        {dateStr}
+                                        <span className="text-muted-foreground ml-2">
+                                          at {timeStr}
+                                        </span>
+                                      </>
+                                    );
+                                  }
+                                }
+                                return "N/A";
+                              })()}
                             </TableCell>
                             <TableCell>
                               <Button
