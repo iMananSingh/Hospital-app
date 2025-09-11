@@ -1835,60 +1835,7 @@ export default function PatientDetail() {
                             <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
                             <TableCell>
-                              {(() => {
-                                if (test.orderDate) {
-                                  // Parse database date properly (ISO, SQLite format, or date-only)
-                                  const parseDbDate = (dateStr: string): Date => {
-                                    if (!dateStr) return new Date('invalid');
-                                    
-                                    if (/T/.test(dateStr)) {
-                                      // ISO format with time
-                                      return new Date(dateStr);
-                                    }
-                                    
-                                    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)) {
-                                      // SQLite format "YYYY-MM-DD HH:MM:SS" - treat as local time
-                                      const [datePart, timePart] = dateStr.split(' ');
-                                      const isoString = `${datePart}T${timePart}`;
-                                      return new Date(isoString);
-                                    }
-                                    
-                                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-                                      // Date-only format "YYYY-MM-DD" - treat as local time
-                                      return new Date(dateStr + 'T00:00:00');
-                                    }
-                                    
-                                    // Fallback to standard Date parsing
-                                    return new Date(dateStr);
-                                  };
-                                  
-                                  const dateToFormat = parseDbDate(test.orderDate);
-                                  
-                                  if (!isNaN(dateToFormat.getTime())) {
-                                    // Format exactly like services: "Sep 11, 2025 at 3:55 PM"
-                                    const dateStr = dateToFormat.toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    });
-                                    const timeStr = dateToFormat.toLocaleTimeString('en-US', {
-                                      hour: 'numeric',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                    
-                                    return (
-                                      <>
-                                        {dateStr}
-                                        <span className="text-muted-foreground ml-2">
-                                          at {timeStr}
-                                        </span>
-                                      </>
-                                    );
-                                  }
-                                }
-                                return "N/A";
-                              })()}
+                              {test.orderDate ? formatDate(test.orderDate) : "N/A"}
                             </TableCell>
                             <TableCell>
                               <Button
