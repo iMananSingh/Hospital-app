@@ -1876,7 +1876,7 @@ export class SqliteStorage implements IStorage {
 
     // Pathology order charges
     const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
-    totalCharges += pathologyOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    totalCharges += pathologyOrders.reduce((sum, orderData) => sum + (orderData.order.totalPrice || 0), 0);
 
     // Calculate total payments
     const payments = await this.getPatientPayments(patientId);
