@@ -1837,16 +1837,29 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Parse database date properly (SQLite format or ISO)
+                                  // Parse database date properly (ISO, SQLite format, or date-only)
                                   const parseDbDate = (dateStr: string): Date => {
+                                    if (!dateStr) return new Date('invalid');
+                                    
                                     if (/T/.test(dateStr)) {
-                                      // ISO format
+                                      // ISO format with time
                                       return new Date(dateStr);
                                     }
-                                    // SQLite format "YYYY-MM-DD HH:MM:SS" - treat as local time
-                                    const [datePart, timePart] = dateStr.split(' ');
-                                    const isoString = `${datePart}T${timePart}`;
-                                    return new Date(isoString);
+                                    
+                                    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)) {
+                                      // SQLite format "YYYY-MM-DD HH:MM:SS" - treat as local time
+                                      const [datePart, timePart] = dateStr.split(' ');
+                                      const isoString = `${datePart}T${timePart}`;
+                                      return new Date(isoString);
+                                    }
+                                    
+                                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                                      // Date-only format "YYYY-MM-DD" - treat as local time
+                                      return new Date(dateStr + 'T00:00:00');
+                                    }
+                                    
+                                    // Fallback to standard Date parsing
+                                    return new Date(dateStr);
                                   };
                                   
                                   const dateToFormat = parseDbDate(test.orderDate);
