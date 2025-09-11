@@ -1616,6 +1616,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/patients/:patientId/comprehensive-bill", authenticateToken, async (req, res) => {
     try {
       const { patientId } = req.params;
+      // Disable caching to ensure fresh data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
       const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
       res.json(comprehensiveBill);
     } catch (error) {

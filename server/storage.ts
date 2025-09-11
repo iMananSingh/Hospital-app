@@ -3434,7 +3434,7 @@ export class SqliteStorage implements IStorage {
       .all();
 
       admissions.forEach(a => {
-        if ((a.admission.status === 'admitted' || a.admission.status === 'discharged') && (a.admission.dailyCost || 0) > 0) {
+        if (a.admission.status === 'admitted' || a.admission.status === 'discharged') {
           const stayDuration = a.admission.dischargeDate 
             ? Math.ceil((new Date(a.admission.dischargeDate).getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
             : Math.ceil((new Date().getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
