@@ -1397,7 +1397,7 @@ export default function PatientDetail() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Service</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Quantity</TableHead>
                         <TableHead>Doctor</TableHead>
                         <TableHead>Scheduled Date</TableHead>
                         <TableHead>Cost</TableHead>
@@ -1415,7 +1415,7 @@ export default function PatientDetail() {
                         return (
                           <TableRow key={service.id}>
                             <TableCell className="font-medium">{service.serviceName}</TableCell>
-                            <TableCell className="capitalize">{service.serviceType}</TableCell>
+                            <TableCell>{service.billingQuantity || 1}</TableCell>
                             <TableCell>{doctorName}</TableCell>
                             <TableCell>
                               {formatDate(service.scheduledDate)}
