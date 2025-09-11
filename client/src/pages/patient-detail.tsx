@@ -1837,35 +1837,22 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Handle different date formats properly
-                                  let dateToFormat: Date;
-                                  
-                                  if (typeof test.orderDate === 'string') {
-                                    // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" as local time
-                                    if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                      const parts = test.orderDate.split(' ');
-                                      const dateParts = parts[0].split('-');
-                                      const timeParts = parts[1].split(':');
-                                      
-                                      // Create date in local timezone (don't add Z or parse as UTC)
-                                      dateToFormat = new Date(
-                                        parseInt(dateParts[0]), // year
-                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                        parseInt(dateParts[2]), // day
-                                        parseInt(timeParts[0]), // hour
-                                        parseInt(timeParts[1]), // minute
-                                        parseInt(timeParts[2]) // second
-                                      );
-                                    } else {
-                                      // For other formats, use standard Date parsing
-                                      dateToFormat = new Date(test.orderDate);
+                                  // Parse database date properly (SQLite format or ISO)
+                                  const parseDbDate = (dateStr: string): Date => {
+                                    if (/T/.test(dateStr)) {
+                                      // ISO format
+                                      return new Date(dateStr);
                                     }
-                                  } else {
-                                    dateToFormat = new Date(test.orderDate);
-                                  }
+                                    // SQLite format "YYYY-MM-DD HH:MM:SS" - treat as local time
+                                    const [datePart, timePart] = dateStr.split(' ');
+                                    const isoString = `${datePart}T${timePart}`;
+                                    return new Date(isoString);
+                                  };
+                                  
+                                  const dateToFormat = parseDbDate(test.orderDate);
                                   
                                   if (!isNaN(dateToFormat.getTime())) {
-                                    // Format like services with grey time part
+                                    // Format exactly like services: "Sep 11, 2025 at 3:55 PM"
                                     const dateStr = dateToFormat.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
@@ -1876,6 +1863,7 @@ export default function PatientDetail() {
                                       minute: '2-digit',
                                       hour12: true
                                     });
+                                    
                                     return (
                                       <>
                                         {dateStr}
