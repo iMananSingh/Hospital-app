@@ -1421,7 +1421,14 @@ export default function PatientDetail() {
                               {formatDate(service.scheduledDate)}
                               {service.scheduledTime && (
                                 <span className="text-muted-foreground ml-2">
-                                  at {service.scheduledTime}
+                                  at {(() => {
+                                    // Convert 24-hour format to 12-hour format
+                                    const [hours, minutes] = service.scheduledTime.split(':');
+                                    const hour = parseInt(hours, 10);
+                                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                                    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                                    return `${displayHour}:${minutes} ${ampm}`;
+                                  })()}
                                 </span>
                               )}
                             </TableCell>
