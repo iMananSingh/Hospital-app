@@ -12,7 +12,7 @@ import type {
   PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity,
   PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount, ScheduleEvent, InsertScheduleEvent, ServiceCategory, InsertServiceCategory
 } from "@shared/schema";
-import { eq, desc, and, sql, asc, ne, like, isNotNull } from "drizzle-orm";
+import { eq, desc, and, sql, asc, ne, like, isNotNull, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
@@ -3423,43 +3423,48 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 3. Get all admissions and their costs
-      const admissions = db.select({
-        admission: schema.admissions,
-        doctor: schema.doctors
-      })
-      .from(schema.admissions)
-      .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id))
-      .where(eq(schema.admissions.patientId, patientId))
-      .all();
+      // 3. Get all admissions and their costs (use same method as financial summary)
+      const admissions = await this.getAdmissions(patientId);
+      
+      // Get doctor names for admissions with doctor IDs
+      const admissionDoctors = new Map();
+      if (admissions.length > 0) {
+        const doctorIds = admissions.map(a => a.doctorId).filter(Boolean);
+        if (doctorIds.length > 0) {
+          const doctors = db.select().from(schema.doctors)
+            .where(inArray(schema.doctors.id, doctorIds))
+            .all();
+          doctors.forEach(doc => admissionDoctors.set(doc.id, doc.name));
+        }
+      }
 
-      admissions.forEach(a => {
-        if (a.admission.status === 'admitted' || a.admission.status === 'discharged') {
-          const stayDuration = a.admission.dischargeDate 
-            ? Math.ceil((new Date(a.admission.dischargeDate).getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
-            : Math.ceil((new Date().getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
+      admissions.forEach(admission => {
+        if (admission.status === 'admitted' || admission.status === 'discharged') {
+          const stayDuration = admission.dischargeDate 
+            ? Math.ceil((new Date(admission.dischargeDate).getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
+            : Math.ceil((new Date().getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
 
-          // Calculate admission charges based on daily cost and stay duration
-          const admissionCharges = (a.admission.dailyCost || 0) * Math.max(1, stayDuration);
+          // Calculate admission charges based on daily cost and stay duration (same logic as financial summary)
+          const admissionCharges = (admission.dailyCost || 0) * Math.max(1, stayDuration);
 
           billItems.push({
             type: 'admission',
-            id: a.admission.id,
-            date: a.admission.admissionDate,
-            description: `Admission - ${a.admission.admissionId} (${a.admission.currentWardType || 'General Ward'})`,
+            id: admission.id,
+            date: admission.admissionDate,
+            description: `Admission - ${admission.admissionId} (${admission.currentWardType || 'General Ward'})`,
             amount: admissionCharges,
             category: 'admission',
             details: {
-              doctor: a.doctor?.name || 'No Doctor Assigned',
-              admissionId: a.admission.admissionId,
-              wardType: a.admission.currentWardType,
-              roomNumber: a.admission.currentRoomNumber,
-              dailyCost: a.admission.dailyCost,
+              doctor: admissionDoctors.get(admission.doctorId) || 'No Doctor Assigned',
+              admissionId: admission.admissionId,
+              wardType: admission.currentWardType,
+              roomNumber: admission.currentRoomNumber,
+              dailyCost: admission.dailyCost,
               stayDuration: stayDuration,
-              status: a.admission.status,
-              dischargeDate: a.admission.dischargeDate,
-              initialDeposit: a.admission.initialDeposit,
-              additionalPayments: a.admission.additionalPayments
+              status: admission.status,
+              dischargeDate: admission.dischargeDate,
+              initialDeposit: admission.initialDeposit,
+              additionalPayments: admission.additionalPayments
             }
           });
         }
