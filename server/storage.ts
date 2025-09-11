@@ -3434,17 +3434,20 @@ export class SqliteStorage implements IStorage {
       .all();
 
       admissions.forEach(a => {
-        if (a.admission.totalCost > 0) {
+        if ((a.admission.status === 'admitted' || a.admission.status === 'discharged') && (a.admission.dailyCost || 0) > 0) {
           const stayDuration = a.admission.dischargeDate 
             ? Math.ceil((new Date(a.admission.dischargeDate).getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
             : Math.ceil((new Date().getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
+
+          // Calculate admission charges based on daily cost and stay duration
+          const admissionCharges = (a.admission.dailyCost || 0) * Math.max(1, stayDuration);
 
           billItems.push({
             type: 'admission',
             id: a.admission.id,
             date: a.admission.admissionDate,
             description: `Admission - ${a.admission.admissionId} (${a.admission.currentWardType || 'General Ward'})`,
-            amount: a.admission.totalCost,
+            amount: admissionCharges,
             category: 'admission',
             details: {
               doctor: a.doctor?.name || 'No Doctor Assigned',
