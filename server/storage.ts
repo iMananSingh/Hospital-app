@@ -3372,13 +3372,14 @@ export class SqliteStorage implements IStorage {
       .all();
 
       patientServices.forEach(ps => {
-        if (ps.service.calculatedAmount > 0) {
+        const serviceAmount = (ps.service as any).calculatedAmount || ps.service.price || 0;
+        if (serviceAmount > 0) {
           billItems.push({
             type: 'service',
             id: ps.service.id,
             date: ps.service.scheduledDate || ps.service.createdAt,
             description: `${ps.service.serviceName}${ps.service.billingQuantity > 1 ? ` (x${ps.service.billingQuantity})` : ''}`,
-            amount: ps.service.calculatedAmount,
+            amount: serviceAmount,
             category: 'service',
             details: {
               serviceId: ps.service.serviceId,
@@ -3475,56 +3476,7 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 4. Get all services - use calculated amount if available, otherwise use price
-      const services = await this.getPatientServices(patientId);
-      services.forEach(service => {
-        const serviceAmount = (service as any).calculatedAmount || service.price || 0;
-        billItems.push({
-          type: 'service',
-          id: service.id,
-          date: service.scheduledDate || service.createdAt,
-          description: `${service.serviceName}${service.billingQuantity > 1 ? ` (x${service.billingQuantity})` : ''}`,
-          amount: serviceAmount,
-          category: 'service',
-          details: {
-            serviceId: service.serviceId,
-            serviceName: service.serviceName,
-            serviceType: service.serviceType,
-            billingType: service.billingType,
-            billingQuantity: service.billingQuantity,
-            unitPrice: service.price,
-            calculatedAmount: (service as any).calculatedAmount,
-            receiptNumber: service.receiptNumber,
-            orderId: service.orderId,
-            status: service.status
-          }
-        });
-      });
-
-      // 5. Get all pathology orders
-      const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
-      pathologyOrders.forEach(orderData => {
-        const order = orderData.order;
-        if (order.totalPrice > 0) {
-          billItems.push({
-            type: 'pathology',
-            id: order.id,
-            date: order.orderedDate || order.createdAt,
-            description: `Pathology Tests - ${order.orderId}`,
-            amount: order.totalPrice,
-            category: 'pathology',
-            details: {
-              orderId: order.orderId,
-              status: order.status,
-              totalPrice: order.totalPrice,
-              testCount: orderData.tests?.length || 0,
-              receiptNumber: order.receiptNumber
-            }
-          });
-        }
-      });
-
-      // 6. Get all payments
+      // 4. Get all payments (including admission deposits)
       const payments = db.select().from(schema.patientPayments)
         .where(eq(schema.patientPayments.patientId, patientId))
         .all();
@@ -3546,7 +3498,42 @@ export class SqliteStorage implements IStorage {
         });
       });
 
-      // 7. Get all discounts
+      // Add admission payments (initial deposits and additional payments)
+      admissions.forEach(admission => {
+        if (admission.initialDeposit && admission.initialDeposit > 0) {
+          billItems.push({
+            type: 'payment',
+            id: `${admission.id}-initial-deposit`,
+            date: admission.admissionDate,
+            description: `Initial Deposit - ${admission.admissionId}`,
+            amount: -admission.initialDeposit, // Negative for payments
+            category: 'payment',
+            details: {
+              admissionId: admission.admissionId,
+              paymentMethod: 'cash',
+              reason: 'Initial admission deposit'
+            }
+          });
+        }
+
+        if (admission.additionalPayments && admission.additionalPayments > 0) {
+          billItems.push({
+            type: 'payment',
+            id: `${admission.id}-additional-payments`,
+            date: admission.lastPaymentDate || admission.updatedAt,
+            description: `Additional Payments - ${admission.admissionId}`,
+            amount: -admission.additionalPayments, // Negative for payments
+            category: 'payment',
+            details: {
+              admissionId: admission.admissionId,
+              paymentMethod: 'cash',
+              reason: 'Additional admission payments'
+            }
+          });
+        }
+      });
+
+      // 5. Get all discounts
       const discounts = db.select().from(schema.patientDiscounts)
         .where(eq(schema.patientDiscounts.patientId, patientId))
         .all();
@@ -3565,6 +3552,25 @@ export class SqliteStorage implements IStorage {
             reason: discount.reason
           }
         });
+      });
+
+      // Add admission discounts for backwards compatibility
+      admissions.forEach(admission => {
+        if (admission.totalDiscount && admission.totalDiscount > 0) {
+          billItems.push({
+            type: 'discount',
+            id: `${admission.id}-discount`,
+            date: admission.lastDiscountDate || admission.updatedAt,
+            description: `Admission Discount - ${admission.admissionId}`,
+            amount: -admission.totalDiscount, // Negative for discounts
+            category: 'discount',
+            details: {
+              admissionId: admission.admissionId,
+              discountType: 'admission',
+              reason: admission.lastDiscountReason || 'Admission discount'
+            }
+          });
+        }
       });
 
       // Sort all items by date (newest first)
