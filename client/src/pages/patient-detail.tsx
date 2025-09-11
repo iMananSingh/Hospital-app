@@ -1822,11 +1822,9 @@ export default function PatientDetail() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Test Name</TableHead>
-                          <TableHead>Category</TableHead>
                           <TableHead>Price (₹)</TableHead>
                           <TableHead>Order ID</TableHead>
-                          <TableHead>Ordered Date & Time</TableHead>
-                          <TableHead>Status</TableHead>
+                          <TableHead>Ordered Date</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1834,9 +1832,6 @@ export default function PatientDetail() {
                         {allTests.map((test: any, index: number) => (
                           <TableRow key={`${test.orderId}-${test.id || index}`}>
                             <TableCell className="font-medium">{test.testName}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{test.testCategory}</Badge>
-                            </TableCell>
                             <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
                             <TableCell>
@@ -1870,24 +1865,22 @@ export default function PatientDetail() {
                                   }
                                   
                                   if (!isNaN(dateToFormat.getTime())) {
-                                    return dateToFormat.toLocaleString('en-US', {
+                                    // Format like services: "Sep 11, 2025 at 3:55 PM"
+                                    const dateStr = dateToFormat.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true,
-                                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                      day: 'numeric'
                                     });
+                                    const timeStr = dateToFormat.toLocaleTimeString('en-US', {
+                                      hour: 'numeric',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                    return `${dateStr} at ${timeStr}`;
                                   }
                                 }
                                 return "N/A";
                               })()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(test.status || test.orderStatus)} variant="secondary">
-                                {test.status || test.orderStatus}
-                              </Badge>
                             </TableCell>
                             <TableCell>
                               <Button
