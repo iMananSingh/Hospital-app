@@ -1837,18 +1837,32 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                  // SQLite stores datetime in UTC, so we need to parse it as UTC
                                   let date;
                                   
+                                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" as local time
                                   if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                    // Convert SQLite format to ISO string and parse as UTC
-                                    const isoString = test.orderDate.replace(' ', 'T') + 'Z';
-                                    date = new Date(isoString);
+                                    const parts = test.orderDate.split(' ');
+                                    const dateParts = parts[0].split('-');
+                                    const timeParts = parts[1].split(':');
+                                    
+                                    // Create date object in local timezone (no UTC conversion)
+                                    date = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]), // day
+                                      parseInt(timeParts[0]), // hour
+                                      parseInt(timeParts[1]), // minute
+                                      parseInt(timeParts[2]) // second
+                                    );
                                   }
                                   // Handle date-only format: "YYYY-MM-DD"
                                   else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                    date = new Date(test.orderDate + 'T00:00:00Z');
+                                    const dateParts = test.orderDate.split('-');
+                                    date = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]) // day
+                                    );
                                   }
                                   // Handle other formats (ISO strings, etc.)
                                   else {
@@ -1856,7 +1870,6 @@ export default function PatientDetail() {
                                   }
                                   
                                   if (!isNaN(date.getTime())) {
-                                    // Display in local timezone
                                     const dateStr = date.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
