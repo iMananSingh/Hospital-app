@@ -187,7 +187,7 @@ async function initializeDatabase() {
     // Check if order_id column exists and add it if it doesn't
     const columns = sqlite.prepare("PRAGMA table_info(patient_services)").all();
     const hasOrderId = columns.some((col: any) => col.name === 'order_id');
-    
+
     if (!hasOrderId) {
       sqlite.exec('ALTER TABLE patient_services ADD COLUMN order_id TEXT;');
       console.log('Added order_id column to patient_services table');
@@ -1538,23 +1538,23 @@ export class SqliteStorage implements IStorage {
     try {
       // Generate a single order ID for all services in this batch
       const orderId = this.generateServiceOrderId();
-      
+
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import('./smart-costing');
-      
+
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
-        
+
         for (const serviceData of servicesData) {
           // Get service details for billing calculation
           let service = null;
           let calculatedAmount = serviceData.price || 0;
           let billingType = serviceData.billingType || 'per_instance';
           let billingQuantity = serviceData.billingQuantity || 1;
-          
+
           if (serviceData.serviceId && serviceData.serviceId !== `SRV-${Date.now()}`) {
             service = tx.select().from(schema.services).where(eq(schema.services.id, serviceData.serviceId)).get();
-            
+
             if (service) {
               // Calculate billing using smart costing
               const billingResult = SmartCostingEngine.calculateBilling({
@@ -1568,7 +1568,7 @@ export class SqliteStorage implements IStorage {
                 quantity: serviceData.billingQuantity || 1,
                 customParameters: serviceData.billingParameters ? JSON.parse(serviceData.billingParameters) : {}
               });
-              
+
               calculatedAmount = billingResult.totalAmount;
               billingType = service.billingType || 'per_instance';
               billingQuantity = billingResult.billingQuantity;
@@ -1584,7 +1584,7 @@ export class SqliteStorage implements IStorage {
             billingQuantity,
             calculatedAmount,
           }).returning().get();
-          
+
           createdServices.push(created);
 
           // Log activity for OPD appointments
@@ -1601,7 +1601,7 @@ export class SqliteStorage implements IStorage {
             );
           }
         }
-        
+
         return createdServices;
       });
     } catch (error) {
@@ -1614,16 +1614,16 @@ export class SqliteStorage implements IStorage {
     try {
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import('./smart-costing');
-      
+
       // Get service details for billing calculation
       let service = null;
       let calculatedAmount = serviceData.price || 0;
       let billingType = serviceData.billingType || 'per_instance';
       let billingQuantity = serviceData.billingQuantity || 1;
-      
+
       if (serviceData.serviceId && serviceData.serviceId !== `SRV-${Date.now()}`) {
         service = db.select().from(schema.services).where(eq(schema.services.id, serviceData.serviceId)).get();
-        
+
         if (service) {
           // Calculate billing using smart costing
           const billingResult = SmartCostingEngine.calculateBilling({
@@ -1637,7 +1637,7 @@ export class SqliteStorage implements IStorage {
             quantity: serviceData.billingQuantity || 1,
             customParameters: serviceData.billingParameters ? JSON.parse(serviceData.billingParameters) : {}
           });
-          
+
           calculatedAmount = billingResult.totalAmount;
           billingType = service.billingType || 'per_instance';
           billingQuantity = billingResult.billingQuantity;
@@ -2335,7 +2335,7 @@ export class SqliteStorage implements IStorage {
 
       // If no settings exist, create default ones
       if (!settings) {
-        settings = db.insert(schema.hospitalSettings).values({
+        settings = {
           id: 'default',
           name: 'MedCare Pro Hospital',
           address: '123 Healthcare Street, Medical District, City - 123456',
@@ -2345,7 +2345,9 @@ export class SqliteStorage implements IStorage {
           logoPath: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        }).returning().get();
+        };
+
+        db.insert(schema.hospitalSettings).values(settings).run();
       }
 
       return settings;
@@ -3374,15 +3376,21 @@ export class SqliteStorage implements IStorage {
           billItems.push({
             type: 'service',
             id: ps.service.id,
-            date: ps.service.scheduledDate,
-            description: `${ps.service.serviceName} (${ps.service.serviceType.toUpperCase()})`,
+            date: ps.service.scheduledDate || ps.service.createdAt,
+            description: `${ps.service.serviceName}${ps.service.billingQuantity > 1 ? ` (x${ps.service.billingQuantity})` : ''}`,
             amount: ps.service.calculatedAmount,
-            category: ps.service.serviceType,
+            category: 'service',
             details: {
-              doctor: ps.doctor?.name || 'No Doctor Assigned',
+              serviceId: ps.service.serviceId,
+              serviceName: ps.service.serviceName,
+              serviceType: ps.service.serviceType,
+              billingType: ps.service.billingType,
+              billingQuantity: ps.service.billingQuantity,
+              unitPrice: ps.service.price,
+              calculatedAmount: (ps.service as any).calculatedAmount,
               receiptNumber: ps.service.receiptNumber,
-              status: ps.service.status,
-              notes: ps.service.notes
+              orderId: ps.service.orderId,
+              status: ps.service.status
             }
           });
         }
@@ -3423,111 +3431,100 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 3. Get all admissions and their costs (use same method as financial summary)
+      // 3. Get all admissions and calculate bed charges
       const admissions = await this.getAdmissions(patientId);
-      
-      // Get doctor names for admissions with doctor IDs
       const admissionDoctors = new Map();
-      if (admissions.length > 0) {
-        const doctorIds = admissions.map(a => a.doctorId).filter(Boolean);
-        if (doctorIds.length > 0) {
-          const doctors = db.select().from(schema.doctors)
-            .where(inArray(schema.doctors.id, doctorIds))
-            .all();
-          doctors.forEach(doc => admissionDoctors.set(doc.id, doc.name));
-        }
-      }
+
+      // Get doctor names for admissions
+      const doctors = db.select().from(schema.doctors).all();
+      doctors.forEach(doctor => {
+        admissionDoctors.set(doctor.id, doctor.name);
+      });
 
       admissions.forEach(admission => {
         if (admission.status === 'admitted' || admission.status === 'discharged') {
-          const stayDuration = admission.dischargeDate 
-            ? Math.ceil((new Date(admission.dischargeDate).getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
-            : Math.ceil((new Date().getTime() - new Date(admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
+          const admissionDate = new Date(admission.admissionDate);
+          const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
+          const stayDuration = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
 
-          // Calculate admission charges based on daily cost and stay duration (same logic as financial summary)
-          const admissionCharges = (admission.dailyCost || 0) * Math.max(1, stayDuration);
+          // Calculate admission charges (daily cost * days stayed)
+          const admissionCharges = (admission.dailyCost || 0) * stayDuration;
 
+          if (admissionCharges > 0) {
+            billItems.push({
+              type: 'admission',
+              id: admission.id,
+              date: admission.admissionDate,
+              description: `Bed Charges - ${admission.admissionId} (${admission.currentWardType || 'General Ward'}) - ${stayDuration} day(s)`,
+              amount: admissionCharges,
+              category: 'admission',
+              details: {
+                doctor: admissionDoctors.get(admission.doctorId) || 'No Doctor Assigned',
+                admissionId: admission.admissionId,
+                wardType: admission.currentWardType,
+                roomNumber: admission.currentRoomNumber,
+                dailyCost: admission.dailyCost,
+                stayDuration: stayDuration,
+                status: admission.status,
+                admissionDate: admission.admissionDate,
+                dischargeDate: admission.dischargeDate,
+                initialDeposit: admission.initialDeposit
+              }
+            });
+          }
+        }
+      });
+
+      // 4. Get all services - use calculated amount if available, otherwise use price
+      const services = await this.getPatientServices(patientId);
+      services.forEach(service => {
+        const serviceAmount = (service as any).calculatedAmount || service.price || 0;
+        billItems.push({
+          type: 'service',
+          id: service.id,
+          date: service.scheduledDate || service.createdAt,
+          description: `${service.serviceName}${service.billingQuantity > 1 ? ` (x${service.billingQuantity})` : ''}`,
+          amount: serviceAmount,
+          category: 'service',
+          details: {
+            serviceId: service.serviceId,
+            serviceName: service.serviceName,
+            serviceType: service.serviceType,
+            billingType: service.billingType,
+            billingQuantity: service.billingQuantity,
+            unitPrice: service.price,
+            calculatedAmount: (service as any).calculatedAmount,
+            receiptNumber: service.receiptNumber,
+            orderId: service.orderId,
+            status: service.status
+          }
+        });
+      });
+
+      // 5. Get all pathology orders
+      const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
+      pathologyOrders.forEach(orderData => {
+        const order = orderData.order;
+        if (order.totalPrice > 0) {
           billItems.push({
-            type: 'admission',
-            id: admission.id,
-            date: admission.admissionDate,
-            description: `Admission - ${admission.admissionId} (${admission.currentWardType || 'General Ward'})`,
-            amount: admissionCharges,
-            category: 'admission',
+            type: 'pathology',
+            id: order.id,
+            date: order.orderedDate || order.createdAt,
+            description: `Pathology Tests - ${order.orderId}`,
+            amount: order.totalPrice,
+            category: 'pathology',
             details: {
-              doctor: admissionDoctors.get(admission.doctorId) || 'No Doctor Assigned',
-              admissionId: admission.admissionId,
-              wardType: admission.currentWardType,
-              roomNumber: admission.currentRoomNumber,
-              dailyCost: admission.dailyCost,
-              stayDuration: stayDuration,
-              status: admission.status,
-              dischargeDate: admission.dischargeDate,
-              initialDeposit: admission.initialDeposit,
-              additionalPayments: admission.additionalPayments
+              orderId: order.orderId,
+              status: order.status,
+              totalPrice: order.totalPrice,
+              testCount: orderData.tests?.length || 0,
+              receiptNumber: order.receiptNumber
             }
           });
         }
       });
 
-      // 4. Get all bills and bill items
-      const bills = db.select({
-        bill: schema.bills,
-        billItem: schema.billItems,
-        service: schema.services
-      })
-      .from(schema.bills)
-      .leftJoin(schema.billItems, eq(schema.bills.id, schema.billItems.billId))
-      .leftJoin(schema.services, eq(schema.billItems.serviceId, schema.services.id))
-      .where(eq(schema.bills.patientId, patientId))
-      .all();
-
-      // Group bill items by bill
-      const billsMap = new Map();
-      bills.forEach(b => {
-        if (!billsMap.has(b.bill.id)) {
-          billsMap.set(b.bill.id, {
-            bill: b.bill,
-            items: []
-          });
-        }
-        if (b.billItem && b.service) {
-          billsMap.get(b.bill.id).items.push({
-            item: b.billItem,
-            service: b.service
-          });
-        }
-      });
-
-      billsMap.forEach(({ bill, items }) => {
-        if (bill.totalAmount > 0) {
-          billItems.push({
-            type: 'service',
-            id: bill.id,
-            date: bill.billDate,
-            description: `Bill ${bill.billNumber} - ${items.length} services`,
-            amount: bill.totalAmount,
-            category: 'billing',
-            details: {
-              billNumber: bill.billNumber,
-              paymentMethod: bill.paymentMethod,
-              paymentStatus: bill.paymentStatus,
-              paidAmount: bill.paidAmount,
-              subtotal: bill.subtotal,
-              taxAmount: bill.taxAmount,
-              discountAmount: bill.discountAmount,
-              services: items.map(i => ({
-                name: i.service.name,
-                quantity: i.item.quantity,
-                unitPrice: i.item.unitPrice,
-                totalPrice: i.item.totalPrice
-              }))
-            }
-          });
-        }
-      });
-
-      // 5. Get all payments
+      // 6. Get all payments
       const payments = db.select().from(schema.patientPayments)
         .where(eq(schema.patientPayments.patientId, patientId))
         .all();
@@ -3549,7 +3546,7 @@ export class SqliteStorage implements IStorage {
         });
       });
 
-      // 6. Get all discounts
+      // 7. Get all discounts
       const discounts = db.select().from(schema.patientDiscounts)
         .where(eq(schema.patientDiscounts.patientId, patientId))
         .all();
