@@ -1820,15 +1820,42 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const date = new Date(test.orderDate);
-                                  if (!isNaN(date.getTime())) {
-                                    return date.toLocaleString('en-US', {
+                                  // Handle different date formats properly
+                                  let dateToFormat: Date;
+                                  
+                                  if (typeof test.orderDate === 'string') {
+                                    // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" as local time
+                                    if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                      const parts = test.orderDate.split(' ');
+                                      const dateParts = parts[0].split('-');
+                                      const timeParts = parts[1].split(':');
+                                      
+                                      // Create date in local timezone (don't add Z or parse as UTC)
+                                      dateToFormat = new Date(
+                                        parseInt(dateParts[0]), // year
+                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                        parseInt(dateParts[2]), // day
+                                        parseInt(timeParts[0]), // hour
+                                        parseInt(timeParts[1]), // minute
+                                        parseInt(timeParts[2]) // second
+                                      );
+                                    } else {
+                                      // For other formats, use standard Date parsing
+                                      dateToFormat = new Date(test.orderDate);
+                                    }
+                                  } else {
+                                    dateToFormat = new Date(test.orderDate);
+                                  }
+                                  
+                                  if (!isNaN(dateToFormat.getTime())) {
+                                    return dateToFormat.toLocaleString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
                                       day: 'numeric',
                                       hour: '2-digit',
                                       minute: '2-digit',
-                                      hour12: true
+                                      hour12: true,
+                                      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
                                     });
                                   }
                                 }
