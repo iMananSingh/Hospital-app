@@ -1865,7 +1865,7 @@ export default function PatientDetail() {
                                   }
                                   
                                   if (!isNaN(dateToFormat.getTime())) {
-                                    // Format like services: "Sep 11, 2025 at 3:55 PM"
+                                    // Format like services with grey time part
                                     const dateStr = dateToFormat.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
@@ -1876,7 +1876,14 @@ export default function PatientDetail() {
                                       minute: '2-digit',
                                       hour12: true
                                     });
-                                    return `${dateStr} at ${timeStr}`;
+                                    return (
+                                      <>
+                                        {dateStr}
+                                        <span className="text-muted-foreground ml-2">
+                                          at {timeStr}
+                                        </span>
+                                      </>
+                                    );
                                   }
                                 }
                                 return "N/A";
