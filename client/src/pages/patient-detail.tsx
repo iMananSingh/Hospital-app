@@ -1774,22 +1774,39 @@ export default function PatientDetail() {
                   const allTests: any[] = [];
                   
                   if (pathologyOrders && pathologyOrders.length > 0) {
-                    pathologyOrders.forEach((orderItem: any, orderIndex: number) => {
-                      console.log(`Processing order ${orderIndex}:`, orderItem);
+                    pathologyOrders.forEach((orderData: any, orderIndex: number) => {
+                      console.log(`Processing order ${orderIndex}:`, orderData);
                       
-                      // The API returns objects with 'order' and 'tests' properties at the top level
-                      const order = orderItem.order;
-                      const tests = orderItem.tests;
+                      // Handle the API response structure - it's an array of objects with order and tests
+                      let order, tests;
                       
+                      // Check if this is the nested structure {order: {...}, tests: [...]}
+                      if (orderData.order && orderData.tests) {
+                        order = orderData.order;
+                        tests = orderData.tests;
+                      }
+                      // Or if it's a direct pathology order object with tests in a different structure
+                      else if (orderData.id && orderData.orderId) {
+                        // This might be the direct order object, we need to fetch tests differently
+                        // For now, let's check if tests are embedded somehow
+                        order = orderData;
+                        tests = orderData.tests || [];
+                      }
+                      // Handle case where entire response is the order
+                      else {
+                        order = orderData;
+                        tests = [];
+                      }
+
                       if (!order) {
-                        console.warn(`No order found in orderItem ${orderIndex}:`, orderItem);
+                        console.warn(`No order found in orderData ${orderIndex}:`, orderData);
                         return;
                       }
 
-                      console.log(`Order ${order.orderId || order.id} has ${tests ? tests.length : 0} tests`);
-                      console.log("Tests:", tests);
+                      console.log(`Order ${order.orderId || order.id} structure:`, order);
+                      console.log(`Found ${tests ? tests.length : 0} tests:`, tests);
 
-                      // Get tests from the order data
+                      // If we have tests in the expected structure
                       if (tests && Array.isArray(tests) && tests.length > 0) {
                         tests.forEach((test: any, testIndex: number) => {
                           console.log(`Adding test ${testIndex} from order ${order.orderId}:`, test);
@@ -1801,8 +1818,27 @@ export default function PatientDetail() {
                             receiptNumber: order.receiptNumber
                           });
                         });
-                      } else {
-                        console.warn(`No tests found for order ${order.orderId || order.id}`);
+                      } 
+                      // If the API is returning a different structure, let's handle it
+                      else {
+                        console.warn(`No tests array found for order ${order.orderId || order.id}. Order structure:`, order);
+                        console.warn(`Full orderData structure:`, orderData);
+                        
+                        // Try to extract test info from other possible locations
+                        if (order.testName) {
+                          // Single test embedded in order
+                          allTests.push({
+                            id: order.id,
+                            testName: order.testName,
+                            testCategory: order.testCategory,
+                            status: order.status,
+                            price: order.totalPrice || order.price || 0,
+                            orderId: order.orderId,
+                            orderDate: order.orderedDate || order.createdAt,
+                            orderStatus: order.status,
+                            receiptNumber: order.receiptNumber
+                          });
+                        }
                       }
                     });
                   }
@@ -1816,10 +1852,10 @@ export default function PatientDetail() {
                         <TableRow>
                           <TableHead>Test Name</TableHead>
                           <TableHead>Category</TableHead>
+                          <TableHead>Price (₹)</TableHead>
                           <TableHead>Order ID</TableHead>
-                          <TableHead>Ordered Date</TableHead>
+                          <TableHead>Ordered Date & Time</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Price</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1830,14 +1866,31 @@ export default function PatientDetail() {
                             <TableCell>
                               <Badge variant="outline">{test.testCategory}</Badge>
                             </TableCell>
+                            <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
-                            <TableCell>{formatDate(test.orderDate)}</TableCell>
+                            <TableCell>
+                              {(() => {
+                                if (test.orderDate) {
+                                  const date = new Date(test.orderDate);
+                                  if (!isNaN(date.getTime())) {
+                                    return date.toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  }
+                                }
+                                return "N/A";
+                              })()}
+                            </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(test.status || test.orderStatus)} variant="secondary">
                                 {test.status || test.orderStatus}
                               </Badge>
                             </TableCell>
-                            <TableCell>₹{test.price || 0}</TableCell>
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -1855,6 +1908,7 @@ export default function PatientDetail() {
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-sm text-muted-foreground">No pathology tests found</p>
+                      <p className="text-xs text-muted-foreground mt-1">Debug: {pathologyOrders?.length || 0} orders received</p>
                     </div>
                   );
                 })()}

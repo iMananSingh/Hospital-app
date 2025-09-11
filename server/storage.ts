@@ -1461,11 +1461,25 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]> {
-    return db.select().from(schema.pathologyOrders)
+  async getPathologyOrdersByPatient(patientId: string): Promise<any[]> {
+    const orders = db.select().from(schema.pathologyOrders)
       .where(eq(schema.pathologyOrders.patientId, patientId))
       .orderBy(desc(schema.pathologyOrders.createdAt))
       .all();
+
+    // For each order, get its associated tests
+    const ordersWithTests = orders.map(order => {
+      const tests = db.select().from(schema.pathologyTests)
+        .where(eq(schema.pathologyTests.orderId, order.id))
+        .all();
+
+      return {
+        order,
+        tests
+      };
+    });
+
+    return ordersWithTests;
   }
 
   async updatePathologyTestStatus(testId: string, status: string, results?: string, userId?: string): Promise<PathologyTest | undefined> {
