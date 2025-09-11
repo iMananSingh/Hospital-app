@@ -1767,49 +1767,22 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {(() => {
-                  console.log("=== PATHOLOGY TAB DEBUG ===");
-                  console.log("Raw pathologyOrders:", pathologyOrders);
-                  
                   // Extract individual tests from all orders
                   const allTests: any[] = [];
                   
                   if (pathologyOrders && pathologyOrders.length > 0) {
-                    pathologyOrders.forEach((orderData: any, orderIndex: number) => {
-                      console.log(`Processing order ${orderIndex}:`, orderData);
+                    pathologyOrders.forEach((orderItem: any) => {
+                      // The API returns objects with 'order' and 'tests' properties at the top level
+                      const order = orderItem.order;
+                      const tests = orderItem.tests;
                       
-                      // Handle the API response structure - it's an array of objects with order and tests
-                      let order, tests;
-                      
-                      // Check if this is the nested structure {order: {...}, tests: [...]}
-                      if (orderData.order && orderData.tests) {
-                        order = orderData.order;
-                        tests = orderData.tests;
-                      }
-                      // Or if it's a direct pathology order object with tests in a different structure
-                      else if (orderData.id && orderData.orderId) {
-                        // This might be the direct order object, we need to fetch tests differently
-                        // For now, let's check if tests are embedded somehow
-                        order = orderData;
-                        tests = orderData.tests || [];
-                      }
-                      // Handle case where entire response is the order
-                      else {
-                        order = orderData;
-                        tests = [];
-                      }
-
                       if (!order) {
-                        console.warn(`No order found in orderData ${orderIndex}:`, orderData);
                         return;
                       }
 
-                      console.log(`Order ${order.orderId || order.id} structure:`, order);
-                      console.log(`Found ${tests ? tests.length : 0} tests:`, tests);
-
-                      // If we have tests in the expected structure
+                      // Get tests from the order data
                       if (tests && Array.isArray(tests) && tests.length > 0) {
-                        tests.forEach((test: any, testIndex: number) => {
-                          console.log(`Adding test ${testIndex} from order ${order.orderId}:`, test);
+                        tests.forEach((test: any) => {
                           allTests.push({
                             ...test,
                             orderId: order.orderId || order.id,
@@ -1818,33 +1791,9 @@ export default function PatientDetail() {
                             receiptNumber: order.receiptNumber
                           });
                         });
-                      } 
-                      // If the API is returning a different structure, let's handle it
-                      else {
-                        console.warn(`No tests array found for order ${order.orderId || order.id}. Order structure:`, order);
-                        console.warn(`Full orderData structure:`, orderData);
-                        
-                        // Try to extract test info from other possible locations
-                        if (order.testName) {
-                          // Single test embedded in order
-                          allTests.push({
-                            id: order.id,
-                            testName: order.testName,
-                            testCategory: order.testCategory,
-                            status: order.status,
-                            price: order.totalPrice || order.price || 0,
-                            orderId: order.orderId,
-                            orderDate: order.orderedDate || order.createdAt,
-                            orderStatus: order.status,
-                            receiptNumber: order.receiptNumber
-                          });
-                        }
                       }
                     });
                   }
-
-                  console.log("Final allTests array:", allTests);
-                  console.log("=== END PATHOLOGY TAB DEBUG ===");
 
                   return allTests.length > 0 ? (
                     <Table>
