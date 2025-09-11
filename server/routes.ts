@@ -993,6 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patient Services Management
+  // Single service creation
   app.post("/api/patient-services", authenticateToken, async (req: any, res) => {
     try {
       const serviceData = req.body;
@@ -1004,6 +1005,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating patient service:", error);
       res.status(500).json({ error: "Failed to create patient service" });
+    }
+  });
+
+  // Batch service creation - multiple services with same order ID
+  app.post("/api/patient-services/batch", authenticateToken, async (req: any, res) => {
+    try {
+      console.log("Creating batch patient services with data:", req.body);
+      
+      // Validate array of services
+      if (!Array.isArray(req.body)) {
+        return res.status(400).json({ message: "Request body must be an array of services" });
+      }
+
+      const services = await storage.createPatientServicesBatch(req.body, req.user.id);
+      console.log("Created batch patient services:", services);
+      res.json(services);
+    } catch (error: any) {
+      console.error("Batch service creation error:", error);
+      res.status(400).json({ message: "Failed to create batch services", error: error.message });
     }
   });
 

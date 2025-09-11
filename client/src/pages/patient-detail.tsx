@@ -661,21 +661,17 @@ export default function PatientDetail() {
           };
         });
 
-        const responses = await Promise.all(
-          serviceData.map(srvc => fetch("/api/patient-services", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-              },
-              body: JSON.stringify(srvc),
-            })
-          )
-        );
+        // Use batch endpoint for multiple services
+        const response = await fetch("/api/patient-services/batch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+          body: JSON.stringify(serviceData),
+        });
 
-        const failedRequests = responses.filter(response => !response.ok);
-
-        if (failedRequests.length === 0) {
+        if (response.ok) {
           toast({
             title: "Success",
             description: `${selectedServices.length} service(s) scheduled successfully`,
@@ -686,7 +682,7 @@ export default function PatientDetail() {
           setSelectedServiceType("");
           setSelectedServices([]);
         } else {
-          throw new Error(`Failed to schedule ${failedRequests.length} service(s)`);
+          throw new Error(`Failed to schedule services`);
         }
       }
     } catch (error) {
@@ -2023,13 +2019,13 @@ export default function PatientDetail() {
                       sortTimestamp: istTimestamp
                     });
 
-                    // Add services with proper date normalization - group by receiptNumber
+                    // Add services with proper date normalization - group by orderId (like pathology tests)
                     if (services && services.length > 0) {
                       console.log("Processing services for timeline:", services.length);
                       
-                      // Group services by receiptNumber
+                      // Group services by orderId (similar to how pathology tests are grouped)
                       const serviceGroups = services.reduce((groups: { [key: string]: any[] }, service: any) => {
-                        const groupKey = service.receiptNumber || `single-${service.id}`;
+                        const groupKey = service.orderId || `single-${service.id}`;
                         if (!groups[groupKey]) {
                           groups[groupKey] = [];
                         }
@@ -2038,7 +2034,7 @@ export default function PatientDetail() {
                       }, {});
 
                       // Create timeline entries for each group
-                      Object.entries(serviceGroups).forEach(([receiptNumber, groupServices]) => {
+                      Object.entries(serviceGroups).forEach(([orderId, groupServices]) => {
                         // Use the earliest service in the group for primary date
                         const primaryService = groupServices[0];
                         
@@ -2052,7 +2048,7 @@ export default function PatientDetail() {
                           }
                         }
 
-                        const serviceNormalized = normalizeDate(primaryDate, 'service', receiptNumber);
+                        const serviceNormalized = normalizeDate(primaryDate, 'service', orderId);
 
                         // Calculate total cost for all services in the group
                         const totalCost = groupServices.reduce((sum, service) => 
@@ -2065,14 +2061,14 @@ export default function PatientDetail() {
                           title = groupServices[0].serviceName;
                           description = `Status: ${groupServices[0].status} • Cost: ₹${totalCost}`;
                         } else {
-                          // Multiple services - show as service order
-                          const receiptId = receiptNumber.startsWith('single-') ? 'Service Order' : receiptNumber;
-                          title = `Service Order: ${receiptId}`;
+                          // Multiple services - show as service order (like "Service Order: SRV-2025-001")
+                          const orderIdLabel = orderId.startsWith('single-') ? 'Service Order' : orderId;
+                          title = `Service Order: ${orderIdLabel}`;
                           description = `${groupServices.length} services • Cost: ₹${totalCost}`;
                         }
 
                         timelineEvents.push({
-                          id: receiptNumber,
+                          id: orderId,
                           type: 'service',
                           title: title,
                           date: serviceNormalized.date,
@@ -2080,8 +2076,8 @@ export default function PatientDetail() {
                           color: 'bg-green-500',
                           sortTimestamp: serviceNormalized.timestamp,
                           rawData: { services: groupServices, primaryDate }, // Debug info
-                          // Include receipt info for receipt access
-                          receiptNumber: receiptNumber.startsWith('single-') ? null : receiptNumber,
+                          // Include order info for service grouping
+                          orderId: orderId.startsWith('single-') ? null : orderId,
                           serviceCount: groupServices.length,
                           totalCost: totalCost,
                           services: groupServices // Store all services for detailed view if needed

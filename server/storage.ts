@@ -12,7 +12,7 @@ import type {
   PathologyCategory, InsertPathologyCategory, DynamicPathologyTest, InsertDynamicPathologyTest, Activity, InsertActivity,
   PatientPayment, InsertPatientPayment, PatientDiscount, InsertPatientDiscount, ScheduleEvent, InsertScheduleEvent, ServiceCategory, InsertServiceCategory
 } from "@shared/schema";
-import { eq, desc, and, sql, asc, ne, like } from "drizzle-orm";
+import { eq, desc, and, sql, asc, ne, like, isNotNull } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
@@ -847,6 +847,12 @@ export class SqliteStorage implements IStorage {
     return `LAB-${year}-${count.toString().padStart(3, '0')}`;
   }
 
+  private generateServiceOrderId(): string {
+    const year = new Date().getFullYear();
+    const count = db.select().from(schema.patientServices).where(isNotNull(schema.patientServices.orderId)).all().length + 1;
+    return `SRV-${year}-${count.toString().padStart(3, '0')}`;
+  }
+
   private generateAdmissionId(): string {
     const year = new Date().getFullYear();
     try {
@@ -1512,6 +1518,82 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
+  async createPatientServicesBatch(servicesData: InsertPatientService[], userId?: string): Promise<PatientService[]> {
+    try {
+      // Generate a single order ID for all services in this batch
+      const orderId = this.generateServiceOrderId();
+      
+      // Import smart costing here to avoid circular dependencies
+      const { SmartCostingEngine } = await import('./smart-costing');
+      
+      return db.transaction((tx) => {
+        const createdServices: PatientService[] = [];
+        
+        for (const serviceData of servicesData) {
+          // Get service details for billing calculation
+          let service = null;
+          let calculatedAmount = serviceData.price || 0;
+          let billingType = serviceData.billingType || 'per_instance';
+          let billingQuantity = serviceData.billingQuantity || 1;
+          
+          if (serviceData.serviceId && serviceData.serviceId !== `SRV-${Date.now()}`) {
+            service = tx.select().from(schema.services).where(eq(schema.services.id, serviceData.serviceId)).get();
+            
+            if (service) {
+              // Calculate billing using smart costing
+              const billingResult = SmartCostingEngine.calculateBilling({
+                service: {
+                  id: service.id,
+                  name: service.name,
+                  price: service.price,
+                  billingType: service.billingType as any,
+                  billingParameters: service.billingParameters || undefined
+                },
+                quantity: serviceData.billingQuantity || 1,
+                customParameters: serviceData.billingParameters ? JSON.parse(serviceData.billingParameters) : {}
+              });
+              
+              calculatedAmount = billingResult.totalAmount;
+              billingType = service.billingType || 'per_instance';
+              billingQuantity = billingResult.billingQuantity;
+            }
+          }
+
+          const created = tx.insert(schema.patientServices).values({
+            ...serviceData,
+            serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
+            receiptNumber: serviceData.receiptNumber || null,
+            orderId: orderId, // Same order ID for all services in batch
+            billingType,
+            billingQuantity,
+            calculatedAmount,
+          }).returning().get();
+          
+          createdServices.push(created);
+
+          // Log activity for OPD appointments
+          if (userId && serviceData.serviceType === 'opd') {
+            const patient = tx.select().from(schema.patients).where(eq(schema.patients.id, serviceData.patientId)).get();
+            this.logActivity(
+              userId,
+              'opd_scheduled',
+              'OPD appointment scheduled',
+              `${serviceData.serviceName} for ${patient?.name || 'Unknown Patient'}`,
+              created.id,
+              'patient_service',
+              { serviceName: serviceData.serviceName, patientName: patient?.name, scheduledDate: serviceData.scheduledDate }
+            );
+          }
+        }
+        
+        return createdServices;
+      });
+    } catch (error) {
+      console.error('Error creating patient services batch:', error);
+      throw error;
+    }
+  }
+
   async createPatientService(serviceData: InsertPatientService, userId?: string): Promise<PatientService> {
     try {
       // Import smart costing here to avoid circular dependencies
@@ -1550,6 +1632,7 @@ export class SqliteStorage implements IStorage {
         ...serviceData,
         serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
         receiptNumber: serviceData.receiptNumber || null,
+        orderId: serviceData.orderId || null,
         billingType,
         billingQuantity,
         calculatedAmount,

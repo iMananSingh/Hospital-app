@@ -166,6 +166,7 @@ export const patientServices = sqliteTable("patient_services", {
   doctorId: text("doctor_id").references(() => doctors.id),
   serviceType: text("service_type").notNull(), // opd, labtest, xray, ecg, consultation, emergency
   serviceName: text("service_name").notNull(),
+  orderId: text("order_id"), // SRV-2025-001 format for grouping related services
   status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
   scheduledDate: text("scheduled_date").notNull(),
   scheduledTime: text("scheduled_time").notNull().default("09:00"),
