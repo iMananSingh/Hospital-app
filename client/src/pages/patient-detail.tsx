@@ -1837,7 +1837,39 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const date = new Date(test.orderDate);
+                                  // Handle different date formats properly
+                                  let date;
+                                  
+                                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - treat as local time
+                                  if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                    const parts = test.orderDate.split(' ');
+                                    const dateParts = parts[0].split('-');
+                                    const timeParts = parts[1].split(':');
+                                    
+                                    // Create date object in local timezone
+                                    date = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]), // day
+                                      parseInt(timeParts[0]), // hour
+                                      parseInt(timeParts[1]), // minute
+                                      parseInt(timeParts[2]) // second
+                                    );
+                                  }
+                                  // Handle date-only format: "YYYY-MM-DD"
+                                  else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                    const dateParts = test.orderDate.split('-');
+                                    date = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]) // day
+                                    );
+                                  }
+                                  // Handle other formats
+                                  else {
+                                    date = new Date(test.orderDate);
+                                  }
+                                  
                                   if (!isNaN(date.getTime())) {
                                     const dateStr = date.toLocaleDateString('en-US', {
                                       year: 'numeric',
