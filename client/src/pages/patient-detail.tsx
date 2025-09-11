@@ -1763,101 +1763,56 @@ export default function PatientDetail() {
           <TabsContent value="pathology">
             <Card>
               <CardHeader>
-                <CardTitle>Pathology Tests</CardTitle>
+                <CardTitle>Pathology Orders</CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  console.log("=== PATHOLOGY TAB DEBUG ===");
-                  console.log("Raw pathologyOrders:", pathologyOrders);
-                  
-                  // Extract individual tests from all orders
-                  const allTests: any[] = [];
-                  
-                  if (pathologyOrders && pathologyOrders.length > 0) {
-                    pathologyOrders.forEach((orderItem: any, orderIndex: number) => {
-                      console.log(`Processing order ${orderIndex}:`, orderItem);
-                      
-                      // The API returns objects with 'order' and 'tests' properties at the top level
-                      const order = orderItem.order;
-                      const tests = orderItem.tests;
-                      
-                      if (!order) {
-                        console.warn(`No order found in orderItem ${orderIndex}:`, orderItem);
-                        return;
-                      }
+                {pathologyOrders && pathologyOrders.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Order ID</TableHead>
+                        <TableHead>Ordered Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Total Price</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pathologyOrders.map((orderData: any) => {
+                        // Handle both direct order objects and nested order structure
+                        const order = orderData.order || orderData;
+                        if (!order || !order.orderId) return null;
 
-                      console.log(`Order ${order.orderId || order.id} has ${tests ? tests.length : 0} tests`);
-                      console.log("Tests:", tests);
-
-                      // Get tests from the order data
-                      if (tests && Array.isArray(tests) && tests.length > 0) {
-                        tests.forEach((test: any, testIndex: number) => {
-                          console.log(`Adding test ${testIndex} from order ${order.orderId}:`, test);
-                          allTests.push({
-                            ...test,
-                            orderId: order.orderId || order.id,
-                            orderDate: order.orderedDate || order.createdAt,
-                            orderStatus: order.status,
-                            receiptNumber: order.receiptNumber
-                          });
-                        });
-                      } else {
-                        console.warn(`No tests found for order ${order.orderId || order.id}`);
-                      }
-                    });
-                  }
-
-                  console.log("Final allTests array:", allTests);
-                  console.log("=== END PATHOLOGY TAB DEBUG ===");
-
-                  return allTests.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Test Name</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Order ID</TableHead>
-                          <TableHead>Ordered Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Price</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {allTests.map((test: any, index: number) => (
-                          <TableRow key={`${test.orderId}-${test.id || index}`}>
-                            <TableCell className="font-medium">{test.testName}</TableCell>
+                        return (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">{order.orderId}</TableCell>
+                            <TableCell>{formatDate(order.orderedDate)}</TableCell>
                             <TableCell>
-                              <Badge variant="outline">{test.testCategory}</Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
-                            <TableCell>{formatDate(test.orderDate)}</TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(test.status || test.orderStatus)} variant="secondary">
-                                {test.status || test.orderStatus}
+                              <Badge className={getStatusColor(order.status)} variant="secondary">
+                                {order.status}
                               </Badge>
                             </TableCell>
-                            <TableCell>₹{test.price || 0}</TableCell>
+                            <TableCell>₹{order.totalPrice || 0}</TableCell>
                             <TableCell>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => navigate(`/pathology`)}
-                                data-testid={`view-test-${test.id || index}`}
+                                data-testid={`view-pathology-${order.id}`}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground">No pathology tests found</p>
-                    </div>
-                  );
-                })()}
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">No pathology orders found</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
