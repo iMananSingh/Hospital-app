@@ -1767,34 +1767,48 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {(() => {
+                  console.log("=== PATHOLOGY TAB DEBUG ===");
+                  console.log("Raw pathologyOrders:", pathologyOrders);
+                  
                   // Extract individual tests from all orders
                   const allTests: any[] = [];
                   
                   if (pathologyOrders && pathologyOrders.length > 0) {
-                    pathologyOrders.forEach((orderData: any) => {
-                      const order = orderData.order || orderData;
-                      if (!order || !order.orderId) return;
-
-                      // Get tests from the order data
-                      let tests = [];
-                      if (orderData.tests && Array.isArray(orderData.tests)) {
-                        tests = orderData.tests;
-                      } else if (order.tests && Array.isArray(order.tests)) {
-                        tests = order.tests;
+                    pathologyOrders.forEach((orderItem: any, orderIndex: number) => {
+                      console.log(`Processing order ${orderIndex}:`, orderItem);
+                      
+                      // The API returns objects with 'order' and 'tests' properties at the top level
+                      const order = orderItem.order;
+                      const tests = orderItem.tests;
+                      
+                      if (!order) {
+                        console.warn(`No order found in orderItem ${orderIndex}:`, orderItem);
+                        return;
                       }
 
-                      // Add each test with order context
-                      tests.forEach((test: any) => {
-                        allTests.push({
-                          ...test,
-                          orderId: order.orderId,
-                          orderDate: order.orderedDate,
-                          orderStatus: order.status,
-                          receiptNumber: order.receiptNumber
+                      console.log(`Order ${order.orderId || order.id} has ${tests ? tests.length : 0} tests`);
+                      console.log("Tests:", tests);
+
+                      // Get tests from the order data
+                      if (tests && Array.isArray(tests) && tests.length > 0) {
+                        tests.forEach((test: any, testIndex: number) => {
+                          console.log(`Adding test ${testIndex} from order ${order.orderId}:`, test);
+                          allTests.push({
+                            ...test,
+                            orderId: order.orderId || order.id,
+                            orderDate: order.orderedDate || order.createdAt,
+                            orderStatus: order.status,
+                            receiptNumber: order.receiptNumber
+                          });
                         });
-                      });
+                      } else {
+                        console.warn(`No tests found for order ${order.orderId || order.id}`);
+                      }
                     });
                   }
+
+                  console.log("Final allTests array:", allTests);
+                  console.log("=== END PATHOLOGY TAB DEBUG ===");
 
                   return allTests.length > 0 ? (
                     <Table>
