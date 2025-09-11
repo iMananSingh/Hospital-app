@@ -17,6 +17,7 @@ import { UserPlus, Edit, Eye } from "lucide-react";
 import { insertPatientSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template";
 import type { Patient } from "@shared/schema";
 
 export default function Patients() {
@@ -25,7 +26,18 @@ export default function Patients() {
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
+  const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
   const { toast } = useToast();
+
+  // Hospital info for bill generation
+  const hospitalInfo = {
+    name: "MedCare Pro Hospital",
+    address: "123 Healthcare Street, Medical District, City - 123456",
+    phone: "+91 98765 43210",
+    email: "info@medcarepro.com",
+    registrationNumber: "REG123456"
+  };
 
   const { data: patients = [], isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
@@ -114,6 +126,42 @@ export default function Patients() {
       });
     },
   });
+
+  const generateComprehensiveBillMutation = useMutation({
+    mutationFn: async (patientId: string) => {
+      const response = await fetch(`/api/patients/${patientId}/comprehensive-bill`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to generate comprehensive bill");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setComprehensiveBillData(data);
+      setIsComprehensiveBillOpen(true);
+      toast({
+        title: "Bill generated successfully",
+        description: "Comprehensive financial statement is ready for viewing.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error generating bill",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateComprehensiveBill = (patient: Patient) => {
+    generateComprehensiveBillMutation.mutate(patient.id);
+  };
 
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
@@ -287,6 +335,22 @@ export default function Patients() {
                             }}
                           >
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleGenerateComprehensiveBill(patient)}
+                            disabled={generateComprehensiveBillMutation.isPending}
+                            data-testid={`button-bill-${patient.id}`}
+                            title="Generate Comprehensive Bill"
+                          >
+                            {generateComprehensiveBillMutation.isPending ? (
+                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            )}
                           </Button>
                         </div>
                       </TableCell>
@@ -571,6 +635,19 @@ export default function Patients() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Comprehensive Bill Template */}
+      {comprehensiveBillData && (
+        <ComprehensiveBillTemplate
+          billData={comprehensiveBillData}
+          hospitalInfo={hospitalInfo}
+          isOpen={isComprehensiveBillOpen}
+          onClose={() => {
+            setIsComprehensiveBillOpen(false);
+            setComprehensiveBillData(null);
+          }}
+        />
+      )}
     </div>
   );
 }

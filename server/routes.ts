@@ -1613,6 +1613,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/patients/:patientId/comprehensive-bill", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
+      res.json(comprehensiveBill);
+    } catch (error) {
+      console.error("Error generating comprehensive bill:", error);
+      res.status(500).json({ message: "Failed to generate comprehensive bill" });
+    }
+  });
+
   // Patient Discount Routes
   app.post("/api/patients/:patientId/discounts", authenticateToken, async (req: any, res) => {
     try {

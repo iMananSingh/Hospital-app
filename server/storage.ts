@@ -3320,6 +3320,287 @@ export class SqliteStorage implements IStorage {
       .returning();
     return !!deleted;
   }
+
+  // Comprehensive Bill Generation
+  async generateComprehensiveBill(patientId: string): Promise<{
+    patient: any;
+    billItems: Array<{
+      type: 'service' | 'pathology' | 'admission' | 'payment' | 'discount';
+      id: string;
+      date: string;
+      description: string;
+      amount: number;
+      category: string;
+      details: any;
+    }>;
+    summary: {
+      totalCharges: number;
+      totalPayments: number;
+      totalDiscounts: number;
+      remainingBalance: number;
+      lastPaymentDate?: string;
+      lastDiscountDate?: string;
+    };
+  }> {
+    try {
+      // Get patient details
+      const patient = await this.getPatientById(patientId);
+      if (!patient) {
+        throw new Error("Patient not found");
+      }
+
+      const billItems: Array<{
+        type: 'service' | 'pathology' | 'admission' | 'payment' | 'discount';
+        id: string;
+        date: string;
+        description: string;
+        amount: number;
+        category: string;
+        details: any;
+      }> = [];
+
+      // 1. Get all patient services (OPD visits, consultations, etc.)
+      const patientServices = db.select({
+        service: schema.patientServices,
+        doctor: schema.doctors
+      })
+      .from(schema.patientServices)
+      .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+      .where(eq(schema.patientServices.patientId, patientId))
+      .all();
+
+      patientServices.forEach(ps => {
+        if (ps.service.calculatedAmount > 0) {
+          billItems.push({
+            type: 'service',
+            id: ps.service.id,
+            date: ps.service.scheduledDate,
+            description: `${ps.service.serviceName} (${ps.service.serviceType.toUpperCase()})`,
+            amount: ps.service.calculatedAmount,
+            category: ps.service.serviceType,
+            details: {
+              doctor: ps.doctor?.name || 'No Doctor Assigned',
+              receiptNumber: ps.service.receiptNumber,
+              status: ps.service.status,
+              notes: ps.service.notes
+            }
+          });
+        }
+      });
+
+      // 2. Get all pathology orders and tests
+      const pathologyOrders = db.select({
+        order: schema.pathologyOrders,
+        doctor: schema.doctors
+      })
+      .from(schema.pathologyOrders)
+      .leftJoin(schema.doctors, eq(schema.pathologyOrders.doctorId, schema.doctors.id))
+      .where(eq(schema.pathologyOrders.patientId, patientId))
+      .all();
+
+      pathologyOrders.forEach(po => {
+        if (po.order.totalPrice > 0) {
+          // Get tests for this order
+          const tests = db.select().from(schema.pathologyTests)
+            .where(eq(schema.pathologyTests.orderId, po.order.id))
+            .all();
+
+          billItems.push({
+            type: 'pathology',
+            id: po.order.id,
+            date: po.order.orderedDate,
+            description: `Pathology Tests - Order ${po.order.orderId}`,
+            amount: po.order.totalPrice,
+            category: 'pathology',
+            details: {
+              doctor: po.doctor?.name || 'External Patient',
+              receiptNumber: po.order.receiptNumber,
+              status: po.order.status,
+              testsCount: tests.length,
+              tests: tests.map(t => ({ name: t.testName, category: t.testCategory, price: t.price }))
+            }
+          });
+        }
+      });
+
+      // 3. Get all admissions and their costs
+      const admissions = db.select({
+        admission: schema.admissions,
+        doctor: schema.doctors
+      })
+      .from(schema.admissions)
+      .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id))
+      .where(eq(schema.admissions.patientId, patientId))
+      .all();
+
+      admissions.forEach(a => {
+        if (a.admission.totalCost > 0) {
+          const stayDuration = a.admission.dischargeDate 
+            ? Math.ceil((new Date(a.admission.dischargeDate).getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
+            : Math.ceil((new Date().getTime() - new Date(a.admission.admissionDate).getTime()) / (1000 * 60 * 60 * 24));
+
+          billItems.push({
+            type: 'admission',
+            id: a.admission.id,
+            date: a.admission.admissionDate,
+            description: `Admission - ${a.admission.admissionId} (${a.admission.currentWardType || 'General Ward'})`,
+            amount: a.admission.totalCost,
+            category: 'admission',
+            details: {
+              doctor: a.doctor?.name || 'No Doctor Assigned',
+              admissionId: a.admission.admissionId,
+              wardType: a.admission.currentWardType,
+              roomNumber: a.admission.currentRoomNumber,
+              dailyCost: a.admission.dailyCost,
+              stayDuration: stayDuration,
+              status: a.admission.status,
+              dischargeDate: a.admission.dischargeDate,
+              initialDeposit: a.admission.initialDeposit,
+              additionalPayments: a.admission.additionalPayments
+            }
+          });
+        }
+      });
+
+      // 4. Get all bills and bill items
+      const bills = db.select({
+        bill: schema.bills,
+        billItem: schema.billItems,
+        service: schema.services
+      })
+      .from(schema.bills)
+      .leftJoin(schema.billItems, eq(schema.bills.id, schema.billItems.billId))
+      .leftJoin(schema.services, eq(schema.billItems.serviceId, schema.services.id))
+      .where(eq(schema.bills.patientId, patientId))
+      .all();
+
+      // Group bill items by bill
+      const billsMap = new Map();
+      bills.forEach(b => {
+        if (!billsMap.has(b.bill.id)) {
+          billsMap.set(b.bill.id, {
+            bill: b.bill,
+            items: []
+          });
+        }
+        if (b.billItem && b.service) {
+          billsMap.get(b.bill.id).items.push({
+            item: b.billItem,
+            service: b.service
+          });
+        }
+      });
+
+      billsMap.forEach(({ bill, items }) => {
+        if (bill.totalAmount > 0) {
+          billItems.push({
+            type: 'service',
+            id: bill.id,
+            date: bill.billDate,
+            description: `Bill ${bill.billNumber} - ${items.length} services`,
+            amount: bill.totalAmount,
+            category: 'billing',
+            details: {
+              billNumber: bill.billNumber,
+              paymentMethod: bill.paymentMethod,
+              paymentStatus: bill.paymentStatus,
+              paidAmount: bill.paidAmount,
+              subtotal: bill.subtotal,
+              taxAmount: bill.taxAmount,
+              discountAmount: bill.discountAmount,
+              services: items.map(i => ({
+                name: i.service.name,
+                quantity: i.item.quantity,
+                unitPrice: i.item.unitPrice,
+                totalPrice: i.item.totalPrice
+              }))
+            }
+          });
+        }
+      });
+
+      // 5. Get all payments
+      const payments = db.select().from(schema.patientPayments)
+        .where(eq(schema.patientPayments.patientId, patientId))
+        .all();
+
+      payments.forEach(payment => {
+        billItems.push({
+          type: 'payment',
+          id: payment.id,
+          date: payment.paymentDate,
+          description: `Payment - ${payment.paymentMethod.toUpperCase()}`,
+          amount: -payment.amount, // Negative for payments
+          category: 'payment',
+          details: {
+            paymentId: payment.paymentId,
+            paymentMethod: payment.paymentMethod,
+            receiptNumber: payment.receiptNumber,
+            reason: payment.reason
+          }
+        });
+      });
+
+      // 6. Get all discounts
+      const discounts = db.select().from(schema.patientDiscounts)
+        .where(eq(schema.patientDiscounts.patientId, patientId))
+        .all();
+
+      discounts.forEach(discount => {
+        billItems.push({
+          type: 'discount',
+          id: discount.id,
+          date: discount.discountDate,
+          description: `Discount - ${discount.discountType.replace('_', ' ').toUpperCase()}`,
+          amount: -discount.amount, // Negative for discounts
+          category: 'discount',
+          details: {
+            discountId: discount.discountId,
+            discountType: discount.discountType,
+            reason: discount.reason
+          }
+        });
+      });
+
+      // Sort all items by date (newest first)
+      billItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      // Calculate summary
+      const totalCharges = billItems
+        .filter(item => item.amount > 0)
+        .reduce((sum, item) => sum + item.amount, 0);
+
+      const totalPayments = Math.abs(billItems
+        .filter(item => item.type === 'payment')
+        .reduce((sum, item) => sum + item.amount, 0));
+
+      const totalDiscounts = Math.abs(billItems
+        .filter(item => item.type === 'discount')
+        .reduce((sum, item) => sum + item.amount, 0));
+
+      const remainingBalance = totalCharges - totalPayments - totalDiscounts;
+
+      const lastPayment = billItems.find(item => item.type === 'payment');
+      const lastDiscount = billItems.find(item => item.type === 'discount');
+
+      return {
+        patient,
+        billItems,
+        summary: {
+          totalCharges,
+          totalPayments,
+          totalDiscounts,
+          remainingBalance,
+          lastPaymentDate: lastPayment?.date,
+          lastDiscountDate: lastDiscount?.date
+        }
+      };
+
+    } catch (error) {
+      console.error('Error generating comprehensive bill:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new SqliteStorage();
