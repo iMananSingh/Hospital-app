@@ -2004,40 +2004,68 @@ export default function PatientDetail() {
                       sortTimestamp: istTimestamp
                     });
 
-                    // Add services with proper date normalization
+                    // Add services with proper date normalization - group by receiptNumber
                     if (services && services.length > 0) {
                       console.log("Processing services for timeline:", services.length);
-                      services.forEach((service: any) => {
+                      
+                      // Group services by receiptNumber
+                      const serviceGroups = services.reduce((groups: { [key: string]: any[] }, service: any) => {
+                        const groupKey = service.receiptNumber || `single-${service.id}`;
+                        if (!groups[groupKey]) {
+                          groups[groupKey] = [];
+                        }
+                        groups[groupKey].push(service);
+                        return groups;
+                      }, {});
+
+                      // Create timeline entries for each group
+                      Object.entries(serviceGroups).forEach(([receiptNumber, groupServices]) => {
+                        // Use the earliest service in the group for primary date
+                        const primaryService = groupServices[0];
+                        
                         // Priority: createdAt > constructed date from scheduled fields
-                        let primaryDate = service.createdAt;
-                        if (!primaryDate && service.scheduledDate) {
-                          if (service.scheduledTime) {
-                            primaryDate = `${service.scheduledDate}T${service.scheduledTime}:00`;
+                        let primaryDate = primaryService.createdAt;
+                        if (!primaryDate && primaryService.scheduledDate) {
+                          if (primaryService.scheduledTime) {
+                            primaryDate = `${primaryService.scheduledDate}T${primaryService.scheduledTime}:00`;
                           } else {
-                            primaryDate = `${service.scheduledDate}T00:00:00`;
+                            primaryDate = `${primaryService.scheduledDate}T00:00:00`;
                           }
                         }
 
-                        const serviceNormalized = normalizeDate(primaryDate, 'service', service.id);
+                        const serviceNormalized = normalizeDate(primaryDate, 'service', receiptNumber);
 
-                        // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
-                        const totalCost = service.calculatedAmount || (service.price * (service.billingQuantity || 1));
+                        // Calculate total cost for all services in the group
+                        const totalCost = groupServices.reduce((sum, service) => 
+                          sum + (service.calculatedAmount || (service.price * (service.billingQuantity || 1))), 0);
+
+                        // Create title and description based on group size
+                        let title, description;
+                        if (groupServices.length === 1) {
+                          // Single service - show service name
+                          title = groupServices[0].serviceName;
+                          description = `Status: ${groupServices[0].status} • Cost: ₹${totalCost}`;
+                        } else {
+                          // Multiple services - show as service order
+                          const receiptId = receiptNumber.startsWith('single-') ? 'Service Order' : receiptNumber;
+                          title = `Service Order: ${receiptId}`;
+                          description = `${groupServices.length} services • Cost: ₹${totalCost}`;
+                        }
 
                         timelineEvents.push({
-                          id: service.id,
+                          id: receiptNumber,
                           type: 'service',
-                          title: service.serviceName,
+                          title: title,
                           date: serviceNormalized.date,
-                          description: `Status: ${service.status} • Cost: ₹${totalCost}`,
+                          description: description,
                           color: 'bg-green-500',
                           sortTimestamp: serviceNormalized.timestamp,
-                          rawData: { service, primaryDate }, // Debug info
-                          // Include all service fields directly in the event for receipt access
-                          receiptNumber: service.receiptNumber,
-                          serviceName: service.serviceName,
-                          price: service.price,
-                          serviceType: service.serviceType,
-                          doctorId: service.doctorId
+                          rawData: { services: groupServices, primaryDate }, // Debug info
+                          // Include receipt info for receipt access
+                          receiptNumber: receiptNumber.startsWith('single-') ? null : receiptNumber,
+                          serviceCount: groupServices.length,
+                          totalCost: totalCost,
+                          services: groupServices // Store all services for detailed view if needed
                         });
                       });
                     }
