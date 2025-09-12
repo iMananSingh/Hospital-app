@@ -4351,8 +4351,8 @@ export class SqliteStorage implements IStorage {
       });
 
       admissions.forEach((admission) => {
-        // Calculate bed charges for completed admissions
-        if (admission.admissionDate) {
+        // Calculate bed charges for admitted/discharged patients
+        if (admission.status === "admitted" || admission.status === "discharged") {
           const admissionDate = new Date(admission.admissionDate);
           const endDate = admission.dischargeDate
             ? new Date(admission.dischargeDate)
@@ -4362,22 +4362,24 @@ export class SqliteStorage implements IStorage {
           console.log(`Admission Date: ${admissionDate.toISOString()}`);
           console.log(`End Date: ${endDate.toISOString()}`);
 
-          const timeDiff = endDate.getTime() - admissionDate.getTime();
-          const hours = timeDiff / (1000 * 3600);
-          // Use the same calculation as the UI - consistent stay duration logic
-          const stayDuration = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+          const timeDiffMs = endDate.getTime() - admissionDate.getTime();
+          const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
 
-          console.log(`Time difference: ${hours} hours, Stay duration: ${stayDuration} days`);
+          // Use ceiling for billing - any partial day counts as full day
+          const daysDiff = Math.ceil(timeDiffHours / 24);
+          const stayDuration = Math.max(1, daysDiff); // Minimum 1 day
+
+          console.log(`Time difference: ${timeDiffHours} hours, Stay duration: ${stayDuration} days`);
 
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
 
           if (admissionCharges > 0) {
             billItems.push({
+              id: `bed-${admission.id}`,
               type: "admission",
-              id: admission.id,
+              description: `Bed Charges - (${admission.currentWardType || admission.wardType || 'General Ward'}) - ${admission.admissionId}`,
               date: admission.admissionDate,
-              description: `Bed Charges - ${admission.admissionId} (${admission.currentWardType || "General Ward"}) - ${stayDuration} day(s)`,
               amount: admissionCharges,
               category: "admission",
               details: {
