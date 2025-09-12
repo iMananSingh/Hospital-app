@@ -2302,10 +2302,13 @@ export default function PatientDetail() {
                               <p className="font-medium">{event.title}</p>
                               <span className="text-sm text-muted-foreground">
                                 {(() => {
-                                  // Apply IST correction (subtract 5.5 hours) to all events for consistent display
-                                  const istCorrectedTimestamp = event.sortTimestamp - (5.5 * 60 * 60 * 1000);
+                                  // For registration events, use the IST-corrected timestamp
+                                  // For other events, use the original timestamp as they're already in local time
+                                  const displayTimestamp = event.type === 'registration' 
+                                    ? event.sortTimestamp  // Already IST-corrected above
+                                    : event.sortTimestamp;
 
-                                  return new Date(istCorrectedTimestamp).toLocaleString('en-US', {
+                                  return new Date(displayTimestamp).toLocaleString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
                                     day: 'numeric',
