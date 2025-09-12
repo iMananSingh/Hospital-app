@@ -1656,7 +1656,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/patients/:patientId/financial-summary", authenticateToken, async (req, res) => {
     try {
       const { patientId } = req.params;
+      console.log(`Generating financial summary for patient: ${patientId}`);
       const summary = await storage.getPatientFinancialSummary(patientId);
+      console.log(`Financial summary - Total charges: ${summary.totalCharges}, Total paid: ${summary.totalPaid}`);
       res.json(summary);
     } catch (error) {
       console.error("Error fetching patient financial summary:", error);
@@ -1671,7 +1673,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
+      
+      console.log(`Generating comprehensive bill for patient: ${patientId}`);
       const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
+      console.log(`Generated comprehensive bill with ${comprehensiveBill.items.length} items`);
+      
       res.json(comprehensiveBill);
     } catch (error) {
       console.error("Error generating comprehensive bill:", error);

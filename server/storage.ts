@@ -4358,11 +4358,17 @@ export class SqliteStorage implements IStorage {
             ? new Date(admission.dischargeDate)
             : new Date(); // Use current date for ongoing admissions
 
+          console.log(`Admission calculation for ${admission.admissionId}:`);
+          console.log(`Admission Date: ${admissionDate.toISOString()}`);
+          console.log(`End Date: ${endDate.toISOString()}`);
+
           const timeDiff = endDate.getTime() - admissionDate.getTime();
-          const stayDuration = Math.max(
-            1,
-            Math.ceil(timeDiff / (1000 * 3600 * 24)),
-          );
+          const hours = timeDiff / (1000 * 3600);
+          // Use the same calculation as the UI - consistent stay duration logic
+          const stayDuration = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+
+          console.log(`Time difference: ${hours} hours, Stay duration: ${stayDuration} days`);
+
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
 
@@ -4386,7 +4392,7 @@ export class SqliteStorage implements IStorage {
                 status: admission.status,
                 admissionDate: admission.admissionDate,
                 dischargeDate: admission.dischargeDate,
-                initialDeposit: admission.initialDeposit,
+                isDischargeEntry: true,
               },
             });
           }
