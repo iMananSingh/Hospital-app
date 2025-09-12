@@ -1386,7 +1386,7 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async getBillsWithPatients(): Promise<any[]> {
+  async getBillsWithPatients(): Promise<any[]>> {
     return db.select({
       bill: schema.bills,
       patient: schema.patients,
@@ -3443,13 +3443,17 @@ export class SqliteStorage implements IStorage {
       });
 
       admissions.forEach(admission => {
-        if (admission.status === 'admitted' || admission.status === 'discharged') {
+        // Calculate bed charges for completed admissions
+        if (admission.admissionDate) {
           const admissionDate = new Date(admission.admissionDate);
-          const endDate = admission.dischargeDate ? new Date(admission.dischargeDate) : new Date();
-          const stayDuration = Math.max(1, Math.ceil((endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24)));
+          const endDate = admission.dischargeDate ? 
+            new Date(admission.dischargeDate) : 
+            new Date(); // Use current date for ongoing admissions
 
-          // Calculate admission charges (daily cost * days stayed)
-          const admissionCharges = (admission.dailyCost || 0) * stayDuration;
+          const timeDiff = endDate.getTime() - admissionDate.getTime();
+          const stayDuration = Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+          const dailyCost = admission.dailyCost || 0;
+          const admissionCharges = dailyCost * stayDuration;
 
           if (admissionCharges > 0) {
             billItems.push({
@@ -3470,6 +3474,28 @@ export class SqliteStorage implements IStorage {
                 admissionDate: admission.admissionDate,
                 dischargeDate: admission.dischargeDate,
                 initialDeposit: admission.initialDeposit
+              }
+            });
+          }
+
+          // Add discharge entry if patient was discharged
+          if (admission.dischargeDate && admission.status === 'discharged') {
+            billItems.push({
+              type: 'admission',
+              id: `${admission.id}-discharge`,
+              date: admission.dischargeDate,
+              description: `Patient Discharged - ${admission.admissionId}`,
+              amount: 0,
+              category: 'admission',
+              details: {
+                doctor: admissionDoctors.get(admission.doctorId) || 'No Doctor Assigned',
+                admissionId: admission.admissionId,
+                wardType: admission.currentWardType,
+                roomNumber: admission.currentRoomNumber,
+                status: admission.status,
+                admissionDate: admission.admissionDate,
+                dischargeDate: admission.dischargeDate,
+                isDischargeEntry: true
               }
             });
           }

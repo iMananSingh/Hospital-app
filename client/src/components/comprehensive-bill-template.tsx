@@ -139,6 +139,36 @@ export function ComprehensiveBillTemplate({
     item.type !== 'payment' && item.type !== 'discount'
   );
 
+  // Helper function to extract quantity and clean description
+  const getQuantityAndDescription = (item: any) => {
+    let quantity = 1;
+    let description = item.description;
+
+    if (item.type === 'admission') {
+      // Extract days from bed charges description
+      const dayMatch = description.match(/(\d+)\s+day\(s\)/);
+      if (dayMatch) {
+        quantity = parseInt(dayMatch[1]);
+        // Clean description: "Bed Charges - ADM-2025-145 (General Ward) - 1 day(s)" 
+        // becomes "Bed Charges - (General Ward) - ADM-2025-145"
+        const admissionIdMatch = description.match(/- (ADM-[^-]+)/);
+        const wardTypeMatch = description.match(/\(([^)]+)\)/);
+        if (admissionIdMatch && wardTypeMatch) {
+          description = `Bed Charges - (${wardTypeMatch[1]}) - ${admissionIdMatch[1]}`;
+        }
+      }
+    } else if (item.type === 'service' || item.type === 'pathology') {
+      // Check if description has quantity pattern like "Service Name (x3)"
+      const quantityMatch = description.match(/\(x(\d+)\)$/);
+      if (quantityMatch) {
+        quantity = parseInt(quantityMatch[1]);
+        description = description.replace(/\s*\(x\d+\)$/, '');
+      }
+    }
+
+    return { quantity, description };
+  };
+
   const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -448,42 +478,43 @@ export function ComprehensiveBillTemplate({
                 <thead>
                   <tr>
                     <th style="width: 5%;">#</th>
-                    <th style="width: 10%;">Date</th>
-                    <th style="width: 5%;">Type</th>
-                    <th style="width: 50%;">Description</th>
-                    <th style="width: 15%;">Category</th>
+                    <th style="width: 12%;">Date</th>
+                    <th style="width: 58%;">Description</th>
+                    <th style="width: 10%;">Qty</th>
                     <th style="width: 15%; text-align: right;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${chargeItems.map((item, index) => `
+                  ${chargeItems.map((item, index) => {
+                    const { quantity, description } = getQuantityAndDescription(item);
+                    return `
                     <tr class="${escapeHtml(item.type)}-row">
                       <td>${index + 1}</td>
                       <td>${formatDate(item.date)}</td>
-                      <td class="type-icon">${getItemTypeIcon(item.type)}</td>
-                      <td>${escapeHtml(item.description)}</td>
-                      <td>${escapeHtml(item.category.charAt(0).toUpperCase() + item.category.slice(1))}</td>
+                      <td>${escapeHtml(description)}</td>
+                      <td style="text-align: center;">${quantity}</td>
                       <td class="amount-cell positive-amount">
                         ₹${item.amount.toLocaleString()}
                       </td>
                     </tr>
-                  `).join('')}
+                    `;
+                  }).join('')}
                   
                   <!-- Summary Section as part of table -->
                   <tr style="border-top: 2px solid #333;">
-                    <td colspan="5" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
+                    <td colspan="4" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
                     <td class="amount-cell" style="font-weight: bold; font-size: 16px; padding-top: 15px;">₹${billData.summary.totalCharges.toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td colspan="5" style="text-align: right; font-weight: bold;">PAID:</td>
+                    <td colspan="4" style="text-align: right; font-weight: bold;">PAID:</td>
                     <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalPayments.toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td colspan="5" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
+                    <td colspan="4" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
                     <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalDiscounts.toLocaleString()}</td>
                   </tr>
                   <tr style="border-top: 2px solid #2563eb; background: #f0f9ff;">
-                    <td colspan="5" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
+                    <td colspan="4" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
                     <td class="amount-cell ${billData.summary.remainingBalance >= 0 ? 'positive-amount' : 'negative-amount'}" style="font-weight: bold; font-size: 18px; padding: 10px;">
                       ₹${billData.summary.remainingBalance.toLocaleString()}
                     </td>
@@ -565,27 +596,25 @@ export function ComprehensiveBillTemplate({
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="text-left p-3 border-b">Date</th>
-                      <th className="text-left p-3 border-b">Type</th>
                       <th className="text-left p-3 border-b">Description</th>
+                      <th className="text-center p-3 border-b">Qty</th>
                       <th className="text-right p-3 border-b">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {chargeItems.map((item, index) => (
-                      <tr key={`${item.type}-${item.id}`} className="hover:bg-gray-50">
-                        <td className="p-3 border-b">{formatDate(item.date)}</td>
-                        <td className="p-3 border-b">
-                          <span className={`inline-flex items-center gap-1 ${getItemTypeColor(item.type)}`}>
-                            {getItemTypeIcon(item.type)}
-                            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-                          </span>
-                        </td>
-                        <td className="p-3 border-b">{item.description}</td>
-                        <td className="p-3 border-b text-right font-medium text-red-600">
-                          {formatCurrency(item.amount)}
-                        </td>
-                      </tr>
-                    ))}
+                    {chargeItems.map((item, index) => {
+                      const { quantity, description } = getQuantityAndDescription(item);
+                      return (
+                        <tr key={`${item.type}-${item.id}`} className="hover:bg-gray-50">
+                          <td className="p-3 border-b">{formatDate(item.date)}</td>
+                          <td className="p-3 border-b">{description}</td>
+                          <td className="p-3 border-b text-center">{quantity}</td>
+                          <td className="p-3 border-b text-right font-medium text-red-600">
+                            {formatCurrency(item.amount)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                     
                     {/* Summary as part of table */}
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
