@@ -4518,9 +4518,9 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // Sort all items by date (newest first)
+      // Sort all items by date (oldest first)
       billItems.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
       );
 
       // Calculate summary
