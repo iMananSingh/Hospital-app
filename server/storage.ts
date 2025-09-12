@@ -4226,6 +4226,7 @@ export class SqliteStorage implements IStorage {
       description: string;
       amount: number;
       category: string;
+      quantity?: number;
       details: any;
     }>;
     summary: {
@@ -4382,6 +4383,7 @@ export class SqliteStorage implements IStorage {
               date: admission.admissionDate,
               amount: admissionCharges,
               category: "admission",
+              quantity: stayDuration,
               details: {
                 doctor:
                   admissionDoctors.get(admission.doctorId) ||
@@ -4391,6 +4393,8 @@ export class SqliteStorage implements IStorage {
                 roomNumber: admission.currentRoomNumber,
                 dailyCost: admission.dailyCost,
                 stayDuration: stayDuration,
+                unitPrice: dailyCost,
+                totalAmount: admissionCharges,
                 status: admission.status,
                 admissionDate: admission.admissionDate,
                 dischargeDate: admission.dischargeDate,

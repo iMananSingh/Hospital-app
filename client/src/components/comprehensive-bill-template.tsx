@@ -47,7 +47,7 @@ export function ComprehensiveBillTemplate({
   isOpen,
   onClose 
 }: ComprehensiveBillTemplateProps) {
-  
+
   // Security: HTML escape functions to prevent XSS
   const escapeHtml = (text: string) => {
     const div = document.createElement('div');
@@ -186,7 +186,7 @@ export function ComprehensiveBillTemplate({
               padding: 0;
               box-sizing: border-box;
             }
-            
+
             body {
               font-family: Arial, sans-serif;
               line-height: 1.4;
@@ -194,7 +194,7 @@ export function ComprehensiveBillTemplate({
               background: white;
               font-size: 14px;
             }
-            
+
             .bill {
               max-width: 800px;
               margin: 0 auto;
@@ -202,7 +202,7 @@ export function ComprehensiveBillTemplate({
               display: flex;
               flex-direction: column;
             }
-            
+
             /* Header */
             .header {
               display: flex;
@@ -212,25 +212,25 @@ export function ComprehensiveBillTemplate({
               padding-bottom: 15px;
               border-bottom: 2px solid #333;
             }
-            
+
             .hospital-info {
               display: flex;
               align-items: center;
               gap: 15px;
             }
-            
+
             .hospital-logo {
               width: 60px;
               height: 60px;
               object-fit: contain;
             }
-            
+
             .hospital-name {
               font-size: 24px;
               font-weight: bold;
               color: #333;
             }
-            
+
             /* Bill Title */
             .bill-title {
               text-align: center;
@@ -241,7 +241,7 @@ export function ComprehensiveBillTemplate({
               letter-spacing: 1px;
               color: #2563eb;
             }
-            
+
             /* Patient Information */
             .patient-info-box {
               border: 2px solid #333;
@@ -249,18 +249,18 @@ export function ComprehensiveBillTemplate({
               margin: 8px 0;
               background: #f9f9f9;
             }
-            
+
             .patient-details {
               display: grid;
               grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
               gap: 10px;
               margin-bottom: 10px;
             }
-            
+
             .patient-detail {
               font-weight: bold;
             }
-            
+
             .bill-meta {
               display: flex;
               justify-content: space-between;
@@ -269,7 +269,7 @@ export function ComprehensiveBillTemplate({
               padding-top: 10px;
               border-top: 1px solid #ddd;
             }
-            
+
             /* Summary Section */
             .summary-section {
               background: #f0f9ff;
@@ -278,7 +278,7 @@ export function ComprehensiveBillTemplate({
               margin: 10px 0;
               border-radius: 5px;
             }
-            
+
             .summary-title {
               font-size: 16px;
               font-weight: bold;
@@ -286,32 +286,32 @@ export function ComprehensiveBillTemplate({
               margin-bottom: 10px;
               text-align: center;
             }
-            
+
             .summary-grid {
               display: grid;
               grid-template-columns: repeat(2, 1fr);
               gap: 10px;
             }
-            
+
             .summary-item {
               display: flex;
               justify-content: space-between;
               padding: 5px 0;
               border-bottom: 1px solid #ddd;
             }
-            
+
             .summary-item.total {
               font-weight: bold;
               font-size: 16px;
               border-bottom: 2px solid #2563eb;
               color: #2563eb;
             }
-            
+
             /* Bill Items */
             .bill-section {
               margin: 10px 0;
             }
-            
+
             .section-title {
               font-size: 16px;
               font-weight: bold;
@@ -320,49 +320,49 @@ export function ComprehensiveBillTemplate({
               background: #f3f4f6;
               border-left: 4px solid #2563eb;
             }
-            
+
             .bill-table {
               width: 100%;
               border-collapse: collapse;
               margin: 5px 0 15px 0;
             }
-            
+
             .bill-table th,
             .bill-table td {
               border: 1px solid #333;
               padding: 8px;
               text-align: left;
             }
-            
+
             .bill-table th {
               background: #f0f0f0;
               font-weight: bold;
             }
-            
+
             .amount-cell {
               text-align: right !important;
             }
-            
+
             .type-icon {
               width: 20px;
               text-align: center;
             }
-            
+
             .service-row { background: #eff6ff; }
             .pathology-row { background: #faf5ff; }
             .admission-row { background: #fff7ed; }
             .payment-row { background: #f0fdf4; }
             .discount-row { background: #eef2ff; }
-            
+
             .negative-amount {
               color: #059669;
               font-weight: bold;
             }
-            
+
             .positive-amount {
               color: #dc2626;
             }
-            
+
             /* Signature Section */
             .signature-section {
               margin: 35px 0;
@@ -370,18 +370,18 @@ export function ComprehensiveBillTemplate({
               justify-content: space-between;
               align-items: center;
             }
-            
+
             .signature-box {
               text-align: center;
               min-width: 200px;
             }
-            
+
             .signature-line {
               border-bottom: 1px solid #333;
               margin-bottom: 5px;
               height: 40px;
             }
-            
+
             /* Footer */
             .footer {
               margin-top: 8px;
@@ -391,46 +391,46 @@ export function ComprehensiveBillTemplate({
               font-size: 12px;
               line-height: 1.5;
             }
-            
+
             .footer-line {
               margin-bottom: 3px;
             }
-            
+
             .bill-id {
               margin-top: 15px;
               font-family: monospace;
               font-size: 10px;
               color: #666;
             }
-            
+
             @page {
               margin: 0;
               size: A4;
             }
-            
+
             @media print {
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
               }
-              
+
               html, body {
                 margin: 0 !important;
                 padding: 0 !important;
                 height: auto !important;
                 background: white !important;
               }
-              
+
               body {
                 padding: 10px !important;
               }
-              
+
               .bill {
                 margin: 0 !important;
                 padding: 10px !important;
                 page-break-inside: avoid;
               }
-              
+
               .header {
                 margin-top: 0 !important;
                 padding-top: 0 !important;
@@ -449,12 +449,12 @@ export function ComprehensiveBillTemplate({
                 <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
               </div>
             </div>
-            
+
             <!-- Bill Title -->
             <div class="bill-title">
               Comprehensive Financial Statement
             </div>
-            
+
             <!-- Patient Information -->
             <div class="patient-info-box">
               <div class="patient-details">
@@ -469,11 +469,11 @@ export function ComprehensiveBillTemplate({
                 <span>Bill Number: ${escapeHtml(receiptNumber)}</span>
               </div>
             </div>
-            
+
             <!-- Detailed Bill Items -->
             <div class="bill-section">
               <div class="section-title">Service & Treatment Details</div>
-              
+
               <table class="bill-table">
                 <thead>
                   <tr>
@@ -499,7 +499,7 @@ export function ComprehensiveBillTemplate({
                     </tr>
                     `;
                   }).join('')}
-                  
+
                   <!-- Summary Section as part of table -->
                   <tr style="border-top: 2px solid #333;">
                     <td colspan="4" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
@@ -522,7 +522,7 @@ export function ComprehensiveBillTemplate({
                 </tbody>
               </table>
             </div>
-            
+
             <!-- Signature Section -->
             <div class="signature-section">
               <div class="signature-box" style="margin-left: auto;">
@@ -530,7 +530,7 @@ export function ComprehensiveBillTemplate({
                 <div>Authorized Signature & Stamp</div>
               </div>
             </div>
-            
+
             <!-- Footer -->
             <div class="footer">
               <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
@@ -547,7 +547,7 @@ export function ComprehensiveBillTemplate({
     printWindow.document.write(billHtml);
     printWindow.document.close();
     printWindow.focus();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -563,7 +563,7 @@ export function ComprehensiveBillTemplate({
             Comprehensive Financial Statement - {billData.patient.name}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Patient Info Summary */}
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -615,7 +615,7 @@ export function ComprehensiveBillTemplate({
                         </tr>
                       );
                     })}
-                    
+
                     {/* Summary as part of table */}
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
                       <td colSpan={3} className="p-3 text-right font-bold text-lg">
