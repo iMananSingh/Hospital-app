@@ -1052,7 +1052,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admissions", authenticateToken, async (req, res) => {
     try {
-      const admission = await storage.createAdmission(req.body);
+      // Normalize admission date to ISO format if provided
+      const requestBody = { ...req.body };
+      if (requestBody.admissionDate && typeof requestBody.admissionDate === 'string') {
+        try {
+          requestBody.admissionDate = new Date(requestBody.admissionDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid admission date format" });
+        }
+      }
+      if (requestBody.dischargeDate && typeof requestBody.dischargeDate === 'string') {
+        try {
+          requestBody.dischargeDate = new Date(requestBody.dischargeDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid discharge date format" });
+        }
+      }
+      
+      const admission = await storage.createAdmission(requestBody);
       res.json(admission);
     } catch (error) {
       console.error("Error creating admission:", error);
@@ -1062,7 +1079,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/admissions/:id", authenticateToken, async (req, res) => {
     try {
-      const admission = await storage.updateAdmission(req.params.id, req.body);
+      // Normalize admission date to ISO format if provided
+      const requestBody = { ...req.body };
+      if (requestBody.admissionDate && typeof requestBody.admissionDate === 'string') {
+        try {
+          requestBody.admissionDate = new Date(requestBody.admissionDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid admission date format" });
+        }
+      }
+      if (requestBody.dischargeDate && typeof requestBody.dischargeDate === 'string') {
+        try {
+          requestBody.dischargeDate = new Date(requestBody.dischargeDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid discharge date format" });
+        }
+      }
+      
+      const admission = await storage.updateAdmission(req.params.id, requestBody);
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
@@ -1072,7 +1106,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admissions/:id", authenticateToken, async (req, res) => {
     try {
-      const admission = await storage.updateAdmission(req.params.id, req.body);
+      // Normalize admission date to ISO format if provided
+      const requestBody = { ...req.body };
+      if (requestBody.admissionDate && typeof requestBody.admissionDate === 'string') {
+        try {
+          requestBody.admissionDate = new Date(requestBody.admissionDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid admission date format" });
+        }
+      }
+      if (requestBody.dischargeDate && typeof requestBody.dischargeDate === 'string') {
+        try {
+          requestBody.dischargeDate = new Date(requestBody.dischargeDate).toISOString();
+        } catch (e) {
+          return res.status(400).json({ error: "Invalid discharge date format" });
+        }
+      }
+      
+      const admission = await storage.updateAdmission(req.params.id, requestBody);
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
