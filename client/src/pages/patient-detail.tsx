@@ -1838,6 +1838,7 @@ export default function PatientDetail() {
                               {(() => {
                                 if (test.orderDate) {
                                   let date;
+                                  let hasTimeInfo = false;
 
                                   // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                                   // Convert to ISO format for proper parsing
@@ -1845,14 +1846,24 @@ export default function PatientDetail() {
                                     // Convert "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM:SS" (local time)
                                     const isoString = test.orderDate.replace(' ', 'T');
                                     date = new Date(isoString);
+                                    hasTimeInfo = true;
+                                  }
+                                  // Handle ISO format with time: "YYYY-MM-DDTHH:MM:SS"
+                                  else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+                                    date = new Date(test.orderDate);
+                                    hasTimeInfo = true;
                                   }
                                   // Handle date-only format: "YYYY-MM-DD"
                                   else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                    date = new Date(test.orderDate + 'T00:00:00');
+                                    // Try to preserve time by using current time instead of midnight
+                                    date = new Date(test.orderDate + 'T' + new Date().toTimeString().substring(0, 8));
+                                    hasTimeInfo = false; // Still mark as no time info since it's estimated
                                   }
                                   // Handle other formats (ISO strings, etc.)
                                   else {
                                     date = new Date(test.orderDate);
+                                    // Check if original string contained time information
+                                    hasTimeInfo = test.orderDate.includes(':') || test.orderDate.includes('T');
                                   }
 
                                   if (!isNaN(date.getTime())) {
@@ -1861,20 +1872,27 @@ export default function PatientDetail() {
                                       month: 'short',
                                       day: 'numeric'
                                     });
-                                    const timeStr = date.toLocaleTimeString('en-US', {
-                                      hour: 'numeric',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
 
-                                    return (
-                                      <>
-                                        {dateStr}
-                                        <span className="text-muted-foreground ml-2">
-                                          at {timeStr}
-                                        </span>
-                                      </>
-                                    );
+                                    // Only show time if we have actual time information
+                                    if (hasTimeInfo) {
+                                      const timeStr = date.toLocaleTimeString('en-US', {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                        hour12: true
+                                      });
+
+                                      return (
+                                        <>
+                                          {dateStr}
+                                          <span className="text-muted-foreground ml-2">
+                                            at {timeStr}
+                                          </span>
+                                        </>
+                                      );
+                                    } else {
+                                      // Just show the date if no time info available
+                                      return dateStr;
+                                    }
                                   }
                                 }
                                 return "N/A";
