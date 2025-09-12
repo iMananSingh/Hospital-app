@@ -1805,10 +1805,15 @@ export default function PatientDetail() {
                       // Get tests from the order data
                       if (tests && Array.isArray(tests) && tests.length > 0) {
                         tests.forEach((test: any) => {
+                          // Prefer the field that actually contains time information
+                          const rawOrdered = order.orderedDate;
+                          const rawCreated = order.createdAt;
+                          const orderDateRaw = rawOrdered && /[:T]/.test(rawOrdered) ? rawOrdered : (rawCreated || rawOrdered);
+                          
                           allTests.push({
                             ...test,
                             orderId: order.orderId || order.id,
-                            orderDate: order.orderedDate || order.createdAt,
+                            orderDate: orderDateRaw,
                             orderStatus: order.status,
                             receiptNumber: order.receiptNumber
                           });
@@ -1837,62 +1842,52 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  let date;
-                                  let hasTimeInfo = false;
-
-                                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                  // Convert to ISO format for proper parsing
-                                  if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                    // Convert "YYYY-MM-DD HH:MM:SS" to "YYYY-MM-DDTHH:MM:SS" (local time)
-                                    const isoString = test.orderDate.replace(' ', 'T');
-                                    date = new Date(isoString);
-                                    hasTimeInfo = true;
+                                  const raw = String(test.orderDate);
+                                  let normalized = raw;
+                                  
+                                  // Detect if the original data has explicit time information
+                                  const hasExplicitTime = /T\d{2}:\d{2}|\d{2}:\d{2}/.test(raw);
+                                  
+                                  // Normalize different date formats for parsing
+                                  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+                                    // SQLite format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
+                                    normalized = raw.replace(' ', 'T');
+                                  } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+                                    // Date-only: "YYYY-MM-DD" -> add midnight for parsing
+                                    normalized = raw + 'T00:00:00';
                                   }
-                                  // Handle ISO format with time: "YYYY-MM-DDTHH:MM:SS"
-                                  else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-                                    date = new Date(test.orderDate);
-                                    hasTimeInfo = true;
+                                  
+                                  let date = new Date(normalized);
+                                  
+                                  // Handle numeric timestamps as fallback
+                                  if (isNaN(date.getTime()) && /^\d+$/.test(raw)) {
+                                    date = new Date(Number(raw));
                                   }
-                                  // Handle date-only format: "YYYY-MM-DD"
-                                  else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                    // Try to preserve time by using current time instead of midnight
-                                    date = new Date(test.orderDate + 'T' + new Date().toTimeString().substring(0, 8));
-                                    hasTimeInfo = false; // Still mark as no time info since it's estimated
-                                  }
-                                  // Handle other formats (ISO strings, etc.)
-                                  else {
-                                    date = new Date(test.orderDate);
-                                    // Check if original string contained time information
-                                    hasTimeInfo = test.orderDate.includes(':') || test.orderDate.includes('T');
-                                  }
-
+                                  
                                   if (!isNaN(date.getTime())) {
-                                    const dateStr = date.toLocaleDateString('en-US', {
+                                    const datePart = date.toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'short',
                                       day: 'numeric'
                                     });
-
-                                    // Only show time if we have actual time information
-                                    if (hasTimeInfo) {
-                                      const timeStr = date.toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      });
-
-                                      return (
-                                        <>
-                                          {dateStr}
-                                          <span className="text-muted-foreground ml-2">
-                                            at {timeStr}
-                                          </span>
-                                        </>
-                                      );
-                                    } else {
-                                      // Just show the date if no time info available
-                                      return dateStr;
-                                    }
+                                    
+                                    const timePart = date.toLocaleTimeString('en-US', {
+                                      hour: 'numeric',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                    
+                                    // Only show time if it's explicitly present and not fabricated midnight
+                                    const showTime = hasExplicitTime && !(date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0);
+                                    
+                                    return showTime ? (
+                                      <>
+                                        {datePart}
+                                        <span className="text-muted-foreground ml-2">
+                                          at {timePart}
+                                        </span>
+                                      </>
+                                    ) : datePart;
                                   }
                                 }
                                 return "N/A";
