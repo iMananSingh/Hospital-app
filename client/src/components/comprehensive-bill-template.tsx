@@ -145,24 +145,43 @@ export function ComprehensiveBillTemplate({
     let description = item.description;
 
     if (item.type === 'admission') {
-      // Extract days from bed charges description
-      const dayMatch = description.match(/(\d+)\s+day\(s\)/);
-      if (dayMatch) {
-        quantity = parseInt(dayMatch[1]);
-        // Clean description: "Bed Charges - ADM-2025-145 (General Ward) - 1 day(s)" 
-        // becomes "Bed Charges - (General Ward) - ADM-2025-145"
-        const admissionIdMatch = description.match(/- (ADM-[^-]+)/);
-        const wardTypeMatch = description.match(/\(([^)]+)\)/);
-        if (admissionIdMatch && wardTypeMatch) {
-          description = `Bed Charges - (${wardTypeMatch[1]}) - ${admissionIdMatch[1]}`;
+      // Check if quantity is available in the item details or extract from description
+      if (item.quantity) {
+        quantity = item.quantity;
+      } else if (item.details?.stayDuration) {
+        quantity = item.details.stayDuration;
+      } else {
+        // Extract days from bed charges description as fallback
+        const dayMatch = description.match(/(\d+)\s+day\(s\)/);
+        if (dayMatch) {
+          quantity = parseInt(dayMatch[1]);
         }
       }
-    } else if (item.type === 'service' || item.type === 'pathology') {
-      // Check if description has quantity pattern like "Service Name (x3)"
-      const quantityMatch = description.match(/\(x(\d+)\)$/);
-      if (quantityMatch) {
-        quantity = parseInt(quantityMatch[1]);
-        description = description.replace(/\s*\(x\d+\)$/, '');
+      
+      // Keep the description as is for admission items
+    } else if (item.type === 'service') {
+      // Check for billing quantity in details first
+      if (item.details?.billingQuantity && item.details.billingQuantity > 1) {
+        quantity = item.details.billingQuantity;
+      } else {
+        // Check if description has quantity pattern like "Service Name (x3)"
+        const quantityMatch = description.match(/\(x(\d+)\)$/);
+        if (quantityMatch) {
+          quantity = parseInt(quantityMatch[1]);
+          description = description.replace(/\s*\(x\d+\)$/, '');
+        }
+      }
+    } else if (item.type === 'pathology') {
+      // For pathology, check if there are multiple tests
+      if (item.details?.testsCount) {
+        quantity = item.details.testsCount;
+      } else {
+        // Check if description has quantity pattern
+        const quantityMatch = description.match(/\(x(\d+)\)$/);
+        if (quantityMatch) {
+          quantity = parseInt(quantityMatch[1]);
+          description = description.replace(/\s*\(x\d+\)$/, '');
+        }
       }
     }
 
