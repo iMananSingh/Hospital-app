@@ -2303,10 +2303,16 @@ export default function PatientDetail() {
                               <span className="text-sm text-muted-foreground">
                                 {(() => {
                                   // For registration events, use the IST-corrected timestamp
+                                  // For discharge events, subtract 5:30 hours from display time
                                   // For other events, use the original timestamp as they're already in local time
-                                  const displayTimestamp = event.type === 'registration' 
+                                  let displayTimestamp = event.type === 'registration' 
                                     ? event.sortTimestamp  // Already IST-corrected above
                                     : event.sortTimestamp;
+
+                                  // Special handling for discharge events - subtract 5:30 hours (19,800,000 ms)
+                                  if (event.title === 'Patient Discharged') {
+                                    displayTimestamp = displayTimestamp - (5.5 * 60 * 60 * 1000);
+                                  }
 
                                   return new Date(displayTimestamp).toLocaleString('en-US', {
                                     year: 'numeric',
