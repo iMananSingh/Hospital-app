@@ -4281,7 +4281,6 @@ export class SqliteStorage implements IStorage {
             description: ps.service.serviceName,
             amount: serviceAmount,
             category: "service",
-            quantity: serviceQuantity,
             details: {
               serviceId: ps.service.serviceId,
               serviceName: ps.service.serviceName,
@@ -4293,6 +4292,7 @@ export class SqliteStorage implements IStorage {
               receiptNumber: ps.service.receiptNumber,
               orderId: ps.service.orderId,
               status: ps.service.status,
+              quantity: serviceQuantity,
             },
           });
         }
@@ -4328,12 +4328,12 @@ export class SqliteStorage implements IStorage {
             description: `Pathology Tests - Order ${po.order.orderId}`,
             amount: po.order.totalPrice,
             category: "pathology",
-            quantity: tests.length,
             details: {
               doctor: po.doctor?.name || "External Patient",
               receiptNumber: po.order.receiptNumber,
               status: po.order.status,
               testsCount: tests.length,
+              quantity: tests.length,
               tests: tests.map((t) => ({
                 name: t.testName,
                 category: t.testCategory,
@@ -4386,7 +4386,6 @@ export class SqliteStorage implements IStorage {
               date: admission.admissionDate,
               amount: admissionCharges,
               category: "admission",
-              quantity: stayDuration,
               details: {
                 doctor:
                   admissionDoctors.get(admission.doctorId) ||
@@ -4401,6 +4400,7 @@ export class SqliteStorage implements IStorage {
                 status: admission.status,
                 admissionDate: admission.admissionDate,
                 dischargeDate: admission.dischargeDate,
+                quantity: stayDuration,
                 isDischargeEntry: true,
               },
             });
@@ -4447,12 +4447,12 @@ export class SqliteStorage implements IStorage {
           description: `Payment - ${payment.paymentMethod.toUpperCase()}`,
           amount: -payment.amount, // Negative for payments
           category: "payment",
-          quantity: 1,
           details: {
             paymentId: payment.paymentId,
             paymentMethod: payment.paymentMethod,
             receiptNumber: payment.receiptNumber,
             reason: payment.reason,
+            quantity: 1,
           },
         });
       });
@@ -4467,11 +4467,11 @@ export class SqliteStorage implements IStorage {
             description: `Initial Deposit - ${admission.admissionId}`,
             amount: -admission.initialDeposit, // Negative for payments
             category: "payment",
-            quantity: 1,
             details: {
               admissionId: admission.admissionId,
               paymentMethod: "cash",
               reason: "Initial admission deposit",
+              quantity: 1,
             },
           });
         }
@@ -4484,11 +4484,11 @@ export class SqliteStorage implements IStorage {
             description: `Additional Payments - ${admission.admissionId}`,
             amount: -admission.additionalPayments, // Negative for payments
             category: "payment",
-            quantity: 1,
             details: {
               admissionId: admission.admissionId,
               paymentMethod: "cash",
               reason: "Additional admission payments",
+              quantity: 1,
             },
           });
         }
@@ -4509,11 +4509,11 @@ export class SqliteStorage implements IStorage {
           description: `Discount - ${discount.discountType.replace("_", " ").toUpperCase()}`,
           amount: -discount.amount, // Negative for discounts
           category: "discount",
-          quantity: 1,
           details: {
             discountId: discount.discountId,
             discountType: discount.discountType,
             reason: discount.reason,
+            quantity: 1,
           },
         });
       });
@@ -4528,11 +4528,11 @@ export class SqliteStorage implements IStorage {
             description: `Admission Discount - ${admission.admissionId}`,
             amount: -admission.totalDiscount, // Negative for discounts
             category: "discount",
-            quantity: 1,
             details: {
               admissionId: admission.admissionId,
               discountType: "admission",
               reason: admission.lastDiscountReason || "Admission discount",
+              quantity: 1,
             },
           });
         }

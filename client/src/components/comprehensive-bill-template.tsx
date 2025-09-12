@@ -144,11 +144,12 @@ export function ComprehensiveBillTemplate({
     let quantity = 1;
     let description = item.description;
 
-    if (item.type === 'admission') {
-      // Check if quantity is available in the item details or extract from description
-      if (item.quantity) {
-        quantity = item.quantity;
-      } else if (item.details?.stayDuration) {
+    // First check if quantity is directly available in details
+    if (item.details?.quantity) {
+      quantity = item.details.quantity;
+    } else if (item.type === 'admission') {
+      // For admission, check stayDuration
+      if (item.details?.stayDuration) {
         quantity = item.details.stayDuration;
       } else {
         // Extract days from bed charges description as fallback
@@ -157,10 +158,8 @@ export function ComprehensiveBillTemplate({
           quantity = parseInt(dayMatch[1]);
         }
       }
-      
-      // Keep the description as is for admission items
     } else if (item.type === 'service') {
-      // Check for billing quantity in details first
+      // For services, check billing quantity
       if (item.details?.billingQuantity && item.details.billingQuantity > 1) {
         quantity = item.details.billingQuantity;
       } else {
@@ -172,7 +171,7 @@ export function ComprehensiveBillTemplate({
         }
       }
     } else if (item.type === 'pathology') {
-      // For pathology, check if there are multiple tests
+      // For pathology, check tests count
       if (item.details?.testsCount) {
         quantity = item.details.testsCount;
       } else {
