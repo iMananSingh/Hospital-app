@@ -43,7 +43,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
 import SmartBillingDialog from "@/components/smart-billing-dialog";
-import { parseTimestamp } from "@/lib/time";
+import { parseTimestamp, calcStayDays } from "@/lib/time";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -1685,45 +1685,7 @@ export default function PatientDetail() {
                                       hour12: true
                                     });
                                   })() :
-                                  (() => {
-                                    // Calculate days using local time
-                                    let admissionDateStr = admission.admissionDate;
-                                    if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                      // Datetime-local format: "YYYY-MM-DDTHH:MM"
-                                      const parts = admissionDateStr.split('T');
-                                      const dateParts = parts[0].split('-');
-                                      const timeParts = parts[1].split(':');
-
-                                      const admissionDate = new Date(
-                                        parseInt(dateParts[0]), // year
-                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                        parseInt(dateParts[2]), // day
-                                        parseInt(timeParts[0]), // hour
-                                        parseInt(timeParts[1]) // minute
-                                      );
-
-                                      return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
-                                    } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                      // Parse as local time for day calculation
-                                      const parts = admissionDateStr.split(' ');
-                                      const dateParts = parts[0].split('-');
-                                      const timeParts = parts[1].split(':');
-
-                                      const admissionDate = new Date(
-                                        parseInt(dateParts[0]), // year
-                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                        parseInt(dateParts[2]), // day
-                                        parseInt(timeParts[0]), // hour
-                                        parseInt(timeParts[1]), // minute
-                                        parseInt(timeParts[2]) // second
-                                      );
-
-                                      return Math.ceil((new Date().getTime() - admissionDate.getTime()) / (1000 * 3600 * 24));
-                                    }
-
-                                    // Fallback for other formats
-                                    return Math.ceil((new Date().getTime() - new Date(admissionDateStr).getTime()) / (1000 * 3600 * 24));
-                                  })()
+                                  calcStayDays(admission.admissionDate)
                                 }
                               </div>
                             </div>

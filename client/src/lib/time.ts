@@ -86,6 +86,38 @@ function parseSQLDateTime(sqlStr: string): Date {
   );
 }
 
+/**
+ * Calculate admission stay duration in days using consistent logic
+ * Uses the same calculation as backend billing to ensure consistency
+ */
+export function calcStayDays(admissionDate: string | Date, endDate?: string | Date): number {
+  let startDate: Date;
+  
+  // Parse admission date using existing detection logic for robustness
+  if (typeof admissionDate === 'string') {
+    if (detectSQLDateTime(admissionDate)) {
+      startDate = parseSQLDateTime(admissionDate);
+    } else if (detectISO(admissionDate)) {
+      startDate = new Date(admissionDate);
+    } else {
+      startDate = new Date(admissionDate);
+    }
+  } else {
+    startDate = admissionDate;
+  }
+  
+  const end = endDate ? new Date(endDate) : new Date();
+  
+  // Guard against invalid dates
+  if (isNaN(startDate.getTime()) || isNaN(end.getTime())) {
+    return 1; // Fallback to minimum 1 day for invalid dates
+  }
+  
+  // Use the same calculation as backend billing system
+  const timeDiff = end.getTime() - startDate.getTime();
+  return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+}
+
 function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string {
   // Convert to IST if timeZone is specified as Asia/Kolkata
   let displayDate = date;
