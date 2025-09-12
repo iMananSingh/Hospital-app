@@ -1676,7 +1676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Generating comprehensive bill for patient: ${patientId}`);
       const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
-      console.log(`Generated comprehensive bill with ${comprehensiveBill.items.length} items`);
+      console.log(`Generated comprehensive bill with ${comprehensiveBill.billItems.length} items`);
       
       res.json(comprehensiveBill);
     } catch (error) {
