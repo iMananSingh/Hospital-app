@@ -1791,13 +1791,13 @@ export default function PatientDetail() {
                 {(() => {
                   // Extract individual tests from all orders
                   const allTests: any[] = [];
-                  
+
                   if (pathologyOrders && pathologyOrders.length > 0) {
                     pathologyOrders.forEach((orderItem: any) => {
                       // The API returns objects with 'order' and 'tests' properties at the top level
                       const order = orderItem.order;
                       const tests = orderItem.tests;
-                      
+
                       if (!order) {
                         return;
                       }
@@ -1838,7 +1838,7 @@ export default function PatientDetail() {
                               {(() => {
                                 if (test.orderDate) {
                                   let date;
-                                  
+
                                   // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                                   // Convert to ISO format for proper parsing
                                   if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
@@ -1854,7 +1854,7 @@ export default function PatientDetail() {
                                   else {
                                     date = new Date(test.orderDate);
                                   }
-                                  
+
                                   if (!isNaN(date.getTime())) {
                                     const dateStr = date.toLocaleDateString('en-US', {
                                       year: 'numeric',
@@ -1866,7 +1866,7 @@ export default function PatientDetail() {
                                       minute: '2-digit',
                                       hour12: true
                                     });
-                                    
+
                                     return (
                                       <>
                                         {dateStr}
@@ -2020,7 +2020,7 @@ export default function PatientDetail() {
                     // Add services with proper date normalization - group by orderId (like pathology tests)
                     if (services && services.length > 0) {
                       console.log("Processing services for timeline:", services.length);
-                      
+
                       // Group services by orderId (similar to how pathology tests are grouped)
                       const serviceGroups = services.reduce((groups: { [key: string]: any[] }, service: any) => {
                         const groupKey = service.orderId || `single-${service.id}`;
@@ -2035,7 +2035,7 @@ export default function PatientDetail() {
                       Object.entries(serviceGroups).forEach(([orderId, groupServices]) => {
                         // Use the earliest service in the group for primary date
                         const primaryService = groupServices[0];
-                        
+
                         // Priority: createdAt > constructed date from scheduled fields
                         let primaryDate = primaryService.createdAt;
                         if (!primaryDate && primaryService.scheduledDate) {
