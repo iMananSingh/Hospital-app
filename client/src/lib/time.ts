@@ -87,11 +87,17 @@ function parseSQLDateTime(sqlStr: string): Date {
 }
 
 function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string {
+  // Convert to IST if timeZone is specified as Asia/Kolkata
+  let displayDate = date;
+  if (timeZone === 'Asia/Kolkata' && hasTime) {
+    // Add 5 hours and 30 minutes to convert UTC to IST
+    displayDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+  }
+
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
-    ...(timeZone && { timeZone })
+    day: 'numeric'
   };
 
   if (hasTime) {
@@ -101,7 +107,7 @@ function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string
   }
 
   const formatter = new Intl.DateTimeFormat('en-US', options);
-  const formatted = formatter.format(date);
+  const formatted = formatter.format(displayDate);
 
   if (hasTime) {
     // Split date and time parts for better styling
