@@ -134,6 +134,11 @@ export function ComprehensiveBillTemplate({
     return `${yymmdd}-BILL-${timestamp}`;
   };
 
+  // Filter out payments and discounts from bill items for transaction history
+  const chargeItems = billData.billItems.filter(item => 
+    item.type !== 'payment' && item.type !== 'discount'
+  );
+
   const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -435,34 +440,9 @@ export function ComprehensiveBillTemplate({
               </div>
             </div>
             
-            <!-- Financial Summary -->
-            <div class="summary-section">
-              <div class="summary-title">Financial Summary</div>
-              <div class="summary-grid">
-                <div class="summary-item">
-                  <span>Total Charges:</span>
-                  <span>₹${billData.summary.totalCharges.toLocaleString()}</span>
-                </div>
-                <div class="summary-item">
-                  <span>Total Payments:</span>
-                  <span class="negative-amount">-₹${billData.summary.totalPayments.toLocaleString()}</span>
-                </div>
-                <div class="summary-item">
-                  <span>Total Discounts:</span>
-                  <span class="negative-amount">-₹${billData.summary.totalDiscounts.toLocaleString()}</span>
-                </div>
-                <div class="summary-item total">
-                  <span>Outstanding Balance:</span>
-                  <span class="${billData.summary.remainingBalance >= 0 ? 'positive-amount' : 'negative-amount'}">
-                    ₹${billData.summary.remainingBalance.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
             <!-- Detailed Bill Items -->
             <div class="bill-section">
-              <div class="section-title">Detailed Transaction History</div>
+              <div class="section-title">Service & Treatment Details</div>
               
               <table class="bill-table">
                 <thead>
@@ -476,18 +456,38 @@ export function ComprehensiveBillTemplate({
                   </tr>
                 </thead>
                 <tbody>
-                  ${billData.billItems.map((item, index) => `
+                  ${chargeItems.map((item, index) => `
                     <tr class="${escapeHtml(item.type)}-row">
                       <td>${index + 1}</td>
                       <td>${formatDate(item.date)}</td>
                       <td class="type-icon">${getItemTypeIcon(item.type)}</td>
                       <td>${escapeHtml(item.description)}</td>
                       <td>${escapeHtml(item.category.charAt(0).toUpperCase() + item.category.slice(1))}</td>
-                      <td class="amount-cell ${item.amount >= 0 ? 'positive-amount' : 'negative-amount'}">
-                        ${item.amount >= 0 ? '' : '-'}₹${Math.abs(item.amount).toLocaleString()}
+                      <td class="amount-cell positive-amount">
+                        ₹${item.amount.toLocaleString()}
                       </td>
                     </tr>
                   `).join('')}
+                  
+                  <!-- Summary Section as part of table -->
+                  <tr style="border-top: 2px solid #333;">
+                    <td colspan="5" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
+                    <td class="amount-cell" style="font-weight: bold; font-size: 16px; padding-top: 15px;">₹${billData.summary.totalCharges.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="5" style="text-align: right; font-weight: bold;">PAID:</td>
+                    <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalPayments.toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td colspan="5" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
+                    <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalDiscounts.toLocaleString()}</td>
+                  </tr>
+                  <tr style="border-top: 2px solid #2563eb; background: #f0f9ff;">
+                    <td colspan="5" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
+                    <td class="amount-cell ${billData.summary.remainingBalance >= 0 ? 'positive-amount' : 'negative-amount'}" style="font-weight: bold; font-size: 18px; padding: 10px;">
+                      ₹${billData.summary.remainingBalance.toLocaleString()}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -556,40 +556,9 @@ export function ComprehensiveBillTemplate({
             </div>
           </div>
 
-          {/* Financial Summary */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-800 mb-3">Financial Summary</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex justify-between">
-                <span>Total Charges:</span>
-                <span className="font-medium text-red-600">
-                  {formatCurrency(billData.summary.totalCharges)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Payments:</span>
-                <span className="font-medium text-green-600">
-                  -{formatCurrency(billData.summary.totalPayments)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Discounts:</span>
-                <span className="font-medium text-green-600">
-                  -{formatCurrency(billData.summary.totalDiscounts)}
-                </span>
-              </div>
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
-                <span>Outstanding Balance:</span>
-                <span className={billData.summary.remainingBalance >= 0 ? "text-red-600" : "text-green-600"}>
-                  {formatCurrency(billData.summary.remainingBalance)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Transaction History */}
+          {/* Service & Treatment Details */}
           <div>
-            <h3 className="font-semibold mb-3">Transaction History ({billData.billItems.length} items)</h3>
+            <h3 className="font-semibold mb-3">Service & Treatment Details ({chargeItems.length} items)</h3>
             <div className="border rounded-lg overflow-hidden">
               <div className="max-h-96 overflow-y-auto">
                 <table className="w-full text-sm">
@@ -602,7 +571,7 @@ export function ComprehensiveBillTemplate({
                     </tr>
                   </thead>
                   <tbody>
-                    {billData.billItems.map((item, index) => (
+                    {chargeItems.map((item, index) => (
                       <tr key={`${item.type}-${item.id}`} className="hover:bg-gray-50">
                         <td className="p-3 border-b">{formatDate(item.date)}</td>
                         <td className="p-3 border-b">
@@ -612,13 +581,47 @@ export function ComprehensiveBillTemplate({
                           </span>
                         </td>
                         <td className="p-3 border-b">{item.description}</td>
-                        <td className={`p-3 border-b text-right font-medium ${
-                          item.amount >= 0 ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          {item.amount >= 0 ? '' : '-'}{formatCurrency(Math.abs(item.amount))}
+                        <td className="p-3 border-b text-right font-medium text-red-600">
+                          {formatCurrency(item.amount)}
                         </td>
                       </tr>
                     ))}
+                    
+                    {/* Summary as part of table */}
+                    <tr className="border-t-2 border-gray-300 bg-gray-50">
+                      <td colSpan={3} className="p-3 text-right font-bold text-lg">
+                        TOTAL CHARGES:
+                      </td>
+                      <td className="p-3 text-right font-bold text-lg text-red-600">
+                        {formatCurrency(billData.summary.totalCharges)}
+                      </td>
+                    </tr>
+                    <tr className="bg-gray-50">
+                      <td colSpan={3} className="p-3 text-right font-bold">
+                        PAID:
+                      </td>
+                      <td className="p-3 text-right font-bold text-green-600">
+                        -{formatCurrency(billData.summary.totalPayments)}
+                      </td>
+                    </tr>
+                    <tr className="bg-gray-50">
+                      <td colSpan={3} className="p-3 text-right font-bold">
+                        DISCOUNT:
+                      </td>
+                      <td className="p-3 text-right font-bold text-green-600">
+                        -{formatCurrency(billData.summary.totalDiscounts)}
+                      </td>
+                    </tr>
+                    <tr className="border-t-2 border-blue-500 bg-blue-50">
+                      <td colSpan={3} className="p-4 text-right font-bold text-xl text-blue-800">
+                        BALANCE:
+                      </td>
+                      <td className={`p-4 text-right font-bold text-xl ${
+                        billData.summary.remainingBalance >= 0 ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        {formatCurrency(billData.summary.remainingBalance)}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
