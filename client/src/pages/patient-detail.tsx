@@ -43,6 +43,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
 import SmartBillingDialog from "@/components/smart-billing-dialog";
+import { parseTimestamp } from "@/lib/time";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -1842,53 +1843,24 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const raw = String(test.orderDate);
-                                  let normalized = raw;
+                                  const result = parseTimestamp(test.orderDate, 'Asia/Kolkata');
                                   
-                                  // Detect if the original data has explicit time information
-                                  const hasExplicitTime = /T\d{2}:\d{2}|\d{2}:\d{2}/.test(raw);
-                                  
-                                  // Normalize different date formats for parsing
-                                  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(raw)) {
-                                    // SQLite format: "YYYY-MM-DD HH:MM:SS" -> "YYYY-MM-DDTHH:MM:SS"
-                                    normalized = raw.replace(' ', 'T');
-                                  } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-                                    // Date-only: "YYYY-MM-DD" -> add midnight for parsing
-                                    normalized = raw + 'T00:00:00';
+                                  if (result.hasTime) {
+                                    // Split the display to add styling
+                                    const parts = result.display.split(' at ');
+                                    if (parts.length === 2) {
+                                      return (
+                                        <>
+                                          {parts[0]}
+                                          <span className="text-muted-foreground ml-2">
+                                            at {parts[1]}
+                                          </span>
+                                        </>
+                                      );
+                                    }
                                   }
                                   
-                                  let date = new Date(normalized);
-                                  
-                                  // Handle numeric timestamps as fallback
-                                  if (isNaN(date.getTime()) && /^\d+$/.test(raw)) {
-                                    date = new Date(Number(raw));
-                                  }
-                                  
-                                  if (!isNaN(date.getTime())) {
-                                    const datePart = date.toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    });
-                                    
-                                    const timePart = date.toLocaleTimeString('en-US', {
-                                      hour: 'numeric',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                    
-                                    // Only show time if it's explicitly present and not fabricated midnight
-                                    const showTime = hasExplicitTime && !(date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0);
-                                    
-                                    return showTime ? (
-                                      <>
-                                        {datePart}
-                                        <span className="text-muted-foreground ml-2">
-                                          at {timePart}
-                                        </span>
-                                      </>
-                                    ) : datePart;
-                                  }
+                                  return result.display;
                                 }
                                 return "N/A";
                               })()}
