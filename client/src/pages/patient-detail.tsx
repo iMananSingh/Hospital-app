@@ -1242,7 +1242,17 @@ export default function PatientDetail() {
 
               {/* Smart Billing Button */}
               <Button 
-                onClick={() => setIsSmartBillingDialogOpen(true)}
+                onClick={() => {
+                  // Set current LOCAL date and time when opening smart billing dialog
+                  const now = new Date();
+                  const currentDate = now.getFullYear() + '-' + 
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(now.getDate()).padStart(2, '0');
+                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
+                    String(now.getMinutes()).padStart(2, '0');
+                  
+                  setIsSmartBillingDialogOpen(true);
+                }}
                 variant="outline"
                 className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white"
                 data-testid="button-smart-billing"
@@ -2870,6 +2880,41 @@ export default function PatientDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Smart Billing Dialog */}
+      <SmartBillingDialog
+        isOpen={isSmartBillingDialogOpen}
+        onClose={() => setIsSmartBillingDialogOpen(false)}
+        onSubmit={(data) => {
+          // Handle smart billing service submission
+          const response = fetch("/api/patient-services", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+            },
+            body: JSON.stringify(data),
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+            queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
+            setIsSmartBillingDialogOpen(false);
+            toast({
+              title: "Service scheduled successfully",
+              description: "The service has been added using smart billing.",
+            });
+          }).catch(() => {
+            toast({
+              title: "Error scheduling service",
+              description: "Please try again.",
+              variant: "destructive",
+            });
+          });
+        }}
+        services={allServices || []}
+        patientId={patientId || ""}
+        currentDate={new Date().toISOString().split('T')[0]}
+        currentTime={new Date().toTimeString().slice(0, 5)}
+      />
 
       {/* Room Update Dialog */}
       <Dialog open={isRoomUpdateDialogOpen} onOpenChange={setIsRoomUpdateDialogOpen}>

@@ -138,9 +138,9 @@ export default function SmartBillingDialog({
       billingType: selectedService.billingType || "per_instance",
       billingQuantity: billingPreview.quantity,
       billingParameters: selectedService.billingType === "composite" ? 
-        JSON.stringify({ distance: data.distance }) : 
+        JSON.stringify({ distance: data.distance || 0 }) : 
         selectedService.billingType === "per_hour" ? 
-        JSON.stringify({ hours: data.hours }) : null,
+        JSON.stringify({ hours: data.hours || 1 }) : null,
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
@@ -276,6 +276,7 @@ export default function SmartBillingDialog({
                     step="0.1"
                     {...form.register("distance", { valueAsNumber: true })}
                     data-testid="input-distance"
+                    placeholder="Enter distance in kilometers"
                   />
                   <p className="text-sm text-gray-500">
                     {(() => {
