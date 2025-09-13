@@ -307,6 +307,23 @@ export default function SmartBillingDialog({
                 </div>
               )}
 
+              {selectedService.billingType === "variable" && (
+                <div className="space-y-2">
+                  <Label>Variable Price (₹)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...form.register("price", { valueAsNumber: true })}
+                    data-testid="input-variable-price"
+                    placeholder="Enter exact amount to charge"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Enter the exact amount to be charged (quantity is always 1)
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Notes</Label>
                 <Textarea

@@ -483,7 +483,7 @@ export default function PatientDetail() {
 
       case "variable":
         quantity = 1;
-        totalAmount = watchedServiceValues.price || 0;
+        totalAmount = watchedServiceValues.price || 0; // Use the entered price from the form
         breakdown = `Variable price: ₹${totalAmount}`;
         break;
 
@@ -709,7 +709,7 @@ export default function PatientDetail() {
               const perKmRate = params.perKmRate || 0;
               const distance = service.quantity || 0;
               const calculatedAmount = fixedCharge + (perKmRate * distance);
-              
+
               serviceData.calculatedAmount = calculatedAmount;
               serviceData.price = calculatedAmount;
             } else if (service.billingType === "per_hour") {
@@ -2591,7 +2591,7 @@ export default function PatientDetail() {
                                         setSelectedServices(selectedServices.map(s => 
                                           s.id === service.id ? { ...s, quantity } : s
                                         ));
-                                        
+
                                         // Update form fields for billing calculation
                                         if (isAmbulanceService) {
                                           serviceForm.setValue("distance", quantity);

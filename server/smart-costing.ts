@@ -4,7 +4,7 @@ export interface BillingCalculationInput {
     id: string;
     name: string;
     price: number;
-    billingType: 'per_instance' | 'per_24_hours' | 'per_hour' | 'composite';
+    billingType: 'per_instance' | 'per_24_hours' | 'per_hour' | 'composite' | 'variable' | 'per_date';
     billingParameters?: string;
   };
   quantity?: number;
@@ -45,6 +45,12 @@ export class SmartCostingEngine {
         
       case 'composite':
         return this.calculateComposite(service, customParameters);
+        
+      case 'variable':
+        return this.calculateVariable(service, customParameters);
+        
+      case 'per_date':
+        return this.calculatePerDate(service, quantity);
         
       default:
         return this.calculatePerInstance(service, quantity);
@@ -175,6 +181,44 @@ export class SmartCostingEngine {
       billingQuantity: 1,
       breakdown,
       billingDetails: `Fixed: ₹${fixedAmount}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceAmount}` : ''} = ₹${totalAmount}`
+    };
+  }
+
+  /**
+   * Variable billing (user-defined price at time of service)
+   */
+  private static calculateVariable(service: any, customParameters: Record<string, any>): BillingCalculationResult {
+    const variablePrice = customParameters.price || service.price || 0;
+    
+    return {
+      totalAmount: variablePrice,
+      billingQuantity: 1,
+      breakdown: [{
+        unitPrice: variablePrice,
+        quantity: 1,
+        subtotal: variablePrice,
+        description: `${service.name} (Variable pricing)`
+      }],
+      billingDetails: `Variable price: ₹${variablePrice}`
+    };
+  }
+
+  /**
+   * Per calendar date billing (different from 24-hour billing)
+   */
+  private static calculatePerDate(service: any, quantity: number): BillingCalculationResult {
+    const totalAmount = service.price * quantity;
+    
+    return {
+      totalAmount,
+      billingQuantity: quantity,
+      breakdown: [{
+        unitPrice: service.price,
+        quantity,
+        subtotal: totalAmount,
+        description: `${service.name} (${quantity} calendar day${quantity > 1 ? 's' : ''})`
+      }],
+      billingDetails: `Per calendar date: ₹${service.price} × ${quantity} day${quantity > 1 ? 's' : ''} = ₹${totalAmount}`
     };
   }
 

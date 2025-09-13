@@ -2050,7 +2050,11 @@ export class SqliteStorage implements IStorage {
               billingParameters: service.billingParameters || undefined,
             },
             quantity: serviceData.billingQuantity || 1,
-            customParameters: customParams,
+            customParameters: {
+              ...customParams,
+              // For variable billing, use the price from billing parameters if available
+              price: customParams.price || (serviceData.billingType === 'variable' ? serviceData.calculatedAmount : undefined)
+            },
           });
 
           calculatedAmount = billingResult.totalAmount;
