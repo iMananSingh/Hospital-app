@@ -441,7 +441,7 @@ export default function PatientDetail() {
     if (selectedCatalogService && selectedCatalogService.billingType) {
       calculateBillingPreview();
     }
-  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance]);
+  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance, watchedServiceValues.price]);
 
   const calculateBillingPreview = () => {
     if (!selectedCatalogService) return;
@@ -506,8 +506,10 @@ export default function PatientDetail() {
       billingType: selectedCatalogService.billingType
     });
 
-    // Update the form price field
-    serviceForm.setValue("price", totalAmount);
+    // Update the form price field (but not for variable billing to avoid overwriting user input)
+    if (selectedCatalogService.billingType !== "variable") {
+      serviceForm.setValue("price", totalAmount);
+    }
   };
 
 
