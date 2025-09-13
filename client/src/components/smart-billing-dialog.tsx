@@ -148,7 +148,7 @@ export default function SmartBillingDialog({
       serviceId: selectedService.id,
       serviceName: selectedService.name,
       serviceType: selectedService.category,
-      price: selectedService.price,
+      price: selectedService.billingType === "variable" ? data.quantity : selectedService.price,
       billingType: selectedService.billingType || "per_instance",
       billingQuantity: billingPreview.quantity,
       billingParameters: selectedService.billingType === "composite" ? 
