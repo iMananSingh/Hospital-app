@@ -684,15 +684,26 @@ export default function PatientDetail() {
             serviceData.billingQuantity = service.quantity || 1;
 
             if (service.billingType === "composite") {
-              serviceData.billingParameters = JSON.stringify({ distance: data.distance || 0 });
+              // For composite billing (ambulance), use quantity as distance
+              serviceData.billingParameters = JSON.stringify({ distance: service.quantity || 0 });
             } else if (service.billingType === "per_hour") {
-              serviceData.billingParameters = JSON.stringify({ hours: data.hours || 1 });
+              serviceData.billingParameters = JSON.stringify({ hours: service.quantity || 1 });
             }
 
-            // Recalculate amount for smart billing
-            if (selectedCatalogService && selectedCatalogService.id === service.id && billingPreview) {
-              serviceData.calculatedAmount = billingPreview.totalAmount;
-              serviceData.price = billingPreview.totalAmount;
+            // Calculate billing amount based on service type and quantity
+            if (service.billingType === "composite") {
+              const params = service.billingParameters ? JSON.parse(service.billingParameters) : {};
+              const fixedCharge = params.fixedCharge || service.price;
+              const perKmRate = params.perKmRate || 0;
+              const distance = service.quantity || 0;
+              const calculatedAmount = fixedCharge + (perKmRate * distance);
+              
+              serviceData.calculatedAmount = calculatedAmount;
+              serviceData.price = calculatedAmount;
+            } else if (service.billingType === "per_hour") {
+              const calculatedAmount = service.price * (service.quantity || 1);
+              serviceData.calculatedAmount = calculatedAmount;
+              serviceData.price = calculatedAmount;
             }
           }
 
@@ -2564,6 +2575,15 @@ export default function PatientDetail() {
                                         setSelectedServices(selectedServices.map(s => 
                                           s.id === service.id ? { ...s, quantity } : s
                                         ));
+                                        
+                                        // Update form fields for billing calculation
+                                        if (isAmbulanceService) {
+                                          serviceForm.setValue("distance", quantity);
+                                        } else if (service.billingType === 'per_hour') {
+                                          serviceForm.setValue("hours", quantity);
+                                        } else {
+                                          serviceForm.setValue("quantity", quantity);
+                                        }
                                       }}
                                       className="w-20 h-8"
                                       placeholder={isAmbulanceService ? "km" : "qty"}
