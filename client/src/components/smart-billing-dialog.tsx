@@ -104,7 +104,7 @@ export default function SmartBillingDialog({
 
       case "variable":
         quantity = 1;
-        totalAmount = watchedValues.price || selectedService.price;
+        totalAmount = watchedValues.quantity || 0;
         breakdown = `Variable price: ₹${totalAmount}`;
         break;
 
@@ -134,7 +134,7 @@ export default function SmartBillingDialog({
     form.setValue("serviceId", serviceId);
     
     // Reset quantity fields
-    form.setValue("quantity", 1);
+    form.setValue("quantity", service?.billingType === "variable" ? 0 : 1);
     form.setValue("hours", 1);
     form.setValue("distance", 0);
     form.setValue("price", service?.price || 0);
@@ -156,7 +156,7 @@ export default function SmartBillingDialog({
         selectedService.billingType === "per_hour" ? 
         JSON.stringify({ hours: data.hours || 1 }) :
         selectedService.billingType === "variable" ?
-        JSON.stringify({ price: data.price || selectedService.price }) : null,
+        JSON.stringify({ price: data.quantity || 0 }) : null,
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
@@ -309,17 +309,17 @@ export default function SmartBillingDialog({
 
               {selectedService.billingType === "variable" && (
                 <div className="space-y-2">
-                  <Label>Variable Price (₹)</Label>
+                  <Label>Price (₹)</Label>
                   <Input
                     type="number"
                     min="0"
                     step="0.01"
-                    {...form.register("price", { valueAsNumber: true })}
+                    {...form.register("quantity", { valueAsNumber: true })}
                     data-testid="input-variable-price"
                     placeholder="Enter exact amount to charge"
                   />
                   <p className="text-sm text-gray-500">
-                    Enter the exact amount to be charged (quantity is always 1)
+                    Enter the exact amount to be charged
                   </p>
                 </div>
               )}
