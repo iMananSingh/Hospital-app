@@ -700,6 +700,9 @@ export default function PatientDetail() {
               serviceData.billingParameters = JSON.stringify({ distance: service.quantity || 0 });
             } else if (service.billingType === "per_hour") {
               serviceData.billingParameters = JSON.stringify({ hours: service.quantity || 1 });
+            } else if (service.billingType === "variable") {
+              // For variable billing, use the entered price
+              serviceData.billingParameters = JSON.stringify({ price: service.price });
             }
 
             // Calculate billing amount based on service type and quantity
