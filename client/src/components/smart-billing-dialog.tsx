@@ -49,6 +49,7 @@ export default function SmartBillingDialog({
       quantity: 1,
       hours: 1,
       distance: 0,
+      price: 0,
       scheduledDate: currentDate,
       scheduledTime: currentTime,
       notes: "",
@@ -61,7 +62,7 @@ export default function SmartBillingDialog({
     if (selectedService && selectedService.billingType) {
       calculateBillingPreview();
     }
-  }, [selectedService, watchedValues.quantity, watchedValues.hours, watchedValues.distance]);
+  }, [selectedService, watchedValues.quantity, watchedValues.hours, watchedValues.distance, watchedValues.price]);
 
   const calculateBillingPreview = () => {
     if (!selectedService) return;
@@ -101,6 +102,18 @@ export default function SmartBillingDialog({
         quantity = 1;
         break;
 
+      case "variable":
+        quantity = 1;
+        totalAmount = watchedValues.price || selectedService.price;
+        breakdown = `Variable price: ₹${totalAmount}`;
+        break;
+
+      case "per_date":
+        quantity = watchedValues.quantity || 1;
+        totalAmount = selectedService.price * quantity;
+        breakdown = `₹${selectedService.price} × ${quantity} calendar day${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        break;
+
       default:
         quantity = watchedValues.quantity || 1;
         totalAmount = selectedService.price * quantity;
@@ -124,6 +137,7 @@ export default function SmartBillingDialog({
     form.setValue("quantity", 1);
     form.setValue("hours", 1);
     form.setValue("distance", 0);
+    form.setValue("price", service?.price || 0);
   };
 
   const handleSubmit = (data: any) => {
@@ -140,7 +154,9 @@ export default function SmartBillingDialog({
       billingParameters: selectedService.billingType === "composite" ? 
         JSON.stringify({ distance: data.distance || 0 }) : 
         selectedService.billingType === "per_hour" ? 
-        JSON.stringify({ hours: data.hours || 1 }) : null,
+        JSON.stringify({ hours: data.hours || 1 }) :
+        selectedService.billingType === "variable" ?
+        JSON.stringify({ price: data.price || selectedService.price }) : null,
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
@@ -157,6 +173,8 @@ export default function SmartBillingDialog({
       case "per_24_hours": return "Per 24 Hours";
       case "per_hour": return "Per Hour";
       case "composite": return "Composite";
+      case "variable": return "Variable";
+      case "per_date": return "Per Date";
       default: return "Per Instance";
     }
   };
@@ -167,6 +185,8 @@ export default function SmartBillingDialog({
       case "per_24_hours": return "bg-green-100 text-green-800";
       case "per_hour": return "bg-orange-100 text-orange-800";
       case "composite": return "bg-purple-100 text-purple-800";
+      case "variable": return "bg-yellow-100 text-yellow-800";
+      case "per_date": return "bg-indigo-100 text-indigo-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };

@@ -444,7 +444,7 @@ export const insertServiceSchema = createInsertSchema(services).omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite"]).default("per_instance"),
+  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite", "variable", "per_date"]).default("per_instance"),
   billingParameters: z.string().nullable().optional(),
 });
 
@@ -477,7 +477,7 @@ export const insertPatientServiceSchema = createInsertSchema(patientServices).om
   serviceName: z.string().min(1, "Service name is required"),
   scheduledDate: z.string().min(1, "Scheduled date is required"),
   scheduledTime: z.string().min(1, "Scheduled time is required"),
-  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite"]).default("per_instance"),
+  billingType: z.enum(["per_instance", "per_24_hours", "per_hour", "composite", "variable", "per_date"]).default("per_instance"),
   billingQuantity: z.number().optional().default(1),
   billingParameters: z.string().optional(),
   calculatedAmount: z.number().default(0),
@@ -663,11 +663,11 @@ export type UpdatePatient = z.infer<typeof updatePatientSchema>;
  */
 export function calculateStayDays(admissionDate: string | Date, endDate?: string | Date): number {
   let startDate: Date;
-  
+
   // Parse admission date using the same robust logic as frontend
   if (typeof admissionDate === 'string') {
     const dateStr = admissionDate;
-    
+
     // Detect SQL datetime format "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
     if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(dateStr)) {
       // Parse SQL format as local time to avoid timezone conversion
@@ -692,14 +692,14 @@ export function calculateStayDays(admissionDate: string | Date, endDate?: string
   } else {
     startDate = admissionDate;
   }
-  
+
   const end = endDate ? new Date(endDate) : new Date();
-  
+
   // Guard against invalid dates
   if (isNaN(startDate.getTime()) || isNaN(end.getTime())) {
     return 1; // Fallback to minimum 1 day for invalid dates
   }
-  
+
   // Use direct millisecond calculation to avoid floating-point precision issues
   const timeDiff = end.getTime() - startDate.getTime();
   return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
