@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
@@ -42,7 +42,7 @@ import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
-import SmartBillingDialog from "@/components/smart-billing-dialog";
+// Removed SmartBillingDialog import as it's no longer used
 import { parseTimestamp, calcStayDays } from "@/lib/time";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -67,16 +67,16 @@ export default function PatientDetail() {
   const patientId = params.id;
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [isSmartBillingDialogOpen, setIsSmartBillingDialogOpen] = useState(false);
+  const [selectedServiceType, setSelectedServiceType] = useState("opd");
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
+  const [selectedCatalogService, setSelectedCatalogService] = useState<any>(null);
+  const [billingPreview, setBillingPreview] = useState<any>(null);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
-  const [selectedServiceType, setSelectedServiceType] = useState("");
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
-  const [selectedServices, setSelectedServices] = useState<Service[]>([]); // Use Service interface
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
@@ -423,13 +423,80 @@ export default function PatientDetail() {
       patientId: patientId || "",
       serviceType: "",
       serviceName: "",
-      scheduledDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-      scheduledTime: "", // Will be set dynamically when dialog opens
-      doctorId: "",
+      price: 0,
+      quantity: 1,
+      hours: 1,
+      distance: 0,
       notes: "",
-      price: 0, // This price field is intended for form submission logic, not direct user input in the table
+      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledTime: new Date().toTimeString().slice(0, 5),
     },
   });
+
+  const watchedServiceValues = serviceForm.watch();
+
+  // Calculate billing preview when service or parameters change
+  useEffect(() => {
+    if (selectedCatalogService && selectedCatalogService.billingType) {
+      calculateBillingPreview();
+    }
+  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance]);
+
+  const calculateBillingPreview = () => {
+    if (!selectedCatalogService) return;
+
+    let totalAmount = 0;
+    let breakdown = "";
+    let quantity = 1;
+
+    switch (selectedCatalogService.billingType) {
+      case "per_instance":
+        quantity = watchedServiceValues.quantity || 1;
+        totalAmount = selectedCatalogService.price * quantity;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} instance${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        break;
+
+      case "per_24_hours":
+        quantity = watchedServiceValues.quantity || 1;
+        totalAmount = selectedCatalogService.price * quantity;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        break;
+
+      case "per_hour":
+        quantity = watchedServiceValues.hours || 1;
+        totalAmount = selectedCatalogService.price * quantity;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} hour${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        break;
+
+      case "composite":
+        const params = selectedCatalogService.billingParameters ? JSON.parse(selectedCatalogService.billingParameters) : {};
+        const fixedCharge = params.fixedCharge || selectedCatalogService.price;
+        const perKmRate = params.perKmRate || 0;
+        const distance = watchedServiceValues.distance || 0;
+
+        const distanceCharge = perKmRate * distance;
+        totalAmount = fixedCharge + distanceCharge;
+        breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ''} = ₹${totalAmount}`;
+        quantity = 1;
+        break;
+
+      default:
+        quantity = watchedServiceValues.quantity || 1;
+        totalAmount = selectedCatalogService.price * quantity;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} = ₹${totalAmount}`;
+    }
+
+    setBillingPreview({
+      totalAmount,
+      quantity,
+      breakdown,
+      billingType: selectedCatalogService.billingType
+    });
+
+    // Update the form price field
+    serviceForm.setValue("price", totalAmount);
+  };
+
 
   const admissionForm = useForm({
     // Remove zodResolver to handle validation manually since reason is now optional
@@ -457,9 +524,9 @@ export default function PatientDetail() {
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
       // Generate receipt number before sending to API with correct format
-      const serviceType = getServiceType('service', data);
-      const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
-      const count = await getDailyCountFromAPI('service', eventDate, data);
+      const serviceType = getServiceType('service', data[0]); // Assuming data is an array of services
+      const eventDate = new Date(data[0].scheduledDate).toISOString().split('T')[0];
+      const count = await getDailyCountFromAPI('service', eventDate, data[0]);
 
       // Format: YYMMDD-TYPE-NNNN (correct format)
       const dateObj = new Date(eventDate);
@@ -474,18 +541,21 @@ export default function PatientDetail() {
 
       const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, '0')}`;
 
-      const serviceDataWithReceipt = {
-        ...data,
+      // Map services to include the generated receipt number and other details
+      const servicesWithReceipt = data.map((service: any) => ({
+        ...service,
         receiptNumber: receiptNumber,
-      };
+        // Include doctorId for OPD services, otherwise null
+        doctorId: service.serviceType === 'opd' ? service.doctorId : null, 
+      }));
 
-      const response = await fetch("/api/patient-services", {
+      const response = await fetch("/api/patient-services/batch", { // Use batch endpoint
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(serviceDataWithReceipt),
+        body: JSON.stringify(servicesWithReceipt),
       });
       if (!response.ok) throw new Error("Failed to create service");
       return response.json();
@@ -496,6 +566,8 @@ export default function PatientDetail() {
       setIsServiceDialogOpen(false);
       setSelectedServiceType("");
       setSelectedServiceCategory("");
+      setSelectedCatalogService(null);
+      setBillingPreview(null);
       serviceForm.reset({
         patientId: patientId || "",
         serviceType: "",
@@ -505,6 +577,9 @@ export default function PatientDetail() {
         doctorId: "",
         notes: "",
         price: 0,
+        quantity: 1,
+        hours: 1,
+        distance: 0,
       });
       toast({
         title: "Service scheduled successfully",
@@ -561,138 +636,43 @@ export default function PatientDetail() {
     },
   });
 
-  const onServiceSubmit = async (data: any) => {
-    try {
-      if (selectedServiceType === "opd") {
-        // Handle OPD consultation
-        const selectedDoctorId = data.doctorId;
-        const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
-        const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
+  const onServiceSubmit = (data: any) => {
+    const isOPD = data.serviceType === "opd";
 
-        const serviceData = {
-          patientId: patient.id,
-          serviceId: "opd-consultation",
-          serviceName: "OPD Consultation",
-          serviceType: "opd",
-          category: "consultation",
-          price: consultationFee,
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          doctorId: selectedDoctorId !== "none" ? selectedDoctorId : null,
-          notes: data.notes,
-          status: "scheduled",
-        };
+    let serviceData: any = {
+      patientId: patientId,
+      serviceType: data.serviceType,
+      serviceName: data.serviceName || "OPD Consultation",
+      price: data.price || 0,
+      quantity: billingPreview ? billingPreview.quantity : (data.quantity || 1),
+      notes: data.notes,
+      scheduledDate: data.scheduledDate,
+      scheduledTime: data.scheduledTime,
+      status: "scheduled",
+    };
 
-        const response = await fetch("/api/patient-services", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-          },
-          body: JSON.stringify(serviceData),
-        });
+    if (isOPD) {
+      serviceData.doctorId = data.doctorId;
+    } else {
+      serviceData.serviceId = data.serviceType || null;
 
-        if (response.ok) {
-          toast({
-            title: "Success",
-            description: "OPD consultation scheduled successfully",
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
-          setIsServiceDialogOpen(false);
-          serviceForm.reset();
-          setSelectedServiceType("");
-          setSelectedServices([]);
-        } else {
-          throw new Error("Failed to schedule OPD consultation");
-        }
-      } else {
-        // Handle multiple services - generate single receipt number for the batch
-        if (selectedServices.length === 0) {
-          toast({
-            title: "Error",
-            description: "Please select at least one service",
-            variant: "destructive",
-          });
-          return;
+      // Add smart billing parameters
+      if (selectedCatalogService && selectedCatalogService.billingType) {
+        serviceData.billingType = selectedCatalogService.billingType;
+        serviceData.billingQuantity = billingPreview ? billingPreview.quantity : 1;
+
+        // Add billing parameters based on type
+        if (selectedCatalogService.billingType === "composite") {
+          serviceData.billingParameters = JSON.stringify({ distance: data.distance || 0 });
+        } else if (selectedCatalogService.billingType === "per_hour") {
+          serviceData.billingParameters = JSON.stringify({ hours: data.hours || 1 });
         }
 
-        // Generate a single receipt number for all services in this batch
-        const serviceType = getServiceType('service', data);
-        const eventDate = new Date(data.scheduledDate).toISOString().split('T')[0];
-        const count = await getDailyCountFromAPI('service', eventDate, data);
-
-        // Format: YYMMDD-TYPE-NNNN (correct format)
-        const dateObj = new Date(eventDate);
-        const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
-
-        let typeCode = '';
-        if (serviceType === 'opd') {
-          typeCode = 'OPD';
-        } else {
-          typeCode = 'SER';
-        }
-
-        const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, '0')}`;
-
-        // Schedule all selected services with the same receipt number
-        const serviceData = selectedServices.map(service => {
-          const quantity = service.quantity || 1;
-          const unitPrice = service.price || parseFloat(data.customPrice as string) || 0;
-          const calculatedAmount = unitPrice * quantity;
-
-          return {
-            patientId: patient.id,
-            serviceId: service.id,
-            serviceName: service.name,
-            serviceType: selectedServiceType,
-            price: unitPrice,
-            billingType: service.billingType || "per_instance",
-            billingQuantity: quantity,
-            billingParameters: service.billingType === "per_hour" ? 
-              JSON.stringify({ hours: quantity }) : 
-              service.billingType === "per_24_hours" ? 
-              JSON.stringify({ days: quantity }) : null,
-            calculatedAmount: calculatedAmount,
-            scheduledDate: data.scheduledDate,
-            scheduledTime: data.scheduledTime,
-            doctorId: data.doctorId || null,
-            notes: data.notes,
-            status: "scheduled",
-            receiptNumber: receiptNumber, // Same receipt number for all services
-          };
-        });
-
-        // Use batch endpoint for multiple services
-        const response = await fetch("/api/patient-services/batch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-          },
-          body: JSON.stringify(serviceData),
-        });
-
-        if (response.ok) {
-          toast({
-            title: "Success",
-            description: `${selectedServices.length} service(s) scheduled successfully`,
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
-          setIsServiceDialogOpen(false);
-          serviceForm.reset();
-          setSelectedServiceType("");
-          setSelectedServices([]);
-        } else {
-          throw new Error(`Failed to schedule services`);
-        }
+        serviceData.calculatedAmount = billingPreview ? billingPreview.totalAmount : data.price;
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to schedule service",
-        variant: "destructive",
-      });
     }
+
+    createServiceMutation.mutate([serviceData]);
   };
 
   const onAdmissionSubmit = (data: any) => {
@@ -1121,6 +1101,8 @@ export default function PatientDetail() {
 
                   setSelectedServiceType("opd");
                   setSelectedServiceCategory("");
+                  setSelectedCatalogService(null); // Reset selected service
+                  setBillingPreview(null); // Reset billing preview
                   serviceForm.reset({
                     patientId: patientId || "",
                     serviceType: "opd",
@@ -1130,6 +1112,9 @@ export default function PatientDetail() {
                     doctorId: "",
                     notes: "",
                     price: 0,
+                    quantity: 1,
+                    hours: 1,
+                    distance: 0,
                   });
 
                   console.log(`Set current date/time: ${currentDate} ${currentTime}`);
@@ -1165,6 +1150,8 @@ export default function PatientDetail() {
                   // Reset service type and category for general service
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
+                  setSelectedCatalogService(null); // Reset selected service
+                  setBillingPreview(null); // Reset billing preview
                   // Reset form completely first
                   serviceForm.reset({
                     patientId: patientId || "",
@@ -1175,6 +1162,9 @@ export default function PatientDetail() {
                     doctorId: "",
                     notes: "",
                     price: 0,
+                    quantity: 1,
+                    hours: 1,
+                    distance: 0,
                   });
 
                   setIsServiceDialogOpen(true);
@@ -1240,26 +1230,8 @@ export default function PatientDetail() {
                 }
               })()}
 
-              {/* Smart Billing Button */}
-              <Button 
-                onClick={() => {
-                  // Set current LOCAL date and time when opening smart billing dialog
-                  const now = new Date();
-                  const currentDate = now.getFullYear() + '-' + 
-                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(now.getDate()).padStart(2, '0');
-                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
-                    String(now.getMinutes()).padStart(2, '0');
-                  
-                  setIsSmartBillingDialogOpen(true);
-                }}
-                variant="outline"
-                className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white"
-                data-testid="button-smart-billing"
-              >
-                <DollarSign className="h-4 w-4" />
-                Smart Billing
-              </Button>
+              {/* Smart Billing Button is removed as its functionality is integrated into "Add Service" */}
+
             </div>
           </CardContent>
         </Card>
@@ -1380,6 +1352,8 @@ export default function PatientDetail() {
                     // Reset service type and category
                     setSelectedServiceType("");
                     setSelectedServiceCategory("");
+                    setSelectedCatalogService(null); // Reset selected service
+                    setBillingPreview(null); // Reset billing preview
                     // Reset form completely first
                     serviceForm.reset({
                       patientId: patientId || "",
@@ -1390,6 +1364,9 @@ export default function PatientDetail() {
                       doctorId: "",
                       notes: "",
                       price: 0,
+                      quantity: 1,
+                      hours: 1,
+                      distance: 0,
                     });
 
                     setIsServiceDialogOpen(true);
@@ -1782,7 +1759,7 @@ export default function PatientDetail() {
                           const rawOrdered = order.orderedDate;
                           const rawCreated = order.createdAt;
                           const orderDateRaw = rawOrdered && /[:T]/.test(rawOrdered) ? rawOrdered : (rawCreated || rawOrdered);
-                          
+
                           allTests.push({
                             ...test,
                             orderId: order.orderId || order.id,
@@ -1816,7 +1793,7 @@ export default function PatientDetail() {
                               {(() => {
                                 if (test.orderDate) {
                                   const result = parseTimestamp(test.orderDate, 'Asia/Kolkata');
-                                  
+
                                   if (result.hasTime) {
                                     // Split the display to add styling
                                     const parts = result.display.split(' at ');
@@ -1831,7 +1808,7 @@ export default function PatientDetail() {
                                       );
                                     }
                                   }
-                                  
+
                                   return result.display;
                                 }
                                 return "N/A";
@@ -2425,6 +2402,8 @@ export default function PatientDetail() {
                         serviceForm.setValue("serviceType", "");
                         serviceForm.setValue("serviceName", "");
                         serviceForm.setValue("price", 0);
+                        setSelectedCatalogService(null); // Reset selected service
+                        setBillingPreview(null); // Reset billing preview
                       }}
                     >
                       <SelectTrigger className="w-48">
@@ -2458,6 +2437,8 @@ export default function PatientDetail() {
                           serviceForm.setValue("serviceType", "");
                           serviceForm.setValue("serviceName", "");
                           serviceForm.setValue("price", 0);
+                          setSelectedCatalogService(null); // Reset selected service
+                          setBillingPreview(null); // Reset billing preview
                         }}
                         className="pl-10"
                         data-testid="search-services"
@@ -2498,8 +2479,14 @@ export default function PatientDetail() {
                                   onCheckedChange={(checked) => {
                                     if (checked) {
                                       setSelectedServices([...selectedServices, { ...service, quantity: 1 }]);
+                                      setSelectedCatalogService(service); // Set selected service for billing preview
+                                      serviceForm.setValue("quantity", 1); // Reset quantity
+                                      serviceForm.setValue("hours", 1); // Reset hours
+                                      serviceForm.setValue("distance", 0); // Reset distance
                                     } else {
                                       setSelectedServices(selectedServices.filter(s => s.id !== service.id));
+                                      setSelectedCatalogService(null); // Reset selected service
+                                      setBillingPreview(null); // Reset billing preview
                                     }
                                   }}
                                 />
@@ -2543,6 +2530,146 @@ export default function PatientDetail() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Smart Billing Parameters */}
+                {selectedCatalogService && (
+                  <>
+                    {/* Per Instance Quantity */}
+                    {selectedCatalogService.billingType === "per_instance" && (
+                      <div className="space-y-2">
+                        <Label>Quantity</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={serviceForm.watch("quantity") || 1}
+                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          data-testid="input-quantity"
+                        />
+                      </div>
+                    )}
+
+                    {/* Per 24 Hours */}
+                    {selectedCatalogService.billingType === "per_24_hours" && (
+                      <div className="space-y-2">
+                        <Label>Number of Days</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={serviceForm.watch("quantity") || 1}
+                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          data-testid="input-days"
+                        />
+                        <p className="text-sm text-gray-500">Room charges are calculated per 24-hour period</p>
+                      </div>
+                    )}
+
+                    {/* Per Hour */}
+                    {selectedCatalogService.billingType === "per_hour" && (
+                      <div className="space-y-2">
+                        <Label>Number of Hours</Label>
+                        <Input
+                          type="number"
+                          min="0.5"
+                          step="0.5"
+                          value={serviceForm.watch("hours") || 1}
+                          onChange={(e) => serviceForm.setValue("hours", parseFloat(e.target.value) || 1)}
+                          data-testid="input-hours"
+                        />
+                        <p className="text-sm text-gray-500">
+                          Service will be charged at ₹{selectedCatalogService.price} per hour
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Composite Billing */}
+                    {selectedCatalogService.billingType === "composite" && (
+                      <div className="space-y-2">
+                        <Label>Distance (km)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={serviceForm.watch("distance") || 0}
+                          onChange={(e) => serviceForm.setValue("distance", parseFloat(e.target.value) || 0)}
+                          placeholder="Enter distance in kilometers"
+                          data-testid="input-distance"
+                        />
+                        <p className="text-sm text-gray-500">
+                          {(() => {
+                            const params = selectedCatalogService.billingParameters ? JSON.parse(selectedCatalogService.billingParameters) : {};
+                            return `Fixed charge: ₹${params.fixedCharge || selectedCatalogService.price}, Per km: ₹${params.perKmRate || 0}`;
+                          })()}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Custom Service Input */}
+                <div className="space-y-2">
+                  <Label>Custom Service Name</Label>
+                  <Input
+                    value={serviceForm.watch("serviceName")}
+                    onChange={(e) => serviceForm.setValue("serviceName", e.target.value)}
+                    placeholder="Enter custom service name"
+                    disabled={!!serviceForm.watch("serviceType")}
+                    data-testid="input-custom-service-name"
+                  />
+                  <p className="text-sm text-gray-500">Only available when no catalog service is selected</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Price (₹) *</Label>
+                  <Input
+                    type="number"
+                    value={serviceForm.watch("price") || ""}
+                    onChange={(e) => serviceForm.setValue("price", parseFloat(e.target.value) || 0)}
+                    placeholder="Enter price"
+                    disabled={!!billingPreview}
+                    data-testid="input-service-price"
+                  />
+                  {billingPreview && (
+                    <p className="text-sm text-green-600">Price calculated automatically based on billing parameters</p>
+                  )}
+                </div>
+
+                {/* Billing Preview */}
+                {billingPreview && (
+                  <Card className="mt-4">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Billing Preview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span>Service:</span>
+                          <span>{selectedCatalogService.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Billing Type:</span>
+                          <Badge className={
+                            billingPreview.billingType === "per_24_hours" ? "bg-green-100 text-green-800" :
+                            billingPreview.billingType === "per_hour" ? "bg-orange-100 text-orange-800" :
+                            billingPreview.billingType === "composite" ? "bg-purple-100 text-purple-800" :
+                            "bg-blue-100 text-blue-800"
+                          } variant="secondary">
+                            {billingPreview.billingType === "per_24_hours" ? "Per 24 Hours" :
+                             billingPreview.billingType === "per_hour" ? "Per Hour" :
+                             billingPreview.billingType === "composite" ? "Composite" : "Per Instance"}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between text-sm text-gray-600">
+                          <span>Calculation:</span>
+                          <span>{billingPreview.breakdown}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+                          <span>Total Amount:</span>
+                          <span>₹{billingPreview.totalAmount}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Services Summary */}
                 {selectedServices.length > 0 && (
@@ -2595,6 +2722,8 @@ export default function PatientDetail() {
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
                   setServiceSearchQuery("");
+                  setSelectedCatalogService(null); // Reset selected service
+                  setBillingPreview(null); // Reset billing preview
                   serviceForm.reset({
                     patientId: patientId || "",
                     serviceType: "",
@@ -2604,6 +2733,9 @@ export default function PatientDetail() {
                     doctorId: "",
                     notes: "",
                     price: 0,
+                    quantity: 1,
+                    hours: 1,
+                    distance: 0,
                   });
                 }}
                 data-testid="button-cancel-service"
@@ -3129,40 +3261,7 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Smart Billing Dialog */}
-      <SmartBillingDialog
-        isOpen={isSmartBillingDialogOpen}
-        onClose={() => setIsSmartBillingDialogOpen(false)}
-        onSubmit={(data) => {
-          // Handle smart billing service submission
-          fetch("/api/patient-services", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-            },
-            body: JSON.stringify(data),
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
-            queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
-            setIsSmartBillingDialogOpen(false);
-            toast({
-              title: "Service scheduled successfully",
-              description: "The service has been added using smart billing.",
-            });
-          }).catch(() => {
-            toast({
-              title: "Error scheduling service",
-              description: "Please try again.",
-              variant: "destructive",
-            });
-          });
-        }}
-        services={allServices || []}
-        patientId={patientId || ""}
-        currentDate={new Date().toISOString().split('T')[0]}
-        currentTime={new Date().toTimeString().slice(0, 5)}
-      />
+      {/* Smart Billing Dialog is removed as its functionality is integrated into "Add Service" */}
     </div>
   );
 }
