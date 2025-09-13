@@ -481,6 +481,18 @@ export default function PatientDetail() {
         quantity = 1;
         break;
 
+      case "variable":
+        quantity = 1;
+        totalAmount = watchedServiceValues.price || 0;
+        breakdown = `Variable price: ₹${totalAmount}`;
+        break;
+
+      case "per_date":
+        quantity = watchedServiceValues.quantity || 1;
+        totalAmount = selectedCatalogService.price * quantity;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} date${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        break;
+
       default:
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
@@ -701,6 +713,15 @@ export default function PatientDetail() {
               serviceData.calculatedAmount = calculatedAmount;
               serviceData.price = calculatedAmount;
             } else if (service.billingType === "per_hour") {
+              const calculatedAmount = service.price * (service.quantity || 1);
+              serviceData.calculatedAmount = calculatedAmount;
+              serviceData.price = calculatedAmount;
+            } else if (service.billingType === "variable") {
+              // For variable billing, use the exact price entered (quantity is always 1)
+              serviceData.calculatedAmount = service.price;
+              serviceData.price = service.price;
+              serviceData.billingQuantity = 1;
+            } else if (service.billingType === "per_date") {
               const calculatedAmount = service.price * (service.quantity || 1);
               serviceData.calculatedAmount = calculatedAmount;
               serviceData.price = calculatedAmount;
@@ -2513,12 +2534,7 @@ export default function PatientDetail() {
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Price (₹)</TableHead>
-                        <TableHead className="text-right w-24">
-                          Quantity
-                          <span className="text-xs text-gray-500 block">
-                            (km for ambulance)
-                          </span>
-                        </TableHead>
+                        <TableHead className="text-right w-24">Quantity</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -2675,6 +2691,42 @@ export default function PatientDetail() {
                         </p>
                       </div>
                     )}
+
+                    {/* Variable Billing */}
+                    {selectedCatalogService.billingType === "variable" && (
+                      <div className="space-y-2">
+                        <Label>Variable Price (₹)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={serviceForm.watch("price") || 0}
+                          onChange={(e) => serviceForm.setValue("price", parseFloat(e.target.value) || 0)}
+                          placeholder="Enter variable price"
+                          data-testid="input-variable-price"
+                        />
+                        <p className="text-sm text-gray-500">
+                          Enter the exact amount to be charged (quantity is always 1)
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Per Date Billing */}
+                    {selectedCatalogService.billingType === "per_date" && (
+                      <div className="space-y-2">
+                        <Label>Number of Calendar Days</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={serviceForm.watch("quantity") || 1}
+                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          data-testid="input-calendar-days"
+                        />
+                        <p className="text-sm text-gray-500">
+                          Charged for each calendar date during admission period (different from 24-hour billing)
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -2724,11 +2776,15 @@ export default function PatientDetail() {
                             billingPreview.billingType === "per_24_hours" ? "bg-green-100 text-green-800" :
                             billingPreview.billingType === "per_hour" ? "bg-orange-100 text-orange-800" :
                             billingPreview.billingType === "composite" ? "bg-purple-100 text-purple-800" :
+                            billingPreview.billingType === "variable" ? "bg-yellow-100 text-yellow-800" :
+                            billingPreview.billingType === "per_date" ? "bg-indigo-100 text-indigo-800" :
                             "bg-blue-100 text-blue-800"
                           } variant="secondary">
                             {billingPreview.billingType === "per_24_hours" ? "Per 24 Hours" :
                              billingPreview.billingType === "per_hour" ? "Per Hour" :
-                             billingPreview.billingType === "composite" ? "Composite" : "Per Instance"}
+                             billingPreview.billingType === "composite" ? "Composite" :
+                             billingPreview.billingType === "variable" ? "Variable" :
+                             billingPreview.billingType === "per_date" ? "Per Date" : "Per Instance"}
                           </Badge>
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">

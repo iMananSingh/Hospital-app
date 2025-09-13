@@ -1651,6 +1651,8 @@ export default function ServiceManagement() {
                     <SelectItem value="per_24_hours">Per 24 Hours (Room Charges)</SelectItem>
                     <SelectItem value="per_hour">Per Hour (Oxygen, etc.)</SelectItem>
                     <SelectItem value="composite">Composite (Fixed + Variable)</SelectItem>
+                    <SelectItem value="variable">Variable (Input-based pricing)</SelectItem>
+                    <SelectItem value="per_date">Per Date (Calendar dates during admission)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-gray-500">
@@ -1658,6 +1660,8 @@ export default function ServiceManagement() {
                   {serviceForm.watch("billingType") === "per_24_hours" && "Charged per day (room stays)"}
                   {serviceForm.watch("billingType") === "per_hour" && "Charged per hour of usage"}
                   {serviceForm.watch("billingType") === "composite" && "Fixed charge + variable component"}
+                  {serviceForm.watch("billingType") === "variable" && "Price determined at time of service (quantity always 1)"}
+                  {serviceForm.watch("billingType") === "per_date" && "Charged per calendar date during admission period"}
                 </p>
               </div>
 
