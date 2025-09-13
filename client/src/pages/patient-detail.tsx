@@ -2031,7 +2031,7 @@ export default function PatientDetail() {
 
                         // Calculate total cost for all services in the group
                         const totalCost = groupServices.reduce((sum, service) => 
-                          sum + (service.calculatedAmount || (service.price * (service.billingQuantity || 1))), 0);
+                          sum + (service.calculatedAmount || (service.price * (service.quantity || 1))), 0);
 
                         // Create title and description based on group size
                         let title, description;
@@ -2502,7 +2502,12 @@ export default function PatientDetail() {
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Price (₹)</TableHead>
-                        <TableHead className="text-right w-24">Quantity</TableHead>
+                        <TableHead className="text-right w-24">
+                          Quantity
+                          <span className="text-xs text-gray-500 block">
+                            (km for ambulance)
+                          </span>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -2515,6 +2520,7 @@ export default function PatientDetail() {
                       ) : (
                         getFilteredServices(selectedServiceCategory).map((service) => {
                           const isSelected = selectedServices.some(s => s.id === service.id);
+                          const isAmbulanceService = service.billingType === 'composite';
                           return (
                             <TableRow 
                               key={service.id}
@@ -2525,15 +2531,9 @@ export default function PatientDetail() {
                                   checked={isSelected}
                                   onCheckedChange={(checked) => {
                                     if (checked) {
-                                      setSelectedServices([...selectedServices, { ...service, quantity: 1 }]);
-                                      setSelectedCatalogService(service); // Set selected service for billing preview
-                                      serviceForm.setValue("quantity", 1); // Reset quantity
-                                      serviceForm.setValue("hours", 1); // Reset hours
-                                      serviceForm.setValue("distance", 0); // Reset distance
+                                      setSelectedServices([...selectedServices, { ...service, quantity: isAmbulanceService ? 0 : 1 }]);
                                     } else {
                                       setSelectedServices(selectedServices.filter(s => s.id !== service.id));
-                                      setSelectedCatalogService(null); // Reset selected service
-                                      setBillingPreview(null); // Reset billing preview
                                     }
                                   }}
                                 />
@@ -2553,19 +2553,25 @@ export default function PatientDetail() {
                               </TableCell>
                               <TableCell className="text-right">
                                 {isSelected ? (
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    step={service.billingType === 'per_hour' ? "0.5" : "1"}
-                                    value={selectedServices.find(s => s.id === service.id)?.quantity || 1}
-                                    onChange={(e) => {
-                                      const quantity = parseFloat(e.target.value) || 1;
-                                      setSelectedServices(selectedServices.map(s => 
-                                        s.id === service.id ? { ...s, quantity } : s
-                                      ));
-                                    }}
-                                    className="w-20 h-8"
-                                  />
+                                  <div className="flex flex-col">
+                                    <Input
+                                      type="number"
+                                      min={isAmbulanceService ? "0" : "1"}
+                                      step={service.billingType === 'per_hour' ? "0.5" : isAmbulanceService ? "0.1" : "1"}
+                                      value={selectedServices.find(s => s.id === service.id)?.quantity || (isAmbulanceService ? 0 : 1)}
+                                      onChange={(e) => {
+                                        const quantity = parseFloat(e.target.value) || (isAmbulanceService ? 0 : 1);
+                                        setSelectedServices(selectedServices.map(s => 
+                                          s.id === service.id ? { ...s, quantity } : s
+                                        ));
+                                      }}
+                                      className="w-20 h-8"
+                                      placeholder={isAmbulanceService ? "km" : "qty"}
+                                    />
+                                    {isAmbulanceService && (
+                                      <span className="text-xs text-gray-500 mt-1">km</span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-gray-400">-</span>
                                 )}
