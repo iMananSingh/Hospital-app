@@ -1942,6 +1942,10 @@ export class SqliteStorage implements IStorage {
 
             if (service) {
               // Calculate billing using smart costing
+              const customParams = serviceData.billingParameters
+                ? JSON.parse(serviceData.billingParameters)
+                : {};
+              
               const billingResult = SmartCostingEngine.calculateBilling({
                 service: {
                   id: service.id,
@@ -1951,9 +1955,7 @@ export class SqliteStorage implements IStorage {
                   billingParameters: service.billingParameters || undefined,
                 },
                 quantity: serviceData.billingQuantity || 1,
-                customParameters: serviceData.billingParameters
-                  ? JSON.parse(serviceData.billingParameters)
-                  : {},
+                customParameters: customParams,
               });
 
               calculatedAmount = billingResult.totalAmount;
@@ -2035,6 +2037,10 @@ export class SqliteStorage implements IStorage {
 
         if (service) {
           // Calculate billing using smart costing
+          const customParams = serviceData.billingParameters
+            ? JSON.parse(serviceData.billingParameters)
+            : {};
+          
           const billingResult = SmartCostingEngine.calculateBilling({
             service: {
               id: service.id,
@@ -2044,9 +2050,7 @@ export class SqliteStorage implements IStorage {
               billingParameters: service.billingParameters || undefined,
             },
             quantity: serviceData.billingQuantity || 1,
-            customParameters: serviceData.billingParameters
-              ? JSON.parse(serviceData.billingParameters)
-              : {},
+            customParameters: customParams,
           });
 
           calculatedAmount = billingResult.totalAmount;
