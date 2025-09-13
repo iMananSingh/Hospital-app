@@ -2881,41 +2881,6 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Smart Billing Dialog */}
-      <SmartBillingDialog
-        isOpen={isSmartBillingDialogOpen}
-        onClose={() => setIsSmartBillingDialogOpen(false)}
-        onSubmit={(data) => {
-          // Handle smart billing service submission
-          const response = fetch("/api/patient-services", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-            },
-            body: JSON.stringify(data),
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
-            queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
-            setIsSmartBillingDialogOpen(false);
-            toast({
-              title: "Service scheduled successfully",
-              description: "The service has been added using smart billing.",
-            });
-          }).catch(() => {
-            toast({
-              title: "Error scheduling service",
-              description: "Please try again.",
-              variant: "destructive",
-            });
-          });
-        }}
-        services={allServices || []}
-        patientId={patientId || ""}
-        currentDate={new Date().toISOString().split('T')[0]}
-        currentTime={new Date().toTimeString().slice(0, 5)}
-      />
-
       {/* Room Update Dialog */}
       <Dialog open={isRoomUpdateDialogOpen} onOpenChange={setIsRoomUpdateDialogOpen}>
         <DialogContent>
@@ -3165,14 +3130,39 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Smart Billing Dialog */}
-      <Dialog open={isSmartBillingDialogOpen} onOpenChange={setIsSmartBillingDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Smart Billing</DialogTitle>
-          </DialogHeader>
-          <SmartBillingDialog patientId={patientId} onClose={() => setIsSmartBillingDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
+      <SmartBillingDialog
+        isOpen={isSmartBillingDialogOpen}
+        onClose={() => setIsSmartBillingDialogOpen(false)}
+        onSubmit={(data) => {
+          // Handle smart billing service submission
+          fetch("/api/patient-services", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+            },
+            body: JSON.stringify(data),
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+            queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
+            setIsSmartBillingDialogOpen(false);
+            toast({
+              title: "Service scheduled successfully",
+              description: "The service has been added using smart billing.",
+            });
+          }).catch(() => {
+            toast({
+              title: "Error scheduling service",
+              description: "Please try again.",
+              variant: "destructive",
+            });
+          });
+        }}
+        services={allServices || []}
+        patientId={patientId || ""}
+        currentDate={new Date().toISOString().split('T')[0]}
+        currentTime={new Date().toTimeString().slice(0, 5)}
+      />
     </div>
   );
 }
