@@ -1941,26 +1941,33 @@ export class SqliteStorage implements IStorage {
               .get();
 
             if (service) {
-              // Calculate billing using smart costing
-              const customParams = serviceData.billingParameters
-                ? JSON.parse(serviceData.billingParameters)
-                : {};
-              
-              const billingResult = SmartCostingEngine.calculateBilling({
-                service: {
-                  id: service.id,
-                  name: service.name,
-                  price: service.price,
-                  billingType: service.billingType as any,
-                  billingParameters: service.billingParameters || undefined,
-                },
-                quantity: serviceData.billingQuantity || 1,
-                customParameters: customParams,
-              });
-
-              calculatedAmount = billingResult.totalAmount;
               billingType = service.billingType || "per_instance";
-              billingQuantity = billingResult.billingQuantity;
+              
+              // For variable billing, use the client-provided amount directly
+              if (service.billingType === "variable") {
+                calculatedAmount = serviceData.calculatedAmount || serviceData.price || 0;
+                billingQuantity = 1; // Variable billing always has quantity 1
+              } else {
+                // Calculate billing using smart costing for other billing types
+                const customParams = serviceData.billingParameters
+                  ? JSON.parse(serviceData.billingParameters)
+                  : {};
+                
+                const billingResult = SmartCostingEngine.calculateBilling({
+                  service: {
+                    id: service.id,
+                    name: service.name,
+                    price: service.price,
+                    billingType: service.billingType as any,
+                    billingParameters: service.billingParameters || undefined,
+                  },
+                  quantity: serviceData.billingQuantity || 1,
+                  customParameters: customParams,
+                });
+
+                calculatedAmount = billingResult.totalAmount;
+                billingQuantity = billingResult.billingQuantity;
+              }
             }
           }
 
