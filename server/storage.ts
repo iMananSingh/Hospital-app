@@ -2494,13 +2494,21 @@ export class SqliteStorage implements IStorage {
         const endDate = admission.dischargeDate
           ? new Date(admission.dischargeDate)
           : new Date();
-        const daysDiff = Math.max(
-          1,
-          Math.ceil(
-            (endDate.getTime() - admissionDate.getTime()) / (1000 * 3600 * 24),
-          ),
-        );
-        totalCharges += (admission.dailyCost || 0) * daysDiff;
+
+        console.log(`Financial summary calculation for ${admission.admissionId}:`);
+        console.log(`Admission Date: ${admissionDate.toISOString()}`);
+        console.log(`End Date: ${endDate.toISOString()}`);
+
+        const timeDiffMs = endDate.getTime() - admissionDate.getTime();
+        const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+
+        // Use ceiling for billing - any partial day counts as full day
+        const daysDiff = Math.ceil(timeDiffHours / 24);
+        const stayDuration = Math.max(1, daysDiff); // Minimum 1 day
+
+        console.log(`Time difference: ${timeDiffHours} hours, Stay duration: ${stayDuration} days`);
+
+        totalCharges += (admission.dailyCost || 0) * stayDuration;
         // Initial deposit is NOT added to charges - it's a payment
       }
     });
