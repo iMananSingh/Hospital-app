@@ -656,3 +656,29 @@ export type InsertActivity = z.infer<typeof insertActivitySchema>;
 // Update schema for PATCH (partial updates allowed)
 export const updatePatientSchema = insertPatientSchema.partial();
 export type UpdatePatient = z.infer<typeof updatePatientSchema>;
+
+/**
+ * Calculate admission stay duration in days using consistent logic
+ * This ensures frontend and backend calculations always match
+ */
+export function calculateStayDays(admissionDate: string | Date, endDate?: string | Date): number {
+  let startDate: Date;
+  
+  // Parse admission date - handle different formats
+  if (typeof admissionDate === 'string') {
+    startDate = new Date(admissionDate);
+  } else {
+    startDate = admissionDate;
+  }
+  
+  const end = endDate ? new Date(endDate) : new Date();
+  
+  // Guard against invalid dates
+  if (isNaN(startDate.getTime()) || isNaN(end.getTime())) {
+    return 1; // Fallback to minimum 1 day for invalid dates
+  }
+  
+  // Use direct millisecond calculation to avoid floating-point precision issues
+  const timeDiff = end.getTime() - startDate.getTime();
+  return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+}
