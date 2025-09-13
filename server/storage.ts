@@ -2277,19 +2277,28 @@ export class SqliteStorage implements IStorage {
   }
 
   async getAdmissions(patientId?: string): Promise<Admission[]> {
+    let admissions: Admission[];
+    
     if (patientId) {
-      return db
+      admissions = db
         .select()
         .from(schema.admissions)
         .where(eq(schema.admissions.patientId, patientId))
         .orderBy(desc(schema.admissions.admissionDate))
         .all();
+    } else {
+      admissions = db
+        .select()
+        .from(schema.admissions)
+        .orderBy(desc(schema.admissions.createdAt))
+        .all();
     }
-    return db
-      .select()
-      .from(schema.admissions)
-      .orderBy(desc(schema.admissions.createdAt))
-      .all();
+    
+    // Add calculated stay days to each admission using the same logic as frontend
+    return admissions.map(admission => ({
+      ...admission,
+      stayDays: calculateStayDays(admission.admissionDate, admission.dischargeDate)
+    }));
   }
 
   async getAdmissionById(id: string): Promise<Admission | undefined> {
@@ -2495,13 +2504,10 @@ export class SqliteStorage implements IStorage {
         console.log(`Admission Date: ${admission.admissionDate}`);
         console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
 
-        // Use the same calculation as frontend to ensure consistency
-        const stayDuration = calculateStayDays(
-          admission.admissionDate,
-          admission.dischargeDate
-        );
+        // Use the pre-calculated stay days from the admission card (same value as frontend)
+        const stayDuration = admission.stayDays;
 
-        console.log(`Stay duration: ${stayDuration} days (using consistent calculation)`);
+        console.log(`Stay duration: ${stayDuration} days (using admission card value)`);
 
         totalCharges += (admission.dailyCost || 0) * stayDuration;
         // Initial deposit is NOT added to charges - it's a payment
@@ -4364,13 +4370,10 @@ export class SqliteStorage implements IStorage {
           console.log(`Admission Date: ${admission.admissionDate}`);
           console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
 
-          // Use the same calculation as frontend to ensure consistency
-          const stayDuration = calculateStayDays(
-            admission.admissionDate,
-            admission.dischargeDate
-          );
+          // Use the pre-calculated stay days from the admission card (same value as frontend)
+          const stayDuration = admission.stayDays;
 
-          console.log(`Stay duration: ${stayDuration} days (using consistent calculation)`);
+          console.log(`Stay duration: ${stayDuration} days (using admission card value)`);
 
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
