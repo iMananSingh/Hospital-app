@@ -701,8 +701,9 @@ export default function PatientDetail() {
             } else if (service.billingType === "per_hour") {
               serviceData.billingParameters = JSON.stringify({ hours: service.quantity || 1 });
             } else if (service.billingType === "variable") {
-              // For variable billing, use the entered price
-              serviceData.billingParameters = JSON.stringify({ price: service.price });
+              // For variable billing, use the entered price from form data
+              const variablePrice = data.price || service.price || 0;
+              serviceData.billingParameters = JSON.stringify({ price: variablePrice });
             }
 
             // Calculate billing amount based on service type and quantity
@@ -720,9 +721,10 @@ export default function PatientDetail() {
               serviceData.calculatedAmount = calculatedAmount;
               serviceData.price = calculatedAmount;
             } else if (service.billingType === "variable") {
-              // For variable billing, use the exact price entered (quantity is always 1)
-              serviceData.calculatedAmount = service.price;
-              serviceData.price = service.price;
+              // For variable billing, use the exact price entered from form (quantity is always 1)
+              const variablePrice = data.price || service.price || 0;
+              serviceData.calculatedAmount = variablePrice;
+              serviceData.price = variablePrice;
               serviceData.billingQuantity = 1;
             } else if (service.billingType === "per_date") {
               const calculatedAmount = service.price * (service.quantity || 1);

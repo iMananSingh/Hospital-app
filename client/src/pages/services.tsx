@@ -1616,7 +1616,15 @@ export default function ServiceManagement() {
                   <Label>Price (₹) {activeTab !== 'rooms' ? '(Optional - Variable Pricing)' : '*'}</Label>
                   <Input
                     type="number"
-                    {...serviceForm.register("price", { valueAsNumber: true })}
+                    {...serviceForm.register("price", { 
+                      setValueAs: (value: string) => {
+                        // For variable pricing services, allow null when blank
+                        if (value === "" && serviceForm.watch("billingType") === "variable") {
+                          return null;
+                        }
+                        return value === "" ? 0 : parseFloat(value) || 0;
+                      }
+                    })}
                     placeholder={activeTab !== 'rooms' ? 'Leave blank for variable pricing' : 'Enter price'}
                     data-testid="input-service-price"
                   />
