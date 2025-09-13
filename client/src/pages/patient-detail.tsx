@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
@@ -82,6 +82,7 @@ export default function PatientDetail() {
   const [discountReason, setDiscountReason] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
   // Fetch hospital settings for receipts
   const { data: hospitalSettings } = useQuery({
@@ -639,40 +640,84 @@ export default function PatientDetail() {
   const onServiceSubmit = (data: any) => {
     const isOPD = data.serviceType === "opd";
 
-    let serviceData: any = {
-      patientId: patientId,
-      serviceType: data.serviceType,
-      serviceName: data.serviceName || "OPD Consultation",
-      price: data.price || 0,
-      quantity: billingPreview ? billingPreview.quantity : (data.quantity || 1),
-      notes: data.notes,
-      scheduledDate: data.scheduledDate,
-      scheduledTime: data.scheduledTime,
-      status: "scheduled",
-    };
+    // Handle multiple selected services or single service
+    const servicesToCreate = [];
 
     if (isOPD) {
-      serviceData.doctorId = data.doctorId;
+      // OPD service
+      const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
+      const consultationFee = selectedDoctor ? selectedDoctor.consultationFee : 0;
+
+      servicesToCreate.push({
+        patientId: patientId,
+        serviceType: "opd",
+        serviceName: "OPD Consultation",
+        price: consultationFee,
+        quantity: 1,
+        notes: data.notes,
+        scheduledDate: data.scheduledDate,
+        scheduledTime: data.scheduledTime,
+        status: "scheduled",
+        doctorId: data.doctorId,
+      });
     } else {
-      serviceData.serviceId = data.serviceType || null;
+      // Handle selected catalog services
+      if (selectedServices.length > 0) {
+        selectedServices.forEach((service) => {
+          let serviceData: any = {
+            patientId: patientId,
+            serviceType: mapCategoryToServiceType(service.category),
+            serviceName: service.name,
+            serviceId: service.id,
+            price: service.price * (service.quantity || 1),
+            quantity: service.quantity || 1,
+            notes: data.notes,
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            status: "scheduled",
+            doctorId: data.doctorId !== "none" ? data.doctorId : null,
+          };
 
-      // Add smart billing parameters
-      if (selectedCatalogService && selectedCatalogService.billingType) {
-        serviceData.billingType = selectedCatalogService.billingType;
-        serviceData.billingQuantity = billingPreview ? billingPreview.quantity : 1;
+          // Add smart billing parameters if service has special billing type
+          if (service.billingType) {
+            serviceData.billingType = service.billingType;
+            serviceData.billingQuantity = service.quantity || 1;
 
-        // Add billing parameters based on type
-        if (selectedCatalogService.billingType === "composite") {
-          serviceData.billingParameters = JSON.stringify({ distance: data.distance || 0 });
-        } else if (selectedCatalogService.billingType === "per_hour") {
-          serviceData.billingParameters = JSON.stringify({ hours: data.hours || 1 });
-        }
+            if (service.billingType === "composite") {
+              serviceData.billingParameters = JSON.stringify({ distance: data.distance || 0 });
+            } else if (service.billingType === "per_hour") {
+              serviceData.billingParameters = JSON.stringify({ hours: data.hours || 1 });
+            }
 
-        serviceData.calculatedAmount = billingPreview ? billingPreview.totalAmount : data.price;
+            // Recalculate amount for smart billing
+            if (selectedCatalogService && selectedCatalogService.id === service.id && billingPreview) {
+              serviceData.calculatedAmount = billingPreview.totalAmount;
+              serviceData.price = billingPreview.totalAmount;
+            }
+          }
+
+          servicesToCreate.push(serviceData);
+        });
+      } else if (data.serviceName && data.price > 0) {
+        // Custom service
+        servicesToCreate.push({
+          patientId: patientId,
+          serviceType: "service",
+          serviceName: data.serviceName,
+          price: data.price,
+          quantity: 1,
+          notes: data.notes,
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
+          status: "scheduled",
+          doctorId: data.doctorId !== "none" ? data.doctorId : null,
+        });
       }
     }
 
-    createServiceMutation.mutate([serviceData]);
+    if (servicesToCreate.length > 0) {
+      createServiceMutation.mutate(servicesToCreate);
+    }
   };
 
   const onAdmissionSubmit = (data: any) => {
@@ -997,6 +1042,8 @@ export default function PatientDetail() {
     setSelectedServiceType(serviceType);
     setSelectedServices([]);
     setSelectedServiceCategory("");
+    setSelectedCatalogService(null);
+    setBillingPreview(null);
     setIsServiceDialogOpen(true);
 
     // Set the current time as default
@@ -2744,7 +2791,11 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending || (selectedServiceType !== "opd" && selectedServices.length === 0)}
+                disabled={createServiceMutation.isPending || (
+                  selectedServiceType !== "opd" && 
+                  selectedServices.length === 0 && 
+                  (!serviceForm.watch("serviceName") || !serviceForm.watch("price"))
+                )}
                 data-testid="button-schedule-service"
               >
                 {createServiceMutation.isPending 
