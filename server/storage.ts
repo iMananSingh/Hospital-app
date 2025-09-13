@@ -4360,23 +4360,17 @@ export class SqliteStorage implements IStorage {
       admissions.forEach((admission) => {
         // Calculate bed charges for admitted/discharged patients
         if (admission.status === "admitted" || admission.status === "discharged") {
-          const admissionDate = new Date(admission.admissionDate);
-          const endDate = admission.dischargeDate
-            ? new Date(admission.dischargeDate)
-            : new Date(); // Use current date for ongoing admissions
-
           console.log(`Admission calculation for ${admission.admissionId}:`);
-          console.log(`Admission Date: ${admissionDate.toISOString()}`);
-          console.log(`End Date: ${endDate.toISOString()}`);
+          console.log(`Admission Date: ${admission.admissionDate}`);
+          console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
 
-          const timeDiffMs = endDate.getTime() - admissionDate.getTime();
-          const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
+          // Use the same calculation as frontend to ensure consistency
+          const stayDuration = calculateStayDays(
+            admission.admissionDate,
+            admission.dischargeDate
+          );
 
-          // Use ceiling for billing - any partial day counts as full day
-          const daysDiff = Math.ceil(timeDiffHours / 24);
-          const stayDuration = Math.max(1, daysDiff); // Minimum 1 day
-
-          console.log(`Time difference: ${timeDiffHours} hours, Stay duration: ${stayDuration} days`);
+          console.log(`Stay duration: ${stayDuration} days (using consistent calculation)`);
 
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
