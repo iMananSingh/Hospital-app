@@ -664,9 +664,31 @@ export type UpdatePatient = z.infer<typeof updatePatientSchema>;
 export function calculateStayDays(admissionDate: string | Date, endDate?: string | Date): number {
   let startDate: Date;
   
-  // Parse admission date - handle different formats
+  // Parse admission date using the same robust logic as frontend
   if (typeof admissionDate === 'string') {
-    startDate = new Date(admissionDate);
+    const dateStr = admissionDate;
+    
+    // Detect SQL datetime format "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(dateStr)) {
+      // Parse SQL format as local time to avoid timezone conversion
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
+      if (match) {
+        const [, year, month, day, hour, minute, second = '0'] = match;
+        startDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1, // Month is 0-indexed
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          parseInt(second)
+        );
+      } else {
+        startDate = new Date(dateStr);
+      }
+    } else {
+      // Fallback to default Date parsing for other formats
+      startDate = new Date(dateStr);
+    }
   } else {
     startDate = admissionDate;
   }
