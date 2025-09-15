@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/layout/topbar";
 import StatsCards from "@/components/stats-cards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FakeBillDialog } from "@/components/fake-bill-dialog";
 
 interface DashboardStats {
   opdPatients: number;
@@ -22,6 +24,8 @@ interface Activity {
 }
 
 export default function Dashboard() {
+  const [isFakeBillDialogOpen, setIsFakeBillDialogOpen] = useState(false);
+
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     staleTime: 0, // Always refetch for real-time data
@@ -185,7 +189,11 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                <button className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" data-testid="quick-new-bill">
+                <button 
+                  onClick={() => setIsFakeBillDialogOpen(true)}
+                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" 
+                  data-testid="quick-new-bill"
+                >
                   <div className="text-center">
                     <div className="text-lg font-semibold">New Bill</div>
                     <div className="text-sm opacity-90">Create invoice</div>
@@ -217,6 +225,12 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Fake Bill Dialog */}
+      <FakeBillDialog 
+        isOpen={isFakeBillDialogOpen}
+        onClose={() => setIsFakeBillDialogOpen(false)}
+      />
     </div>
   );
 }
