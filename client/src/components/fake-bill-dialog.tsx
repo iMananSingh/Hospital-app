@@ -299,21 +299,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               color: #666;
             }
 
-            .fake-watermark {
-              position: fixed;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%) rotate(-45deg);
-              font-size: 120px;
-              color: rgba(220, 38, 38, 0.1);
-              font-weight: bold;
-              z-index: -1;
-              pointer-events: none;
-            }
           </style>
         </head>
         <body>
-          <div class="fake-watermark">SAMPLE</div>
           <div class="bill">
             <div class="header">
               <div class="hospital-info">
