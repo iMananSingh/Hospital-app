@@ -12,6 +12,7 @@ interface BillItem {
   date: string;
   description: string;
   quantity: number;
+  rate: number;
   amount: number;
 }
 
@@ -84,6 +85,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
       date: new Date().toISOString().split('T')[0],
       description: '',
       quantity: 1,
+      rate: 0,
       amount: 0
     };
     setBillItems([...billItems, newItem]);
@@ -94,14 +96,27 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
     if (field === 'quantity' && typeof value === 'number') {
       value = Math.max(1, value);
     }
+    if (field === 'rate' && typeof value === 'number') {
+      value = Math.max(0, value);
+    }
     if (field === 'amount' && typeof value === 'number') {
       value = Math.max(0, value);
     }
     
     setBillItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      items.map(item => {
+        if (item.id === id) {
+          const updatedItem = { ...item, [field]: value };
+          // Auto-calculate amount when rate or quantity changes
+          if (field === 'rate' || field === 'quantity') {
+            const rate = field === 'rate' ? value as number : item.rate;
+            const quantity = field === 'quantity' ? value as number : item.quantity;
+            updatedItem.amount = rate * quantity;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
     );
   };
 
@@ -355,8 +370,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 <tr>
                   <th style="width: 5%;">#</th>
                   <th style="width: 12%;">Date</th>
-                  <th style="width: 58%;">Description</th>
-                  <th style="width: 10%;">Qty</th>
+                  <th style="width: 43%;">Description</th>
+                  <th style="width: 8%;">Qty</th>
+                  <th style="width: 12%; text-align: right;">Rate (₹)</th>
                   <th style="width: 15%; text-align: right;">Amount (₹)</th>
                 </tr>
               </thead>
@@ -367,26 +383,29 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                     <td>${formatDate(item.date)}</td>
                     <td>${escapeHtml(item.description)}</td>
                     <td style="text-align: center;">${item.quantity}</td>
+                    <td class="amount-cell" style="text-align: right;">
+                      ₹${item.rate.toLocaleString()}
+                    </td>
                     <td class="amount-cell positive-amount">
-                      ₹${(item.quantity * item.amount).toLocaleString()}
+                      ₹${item.amount.toLocaleString()}
                     </td>
                   </tr>
                 `).join('')}
 
                 <tr style="border-top: 2px solid #333;">
-                  <td colspan="4" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
+                  <td colspan="5" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
                   <td class="amount-cell" style="font-weight: bold; font-size: 16px; padding-top: 15px;">₹${totalCharges.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colspan="4" style="text-align: right; font-weight: bold;">PAID:</td>
+                  <td colspan="5" style="text-align: right; font-weight: bold;">PAID:</td>
                   <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${paid.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td colspan="4" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
+                  <td colspan="5" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
                   <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${discount.toLocaleString()}</td>
                 </tr>
                 <tr style="border-top: 2px solid #2563eb; background: #f0f9ff;">
-                  <td colspan="4" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
+                  <td colspan="5" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
                   <td class="amount-cell ${balance >= 0 ? 'positive-amount' : 'negative-amount'}" style="font-weight: bold; font-size: 18px; padding: 10px;">
                     ₹${balance.toLocaleString()}
                   </td>
@@ -548,7 +567,8 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       <tr>
                         <th className="p-3 text-left w-20">Date</th>
                         <th className="p-3 text-left">Description</th>
-                        <th className="p-3 text-left w-20">Qty</th>
+                        <th className="p-3 text-left w-16">Qty</th>
+                        <th className="p-3 text-left w-24">Rate (₹)</th>
                         <th className="p-3 text-left w-28">Amount (₹)</th>
                         <th className="p-3 text-center w-16">Action</th>
                       </tr>
@@ -589,9 +609,20 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                               type="number"
                               min="0"
                               step="0.01"
-                              value={item.amount}
-                              onChange={(e) => updateBillItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                              value={item.rate}
+                              onChange={(e) => updateBillItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
                               className="w-full"
+                              data-testid={`input-rate-${index}`}
+                            />
+                          </td>
+                          <td className="p-3">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={item.amount}
+                              readOnly
+                              className="w-full bg-gray-50"
                               data-testid={`input-amount-${index}`}
                             />
                           </td>
@@ -610,7 +641,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       ))}
                       {billItems.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={6} className="p-8 text-center text-muted-foreground">
                             No items added. Click "Add Item" to start building the bill.
                           </td>
                         </tr>

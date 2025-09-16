@@ -497,8 +497,9 @@ export function ComprehensiveBillTemplate({
                   <tr>
                     <th style="width: 5%;">#</th>
                     <th style="width: 12%;">Date</th>
-                    <th style="width: 58%;">Description</th>
-                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 43%;">Description</th>
+                    <th style="width: 8%;">Qty</th>
+                    <th style="width: 12%; text-align: right;">Rate (₹)</th>
                     <th style="width: 15%; text-align: right;">Amount (₹)</th>
                   </tr>
                 </thead>
@@ -511,6 +512,9 @@ export function ComprehensiveBillTemplate({
                       <td>${formatDate(item.date)}</td>
                       <td>${escapeHtml(description)}</td>
                       <td style="text-align: center;">${quantity}</td>
+                      <td class="amount-cell" style="text-align: right;">
+                        ₹${quantity > 0 ? (item.amount / quantity).toLocaleString() : '0'}
+                      </td>
                       <td class="amount-cell positive-amount">
                         ₹${item.amount.toLocaleString()}
                       </td>
@@ -520,19 +524,19 @@ export function ComprehensiveBillTemplate({
 
                   <!-- Summary Section as part of table -->
                   <tr style="border-top: 2px solid #333;">
-                    <td colspan="4" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
+                    <td colspan="5" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
                     <td class="amount-cell" style="font-weight: bold; font-size: 16px; padding-top: 15px;">₹${billData.summary.totalCharges.toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td colspan="4" style="text-align: right; font-weight: bold;">PAID:</td>
+                    <td colspan="5" style="text-align: right; font-weight: bold;">PAID:</td>
                     <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalPayments.toLocaleString()}</td>
                   </tr>
                   <tr>
-                    <td colspan="4" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
+                    <td colspan="5" style="text-align: right; font-weight: bold;">DISCOUNT:</td>
                     <td class="amount-cell negative-amount" style="font-weight: bold;">-₹${billData.summary.totalDiscounts.toLocaleString()}</td>
                   </tr>
                   <tr style="border-top: 2px solid #2563eb; background: #f0f9ff;">
-                    <td colspan="4" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
+                    <td colspan="5" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
                     <td class="amount-cell ${billData.summary.remainingBalance >= 0 ? 'positive-amount' : 'negative-amount'}" style="font-weight: bold; font-size: 18px; padding: 10px;">
                       ₹${billData.summary.remainingBalance.toLocaleString()}
                     </td>
@@ -616,6 +620,7 @@ export function ComprehensiveBillTemplate({
                       <th className="text-left p-3 border-b">Date</th>
                       <th className="text-left p-3 border-b">Description</th>
                       <th className="text-center p-3 border-b">Qty</th>
+                      <th className="text-right p-3 border-b">Rate</th>
                       <th className="text-right p-3 border-b">Amount</th>
                     </tr>
                   </thead>
@@ -627,6 +632,9 @@ export function ComprehensiveBillTemplate({
                           <td className="p-3 border-b">{formatDate(item.date)}</td>
                           <td className="p-3 border-b">{description}</td>
                           <td className="p-3 border-b text-center">{quantity}</td>
+                          <td className="p-3 border-b text-right font-medium">
+                            {formatCurrency(quantity > 0 ? item.amount / quantity : 0)}
+                          </td>
                           <td className="p-3 border-b text-right font-medium text-red-600">
                             {formatCurrency(item.amount)}
                           </td>
@@ -636,7 +644,7 @@ export function ComprehensiveBillTemplate({
 
                     {/* Summary as part of table */}
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
-                      <td colSpan={3} className="p-3 text-right font-bold text-lg">
+                      <td colSpan={4} className="p-3 text-right font-bold text-lg">
                         TOTAL CHARGES:
                       </td>
                       <td className="p-3 text-right font-bold text-lg text-red-600">
@@ -644,7 +652,7 @@ export function ComprehensiveBillTemplate({
                       </td>
                     </tr>
                     <tr className="bg-gray-50">
-                      <td colSpan={3} className="p-3 text-right font-bold">
+                      <td colSpan={4} className="p-3 text-right font-bold">
                         PAID:
                       </td>
                       <td className="p-3 text-right font-bold text-green-600">
@@ -652,7 +660,7 @@ export function ComprehensiveBillTemplate({
                       </td>
                     </tr>
                     <tr className="bg-gray-50">
-                      <td colSpan={3} className="p-3 text-right font-bold">
+                      <td colSpan={4} className="p-3 text-right font-bold">
                         DISCOUNT:
                       </td>
                       <td className="p-3 text-right font-bold text-green-600">
@@ -660,7 +668,7 @@ export function ComprehensiveBillTemplate({
                       </td>
                     </tr>
                     <tr className="border-t-2 border-blue-500 bg-blue-50">
-                      <td colSpan={3} className="p-4 text-right font-bold text-xl text-blue-800">
+                      <td colSpan={4} className="p-4 text-right font-bold text-xl text-blue-800">
                         BALANCE:
                       </td>
                       <td className={`p-4 text-right font-bold text-xl ${
