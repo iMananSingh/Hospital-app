@@ -112,7 +112,9 @@ export default function PatientDetail() {
     email: hospitalSettings?.email || "hospital@healthcare.in",
     registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
     logo: hospitalSettings?.logoPath || undefined
-  };</old_str>
+  };
+
+  // Helper function to determine service type for receipt numbering</old_str>
 
   // Helper function to determine service type for receipt numbering
   const getServiceType = (eventType: string, event: any) => {
