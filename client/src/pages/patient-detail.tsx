@@ -112,7 +112,7 @@ export default function PatientDetail() {
     email: hospitalSettings?.email || "hospital@healthcare.in",
     registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
     logo: hospitalSettings?.logoPath || undefined
-  };
+  };</old_str>
 
   // Helper function to determine service type for receipt numbering
   const getServiceType = (eventType: string, event: any) => {
@@ -1099,7 +1099,14 @@ export default function PatientDetail() {
 
   // Function to open the comprehensive bill dialog
   const handleOpenComprehensiveBill = async () => {
-    if (!patient) return;
+    if (!patient || !hospitalSettings) {
+      toast({
+        title: "Error",
+        description: "Hospital settings not loaded yet. Please wait a moment and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       setIsLoadingBill(true);
@@ -1137,17 +1144,17 @@ export default function PatientDetail() {
         actions={
           <Button 
             onClick={handleOpenComprehensiveBill}
-            disabled={isLoadingBill}
+            disabled={isLoadingBill || !hospitalSettings}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
-            {isLoadingBill ? "Generating..." : (
+            {isLoadingBill ? "Generating..." : !hospitalSettings ? "Loading..." : (
               <>
                 <FileText className="h-4 w-4" />
                 Comprehensive Bill
               </>
             )}
-          </Button>
+          </Button></old_str>
         }
       />
 
