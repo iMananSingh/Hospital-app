@@ -239,6 +239,17 @@ export function ComprehensiveBillTemplate({
               font-size: 24px;
               font-weight: bold;
               color: #333;
+              margin-bottom: 5px;
+            }
+
+            .hospital-details {
+              font-size: 12px;
+              color: #666;
+              line-height: 1.4;
+            }
+
+            .hospital-details div {
+              margin-bottom: 2px;
             }
 
             /* Bill Title */
@@ -456,7 +467,13 @@ export function ComprehensiveBillTemplate({
                 ${hospitalInfo.logo ? `
                   <img src="${sanitizeImageUrl(hospitalInfo.logo)}" alt="Hospital Logo" class="hospital-logo">
                 ` : ''}
-                <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+                <div>
+                  <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+                  <div class="hospital-details">
+                    <div>${escapeHtml(hospitalInfo.address)}</div>
+                    <div>Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -579,6 +596,27 @@ export function ComprehensiveBillTemplate({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Patient Info Summary */}
+          {/* Hospital Info Header */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+            <div className="flex items-center gap-4">
+              {hospitalInfo.logo && (
+                <img 
+                  src={hospitalInfo.logo} 
+                  alt="Hospital Logo" 
+                  className="w-12 h-12 object-contain"
+                />
+              )}
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-blue-800">{hospitalInfo.name}</h2>
+                <div className="text-sm text-blue-700">
+                  <div>{hospitalInfo.address}</div>
+                  <div>Phone: {hospitalInfo.phone} | Email: {hospitalInfo.email}{hospitalInfo.registrationNumber ? ` | Reg. No.: ${hospitalInfo.registrationNumber}` : ''}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Patient Info Summary */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
