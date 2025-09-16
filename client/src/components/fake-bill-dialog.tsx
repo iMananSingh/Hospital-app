@@ -567,7 +567,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       <tr>
                         <th className="p-3 text-left w-20">Date</th>
                         <th className="p-3 text-left">Description</th>
-                        <th className="p-3 text-left w-16">Qty</th>
+                        <th className="p-3 text-left w-24">Qty</th>
                         <th className="p-3 text-left w-24">Rate (₹)</th>
                         <th className="p-3 text-left w-28">Amount (₹)</th>
                         <th className="p-3 text-center w-16">Action</th>
