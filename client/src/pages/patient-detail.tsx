@@ -46,6 +46,7 @@ import { ReceiptTemplate } from "@/components/receipt-template";
 import { parseTimestamp, calcStayDays } from "@/lib/time";
 import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template"; // Import ComprehensiveBillTemplate
 
 // Define Service interface with quantity
 interface Service {
@@ -84,7 +85,12 @@ export default function PatientDetail() {
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
-  // Fetch hospital settings for receipts
+  // For Comprehensive Bill
+  const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
+  const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
+  const [isLoadingBill, setIsLoadingBill] = useState(false);
+
+  // Fetch hospital settings for receipts and other uses
   const { data: hospitalSettings } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
@@ -98,7 +104,7 @@ export default function PatientDetail() {
     },
   });
 
-  // Hospital info for receipts
+  // Hospital info for receipts and comprehensive bill
   const hospitalInfo = {
     name: hospitalSettings?.name || "MedCare Pro Hospital",
     address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
@@ -438,10 +444,10 @@ export default function PatientDetail() {
 
   // Calculate billing preview when service or parameters change
   useEffect(() => {
-    if (selectedCatalogService && selectedCatalogService.billingType) {
+    if (selectedServiceType !== "opd" && selectedCatalogService && selectedCatalogService.billingType) {
       calculateBillingPreview();
     }
-  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance, watchedServiceValues.price]);
+  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance, watchedServiceValues.price, selectedServiceType]);
 
   const calculateBillingPreview = () => {
     if (!selectedCatalogService) return;
@@ -1091,6 +1097,34 @@ export default function PatientDetail() {
     serviceForm.setValue("scheduledTime", timeString);
   };
 
+  // Function to open the comprehensive bill dialog
+  const handleOpenComprehensiveBill = async () => {
+    if (!patient) return;
+
+    try {
+      setIsLoadingBill(true);
+      const response = await fetch(`/api/patients/${patient.id}/comprehensive-bill`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch comprehensive bill");
+
+      const billData = await response.json();
+      setComprehensiveBillData(billData);
+      setIsComprehensiveBillOpen(true);
+    } catch (error) {
+      console.error("Error fetching comprehensive bill:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate comprehensive bill",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingBill(false);
+    }
+  };
 
   if (!patient) {
     return <div className="flex items-center justify-center h-64">Loading patient details...</div>;
@@ -1100,6 +1134,21 @@ export default function PatientDetail() {
     <div className="space-y-6">
       <TopBar 
         title={`Patient: ${patient.name}`}
+        actions={
+          <Button 
+            onClick={handleOpenComprehensiveBill}
+            disabled={isLoadingBill}
+            className="flex items-center gap-2"
+            data-testid="button-comprehensive-bill"
+          >
+            {isLoadingBill ? "Generating..." : (
+              <>
+                <FileText className="h-4 w-4" />
+                Comprehensive Bill
+              </>
+            )}
+          </Button>
+        }
       />
 
       <div className="p-6">
@@ -1535,7 +1584,7 @@ export default function PatientDetail() {
                         <>
                           <div className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-800 rounded-lg text-sm">
                             <div className="w-2 h-2 bg-green-500 rounded-full" />
-                            Admitted - Room {currentAdmission.roomNumber}
+                            Admitted - Room {currentAdmission.currentRoomNumber}
                           </div>
                           <Button 
                             onClick={() => setIsDischargeDialogOpen(true)}
@@ -3113,8 +3162,8 @@ export default function PatientDetail() {
               if (currentAdmission) {
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm"><strong>Room:</strong> {currentAdmission.roomNumber}</p>
-                    <p className="text-sm"><strong>Ward Type:</strong> {currentAdmission.wardType}</p>
+                    <p className="text-sm"><strong>Room:</strong> {currentAdmission.currentRoomNumber}</p>
+                    <p className="text-sm"><strong>Ward Type:</strong> {currentAdmission.currentWardType}</p>
                     <p className="text-sm"><strong>Admission Date:</strong> {formatDate(currentAdmission.admissionDate)}</p>
                   </div>
                 );
@@ -3401,7 +3450,15 @@ export default function PatientDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Smart Billing Dialog is removed as its functionality is integrated into "Add Service" */}
+      {/* Comprehensive Bill Dialog */}
+      {isComprehensiveBillOpen && comprehensiveBillData && (
+        <ComprehensiveBillTemplate
+          billData={comprehensiveBillData}
+          hospitalInfo={hospitalInfo}
+          isOpen={isComprehensiveBillOpen}
+          onClose={() => setIsComprehensiveBillOpen(false)}
+        />
+      )}
     </div>
   );
 }
