@@ -171,17 +171,9 @@ export function ComprehensiveBillTemplate({
         }
       }
     } else if (item.type === 'pathology') {
-      // For pathology, check tests count
-      if (item.details?.testsCount) {
-        quantity = item.details.testsCount;
-      } else {
-        // Check if description has quantity pattern
-        const quantityMatch = description.match(/\(x(\d+)\)$/);
-        if (quantityMatch) {
-          quantity = parseInt(quantityMatch[1]);
-          description = description.replace(/\s*\(x\d+\)$/, '');
-        }
-      }
+      // For pathology orders, always show quantity as 1 (one order)
+      // The total price already represents the sum of all tests in the order
+      quantity = 1;
     }
 
     return { quantity, description };
