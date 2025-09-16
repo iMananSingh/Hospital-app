@@ -8,22 +8,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  User, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Stethoscope, 
-  TestTube, 
-  X, 
-  Heart, 
+import {
+  User,
+  Calendar,
+  Phone,
+  Mail,
+  MapPin,
+  Stethoscope,
+  TestTube,
+  X,
+  Heart,
   Bed,
   FileText,
   ClipboardList,
@@ -35,16 +53,25 @@ import {
   Settings,
   Printer,
   Search,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
-import { insertPatientServiceSchema, insertAdmissionSchema } from "@shared/schema";
+import {
+  insertPatientServiceSchema,
+  insertAdmissionSchema,
+} from "@shared/schema";
 import { z } from "zod";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ReceiptTemplate } from "@/components/receipt-template";
 // Removed SmartBillingDialog import as it's no longer used
 import { parseTimestamp, calcStayDays } from "@/lib/time";
-import type { Patient, PatientService, Admission, AdmissionEvent, Doctor } from "@shared/schema";
+import type {
+  Patient,
+  PatientService,
+  Admission,
+  AdmissionEvent,
+  Doctor,
+} from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template"; // Import ComprehensiveBillTemplate
 
@@ -69,15 +96,18 @@ export default function PatientDetail() {
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState("opd");
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("");
-  const [selectedCatalogService, setSelectedCatalogService] = useState<any>(null);
+  const [selectedServiceCategory, setSelectedServiceCategory] =
+    useState<string>("");
+  const [selectedCatalogService, setSelectedCatalogService] =
+    useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] = useState("");
+  const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] =
+    useState("");
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
@@ -96,7 +126,7 @@ export default function PatientDetail() {
     queryFn: async () => {
       const response = await fetch("/api/settings/hospital", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch hospital settings");
@@ -106,12 +136,16 @@ export default function PatientDetail() {
 
   // Hospital info for receipts and comprehensive bill
   const hospitalInfo = {
-    name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
-    address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+    name:
+      hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+    address:
+      hospitalSettings?.address ||
+      "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
     phone: hospitalSettings?.phone || "8889762101, 9826325958",
     email: hospitalSettings?.email || "hospital@healthcare.in",
-    registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
-    logo: hospitalSettings?.logoPath || undefined
+    registrationNumber:
+      hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
+    logo: hospitalSettings?.logoPath || undefined,
   };
 
   // Helper function to determine service type for receipt numbering</old_str>
@@ -119,68 +153,82 @@ export default function PatientDetail() {
   // Helper function to determine service type for receipt numbering
   const getServiceType = (eventType: string, event: any) => {
     switch (eventType) {
-      case 'service':
+      case "service":
         // Check if it's OPD service
-        if (event.serviceType === 'opd' || event.serviceName === 'OPD Consultation') {
-          return 'opd';
+        if (
+          event.serviceType === "opd" ||
+          event.serviceName === "OPD Consultation"
+        ) {
+          return "opd";
         }
         // Check specific service categories
         const category = event.category?.toLowerCase();
-        if (category === 'discharge' || event.description?.toLowerCase().includes('discharge')) {
-          return 'discharge';
+        if (
+          category === "discharge" ||
+          event.description?.toLowerCase().includes("discharge")
+        ) {
+          return "discharge";
         }
-        if (category === 'room_transfer' || event.description?.toLowerCase().includes('transfer')) {
-          return 'room_transfer';
+        if (
+          category === "room_transfer" ||
+          event.description?.toLowerCase().includes("transfer")
+        ) {
+          return "room_transfer";
         }
-        return 'service';
-      case 'pathology':
-        return 'pathology';
-      case 'admission':
-        return 'admission';
-      case 'payment':
-        return 'payment';
-      case 'discount':
-        return 'discount';
+        return "service";
+      case "pathology":
+        return "pathology";
+      case "admission":
+        return "admission";
+      case "payment":
+        return "payment";
+      case "discount":
+        return "discount";
       default:
         return eventType;
     }
   };
 
   // Helper function to get daily count for receipt numbering from API
-  const getDailyCountFromAPI = async (eventType: string, eventDate: string, currentEvent: any): Promise<number> => {
+  const getDailyCountFromAPI = async (
+    eventType: string,
+    eventDate: string,
+    currentEvent: any,
+  ): Promise<number> => {
     try {
       const serviceType = getServiceType(eventType, currentEvent);
-      const response = await fetch(`/api/receipts/daily-count/${serviceType}/${eventDate}`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/receipts/daily-count/${serviceType}/${eventDate}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
-        console.error('Failed to get daily count from API');
+        console.error("Failed to get daily count from API");
         return 1;
       }
 
       const data = await response.json();
       return data.count;
     } catch (error) {
-      console.error('Error fetching daily count:', error);
+      console.error("Error fetching daily count:", error);
       return 1;
     }
   };
-
-
 
   const generateReceiptData = (event: any, eventType: string) => {
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
       // For services, always use the stored receiptNumber
-      if (eventType === 'service' && event.receiptNumber) {
+      if (eventType === "service" && event.receiptNumber) {
         return event.receiptNumber;
       }
 
       // For pathology, try to get from order data
-      if (eventType === 'pathology') {
+      if (eventType === "pathology") {
         if (event.rawData?.order?.receiptNumber) {
           return event.rawData.order.receiptNumber;
         }
@@ -193,7 +241,7 @@ export default function PatientDetail() {
       }
 
       // For admission events, try to get from admission event data
-      if (eventType === 'admission_event') {
+      if (eventType === "admission_event") {
         if (event.rawData?.event?.receiptNumber) {
           return event.rawData.event.receiptNumber;
         }
@@ -203,7 +251,7 @@ export default function PatientDetail() {
       }
 
       // For admission fallback, try to get from admission data
-      if (eventType === 'admission') {
+      if (eventType === "admission") {
         if (event.rawData?.admission?.receiptNumber) {
           return event.rawData.admission.receiptNumber;
         }
@@ -217,7 +265,7 @@ export default function PatientDetail() {
         return event.receiptNumber;
       }
 
-      return 'RECEIPT-NOT-FOUND';
+      return "RECEIPT-NOT-FOUND";
     };
 
     // Helper function to get doctor name from doctor ID
@@ -241,49 +289,66 @@ export default function PatientDetail() {
       }
 
       // Try to get from rawData for pathology orders
-      if (eventType === 'pathology' && event.rawData?.order?.doctorId) {
-        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.order.doctorId);
+      if (eventType === "pathology" && event.rawData?.order?.doctorId) {
+        const doctor = doctors.find(
+          (d: Doctor) => d.id === event.rawData.order.doctorId,
+        );
         if (doctor) {
           return doctor.name;
         }
       }
 
       // Try to get from rawData for admission events
-      if (eventType === 'admission_event' && event.rawData?.event?.doctorId) {
-        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.event.doctorId);
+      if (eventType === "admission_event" && event.rawData?.event?.doctorId) {
+        const doctor = doctors.find(
+          (d: Doctor) => d.id === event.rawData.event.doctorId,
+        );
         if (doctor) {
           return doctor.name;
         }
       }
 
       // Try to get from rawData for admission fallback
-      if (eventType === 'admission' && event.rawData?.admission?.doctorId) {
-        const doctor = doctors.find((d: Doctor) => d.id === event.rawData.admission.doctorId);
+      if (eventType === "admission" && event.rawData?.admission?.doctorId) {
+        const doctor = doctors.find(
+          (d: Doctor) => d.id === event.rawData.admission.doctorId,
+        );
         if (doctor) {
           return doctor.name;
         }
       }
 
-      return 'No Doctor Assigned';
+      return "No Doctor Assigned";
     };
 
     // Base receipt data structure
     const baseReceiptData = {
-      type: eventType as 'service' | 'pathology' | 'admission' | 'payment' | 'discount',
+      type: eventType as
+        | "service"
+        | "pathology"
+        | "admission"
+        | "payment"
+        | "discount",
       id: event.id,
-      title: event.title || event.serviceName || event.testName || event.description || 'Service',
+      title:
+        event.title ||
+        event.serviceName ||
+        event.testName ||
+        event.description ||
+        "Service",
       date: event.sortTimestamp,
       amount: event.amount || event.price || event.totalPrice || 0,
-      description: event.description || event.serviceName || event.testName || '',
-      patientName: patient?.name || 'Unknown Patient',
-      patientId: patient?.patientId || 'Unknown ID',
+      description:
+        event.description || event.serviceName || event.testName || "",
+      patientName: patient?.name || "Unknown Patient",
+      patientId: patient?.patientId || "Unknown ID",
       details: {
         ...event,
         patientAge: patient?.age,
         patientGender: patient?.gender,
         doctorName: getDoctorName(),
-        receiptNumber: getReceiptNumber()
-      }
+        receiptNumber: getReceiptNumber(),
+      },
     };
 
     return baseReceiptData;
@@ -295,7 +360,7 @@ export default function PatientDetail() {
     queryFn: async () => {
       const response = await fetch(`/api/patients/${patientId}`, {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch patient");
@@ -307,23 +372,27 @@ export default function PatientDetail() {
   const { data: services } = useQuery<PatientService[]>({
     queryKey: ["/api/patient-services", patientId],
     queryFn: async () => {
-      const response = await fetch(`/api/patient-services?patientId=${patientId}`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/patient-services?patientId=${patientId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
       if (!response.ok) throw new Error("Failed to fetch patient services");
       return response.json();
     },
   });
 
   // Fetch all services for service selection
-  const { data: allServices } = useQuery<Service[]>({ // Use Service interface
+  const { data: allServices } = useQuery<Service[]>({
+    // Use Service interface
     queryKey: ["/api/services"],
     queryFn: async () => {
       const response = await fetch("/api/services", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch services");
@@ -337,7 +406,7 @@ export default function PatientDetail() {
     queryFn: async () => {
       const response = await fetch(`/api/admissions?patientId=${patientId}`, {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch patient admissions");
@@ -351,7 +420,7 @@ export default function PatientDetail() {
     queryFn: async () => {
       const response = await fetch(`/api/pathology/patient/${patientId}`, {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch pathology orders");
@@ -364,11 +433,14 @@ export default function PatientDetail() {
   const { data: financialSummary, isLoading: isFinancialLoading } = useQuery({
     queryKey: ["/api/patients", patientId, "financial-summary"],
     queryFn: async () => {
-      const response = await fetch(`/api/patients/${patientId}/financial-summary`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/patients/${patientId}/financial-summary`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
       if (!response.ok) throw new Error("Failed to fetch financial summary");
       return response.json();
     },
@@ -386,19 +458,25 @@ export default function PatientDetail() {
         await Promise.all(
           admissions.map(async (admission: Admission) => {
             try {
-              const response = await fetch(`/api/admissions/${admission.id}/events`, {
-                headers: {
-                  "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+              const response = await fetch(
+                `/api/admissions/${admission.id}/events`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+                  },
                 },
-              });
+              );
               if (response.ok) {
                 const events = await response.json();
                 eventsMap[admission.id] = events;
               }
             } catch (error) {
-              console.error(`Failed to fetch events for admission ${admission.id}:`, error);
+              console.error(
+                `Failed to fetch events for admission ${admission.id}:`,
+                error,
+              );
             }
-          })
+          }),
         );
       }
 
@@ -437,7 +515,7 @@ export default function PatientDetail() {
       hours: 1,
       distance: 0,
       notes: "",
-      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledDate: new Date().toISOString().split("T")[0],
       scheduledTime: new Date().toTimeString().slice(0, 5),
     },
   });
@@ -446,10 +524,21 @@ export default function PatientDetail() {
 
   // Calculate billing preview when service or parameters change
   useEffect(() => {
-    if (selectedServiceType !== "opd" && selectedCatalogService && selectedCatalogService.billingType) {
+    if (
+      selectedServiceType !== "opd" &&
+      selectedCatalogService &&
+      selectedCatalogService.billingType
+    ) {
       calculateBillingPreview();
     }
-  }, [selectedCatalogService, watchedServiceValues.quantity, watchedServiceValues.hours, watchedServiceValues.distance, watchedServiceValues.price, selectedServiceType]);
+  }, [
+    selectedCatalogService,
+    watchedServiceValues.quantity,
+    watchedServiceValues.hours,
+    watchedServiceValues.distance,
+    watchedServiceValues.price,
+    selectedServiceType,
+  ]);
 
   const calculateBillingPreview = () => {
     if (!selectedCatalogService) return;
@@ -462,30 +551,32 @@ export default function PatientDetail() {
       case "per_instance":
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} instance${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} instance${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "per_24_hours":
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "per_hour":
         quantity = watchedServiceValues.hours || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} hour${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} hour${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "composite":
-        const params = selectedCatalogService.billingParameters ? JSON.parse(selectedCatalogService.billingParameters) : {};
+        const params = selectedCatalogService.billingParameters
+          ? JSON.parse(selectedCatalogService.billingParameters)
+          : {};
         const fixedCharge = params.fixedCharge || selectedCatalogService.price;
         const perKmRate = params.perKmRate || 0;
         const distance = watchedServiceValues.distance || 0;
 
         const distanceCharge = perKmRate * distance;
         totalAmount = fixedCharge + distanceCharge;
-        breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ''} = ₹${totalAmount}`;
+        breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ""} = ₹${totalAmount}`;
         quantity = 1;
         break;
 
@@ -498,7 +589,7 @@ export default function PatientDetail() {
       case "per_date":
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} date${quantity > 1 ? 's' : ''} = ₹${totalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} date${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       default:
@@ -511,7 +602,7 @@ export default function PatientDetail() {
       totalAmount,
       quantity,
       breakdown,
-      billingType: selectedCatalogService.billingType
+      billingType: selectedCatalogService.billingType,
     });
 
     // Update the form price field (but not for variable billing to avoid overwriting user input)
@@ -519,7 +610,6 @@ export default function PatientDetail() {
       serviceForm.setValue("price", totalAmount);
     }
   };
-
 
   const admissionForm = useForm({
     // Remove zodResolver to handle validation manually since reason is now optional
@@ -547,36 +637,43 @@ export default function PatientDetail() {
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
       // Generate receipt number before sending to API with correct format
-      const serviceType = getServiceType('service', data[0]); // Assuming data is an array of services
-      const eventDate = new Date(data[0].scheduledDate).toISOString().split('T')[0];
-      const count = await getDailyCountFromAPI('service', eventDate, data[0]);
+      const serviceType = getServiceType("service", data[0]); // Assuming data is an array of services
+      const eventDate = new Date(data[0].scheduledDate)
+        .toISOString()
+        .split("T")[0];
+      const count = await getDailyCountFromAPI("service", eventDate, data[0]);
 
       // Format: YYMMDD-TYPE-NNNN (correct format)
       const dateObj = new Date(eventDate);
-      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+      const yymmdd = dateObj
+        .toISOString()
+        .slice(2, 10)
+        .replace(/-/g, "")
+        .slice(0, 6);
 
-      let typeCode = '';
-      if (serviceType === 'opd') {
-        typeCode = 'OPD';
+      let typeCode = "";
+      if (serviceType === "opd") {
+        typeCode = "OPD";
       } else {
-        typeCode = 'SER';
+        typeCode = "SER";
       }
 
-      const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, '0')}`;
+      const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, "0")}`;
 
       // Map services to include the generated receipt number and other details
       const servicesWithReceipt = data.map((service: any) => ({
         ...service,
         receiptNumber: receiptNumber,
         // Include doctorId for OPD services, otherwise null
-        doctorId: service.serviceType === 'opd' ? service.doctorId : null, 
+        doctorId: service.serviceType === "opd" ? service.doctorId : null,
       }));
 
-      const response = await fetch("/api/patient-services/batch", { // Use batch endpoint
+      const response = await fetch("/api/patient-services/batch", {
+        // Use batch endpoint
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(servicesWithReceipt),
       });
@@ -584,7 +681,9 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patient-services", patientId],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsServiceDialogOpen(false);
       setSelectedServiceType("");
@@ -624,7 +723,7 @@ export default function PatientDetail() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
@@ -632,7 +731,9 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admissions", patientId],
+      });
       setIsAdmissionDialogOpen(false);
       admissionForm.reset();
       toast({
@@ -667,8 +768,12 @@ export default function PatientDetail() {
 
     if (isOPD) {
       // OPD service
-      const selectedDoctor = doctors.find((d: Doctor) => d.id === data.doctorId);
-      const consultationFee = selectedDoctor ? selectedDoctor.consultationFee : 0;
+      const selectedDoctor = doctors.find(
+        (d: Doctor) => d.id === data.doctorId,
+      );
+      const consultationFee = selectedDoctor
+        ? selectedDoctor.consultationFee
+        : 0;
 
       servicesToCreate.push({
         patientId: patientId,
@@ -707,22 +812,30 @@ export default function PatientDetail() {
 
             if (service.billingType === "composite") {
               // For composite billing (ambulance), use quantity as distance
-              serviceData.billingParameters = JSON.stringify({ distance: service.quantity || 0 });
+              serviceData.billingParameters = JSON.stringify({
+                distance: service.quantity || 0,
+              });
             } else if (service.billingType === "per_hour") {
-              serviceData.billingParameters = JSON.stringify({ hours: service.quantity || 1 });
+              serviceData.billingParameters = JSON.stringify({
+                hours: service.quantity || 1,
+              });
             } else if (service.billingType === "variable") {
               // For variable billing, use the entered price from form data
               const variablePrice = data.price || service.price || 0;
-              serviceData.billingParameters = JSON.stringify({ price: variablePrice });
+              serviceData.billingParameters = JSON.stringify({
+                price: variablePrice,
+              });
             }
 
             // Calculate billing amount based on service type and quantity
             if (service.billingType === "composite") {
-              const params = service.billingParameters ? JSON.parse(service.billingParameters) : {};
+              const params = service.billingParameters
+                ? JSON.parse(service.billingParameters)
+                : {};
               const fixedCharge = params.fixedCharge || service.price;
               const perKmRate = params.perKmRate || 0;
               const distance = service.quantity || 0;
-              const calculatedAmount = fixedCharge + (perKmRate * distance);
+              const calculatedAmount = fixedCharge + perKmRate * distance;
 
               serviceData.calculatedAmount = calculatedAmount;
               serviceData.price = calculatedAmount;
@@ -769,13 +882,20 @@ export default function PatientDetail() {
 
   const onAdmissionSubmit = (data: any) => {
     // Validate required fields (reason is now optional)
-    const requiredFields = ['doctorId', 'currentWardType', 'admissionDate', 'dailyCost'];
-    const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
+    const requiredFields = [
+      "doctorId",
+      "currentWardType",
+      "admissionDate",
+      "dailyCost",
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !data[field] || data[field] === "",
+    );
 
     if (missingFields.length > 0) {
       toast({
         title: "Missing Required Fields",
-        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        description: `Please fill in all required fields: ${missingFields.join(", ")}`,
         variant: "destructive",
       });
       return;
@@ -789,15 +909,21 @@ export default function PatientDetail() {
   };
 
   const dischargePatientMutation = useMutation({
-    mutationFn: async (data: { currentAdmissionId: string; dischargeDateTime: string }) => {
-      const response = await fetch(`/api/admissions/${data.currentAdmissionId}/discharge`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+    mutationFn: async (data: {
+      currentAdmissionId: string;
+      dischargeDateTime: string;
+    }) => {
+      const response = await fetch(
+        `/api/admissions/${data.currentAdmissionId}/discharge`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+          body: JSON.stringify({ dischargeDateTime: data.dischargeDateTime }),
         },
-        body: JSON.stringify({ dischargeDateTime: data.dischargeDateTime }),
-      });
+      );
 
       if (!response.ok) throw new Error("Failed to discharge patient");
       return response.json();
@@ -809,7 +935,8 @@ export default function PatientDetail() {
       setDischargeDateTime(""); // Reset the date/time state
       toast({
         title: "Patient discharged successfully",
-        description: "The patient has been discharged and the event has been recorded.",
+        description:
+          "The patient has been discharged and the event has been recorded.",
       });
     },
     onError: () => {
@@ -823,20 +950,25 @@ export default function PatientDetail() {
 
   const updateRoomMutation = useMutation({
     mutationFn: async (data: any) => {
-      const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+      const currentAdmission = admissions?.find(
+        (adm: any) => adm.status === "admitted",
+      );
       if (!currentAdmission) throw new Error("No active admission found");
 
-      const response = await fetch(`/api/admissions/${currentAdmission.id}/transfer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/admissions/${currentAdmission.id}/transfer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+          body: JSON.stringify({
+            roomNumber: data.roomNumber,
+            wardType: data.wardType,
+          }),
         },
-        body: JSON.stringify({
-          roomNumber: data.roomNumber,
-          wardType: data.wardType,
-        }),
-      });
+      );
 
       if (!response.ok) throw new Error("Failed to transfer room");
       return response.json();
@@ -854,12 +986,16 @@ export default function PatientDetail() {
   });
 
   const addPaymentMutation = useMutation({
-    mutationFn: async (data: { amount: number, paymentMethod: string, reason?: string }) => {
+    mutationFn: async (data: {
+      amount: number;
+      paymentMethod: string;
+      reason?: string;
+    }) => {
       const response = await fetch(`/api/patients/${patientId}/payments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify({
           amount: data.amount,
@@ -873,8 +1009,12 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "payments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "financial-summary"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "payments"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
@@ -894,12 +1034,16 @@ export default function PatientDetail() {
   });
 
   const addDiscountMutation = useMutation({
-    mutationFn: async (data: { amount: number, reason: string, discountType?: string }) => {
+    mutationFn: async (data: {
+      amount: number;
+      reason: string;
+      discountType?: string;
+    }) => {
       const response = await fetch(`/api/patients/${patientId}/discounts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify({
           amount: data.amount,
@@ -913,8 +1057,12 @@ export default function PatientDetail() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "financial-summary"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "discounts"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "financial-summary"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "discounts"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
@@ -934,7 +1082,9 @@ export default function PatientDetail() {
   });
 
   const onDischargePatient = (dischargeDateTime: string) => {
-    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+    const currentAdmission = admissions?.find(
+      (adm: any) => adm.status === "admitted",
+    );
     if (!currentAdmission) {
       toast({
         title: "Error",
@@ -953,21 +1103,23 @@ export default function PatientDetail() {
       return;
     }
 
-    dischargePatientMutation.mutate({ 
-      currentAdmissionId: currentAdmission.id, 
-      dischargeDateTime 
+    dischargePatientMutation.mutate({
+      currentAdmissionId: currentAdmission.id,
+      dischargeDateTime,
     });
   };
 
   const onRoomUpdate = (data: any) => {
     // Validate required fields
-    const requiredFields = ['wardType', 'roomNumber'];
-    const missingFields = requiredFields.filter(field => !data[field] || data[field] === '');
+    const requiredFields = ["wardType", "roomNumber"];
+    const missingFields = requiredFields.filter(
+      (field) => !data[field] || data[field] === "",
+    );
 
     if (missingFields.length > 0) {
       toast({
         title: "Missing Required Fields",
-        description: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        description: `Please fill in all required fields: ${missingFields.join(", ")}`,
         variant: "destructive",
       });
       return;
@@ -978,16 +1130,16 @@ export default function PatientDetail() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in-progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'scheduled':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800";
+      case "scheduled":
+        return "bg-yellow-100 text-yellow-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -996,9 +1148,9 @@ export default function PatientDetail() {
 
     // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
     if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-      const parts = dateString.split('T');
-      const dateParts = parts[0].split('-');
-      const timeParts = parts[1].split(':');
+      const parts = dateString.split("T");
+      const dateParts = parts[0].split("-");
+      const timeParts = parts[1].split(":");
 
       // Create date object in local timezone
       const localDate = new Date(
@@ -1006,20 +1158,20 @@ export default function PatientDetail() {
         parseInt(dateParts[1]) - 1, // month (0-indexed)
         parseInt(dateParts[2]), // day
         parseInt(timeParts[0]), // hour
-        parseInt(timeParts[1]) // minute
+        parseInt(timeParts[1]), // minute
       );
 
       // Check if date is valid
       if (isNaN(localDate.getTime())) return "N/A";
 
-      return localDate.toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+      return localDate.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
         hour12: true,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
     }
 
@@ -1031,36 +1183,40 @@ export default function PatientDetail() {
 
     return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "short", 
+      month: "short",
       day: "numeric",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
   };
 
   // Service categories mapping (matching service management)
   const serviceCategories = [
-    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
-    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
-    { key: 'operations', label: 'Surgical Operations', icon: X },
-    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
+    { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
+    { key: "procedures", label: "Medical Procedures", icon: Stethoscope },
+    { key: "operations", label: "Surgical Operations", icon: X },
+    { key: "misc", label: "Miscellaneous Services", icon: Settings },
   ];
 
   // Filter services by category and search query
   const getFilteredServices = (category: string) => {
     if (!allServices) return [];
 
-    let filtered = allServices.filter(s => s.isActive);
+    let filtered = allServices.filter((s) => s.isActive);
 
     // Filter by category
     if (category && category !== "all") {
-      filtered = filtered.filter(s => s.category === category);
+      filtered = filtered.filter((s) => s.category === category);
     }
 
     // Filter by search query
     if (serviceSearchQuery.trim()) {
-      filtered = filtered.filter(s => 
-        s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
-        (s.description && s.description.toLowerCase().includes(serviceSearchQuery.toLowerCase()))
+      filtered = filtered.filter(
+        (s) =>
+          s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
+          (s.description &&
+            s.description
+              .toLowerCase()
+              .includes(serviceSearchQuery.toLowerCase())),
       );
     }
 
@@ -1070,18 +1226,18 @@ export default function PatientDetail() {
   // Map service categories to valid database service types
   const mapCategoryToServiceType = (category: string) => {
     switch (category) {
-      case 'diagnostics':
-        return 'diagnostic';
-      case 'procedures':
-        return 'procedure';
-      case 'operations':
-        return 'operation';
-      case 'consultation':
-        return 'opd';
-      case 'misc':
-        return 'service';
+      case "diagnostics":
+        return "diagnostic";
+      case "procedures":
+        return "procedure";
+      case "operations":
+        return "operation";
+      case "consultation":
+        return "opd";
+      case "misc":
+        return "service";
       default:
-        return 'service';
+        return "service";
     }
   };
 
@@ -1104,7 +1260,8 @@ export default function PatientDetail() {
     if (!patient || !hospitalSettings) {
       toast({
         title: "Error",
-        description: "Hospital settings not loaded yet. Please wait a moment and try again.",
+        description:
+          "Hospital settings not loaded yet. Please wait a moment and try again.",
         variant: "destructive",
       });
       return;
@@ -1112,11 +1269,14 @@ export default function PatientDetail() {
 
     try {
       setIsLoadingBill(true);
-      const response = await fetch(`/api/patients/${patient.id}/comprehensive-bill`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/patients/${patient.id}/comprehensive-bill`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) throw new Error("Failed to fetch comprehensive bill");
 
@@ -1136,27 +1296,35 @@ export default function PatientDetail() {
   };
 
   if (!patient) {
-    return <div className="flex items-center justify-center h-64">Loading patient details...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        Loading patient details...
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <TopBar 
+      <TopBar
         title={`Patient: ${patient.name}`}
         actions={
-          <Button 
+          <Button
             onClick={handleOpenComprehensiveBill}
             disabled={isLoadingBill || !hospitalSettings}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
-            {isLoadingBill ? "Generating..." : !hospitalSettings ? "Loading..." : (
+            {isLoadingBill ? (
+              "Generating..."
+            ) : !hospitalSettings ? (
+              "Loading..."
+            ) : (
               <>
                 <FileText className="h-4 w-4" />
                 Comprehensive Bill
               </>
             )}
-          </Button></old_str>
+          </Button>
         }
       />
 
@@ -1197,8 +1365,12 @@ export default function PatientDetail() {
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">Emergency Contact</p>
-                <p className="font-medium">{patient.emergencyContact || "N/A"}</p>
+                <p className="text-sm text-muted-foreground">
+                  Emergency Contact
+                </p>
+                <p className="font-medium">
+                  {patient.emergencyContact || "N/A"}
+                </p>
               </div>
 
               <div>
@@ -1215,7 +1387,9 @@ export default function PatientDetail() {
                 <p className="text-sm text-muted-foreground">Room No</p>
                 <p className="font-medium">
                   {(() => {
-                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    const currentAdmission = admissions?.find(
+                      (adm: any) => adm.status === "admitted",
+                    );
                     return currentAdmission?.currentRoomNumber || "N/A";
                   })()}
                 </p>
@@ -1231,17 +1405,22 @@ export default function PatientDetail() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
-              <Button 
+              <Button
                 onClick={() => {
                   console.log("=== SCHEDULE OPD CLICKED ===");
 
                   // Set current LOCAL date and time when opening the dialog
                   const now = new Date();
-                  const currentDate = now.getFullYear() + '-' + 
-                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(now.getDate()).padStart(2, '0');
-                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
-                    String(now.getMinutes()).padStart(2, '0');
+                  const currentDate =
+                    now.getFullYear() +
+                    "-" +
+                    String(now.getMonth() + 1).padStart(2, "0") +
+                    "-" +
+                    String(now.getDate()).padStart(2, "0");
+                  const currentTime =
+                    String(now.getHours()).padStart(2, "0") +
+                    ":" +
+                    String(now.getMinutes()).padStart(2, "0");
 
                   setSelectedServiceType("opd");
                   setSelectedServiceCategory("");
@@ -1261,7 +1440,9 @@ export default function PatientDetail() {
                     distance: 0,
                   });
 
-                  console.log(`Set current date/time: ${currentDate} ${currentTime}`);
+                  console.log(
+                    `Set current date/time: ${currentDate} ${currentTime}`,
+                  );
                   setIsServiceDialogOpen(true);
                 }}
                 className="flex items-center gap-2"
@@ -1271,8 +1452,12 @@ export default function PatientDetail() {
                 Schedule OPD
               </Button>
 
-              <Button 
-                onClick={() => navigate(`/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || '')}`)}
+              <Button
+                onClick={() =>
+                  navigate(
+                    `/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || "")}`,
+                  )
+                }
                 variant="outline"
                 className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-pathology-tests"
@@ -1281,15 +1466,20 @@ export default function PatientDetail() {
                 Order Pathology Tests
               </Button>
 
-              <Button 
+              <Button
                 onClick={() => {
                   // Set current LOCAL date and time when opening service dialog
                   const now = new Date();
-                  const currentDate = now.getFullYear() + '-' + 
-                    String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(now.getDate()).padStart(2, '0');
-                  const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
-                    String(now.getMinutes()).padStart(2, '0');
+                  const currentDate =
+                    now.getFullYear() +
+                    "-" +
+                    String(now.getMonth() + 1).padStart(2, "0") +
+                    "-" +
+                    String(now.getDate()).padStart(2, "0");
+                  const currentTime =
+                    String(now.getHours()).padStart(2, "0") +
+                    ":" +
+                    String(now.getMinutes()).padStart(2, "0");
 
                   // Reset service type and category for general service
                   setSelectedServiceType("");
@@ -1323,20 +1513,27 @@ export default function PatientDetail() {
 
               {/* Admission/Discharge Button */}
               {(() => {
-                const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                const currentAdmission = admissions?.find(
+                  (adm: any) => adm.status === "admitted",
+                );
 
                 if (currentAdmission) {
                   // Patient is admitted - show discharge button
                   return (
-                    <Button 
+                    <Button
                       onClick={() => {
                         // Set current LOCAL date and time when opening discharge dialog
                         const now = new Date();
-                        const currentDateTime = now.getFullYear() + '-' +
-                          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                          String(now.getDate()).padStart(2, '0') + 'T' +
-                          String(now.getHours()).padStart(2, '0') + ':' +
-                          String(now.getMinutes()).padStart(2, '0');
+                        const currentDateTime =
+                          now.getFullYear() +
+                          "-" +
+                          String(now.getMonth() + 1).padStart(2, "0") +
+                          "-" +
+                          String(now.getDate()).padStart(2, "0") +
+                          "T" +
+                          String(now.getHours()).padStart(2, "0") +
+                          ":" +
+                          String(now.getMinutes()).padStart(2, "0");
 
                         setDischargeDateTime(currentDateTime);
                         setIsDischargeDialogOpen(true);
@@ -1351,17 +1548,25 @@ export default function PatientDetail() {
                 } else {
                   // Patient is not admitted - show admit button
                   return (
-                    <Button 
+                    <Button
                       onClick={() => {
-                        // Set current LOCAL date and time when opening admission dialog  
+                        // Set current LOCAL date and time when opening admission dialog
                         const now = new Date();
-                        const currentDateTime = now.getFullYear() + '-' + 
-                          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                          String(now.getDate()).padStart(2, '0') + 'T' +
-                          String(now.getHours()).padStart(2, '0') + ':' +
-                          String(now.getMinutes()).padStart(2, '0');
+                        const currentDateTime =
+                          now.getFullYear() +
+                          "-" +
+                          String(now.getMonth() + 1).padStart(2, "0") +
+                          "-" +
+                          String(now.getDate()).padStart(2, "0") +
+                          "T" +
+                          String(now.getHours()).padStart(2, "0") +
+                          ":" +
+                          String(now.getMinutes()).padStart(2, "0");
 
-                        admissionForm.setValue("admissionDate", currentDateTime);
+                        admissionForm.setValue(
+                          "admissionDate",
+                          currentDateTime,
+                        );
                         setIsAdmissionDialogOpen(true);
                       }}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -1375,7 +1580,6 @@ export default function PatientDetail() {
               })()}
 
               {/* Smart Billing Button is removed as its functionality is integrated into "Add Service" */}
-
             </div>
           </CardContent>
         </Card>
@@ -1385,8 +1589,18 @@ export default function PatientDetail() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                  />
                 </svg>
                 Financial Summary
               </div>
@@ -1421,7 +1635,9 @@ export default function PatientDetail() {
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-muted-foreground mb-1">Total Charges</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Total Charges
+                </p>
                 <p className="text-2xl font-bold text-blue-700">
                   {isFinancialLoading ? (
                     <span className="text-sm">Loading...</span>
@@ -1453,9 +1669,13 @@ export default function PatientDetail() {
                 </p>
               </div>
 
-              <div className={`text-center p-4 rounded-lg ${(financialSummary?.balance || 0) < 0 ? 'bg-red-50' : 'bg-orange-50'}`}>
+              <div
+                className={`text-center p-4 rounded-lg ${(financialSummary?.balance || 0) < 0 ? "bg-red-50" : "bg-orange-50"}`}
+              >
                 <p className="text-sm text-muted-foreground mb-1">Balance</p>
-                <p className={`text-2xl font-bold ${(financialSummary?.balance || 0) < 0 ? 'text-red-700' : 'text-orange-700'}`}>
+                <p
+                  className={`text-2xl font-bold ${(financialSummary?.balance || 0) < 0 ? "text-red-700" : "text-orange-700"}`}
+                >
                   {isFinancialLoading ? (
                     <span className="text-sm">Loading...</span>
                   ) : (
@@ -1463,7 +1683,9 @@ export default function PatientDetail() {
                   )}
                 </p>
                 {(financialSummary?.balance || 0) < 0 && (
-                  <p className="text-xs text-red-600 mt-1">Hospital owes patient</p>
+                  <p className="text-xs text-red-600 mt-1">
+                    Hospital owes patient
+                  </p>
                 )}
               </div>
             </div>
@@ -1471,7 +1693,12 @@ export default function PatientDetail() {
         </Card>
 
         {/* Patient History Tabs */}
-        <Tabs defaultValue={window.location.hash === '#pathology' ? 'pathology' : 'services'} className="space-y-4">
+        <Tabs
+          defaultValue={
+            window.location.hash === "#pathology" ? "pathology" : "services"
+          }
+          className="space-y-4"
+        >
           <TabsList>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="admissions">Admissions</TabsTrigger>
@@ -1487,11 +1714,16 @@ export default function PatientDetail() {
                   onClick={() => {
                     // Set current LOCAL date and time when opening any service dialog
                     const now = new Date();
-                    const currentDate = now.getFullYear() + '-' + 
-                      String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                      String(now.getDate()).padStart(2, '0');
-                    const currentTime = String(now.getHours()).padStart(2, '0') + ':' + 
-                      String(now.getMinutes()).padStart(2, '0');
+                    const currentDate =
+                      now.getFullYear() +
+                      "-" +
+                      String(now.getMonth() + 1).padStart(2, "0") +
+                      "-" +
+                      String(now.getDate()).padStart(2, "0");
+                    const currentTime =
+                      String(now.getHours()).padStart(2, "0") +
+                      ":" +
+                      String(now.getMinutes()).padStart(2, "0");
 
                     // Reset service type and category
                     setSelectedServiceType("");
@@ -1538,27 +1770,46 @@ export default function PatientDetail() {
                     <TableBody>
                       {services.map((service: any) => {
                         // Find doctor name from doctors array using doctorId
-                        const doctor = doctors.find((d: Doctor) => d.id === service.doctorId);
-                        const doctorName = doctor ? doctor.name : (service.doctorId ? "Unknown Doctor" : "No Doctor Assigned");
+                        const doctor = doctors.find(
+                          (d: Doctor) => d.id === service.doctorId,
+                        );
+                        const doctorName = doctor
+                          ? doctor.name
+                          : service.doctorId
+                            ? "Unknown Doctor"
+                            : "No Doctor Assigned";
 
                         // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
-                        const totalCost = service.calculatedAmount || (service.price * (service.billingQuantity || 1));
+                        const totalCost =
+                          service.calculatedAmount ||
+                          service.price * (service.billingQuantity || 1);
 
                         return (
                           <TableRow key={service.id}>
-                            <TableCell className="font-medium">{service.serviceName}</TableCell>
-                            <TableCell>{service.billingQuantity || 1}</TableCell>
+                            <TableCell className="font-medium">
+                              {service.serviceName}
+                            </TableCell>
+                            <TableCell>
+                              {service.billingQuantity || 1}
+                            </TableCell>
                             <TableCell>{doctorName}</TableCell>
                             <TableCell>
                               {formatDate(service.scheduledDate)}
                               {service.scheduledTime && (
                                 <span className="text-muted-foreground ml-2">
-                                  at {(() => {
+                                  at{" "}
+                                  {(() => {
                                     // Convert 24-hour format to 12-hour format
-                                    const [hours, minutes] = service.scheduledTime.split(':');
+                                    const [hours, minutes] =
+                                      service.scheduledTime.split(":");
                                     const hour = parseInt(hours, 10);
-                                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                                    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                                    const ampm = hour >= 12 ? "PM" : "AM";
+                                    const displayHour =
+                                      hour === 0
+                                        ? 12
+                                        : hour > 12
+                                          ? hour - 12
+                                          : hour;
                                     return `${displayHour}:${minutes} ${ampm}`;
                                   })()}
                                 </span>
@@ -1572,7 +1823,9 @@ export default function PatientDetail() {
                   </Table>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">No services scheduled</p>
+                    <p className="text-sm text-muted-foreground">
+                      No services scheduled
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -1586,7 +1839,9 @@ export default function PatientDetail() {
                 <div className="flex items-center gap-2">
                   {(() => {
                     // Check if patient is currently admitted
-                    const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+                    const currentAdmission = admissions?.find(
+                      (adm: any) => adm.status === "admitted",
+                    );
 
                     if (currentAdmission) {
                       return (
@@ -1595,7 +1850,7 @@ export default function PatientDetail() {
                             <div className="w-2 h-2 bg-green-500 rounded-full" />
                             Admitted - Room {currentAdmission.currentRoomNumber}
                           </div>
-                          <Button 
+                          <Button
                             onClick={() => setIsDischargeDialogOpen(true)}
                             size="sm"
                             variant="outline"
@@ -1605,7 +1860,7 @@ export default function PatientDetail() {
                             <Minus className="h-4 w-4" />
                             Discharge Patient
                           </Button>
-                          <Button 
+                          <Button
                             onClick={() => setIsRoomUpdateDialogOpen(true)}
                             variant="outline"
                             size="sm"
@@ -1621,15 +1876,23 @@ export default function PatientDetail() {
                       return (
                         <Button
                           onClick={() => {
-                            // Set current LOCAL date and time when opening admission dialog  
+                            // Set current LOCAL date and time when opening admission dialog
                             const now = new Date();
-                            const currentDateTime = now.getFullYear() + '-' + 
-                              String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                              String(now.getDate()).padStart(2, '0') + 'T' +
-                              String(now.getHours()).padStart(2, '0') + ':' +
-                              String(now.getMinutes()).padStart(2, '0');
+                            const currentDateTime =
+                              now.getFullYear() +
+                              "-" +
+                              String(now.getMonth() + 1).padStart(2, "0") +
+                              "-" +
+                              String(now.getDate()).padStart(2, "0") +
+                              "T" +
+                              String(now.getHours()).padStart(2, "0") +
+                              ":" +
+                              String(now.getMinutes()).padStart(2, "0");
 
-                            admissionForm.setValue("admissionDate", currentDateTime);
+                            admissionForm.setValue(
+                              "admissionDate",
+                              currentDateTime,
+                            );
                             setIsAdmissionDialogOpen(true);
                           }}
                           size="sm"
@@ -1649,19 +1912,26 @@ export default function PatientDetail() {
                   <div className="space-y-6">
                     {admissions.map((admission: any) => {
                       const events = admissionEventsMap[admission.id] || [];
-                      const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                      const doctor = doctors.find(
+                        (d: Doctor) => d.id === admission.doctorId,
+                      );
 
                       return (
-                        <div key={admission.id} className="border rounded-lg p-4">
+                        <div
+                          key={admission.id}
+                          className="border rounded-lg p-4"
+                        >
                           {/* Admission Episode Header */}
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-4">
-                              <h3 className="font-semibold text-lg">{admission.admissionId}</h3>
-                              <Badge 
+                              <h3 className="font-semibold text-lg">
+                                {admission.admissionId}
+                              </h3>
+                              <Badge
                                 className={
-                                  admission.status === 'admitted' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
+                                  admission.status === "admitted"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
                                 }
                                 variant="secondary"
                               >
@@ -1676,49 +1946,35 @@ export default function PatientDetail() {
                           {/* Admission Summary */}
                           <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Current Room:</span>
+                              <span className="text-muted-foreground">
+                                Current Room:
+                              </span>
                               <div className="font-medium">
-                                {admission.currentWardType && admission.currentRoomNumber 
+                                {admission.currentWardType &&
+                                admission.currentRoomNumber
                                   ? `${admission.currentWardType} (${admission.currentRoomNumber})`
-                                  : "Not assigned"
-                                }
+                                  : "Not assigned"}
                               </div>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Admission Date:</span>
+                              <span className="text-muted-foreground">
+                                Admission Date:
+                              </span>
                               <div className="font-medium">
                                 {(() => {
-                                  let admissionDateStr = admission.admissionDate;
+                                  let admissionDateStr =
+                                    admission.admissionDate;
 
                                   // Handle different date formats
-                                  if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                  if (
+                                    admissionDateStr.match(
+                                      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+                                    )
+                                  ) {
                                     // Datetime-local format: "YYYY-MM-DDTHH:MM"
-                                    const parts = admissionDateStr.split('T');
-                                    const dateParts = parts[0].split('-');
-                                    const timeParts = parts[1].split(':');
-
-                                    // Create date object in local timezone
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]) // minute
-                                    );
-
-                                    return localDate.toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                    // Full datetime format: "YYYY-MM-DD HH:MM:SS"
-                                    const parts = admissionDateStr.split(' ');
-                                    const dateParts = parts[0].split('-');
-                                    const timeParts = parts[1].split(':');
+                                    const parts = admissionDateStr.split("T");
+                                    const dateParts = parts[0].split("-");
+                                    const timeParts = parts[1].split(":");
 
                                     // Create date object in local timezone
                                     const localDate = new Date(
@@ -1727,43 +1983,78 @@ export default function PatientDetail() {
                                       parseInt(dateParts[2]), // day
                                       parseInt(timeParts[0]), // hour
                                       parseInt(timeParts[1]), // minute
-                                      parseInt(timeParts[2]) // second
                                     );
 
-                                    return localDate.toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
+                                    return localDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
                                     });
-                                  } else if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                    // Date only format: "YYYY-MM-DD" 
-                                    const dateParts = admissionDateStr.split('-');
+                                  } else if (
+                                    admissionDateStr.match(
+                                      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+                                    )
+                                  ) {
+                                    // Full datetime format: "YYYY-MM-DD HH:MM:SS"
+                                    const parts = admissionDateStr.split(" ");
+                                    const dateParts = parts[0].split("-");
+                                    const timeParts = parts[1].split(":");
+
+                                    // Create date object in local timezone
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]) // day
+                                      parseInt(dateParts[2]), // day
+                                      parseInt(timeParts[0]), // hour
+                                      parseInt(timeParts[1]), // minute
+                                      parseInt(timeParts[2]), // second
                                     );
 
-                                    return localDate.toLocaleDateString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
+                                    return localDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
                                     });
+                                  } else if (
+                                    admissionDateStr.match(
+                                      /^\d{4}-\d{2}-\d{2}$/,
+                                    )
+                                  ) {
+                                    // Date only format: "YYYY-MM-DD"
+                                    const dateParts =
+                                      admissionDateStr.split("-");
+                                    const localDate = new Date(
+                                      parseInt(dateParts[0]), // year
+                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                      parseInt(dateParts[2]), // day
+                                    );
+
+                                    return localDate.toLocaleDateString(
+                                      "en-US",
+                                      {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric",
+                                      },
+                                    );
                                   }
 
                                   // Fallback for other formats (including ISO strings)
                                   const date = new Date(admissionDateStr);
                                   if (!isNaN(date.getTime())) {
-                                    return date.toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
+                                    return date.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
                                     });
                                   }
 
@@ -1773,51 +2064,63 @@ export default function PatientDetail() {
                             </div>
                             <div>
                               <span className="text-muted-foreground">
-                                {admission.status === 'discharged' ? 'Discharge Date:' : 'Days Admitted:'}
+                                {admission.status === "discharged"
+                                  ? "Discharge Date:"
+                                  : "Days Admitted:"}
                               </span>
                               <div className="font-medium">
-                                {admission.dischargeDate ? 
-                                  (() => {
-                                    // Handle SQLite datetime format as local time (no timezone conversion)
-                                    let dischargeDateStr = admission.dischargeDate;
-                                    if (dischargeDateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                      // Parse as local time without adding 'Z' or timezone info
-                                      const parts = dischargeDateStr.split(' ');
-                                      const dateParts = parts[0].split('-');
-                                      const timeParts = parts[1].split(':');
+                                {admission.dischargeDate
+                                  ? (() => {
+                                      // Handle SQLite datetime format as local time (no timezone conversion)
+                                      let dischargeDateStr =
+                                        admission.dischargeDate;
+                                      if (
+                                        dischargeDateStr.match(
+                                          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+                                        )
+                                      ) {
+                                        // Parse as local time without adding 'Z' or timezone info
+                                        const parts =
+                                          dischargeDateStr.split(" ");
+                                        const dateParts = parts[0].split("-");
+                                        const timeParts = parts[1].split(":");
 
-                                      // Create date object in local timezone
-                                      const localDate = new Date(
-                                        parseInt(dateParts[0]), // year
-                                        parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                        parseInt(dateParts[2]), // day
-                                        parseInt(timeParts[0]), // hour
-                                        parseInt(timeParts[1]), // minute
-                                        parseInt(timeParts[2]) // second
-                                      );
+                                        // Create date object in local timezone
+                                        const localDate = new Date(
+                                          parseInt(dateParts[0]), // year
+                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                          parseInt(dateParts[2]), // day
+                                          parseInt(timeParts[0]), // hour
+                                          parseInt(timeParts[1]), // minute
+                                          parseInt(timeParts[2]), // second
+                                        );
 
-                                      return localDate.toLocaleString('en-US', {
-                                        year: 'numeric',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        hour12: true
+                                        return localDate.toLocaleString(
+                                          "en-US",
+                                          {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            hour12: true,
+                                          },
+                                        );
+                                      }
+
+                                      // Fallback for other formats
+                                      return new Date(
+                                        dischargeDateStr,
+                                      ).toLocaleString("en-US", {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
                                       });
-                                    }
-
-                                    // Fallback for other formats
-                                    return new Date(dischargeDateStr).toLocaleString('en-US', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  })() :
-                                  calcStayDays(admission.admissionDate)
-                                }
+                                    })()
+                                  : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
                           </div>
@@ -1825,30 +2128,41 @@ export default function PatientDetail() {
                           {/* Event Timeline */}
                           {events.length > 0 && (
                             <div>
-                              <h4 className="font-medium mb-2 text-sm text-muted-foreground">Event History:</h4>
+                              <h4 className="font-medium mb-2 text-sm text-muted-foreground">
+                                Event History:
+                              </h4>
                               <div className="space-y-2">
                                 {events.map((event: AdmissionEvent) => (
-                                  <div key={event.id} className="flex items-start gap-3 text-sm">
-                                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                                      event.eventType === 'admit' ? 'bg-green-500' :
-                                      event.eventType === 'room_change' ? 'bg-blue-500' :
-                                      'bg-gray-500'
-                                    }`} />
+                                  <div
+                                    key={event.id}
+                                    className="flex items-start gap-3 text-sm"
+                                  >
+                                    <div
+                                      className={`w-2 h-2 rounded-full mt-2 ${
+                                        event.eventType === "admit"
+                                          ? "bg-green-500"
+                                          : event.eventType === "room_change"
+                                            ? "bg-blue-500"
+                                            : "bg-gray-500"
+                                      }`}
+                                    />
                                     <div className="flex-1">
                                       <div className="flex items-center justify-between">
                                         <span className="font-medium capitalize">
-                                          {event.eventType.replace('_', ' ')}
-                                          {event.roomNumber && event.wardType && 
-                                            ` - ${event.wardType} (${event.roomNumber})`
-                                          }
+                                          {event.eventType.replace("_", " ")}
+                                          {event.roomNumber &&
+                                            event.wardType &&
+                                            ` - ${event.wardType} (${event.roomNumber})`}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
-                                          {new Date(event.eventTime).toLocaleString('en-IN', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: true
+                                          {new Date(
+                                            event.eventTime,
+                                          ).toLocaleString("en-IN", {
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                            hour12: true,
                                           })}
                                         </span>
                                       </div>
@@ -1869,7 +2183,9 @@ export default function PatientDetail() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-sm text-muted-foreground">No admissions recorded</p>
+                    <p className="text-sm text-muted-foreground">
+                      No admissions recorded
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -1902,14 +2218,17 @@ export default function PatientDetail() {
                           // Prefer the field that actually contains time information
                           const rawOrdered = order.orderedDate;
                           const rawCreated = order.createdAt;
-                          const orderDateRaw = rawOrdered && /[:T]/.test(rawOrdered) ? rawOrdered : (rawCreated || rawOrdered);
+                          const orderDateRaw =
+                            rawOrdered && /[:T]/.test(rawOrdered)
+                              ? rawOrdered
+                              : rawCreated || rawOrdered;
 
                           allTests.push({
                             ...test,
                             orderId: order.orderId || order.id,
                             orderDate: orderDateRaw,
                             orderStatus: order.status,
-                            receiptNumber: order.receiptNumber
+                            receiptNumber: order.receiptNumber,
                           });
                         });
                       }
@@ -1930,17 +2249,24 @@ export default function PatientDetail() {
                       <TableBody>
                         {allTests.map((test: any, index: number) => (
                           <TableRow key={`${test.orderId}-${test.id || index}`}>
-                            <TableCell className="font-medium">{test.testName}</TableCell>
+                            <TableCell className="font-medium">
+                              {test.testName}
+                            </TableCell>
                             <TableCell>₹{test.price || 0}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{test.orderId}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {test.orderId}
+                            </TableCell>
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const result = parseTimestamp(test.orderDate, 'Asia/Kolkata');
+                                  const result = parseTimestamp(
+                                    test.orderDate,
+                                    "Asia/Kolkata",
+                                  );
 
                                   if (result.hasTime) {
                                     // Split the display to add styling
-                                    const parts = result.display.split(' at ');
+                                    const parts = result.display.split(" at ");
                                     if (parts.length === 2) {
                                       return (
                                         <>
@@ -1974,8 +2300,12 @@ export default function PatientDetail() {
                     </Table>
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground">No pathology tests found</p>
-                      <p className="text-xs text-muted-foreground mt-1">Debug: {pathologyOrders?.length || 0} orders received</p>
+                      <p className="text-sm text-muted-foreground">
+                        No pathology tests found
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Debug: {pathologyOrders?.length || 0} orders received
+                      </p>
                     </div>
                   );
                 })()}
@@ -1994,18 +2324,27 @@ export default function PatientDetail() {
                     console.log("=== TIMELINE DEBUG START ===");
 
                     // Helper function to normalize dates consistently
-                    const normalizeDate = (dateInput: any, source: string, id?: string): { date: string; timestamp: number } => {
+                    const normalizeDate = (
+                      dateInput: any,
+                      source: string,
+                      id?: string,
+                    ): { date: string; timestamp: number } => {
                       let dateStr: string;
 
                       // Handle null/undefined
                       if (!dateInput) {
-                        console.warn(`No date provided for ${source} ${id || 'unknown'}, using current time`);
+                        console.warn(
+                          `No date provided for ${source} ${id || "unknown"}, using current time`,
+                        );
                         const now = new Date();
-                        return { date: now.toISOString(), timestamp: now.getTime() };
+                        return {
+                          date: now.toISOString(),
+                          timestamp: now.getTime(),
+                        };
                       }
 
                       // Convert to string if it's not already
-                      if (typeof dateInput === 'string') {
+                      if (typeof dateInput === "string") {
                         dateStr = dateInput;
                       } else if (dateInput instanceof Date) {
                         dateStr = dateInput.toISOString();
@@ -2013,67 +2352,105 @@ export default function PatientDetail() {
                         dateStr = String(dateInput);
                       }
 
-                      console.log(`Normalizing date for ${source} ${id || 'unknown'}: "${dateStr}"`);
+                      console.log(
+                        `Normalizing date for ${source} ${id || "unknown"}: "${dateStr}"`,
+                      );
 
                       // For registration dates, use the same UTC handling as other events
-                      if (source === 'registration') {
+                      if (source === "registration") {
                         // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - convert to UTC
-                        if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                          dateStr = dateStr.replace(' ', 'T') + 'Z';
-                          console.log(`Converted SQLite format (UTC) to: "${dateStr}"`);
+                        if (
+                          dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+                        ) {
+                          dateStr = dateStr.replace(" ", "T") + "Z";
+                          console.log(
+                            `Converted SQLite format (UTC) to: "${dateStr}"`,
+                          );
                         }
                         // Handle date only format: "YYYY-MM-DD" - convert to UTC
                         else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                          dateStr = dateStr + 'T00:00:00Z';
-                          console.log(`Converted date-only format (UTC) to: "${dateStr}"`);
+                          dateStr = dateStr + "T00:00:00Z";
+                          console.log(
+                            `Converted date-only format (UTC) to: "${dateStr}"`,
+                          );
                         }
                         // Handle datetime without timezone - add Z for UTC
-                        else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) && !dateStr.includes('Z') && !dateStr.includes('+')) {
-                          dateStr = dateStr + 'Z';
+                        else if (
+                          dateStr.match(
+                            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+                          ) &&
+                          !dateStr.includes("Z") &&
+                          !dateStr.includes("+")
+                        ) {
+                          dateStr = dateStr + "Z";
                           console.log(`Added timezone to: "${dateStr}"`);
                         }
 
                         // Parse the date
                         const parsed = new Date(dateStr);
                         if (isNaN(parsed.getTime())) {
-                          console.error(`Failed to parse registration date "${dateStr}", using current time`);
+                          console.error(
+                            `Failed to parse registration date "${dateStr}", using current time`,
+                          );
                           const now = new Date();
-                          return { date: now.toISOString(), timestamp: now.getTime() };
+                          return {
+                            date: now.toISOString(),
+                            timestamp: now.getTime(),
+                          };
                         }
 
                         const timestamp = parsed.getTime();
-                        console.log(`Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
+                        console.log(
+                          `Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`,
+                        );
 
                         return { date: dateStr, timestamp };
                       }
 
                       // For other sources (services, admissions, etc), use existing logic
                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                      if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                        dateStr = dateStr.replace(' ', 'T') + 'Z';
+                      if (
+                        dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+                      ) {
+                        dateStr = dateStr.replace(" ", "T") + "Z";
                         console.log(`Converted SQLite format to: "${dateStr}"`);
                       }
                       // Handle date only format: "YYYY-MM-DD"
                       else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        dateStr = dateStr + 'T00:00:00Z';
-                        console.log(`Converted date-only format to: "${dateStr}"`);
+                        dateStr = dateStr + "T00:00:00Z";
+                        console.log(
+                          `Converted date-only format to: "${dateStr}"`,
+                        );
                       }
                       // Handle datetime without timezone
-                      else if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/) && !dateStr.includes('Z') && !dateStr.includes('+')) {
-                        dateStr = dateStr + 'Z';
+                      else if (
+                        dateStr.match(
+                          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
+                        ) &&
+                        !dateStr.includes("Z") &&
+                        !dateStr.includes("+")
+                      ) {
+                        dateStr = dateStr + "Z";
                         console.log(`Added timezone to: "${dateStr}"`);
                       }
 
                       // Parse the date
                       const parsed = new Date(dateStr);
                       if (isNaN(parsed.getTime())) {
-                        console.error(`Failed to parse date "${dateStr}" for ${source} ${id || 'unknown'}, using current time`);
+                        console.error(
+                          `Failed to parse date "${dateStr}" for ${source} ${id || "unknown"}, using current time`,
+                        );
                         const now = new Date();
-                        return { date: now.toISOString(), timestamp: now.getTime() };
+                        return {
+                          date: now.toISOString(),
+                          timestamp: now.getTime(),
+                        };
                       }
 
                       const timestamp = parsed.getTime();
-                      console.log(`Final normalized date for ${source} ${id || 'unknown'}: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`);
+                      console.log(
+                        `Final normalized date for ${source} ${id || "unknown"}: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`,
+                      );
 
                       return { date: dateStr, timestamp };
                     };
@@ -2082,129 +2459,169 @@ export default function PatientDetail() {
                     const timelineEvents = [];
 
                     // Add registration event with IST correction
-                    const regNormalized = normalizeDate(patient.createdAt, 'registration');
+                    const regNormalized = normalizeDate(
+                      patient.createdAt,
+                      "registration",
+                    );
                     // Subtract 5.5 hours (19800000 ms) to correct the timezone display
-                    const istTimestamp = regNormalized.timestamp - (5.5 * 60 * 60 * 1000);
+                    const istTimestamp =
+                      regNormalized.timestamp - 5.5 * 60 * 60 * 1000;
                     timelineEvents.push({
-                      id: 'registration',
-                      type: 'registration',
-                      title: 'Patient Registered',
+                      id: "registration",
+                      type: "registration",
+                      title: "Patient Registered",
                       date: regNormalized.date,
                       description: `Patient ID: ${patient.patientId}`,
-                      color: 'bg-blue-500',
-                      sortTimestamp: istTimestamp
+                      color: "bg-blue-500",
+                      sortTimestamp: istTimestamp,
                     });
 
                     // Add services with proper date normalization - group by orderId (like pathology tests)
                     if (services && services.length > 0) {
-                      console.log("Processing services for timeline:", services.length);
+                      console.log(
+                        "Processing services for timeline:",
+                        services.length,
+                      );
 
                       // Group services by orderId (similar to how pathology tests are grouped)
-                      const serviceGroups = services.reduce((groups: { [key: string]: any[] }, service: any) => {
-                        const groupKey = service.orderId || `single-${service.id}`;
-                        if (!groups[groupKey]) {
-                          groups[groupKey] = [];
-                        }
-                        groups[groupKey].push(service);
-                        return groups;
-                      }, {});
+                      const serviceGroups = services.reduce(
+                        (groups: { [key: string]: any[] }, service: any) => {
+                          const groupKey =
+                            service.orderId || `single-${service.id}`;
+                          if (!groups[groupKey]) {
+                            groups[groupKey] = [];
+                          }
+                          groups[groupKey].push(service);
+                          return groups;
+                        },
+                        {},
+                      );
 
                       // Create timeline entries for each group
-                      Object.entries(serviceGroups).forEach(([orderId, groupServices]) => {
-                        // Use the earliest service in the group for primary date
-                        const primaryService = groupServices[0];
+                      Object.entries(serviceGroups).forEach(
+                        ([orderId, groupServices]) => {
+                          // Use the earliest service in the group for primary date
+                          const primaryService = groupServices[0];
 
-                        // Priority: createdAt > constructed date from scheduled fields
-                        let primaryDate = primaryService.createdAt;
-                        if (!primaryDate && primaryService.scheduledDate) {
-                          if (primaryService.scheduledTime) {
-                            primaryDate = `${primaryService.scheduledDate}T${primaryService.scheduledTime}:00`;
-                          } else {
-                            primaryDate = `${primaryService.scheduledDate}T00:00:00`;
+                          // Priority: createdAt > constructed date from scheduled fields
+                          let primaryDate = primaryService.createdAt;
+                          if (!primaryDate && primaryService.scheduledDate) {
+                            if (primaryService.scheduledTime) {
+                              primaryDate = `${primaryService.scheduledDate}T${primaryService.scheduledTime}:00`;
+                            } else {
+                              primaryDate = `${primaryService.scheduledDate}T00:00:00`;
+                            }
                           }
-                        }
 
-                        const serviceNormalized = normalizeDate(primaryDate, 'service', orderId);
+                          const serviceNormalized = normalizeDate(
+                            primaryDate,
+                            "service",
+                            orderId,
+                          );
 
-                        // Calculate total cost for all services in the group
-                        const totalCost = groupServices.reduce((sum, service) => 
-                          sum + (service.calculatedAmount || (service.price * (service.quantity || 1))), 0);
+                          // Calculate total cost for all services in the group
+                          const totalCost = groupServices.reduce(
+                            (sum, service) =>
+                              sum +
+                              (service.calculatedAmount ||
+                                service.price * (service.quantity || 1)),
+                            0,
+                          );
 
-                        // Create title and description based on group size
-                        let title, description;
-                        if (groupServices.length === 1) {
-                          // Single service - show service name
-                          title = groupServices[0].serviceName;
-                          description = `Status: ${groupServices[0].status} • Cost: ₹${totalCost}`;
-                        } else {
-                          // Multiple services - show as service order (like "Service Order: SRV-2025-001")
-                          const orderIdLabel = orderId.startsWith('single-') ? 'Service Order' : orderId;
-                          title = `Service Order: ${orderIdLabel}`;
-                          description = `${groupServices.length} services • Cost: ₹${totalCost}`;
-                        }
+                          // Create title and description based on group size
+                          let title, description;
+                          if (groupServices.length === 1) {
+                            // Single service - show service name
+                            title = groupServices[0].serviceName;
+                            description = `Status: ${groupServices[0].status} • Cost: ₹${totalCost}`;
+                          } else {
+                            // Multiple services - show as service order (like "Service Order: SRV-2025-001")
+                            const orderIdLabel = orderId.startsWith("single-")
+                              ? "Service Order"
+                              : orderId;
+                            title = `Service Order: ${orderIdLabel}`;
+                            description = `${groupServices.length} services • Cost: ₹${totalCost}`;
+                          }
 
-                        timelineEvents.push({
-                          id: orderId,
-                          type: 'service',
-                          title: title,
-                          date: serviceNormalized.date,
-                          description: description,
-                          color: 'bg-green-500',
-                          sortTimestamp: serviceNormalized.timestamp,
-                          rawData: { services: groupServices, primaryDate }, // Debug info
-                          // Include order info for service grouping
-                          orderId: orderId.startsWith('single-') ? null : orderId,
-                          serviceCount: groupServices.length,
-                          totalCost: totalCost,
-                          services: groupServices // Store all services for detailed view if needed
-                        });
-                      });
+                          timelineEvents.push({
+                            id: orderId,
+                            type: "service",
+                            title: title,
+                            date: serviceNormalized.date,
+                            description: description,
+                            color: "bg-green-500",
+                            sortTimestamp: serviceNormalized.timestamp,
+                            rawData: { services: groupServices, primaryDate }, // Debug info
+                            // Include order info for service grouping
+                            orderId: orderId.startsWith("single-")
+                              ? null
+                              : orderId,
+                            serviceCount: groupServices.length,
+                            totalCost: totalCost,
+                            services: groupServices, // Store all services for detailed view if needed
+                          });
+                        },
+                      );
                     }
 
                     // Add admission events
                     if (admissions && admissions.length > 0) {
-                      console.log("Processing admissions for timeline:", admissions.length);
+                      console.log(
+                        "Processing admissions for timeline:",
+                        admissions.length,
+                      );
                       admissions.forEach((admission: any) => {
                         const events = admissionEventsMap[admission.id] || [];
-                        const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
-                        const doctorName = doctor ? doctor.name : "No Doctor Assigned";
+                        const doctor = doctors.find(
+                          (d: Doctor) => d.id === admission.doctorId,
+                        );
+                        const doctorName = doctor
+                          ? doctor.name
+                          : "No Doctor Assigned";
 
-                        console.log(`Processing admission ${admission.id} with ${events.length} events`);
+                        console.log(
+                          `Processing admission ${admission.id} with ${events.length} events`,
+                        );
 
                         // Add events from admission events table
                         events.forEach((event: AdmissionEvent) => {
                           // Priority: eventTime > createdAt
-                          const primaryDate = event.eventTime || event.createdAt;
-                          const eventNormalized = normalizeDate(primaryDate, 'admission_event', event.id);
+                          const primaryDate =
+                            event.eventTime || event.createdAt;
+                          const eventNormalized = normalizeDate(
+                            primaryDate,
+                            "admission_event",
+                            event.id,
+                          );
 
-                          let title = '';
-                          let color = 'bg-orange-500';
-                          let description = '';
+                          let title = "";
+                          let color = "bg-orange-500";
+                          let description = "";
 
                           switch (event.eventType) {
-                            case 'admit':
-                              title = 'Patient Admitted';
-                              color = 'bg-green-500';
+                            case "admit":
+                              title = "Patient Admitted";
+                              color = "bg-green-500";
                               if (event.roomNumber && event.wardType) {
                                 description = `Room: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
-                            case 'room_change':
-                              title = 'Room Transfer';
-                              color = 'bg-blue-500';
+                            case "room_change":
+                              title = "Room Transfer";
+                              color = "bg-blue-500";
                               if (event.roomNumber && event.wardType) {
                                 description = `Moved to: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
-                            case 'discharge':
-                              title = 'Patient Discharged';
-                              color = 'bg-gray-500';
+                            case "discharge":
+                              title = "Patient Discharged";
+                              color = "bg-gray-500";
                               if (event.roomNumber && event.wardType) {
                                 description = `From: ${event.roomNumber} (${event.wardType})`;
                               }
                               break;
                             default:
-                              title = `Admission ${event.eventType.replace('_', ' ')}`;
+                              title = `Admission ${event.eventType.replace("_", " ")}`;
                               if (event.roomNumber && event.wardType) {
                                 description = `Room: ${event.roomNumber} (${event.wardType})`;
                               }
@@ -2212,7 +2629,7 @@ export default function PatientDetail() {
 
                           timelineEvents.push({
                             id: `${admission.id}-${event.id}`,
-                            type: 'admission_event',
+                            type: "admission_event",
                             title: title,
                             date: eventNormalized.date,
                             description: description,
@@ -2220,33 +2637,42 @@ export default function PatientDetail() {
                             sortTimestamp: eventNormalized.timestamp,
                             rawData: { event, primaryDate }, // Debug info
                             doctorName: doctorName, // Add doctorName directly to the event
-                            receiptNumber: event.receiptNumber // Include receipt number from event
+                            receiptNumber: event.receiptNumber, // Include receipt number from event
                           });
                         });
 
                         // If no events exist, create a basic admission entry as fallback
                         if (events.length === 0) {
-                          const primaryDate = admission.createdAt || admission.admissionDate;
-                          const admissionNormalized = normalizeDate(primaryDate, 'admission_fallback', admission.id);
+                          const primaryDate =
+                            admission.createdAt || admission.admissionDate;
+                          const admissionNormalized = normalizeDate(
+                            primaryDate,
+                            "admission_fallback",
+                            admission.id,
+                          );
 
                           timelineEvents.push({
                             id: `${admission.id}-fallback`,
-                            type: 'admission',
-                            title: 'Patient Admission',
+                            type: "admission",
+                            title: "Patient Admission",
                             date: admissionNormalized.date,
                             description: (() => {
-                              const wardDisplay = admission.currentWardType || admission.wardType;
+                              const wardDisplay =
+                                admission.currentWardType || admission.wardType;
                               const parts = [];
-                              if (admission.reason) parts.push(`Reason: ${admission.reason}`);
+                              if (admission.reason)
+                                parts.push(`Reason: ${admission.reason}`);
                               parts.push(`Doctor: ${doctorName}`);
                               parts.push(`Ward: ${wardDisplay}`);
-                              parts.push(`Room: ${admission.currentRoomNumber || admission.roomNumber || 'N/A'}`);
-                              return parts.join(' • ');
+                              parts.push(
+                                `Room: ${admission.currentRoomNumber || admission.roomNumber || "N/A"}`,
+                              );
+                              return parts.join(" • ");
                             })(),
-                            color: 'bg-orange-500',
+                            color: "bg-orange-500",
                             sortTimestamp: admissionNormalized.timestamp,
                             rawData: { admission, primaryDate, doctorName }, // Include doctor info for receipt
-                            doctorName: doctorName // Add doctorName directly to the event
+                            doctorName: doctorName, // Add doctorName directly to the event
                           });
                         }
                       });
@@ -2254,35 +2680,51 @@ export default function PatientDetail() {
 
                     // Add payment and discount entries from admissions
                     if (admissions && admissions.length > 0) {
-                      console.log("Processing payment and discount entries for timeline");
+                      console.log(
+                        "Processing payment and discount entries for timeline",
+                      );
                       admissions.forEach((admission: any) => {
                         // Add payment entries
-                        if (admission.lastPaymentDate && admission.lastPaymentAmount) {
-                          const paymentNormalized = normalizeDate(admission.lastPaymentDate, 'payment', admission.id);
+                        if (
+                          admission.lastPaymentDate &&
+                          admission.lastPaymentAmount
+                        ) {
+                          const paymentNormalized = normalizeDate(
+                            admission.lastPaymentDate,
+                            "payment",
+                            admission.id,
+                          );
 
                           timelineEvents.push({
                             id: `payment-${admission.id}`,
-                            type: 'payment',
-                            title: 'Payment Received',
+                            type: "payment",
+                            title: "Payment Received",
                             date: paymentNormalized.date,
                             description: `Amount: ₹${admission.lastPaymentAmount}`,
-                            color: 'bg-green-600',
-                            sortTimestamp: paymentNormalized.timestamp
+                            color: "bg-green-600",
+                            sortTimestamp: paymentNormalized.timestamp,
                           });
                         }
 
-                        // Add discount entries  
-                        if (admission.lastDiscountDate && admission.lastDiscountAmount) {
-                          const discountNormalized = normalizeDate(admission.lastDiscountDate, 'discount', admission.id);
+                        // Add discount entries
+                        if (
+                          admission.lastDiscountDate &&
+                          admission.lastDiscountAmount
+                        ) {
+                          const discountNormalized = normalizeDate(
+                            admission.lastDiscountDate,
+                            "discount",
+                            admission.id,
+                          );
 
                           timelineEvents.push({
                             id: `discount-${admission.id}`,
-                            type: 'discount',
-                            title: 'Discount Applied',
+                            type: "discount",
+                            title: "Discount Applied",
                             date: discountNormalized.date,
-                            description: `Amount: ₹${admission.lastDiscountAmount}${admission.lastDiscountReason ? ` • Reason: ${admission.lastDiscountReason}` : ''}`,
-                            color: 'bg-red-500',
-                            sortTimestamp: discountNormalized.timestamp
+                            description: `Amount: ₹${admission.lastDiscountAmount}${admission.lastDiscountReason ? ` • Reason: ${admission.lastDiscountReason}` : ""}`,
+                            color: "bg-red-500",
+                            sortTimestamp: discountNormalized.timestamp,
                           });
                         }
                       });
@@ -2290,18 +2732,29 @@ export default function PatientDetail() {
 
                     // Add pathology orders
                     if (pathologyOrders && pathologyOrders.length > 0) {
-                      console.log("Processing pathology orders for timeline:", pathologyOrders.length);
+                      console.log(
+                        "Processing pathology orders for timeline:",
+                        pathologyOrders.length,
+                      );
                       pathologyOrders.forEach((orderData: any) => {
                         // Handle both the nested structure from the API and direct order objects
                         const order = orderData.order || orderData;
                         if (!order) {
-                          console.warn("No order found in pathology data:", orderData);
+                          console.warn(
+                            "No order found in pathology data:",
+                            orderData,
+                          );
                           return;
                         }
 
                         // Priority: createdAt > orderedDate
-                        const primaryDate = order.createdAt || order.orderedDate;
-                        const pathologyNormalized = normalizeDate(primaryDate, 'pathology', order.id);
+                        const primaryDate =
+                          order.createdAt || order.orderedDate;
+                        const pathologyNormalized = normalizeDate(
+                          primaryDate,
+                          "pathology",
+                          order.id,
+                        );
 
                         // Count tests - handle both nested tests array and direct tests
                         let testCount = 0;
@@ -2313,27 +2766,33 @@ export default function PatientDetail() {
 
                         const pathologyEvent = {
                           id: order.id || `pathology-${Date.now()}`,
-                          type: 'pathology',
-                          title: `Pathology Order: ${order.orderId || 'Unknown Order'}`,
+                          type: "pathology",
+                          title: `Pathology Order: ${order.orderId || "Unknown Order"}`,
                           date: pathologyNormalized.date,
-                          description: `Status: ${order.status || 'ordered'} • Cost: ₹${order.totalPrice || 0}`,
-                          color: 'bg-purple-500',
+                          description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
+                          color: "bg-purple-500",
                           sortTimestamp: pathologyNormalized.timestamp,
-                          extraInfo: order.completedDate ? `Completed: ${new Date(order.completedDate).toLocaleString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true,
-                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                          })}` : null,
+                          extraInfo: order.completedDate
+                            ? `Completed: ${new Date(
+                                order.completedDate,
+                              ).toLocaleString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                                timeZone:
+                                  Intl.DateTimeFormat().resolvedOptions()
+                                    .timeZone,
+                              })}`
+                            : null,
                           rawData: { order, primaryDate }, // Debug info
                           // Include order fields directly for receipt access
                           receiptNumber: order.receiptNumber,
                           orderId: order.orderId,
                           totalPrice: order.totalPrice,
-                          orderedDate: order.orderedDate
+                          orderedDate: order.orderedDate,
                         };
 
                         timelineEvents.push(pathologyEvent);
@@ -2341,13 +2800,16 @@ export default function PatientDetail() {
                     }
 
                     // Sort events chronologically (earliest first) using consistent timestamp
-                    console.log("Timeline events before sorting:", timelineEvents.map(e => ({
-                      id: e.id,
-                      title: e.title,
-                      timestamp: e.sortTimestamp,
-                      date: e.date,
-                      localTime: new Date(e.sortTimestamp).toLocaleString()
-                    })));
+                    console.log(
+                      "Timeline events before sorting:",
+                      timelineEvents.map((e) => ({
+                        id: e.id,
+                        title: e.title,
+                        timestamp: e.sortTimestamp,
+                        date: e.date,
+                        localTime: new Date(e.sortTimestamp).toLocaleString(),
+                      })),
+                    );
 
                     timelineEvents.sort((a, b) => {
                       // Primary sort by timestamp (ascending - earliest first)
@@ -2361,78 +2823,105 @@ export default function PatientDetail() {
                       return a.id.localeCompare(b.id);
                     });
 
-                    console.log("Timeline events after sorting:", timelineEvents.map(e => ({
-                      id: e.id,
-                      title: e.title,
-                      timestamp: e.sortTimestamp,
-                      date: e.date,
-                      localTime: new Date(e.sortTimestamp).toLocaleString()
-                    })));
+                    console.log(
+                      "Timeline events after sorting:",
+                      timelineEvents.map((e) => ({
+                        id: e.id,
+                        title: e.title,
+                        timestamp: e.sortTimestamp,
+                        date: e.date,
+                        localTime: new Date(e.sortTimestamp).toLocaleString(),
+                      })),
+                    );
 
                     console.log("=== TIMELINE DEBUG END ===");
 
-                    return timelineEvents.length > 0 ? timelineEvents.map((event) => (
-                      <div key={event.id} className={event.type === 'registration' ? 'w-full' : 'flex items-stretch gap-3'}>
-                        <div className={`${event.type === 'registration' ? 'w-full' : 'flex-1'} flex items-start gap-3 p-3 border rounded-lg`}>
-                          <div className={`w-3 h-3 ${event.color} rounded-full mt-1`} />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium">{event.title}</p>
-                              <span className="text-sm text-muted-foreground">
-                                {(() => {
-                                  // For registration events, use the IST-corrected timestamp
-                                  // For discharge events, subtract 5:30 hours from display time
-                                  // For other events, use the original timestamp as they're already in local time
-                                  let displayTimestamp = event.type === 'registration' 
-                                    ? event.sortTimestamp  // Already IST-corrected above
-                                    : event.sortTimestamp;
+                    return timelineEvents.length > 0 ? (
+                      timelineEvents.map((event) => (
+                        <div
+                          key={event.id}
+                          className={
+                            event.type === "registration"
+                              ? "w-full"
+                              : "flex items-stretch gap-3"
+                          }
+                        >
+                          <div
+                            className={`${event.type === "registration" ? "w-full" : "flex-1"} flex items-start gap-3 p-3 border rounded-lg`}
+                          >
+                            <div
+                              className={`w-3 h-3 ${event.color} rounded-full mt-1`}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <p className="font-medium">{event.title}</p>
+                                <span className="text-sm text-muted-foreground">
+                                  {(() => {
+                                    // For registration events, use the IST-corrected timestamp
+                                    // For discharge events, subtract 5:30 hours from display time
+                                    // For other events, use the original timestamp as they're already in local time
+                                    let displayTimestamp =
+                                      event.type === "registration"
+                                        ? event.sortTimestamp // Already IST-corrected above
+                                        : event.sortTimestamp;
 
-                                  // Special handling for discharge events - subtract 5:30 hours (19,800,000 ms)
-                                  if (event.title === 'Patient Discharged') {
-                                    displayTimestamp = displayTimestamp - (5.5 * 60 * 60 * 1000);
-                                  }
+                                    // Special handling for discharge events - subtract 5:30 hours (19,800,000 ms)
+                                    if (event.title === "Patient Discharged") {
+                                      displayTimestamp =
+                                        displayTimestamp - 5.5 * 60 * 60 * 1000;
+                                    }
 
-                                  return new Date(displayTimestamp).toLocaleString('en-US', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true
-                                  });
-                                })()}
-                              </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {event.description}
-                            </p>
-                            {(event as any).extraInfo && (
-                              <p className="text-sm text-green-600">
-                                {(event as any).extraInfo}
+                                    return new Date(
+                                      displayTimestamp,
+                                    ).toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    });
+                                  })()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {event.description}
                               </p>
-                            )}
-                          </div>
-                        </div>
-                        {event.type !== 'registration' && (
-                          <div className="flex items-stretch">
-                            <div className="flex items-center h-full">
-                              <ReceiptTemplate
-                                receiptData={generateReceiptData(event, event.type)}
-                                hospitalInfo={hospitalInfo}
-                                onPrint={() => {
-                                  toast({
-                                    title: "Receipt printed",
-                                    description: "Receipt has been sent to printer.",
-                                  });
-                                }}
-                              />
+                              {(event as any).extraInfo && (
+                                <p className="text-sm text-green-600">
+                                  {(event as any).extraInfo}
+                                </p>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    )) : (
+                          {event.type !== "registration" && (
+                            <div className="flex items-stretch">
+                              <div className="flex items-center h-full">
+                                <ReceiptTemplate
+                                  receiptData={generateReceiptData(
+                                    event,
+                                    event.type,
+                                  )}
+                                  hospitalInfo={hospitalInfo}
+                                  onPrint={() => {
+                                    toast({
+                                      title: "Receipt printed",
+                                      description:
+                                        "Receipt has been sent to printer.",
+                                    });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
                       <div className="text-center text-muted-foreground py-8">
-                        <p>Patient timeline will show services, admissions, and pathology orders as they are added.</p>
+                        <p>
+                          Patient timeline will show services, admissions, and
+                          pathology orders as they are added.
+                        </p>
                       </div>
                     );
                   })()}
@@ -2448,23 +2937,41 @@ export default function PatientDetail() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedServiceType === "opd" ? "Schedule OPD Consultation" : "Schedule Patient Service"}
+              {selectedServiceType === "opd"
+                ? "Schedule OPD Consultation"
+                : "Schedule Patient Service"}
             </DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-6">
+          <form
+            onSubmit={serviceForm.handleSubmit(onServiceSubmit)}
+            className="space-y-6"
+          >
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-sm text-blue-800 font-medium">OPD Consultation</p>
+                <p className="text-sm text-blue-800 font-medium">
+                  OPD Consultation
+                </p>
                 {(() => {
                   const selectedDoctorId = serviceForm.watch("doctorId");
-                  const selectedDoctor = doctors.find((d: Doctor) => d.id === selectedDoctorId);
-                  const consultationFee = selectedDoctorId && selectedDoctorId !== "none" && selectedDoctor ? selectedDoctor.consultationFee : 0;
+                  const selectedDoctor = doctors.find(
+                    (d: Doctor) => d.id === selectedDoctorId,
+                  );
+                  const consultationFee =
+                    selectedDoctorId &&
+                    selectedDoctorId !== "none" &&
+                    selectedDoctor
+                      ? selectedDoctor.consultationFee
+                      : 0;
 
                   return (
                     <p className="text-sm text-blue-600">
                       Consultation fee: ₹{consultationFee}
-                      {(!selectedDoctorId || selectedDoctorId === "none") && <span className="text-blue-500 ml-1">(Select doctor to see fee)</span>}
+                      {(!selectedDoctorId || selectedDoctorId === "none") && (
+                        <span className="text-blue-500 ml-1">
+                          (Select doctor to see fee)
+                        </span>
+                      )}
                     </p>
                   );
                 })()}
@@ -2473,8 +2980,12 @@ export default function PatientDetail() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>{selectedServiceType === "opd" ? "Consulting Doctor *" : "Assigned Doctor *"}</Label>
-                <Select 
+                <Label>
+                  {selectedServiceType === "opd"
+                    ? "Consulting Doctor *"
+                    : "Assigned Doctor *"}
+                </Label>
+                <Select
                   value={serviceForm.watch("doctorId")}
                   onValueChange={(value) => {
                     serviceForm.setValue("doctorId", value);
@@ -2486,10 +2997,18 @@ export default function PatientDetail() {
                   data-testid="select-service-doctor"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={selectedServiceType === "opd" ? "Select consulting doctor (required)" : "Select doctor (required)"} />
+                    <SelectValue
+                      placeholder={
+                        selectedServiceType === "opd"
+                          ? "Select consulting doctor (required)"
+                          : "Select doctor (required)"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedServiceType !== "opd" && <SelectItem value="none">No doctor assigned</SelectItem>}
+                    {selectedServiceType !== "opd" && (
+                      <SelectItem value="none">No doctor assigned</SelectItem>
+                    )}
                     {doctors.map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
@@ -2508,7 +3027,9 @@ export default function PatientDetail() {
                 <Label>Scheduled Date *</Label>
                 <Input
                   type="date"
-                  {...serviceForm.register("scheduledDate", { required: "Scheduled date is required" })}
+                  {...serviceForm.register("scheduledDate", {
+                    required: "Scheduled date is required",
+                  })}
                   data-testid="input-service-date"
                 />
                 {serviceForm.formState.errors.scheduledDate && (
@@ -2522,7 +3043,9 @@ export default function PatientDetail() {
                 <Label>Scheduled Time *</Label>
                 <Input
                   type="time"
-                  {...serviceForm.register("scheduledTime", { required: "Scheduled time is required" })}
+                  {...serviceForm.register("scheduledTime", {
+                    required: "Scheduled time is required",
+                  })}
                   data-testid="input-service-time"
                 />
                 {serviceForm.formState.errors.scheduledTime && (
@@ -2538,10 +3061,12 @@ export default function PatientDetail() {
                 <div className="flex items-center justify-between">
                   <Label>Select Service from Catalog</Label>
                   <div className="flex items-center space-x-2">
-                    <Select 
-                      value={selectedServiceCategory || "all"} 
+                    <Select
+                      value={selectedServiceCategory || "all"}
                       onValueChange={(value) => {
-                        setSelectedServiceCategory(value === "all" ? "" : value);
+                        setSelectedServiceCategory(
+                          value === "all" ? "" : value,
+                        );
                         // Reset service selection when category changes
                         serviceForm.setValue("serviceType", "");
                         serviceForm.setValue("serviceName", "");
@@ -2599,87 +3124,147 @@ export default function PatientDetail() {
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Price (₹)</TableHead>
-                        <TableHead className="text-right w-24">Quantity</TableHead>
+                        <TableHead className="text-right w-24">
+                          Quantity
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {getFilteredServices(selectedServiceCategory).length === 0 ? (
+                      {getFilteredServices(selectedServiceCategory).length ===
+                      0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                            No services found. Try adjusting your search or category filter.
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground py-8"
+                          >
+                            No services found. Try adjusting your search or
+                            category filter.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        getFilteredServices(selectedServiceCategory).map((service) => {
-                          const isSelected = selectedServices.some(s => s.id === service.id);
-                          const isAmbulanceService = service.billingType === 'composite';
-                          return (
-                            <TableRow 
-                              key={service.id}
-                              className={isSelected ? "bg-blue-50" : ""}
-                            >
-                              <TableCell>
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedServices([...selectedServices, { ...service, quantity: isAmbulanceService ? 0 : 1 }]);
-                                    } else {
-                                      setSelectedServices(selectedServices.filter(s => s.id !== service.id));
-                                    }
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell className="font-medium">{service.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {serviceCategories.find(cat => cat.key === service.category)?.label || service.category}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {service.price === 0 ? (
-                                  <Badge variant="secondary">Variable</Badge>
-                                ) : (
-                                  `₹${service.price}`
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {isSelected ? (
-                                  <div className="flex flex-col">
-                                    <Input
-                                      type="number"
-                                      min={isAmbulanceService ? "0" : "1"}
-                                      step={service.billingType === 'per_hour' ? "0.5" : isAmbulanceService ? "0.1" : "1"}
-                                      value={selectedServices.find(s => s.id === service.id)?.quantity || (isAmbulanceService ? 0 : 1)}
-                                      onChange={(e) => {
-                                        const quantity = parseFloat(e.target.value) || (isAmbulanceService ? 0 : 1);
-                                        setSelectedServices(selectedServices.map(s => 
-                                          s.id === service.id ? { ...s, quantity } : s
-                                        ));
-
-                                        // Update form fields for billing calculation
-                                        if (isAmbulanceService) {
-                                          serviceForm.setValue("distance", quantity);
-                                        } else if (service.billingType === 'per_hour') {
-                                          serviceForm.setValue("hours", quantity);
-                                        } else {
-                                          serviceForm.setValue("quantity", quantity);
+                        getFilteredServices(selectedServiceCategory).map(
+                          (service) => {
+                            const isSelected = selectedServices.some(
+                              (s) => s.id === service.id,
+                            );
+                            const isAmbulanceService =
+                              service.billingType === "composite";
+                            return (
+                              <TableRow
+                                key={service.id}
+                                className={isSelected ? "bg-blue-50" : ""}
+                              >
+                                <TableCell>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedServices([
+                                          ...selectedServices,
+                                          {
+                                            ...service,
+                                            quantity: isAmbulanceService
+                                              ? 0
+                                              : 1,
+                                          },
+                                        ]);
+                                      } else {
+                                        setSelectedServices(
+                                          selectedServices.filter(
+                                            (s) => s.id !== service.id,
+                                          ),
+                                        );
+                                      }
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {service.name}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {serviceCategories.find(
+                                      (cat) => cat.key === service.category,
+                                    )?.label || service.category}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {service.price === 0 ? (
+                                    <Badge variant="secondary">Variable</Badge>
+                                  ) : (
+                                    `₹${service.price}`
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isSelected ? (
+                                    <div className="flex flex-col">
+                                      <Input
+                                        type="number"
+                                        min={isAmbulanceService ? "0" : "1"}
+                                        step={
+                                          service.billingType === "per_hour"
+                                            ? "0.5"
+                                            : isAmbulanceService
+                                              ? "0.1"
+                                              : "1"
                                         }
-                                      }}
-                                      className="w-20 h-8"
-                                      placeholder={isAmbulanceService ? "km" : "qty"}
-                                    />
-                                    {isAmbulanceService && (
-                                      <span className="text-xs text-gray-500 mt-1">km</span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                                        value={
+                                          selectedServices.find(
+                                            (s) => s.id === service.id,
+                                          )?.quantity ||
+                                          (isAmbulanceService ? 0 : 1)
+                                        }
+                                        onChange={(e) => {
+                                          const quantity =
+                                            parseFloat(e.target.value) ||
+                                            (isAmbulanceService ? 0 : 1);
+                                          setSelectedServices(
+                                            selectedServices.map((s) =>
+                                              s.id === service.id
+                                                ? { ...s, quantity }
+                                                : s,
+                                            ),
+                                          );
+
+                                          // Update form fields for billing calculation
+                                          if (isAmbulanceService) {
+                                            serviceForm.setValue(
+                                              "distance",
+                                              quantity,
+                                            );
+                                          } else if (
+                                            service.billingType === "per_hour"
+                                          ) {
+                                            serviceForm.setValue(
+                                              "hours",
+                                              quantity,
+                                            );
+                                          } else {
+                                            serviceForm.setValue(
+                                              "quantity",
+                                              quantity,
+                                            );
+                                          }
+                                        }}
+                                        className="w-20 h-8"
+                                        placeholder={
+                                          isAmbulanceService ? "km" : "qty"
+                                        }
+                                      />
+                                      {isAmbulanceService && (
+                                        <span className="text-xs text-gray-500 mt-1">
+                                          km
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          },
+                        )
                       )}
                     </TableBody>
                   </Table>
@@ -2696,7 +3281,12 @@ export default function PatientDetail() {
                           type="number"
                           min="1"
                           value={serviceForm.watch("quantity") || 1}
-                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "quantity",
+                              parseInt(e.target.value) || 1,
+                            )
+                          }
                           data-testid="input-quantity"
                         />
                       </div>
@@ -2710,10 +3300,17 @@ export default function PatientDetail() {
                           type="number"
                           min="1"
                           value={serviceForm.watch("quantity") || 1}
-                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "quantity",
+                              parseInt(e.target.value) || 1,
+                            )
+                          }
                           data-testid="input-days"
                         />
-                        <p className="text-sm text-gray-500">Room charges are calculated per 24-hour period</p>
+                        <p className="text-sm text-gray-500">
+                          Room charges are calculated per 24-hour period
+                        </p>
                       </div>
                     )}
 
@@ -2726,11 +3323,17 @@ export default function PatientDetail() {
                           min="0.5"
                           step="0.5"
                           value={serviceForm.watch("hours") || 1}
-                          onChange={(e) => serviceForm.setValue("hours", parseFloat(e.target.value) || 1)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "hours",
+                              parseFloat(e.target.value) || 1,
+                            )
+                          }
                           data-testid="input-hours"
                         />
                         <p className="text-sm text-gray-500">
-                          Service will be charged at ₹{selectedCatalogService.price} per hour
+                          Service will be charged at ₹
+                          {selectedCatalogService.price} per hour
                         </p>
                       </div>
                     )}
@@ -2744,13 +3347,23 @@ export default function PatientDetail() {
                           min="0"
                           step="0.1"
                           value={serviceForm.watch("distance") || 0}
-                          onChange={(e) => serviceForm.setValue("distance", parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "distance",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
                           placeholder="Enter distance in kilometers"
                           data-testid="input-distance"
                         />
                         <p className="text-sm text-gray-500">
                           {(() => {
-                            const params = selectedCatalogService.billingParameters ? JSON.parse(selectedCatalogService.billingParameters) : {};
+                            const params =
+                              selectedCatalogService.billingParameters
+                                ? JSON.parse(
+                                    selectedCatalogService.billingParameters,
+                                  )
+                                : {};
                             return `Fixed charge: ₹${params.fixedCharge || selectedCatalogService.price}, Per km: ₹${params.perKmRate || 0}`;
                           })()}
                         </p>
@@ -2766,12 +3379,18 @@ export default function PatientDetail() {
                           min="0"
                           step="0.01"
                           value={serviceForm.watch("price") || 0}
-                          onChange={(e) => serviceForm.setValue("price", parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "price",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
                           placeholder="Enter variable price"
                           data-testid="input-variable-price"
                         />
                         <p className="text-sm text-gray-500">
-                          Enter the exact amount to be charged (quantity is always 1)
+                          Enter the exact amount to be charged (quantity is
+                          always 1)
                         </p>
                       </div>
                     )}
@@ -2784,11 +3403,17 @@ export default function PatientDetail() {
                           type="number"
                           min="1"
                           value={serviceForm.watch("quantity") || 1}
-                          onChange={(e) => serviceForm.setValue("quantity", parseInt(e.target.value) || 1)}
+                          onChange={(e) =>
+                            serviceForm.setValue(
+                              "quantity",
+                              parseInt(e.target.value) || 1,
+                            )
+                          }
                           data-testid="input-calendar-days"
                         />
                         <p className="text-sm text-gray-500">
-                          Charged for each calendar date during admission period (different from 24-hour billing)
+                          Charged for each calendar date during admission period
+                          (different from 24-hour billing)
                         </p>
                       </div>
                     )}
@@ -2800,12 +3425,16 @@ export default function PatientDetail() {
                   <Label>Custom Service Name</Label>
                   <Input
                     value={serviceForm.watch("serviceName")}
-                    onChange={(e) => serviceForm.setValue("serviceName", e.target.value)}
+                    onChange={(e) =>
+                      serviceForm.setValue("serviceName", e.target.value)
+                    }
                     placeholder="Enter custom service name"
                     disabled={!!serviceForm.watch("serviceType")}
                     data-testid="input-custom-service-name"
                   />
-                  <p className="text-sm text-gray-500">Only available when no catalog service is selected</p>
+                  <p className="text-sm text-gray-500">
+                    Only available when no catalog service is selected
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -2813,13 +3442,20 @@ export default function PatientDetail() {
                   <Input
                     type="number"
                     value={serviceForm.watch("price") || ""}
-                    onChange={(e) => serviceForm.setValue("price", parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      serviceForm.setValue(
+                        "price",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                     placeholder="Enter price"
                     disabled={!!billingPreview}
                     data-testid="input-service-price"
                   />
                   {billingPreview && (
-                    <p className="text-sm text-green-600">Price calculated automatically based on billing parameters</p>
+                    <p className="text-sm text-green-600">
+                      Price calculated automatically based on billing parameters
+                    </p>
                   )}
                 </div>
 
@@ -2837,19 +3473,34 @@ export default function PatientDetail() {
                         </div>
                         <div className="flex justify-between">
                           <span>Billing Type:</span>
-                          <Badge className={
-                            billingPreview.billingType === "per_24_hours" ? "bg-green-100 text-green-800" :
-                            billingPreview.billingType === "per_hour" ? "bg-orange-100 text-orange-800" :
-                            billingPreview.billingType === "composite" ? "bg-purple-100 text-purple-800" :
-                            billingPreview.billingType === "variable" ? "bg-yellow-100 text-yellow-800" :
-                            billingPreview.billingType === "per_date" ? "bg-indigo-100 text-indigo-800" :
-                            "bg-blue-100 text-blue-800"
-                          } variant="secondary">
-                            {billingPreview.billingType === "per_24_hours" ? "Per 24 Hours" :
-                             billingPreview.billingType === "per_hour" ? "Per Hour" :
-                             billingPreview.billingType === "composite" ? "Composite" :
-                             billingPreview.billingType === "variable" ? "Variable" :
-                             billingPreview.billingType === "per_date" ? "Per Date" : "Per Instance"}
+                          <Badge
+                            className={
+                              billingPreview.billingType === "per_24_hours"
+                                ? "bg-green-100 text-green-800"
+                                : billingPreview.billingType === "per_hour"
+                                  ? "bg-orange-100 text-orange-800"
+                                  : billingPreview.billingType === "composite"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : billingPreview.billingType === "variable"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : billingPreview.billingType ===
+                                          "per_date"
+                                        ? "bg-indigo-100 text-indigo-800"
+                                        : "bg-blue-100 text-blue-800"
+                            }
+                            variant="secondary"
+                          >
+                            {billingPreview.billingType === "per_24_hours"
+                              ? "Per 24 Hours"
+                              : billingPreview.billingType === "per_hour"
+                                ? "Per Hour"
+                                : billingPreview.billingType === "composite"
+                                  ? "Composite"
+                                  : billingPreview.billingType === "variable"
+                                    ? "Variable"
+                                    : billingPreview.billingType === "per_date"
+                                      ? "Per Date"
+                                      : "Per Instance"}
                           </Badge>
                         </div>
                         <div className="flex justify-between text-sm text-gray-600">
@@ -2868,10 +3519,15 @@ export default function PatientDetail() {
                 {/* Services Summary */}
                 {selectedServices.length > 0 && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium mb-3">Selected Services Summary</h4>
+                    <h4 className="font-medium mb-3">
+                      Selected Services Summary
+                    </h4>
                     <div className="space-y-2">
                       {selectedServices.map((service) => (
-                        <div key={service.id} className="flex justify-between items-center text-sm">
+                        <div
+                          key={service.id}
+                          className="flex justify-between items-center text-sm"
+                        >
                           <span className="font-medium">{service.name}</span>
                           <span>
                             {service.price === 0 ? (
@@ -2885,9 +3541,14 @@ export default function PatientDetail() {
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total ({selectedServices.length} services)</span>
                         <span>
-                          ₹{selectedServices.reduce((total, service) => 
-                            total + (service.price * (service.quantity || 1)), 0
-                          ).toLocaleString()}
+                          ₹
+                          {selectedServices
+                            .reduce(
+                              (total, service) =>
+                                total + service.price * (service.quantity || 1),
+                              0,
+                            )
+                            .toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -2938,21 +3599,22 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending || (
-                  selectedServiceType !== "opd" && 
-                  selectedServices.length === 0 && 
-                  (!serviceForm.watch("serviceName") || !serviceForm.watch("price"))
-                )}
+                disabled={
+                  createServiceMutation.isPending ||
+                  (selectedServiceType !== "opd" &&
+                    selectedServices.length === 0 &&
+                    (!serviceForm.watch("serviceName") ||
+                      !serviceForm.watch("price")))
+                }
                 data-testid="button-schedule-service"
               >
-                {createServiceMutation.isPending 
-                  ? "Scheduling..." 
-                  : selectedServiceType === "opd" 
-                    ? "Schedule OPD" 
+                {createServiceMutation.isPending
+                  ? "Scheduling..."
+                  : selectedServiceType === "opd"
+                    ? "Schedule OPD"
                     : selectedServices.length > 0
-                      ? `Schedule ${selectedServices.length} Service(s)` 
-                      : "Schedule Service"
-                }
+                      ? `Schedule ${selectedServices.length} Service(s)`
+                      : "Schedule Service"}
               </Button>
             </div>
           </form>
@@ -2960,19 +3622,27 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Admission Dialog */}
-      <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
+      <Dialog
+        open={isAdmissionDialogOpen}
+        onOpenChange={setIsAdmissionDialogOpen}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Admit Patient</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)} className="space-y-4">
+          <form
+            onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)}
+            className="space-y-4"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Doctor *</Label>
-                <Select 
+                <Select
                   value={admissionForm.watch("doctorId")}
-                  onValueChange={(value) => admissionForm.setValue("doctorId", value)}
+                  onValueChange={(value) =>
+                    admissionForm.setValue("doctorId", value)
+                  }
                   data-testid="select-admission-doctor"
                 >
                   <SelectTrigger>
@@ -2990,15 +3660,20 @@ export default function PatientDetail() {
 
               <div className="space-y-2">
                 <Label>Ward/Room Type *</Label>
-                <Select 
+                <Select
                   value={admissionForm.watch("currentWardType")}
                   onValueChange={(value) => {
                     admissionForm.setValue("currentWardType", value);
                     admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
                     // Auto-set daily cost based on selected room type
-                    const selectedRoomType = roomTypes.find((rt: any) => rt.name === value);
+                    const selectedRoomType = roomTypes.find(
+                      (rt: any) => rt.name === value,
+                    );
                     if (selectedRoomType) {
-                      admissionForm.setValue("dailyCost", selectedRoomType.dailyCost);
+                      admissionForm.setValue(
+                        "dailyCost",
+                        selectedRoomType.dailyCost,
+                      );
                     }
                   }}
                   data-testid="select-ward-type"
@@ -3022,24 +3697,36 @@ export default function PatientDetail() {
                 <Label>Room Number *</Label>
                 <Select
                   value={admissionForm.watch("currentRoomNumber")}
-                  onValueChange={(value) => admissionForm.setValue("currentRoomNumber", value)}
+                  onValueChange={(value) =>
+                    admissionForm.setValue("currentRoomNumber", value)
+                  }
                   disabled={!admissionForm.watch("currentWardType")}
                   data-testid="select-room-number"
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={admissionForm.watch("currentWardType") ? "Select available room" : "Select ward type first"} />
+                    <SelectValue
+                      placeholder={
+                        admissionForm.watch("currentWardType")
+                          ? "Select available room"
+                          : "Select ward type first"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
-                      const selectedWardType = admissionForm.watch("currentWardType");
-                      const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
+                      const selectedWardType =
+                        admissionForm.watch("currentWardType");
+                      const selectedRoomType = roomTypes.find(
+                        (rt: any) => rt.name === selectedWardType,
+                      );
 
                       if (!selectedRoomType) return null;
 
                       // Get all rooms for this room type
-                      const allRoomsForType = rooms.filter((room: any) => 
-                        room.roomTypeId === selectedRoomType.id && 
-                        room.isActive
+                      const allRoomsForType = rooms.filter(
+                        (room: any) =>
+                          room.roomTypeId === selectedRoomType.id &&
+                          room.isActive,
                       );
 
                       if (allRoomsForType.length === 0) {
@@ -3053,24 +3740,32 @@ export default function PatientDetail() {
                       // Check which rooms are actually occupied based on current admissions
                       const occupiedRoomNumbers = new Set(
                         allCurrentAdmissions
-                          .filter((admission: any) => 
-                            admission.currentWardType === selectedWardType && 
-                            admission.status === 'admitted'
+                          .filter(
+                            (admission: any) =>
+                              admission.currentWardType === selectedWardType &&
+                              admission.status === "admitted",
                           )
-                          .map((admission: any) => admission.currentRoomNumber)
+                          .map((admission: any) => admission.currentRoomNumber),
                       );
 
                       return allRoomsForType.map((room: any) => {
-                        const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
+                        const isOccupied = occupiedRoomNumbers.has(
+                          room.roomNumber,
+                        );
 
                         return (
-                          <SelectItem 
-                            key={room.id} 
+                          <SelectItem
+                            key={room.id}
                             value={room.roomNumber}
                             disabled={isOccupied}
-                            className={isOccupied ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800" : ""}
+                            className={
+                              isOccupied
+                                ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                : ""
+                            }
                           >
-                            {room.roomNumber}{isOccupied ? " (Occupied)" : ""}
+                            {room.roomNumber}
+                            {isOccupied ? " (Occupied)" : ""}
                           </SelectItem>
                         );
                       });
@@ -3098,18 +3793,20 @@ export default function PatientDetail() {
               />
             </div>
 
-
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Daily Cost (₹) *</Label>
                 <Input
                   type="number"
-                  {...admissionForm.register("dailyCost", { valueAsNumber: true })}
+                  {...admissionForm.register("dailyCost", {
+                    valueAsNumber: true,
+                  })}
                   placeholder="Daily ward cost"
                   data-testid="input-daily-cost"
                   readOnly={!!admissionForm.watch("currentWardType")}
-                  className={admissionForm.watch("currentWardType") ? "bg-gray-50" : ""}
+                  className={
+                    admissionForm.watch("currentWardType") ? "bg-gray-50" : ""
+                  }
                 />
               </div>
 
@@ -3117,7 +3814,9 @@ export default function PatientDetail() {
                 <Label>Initial Deposit (₹)</Label>
                 <Input
                   type="number"
-                  {...admissionForm.register("initialDeposit", { valueAsNumber: true })}
+                  {...admissionForm.register("initialDeposit", {
+                    valueAsNumber: true,
+                  })}
                   placeholder="Initial deposit amount"
                   data-testid="input-initial-deposit"
                 />
@@ -3147,7 +3846,9 @@ export default function PatientDetail() {
                 disabled={createAdmissionMutation.isPending}
                 data-testid="button-admit"
               >
-                {createAdmissionMutation.isPending ? "Admitting..." : "Admit Patient"}
+                {createAdmissionMutation.isPending
+                  ? "Admitting..."
+                  : "Admit Patient"}
               </Button>
             </div>
           </form>
@@ -3155,7 +3856,10 @@ export default function PatientDetail() {
       </Dialog>
 
       {/* Discharge Dialog */}
-      <Dialog open={isDischargeDialogOpen} onOpenChange={setIsDischargeDialogOpen}>
+      <Dialog
+        open={isDischargeDialogOpen}
+        onOpenChange={setIsDischargeDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Discharge Patient</DialogTitle>
@@ -3163,17 +3867,29 @@ export default function PatientDetail() {
 
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
-              Are you sure you want to discharge this patient? This action will mark the admission as completed and set the discharge date to now.
+              Are you sure you want to discharge this patient? This action will
+              mark the admission as completed and set the discharge date to now.
             </p>
 
             {(() => {
-              const currentAdmission = admissions?.find((adm: any) => adm.status === 'admitted');
+              const currentAdmission = admissions?.find(
+                (adm: any) => adm.status === "admitted",
+              );
               if (currentAdmission) {
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm"><strong>Room:</strong> {currentAdmission.currentRoomNumber}</p>
-                    <p className="text-sm"><strong>Ward Type:</strong> {currentAdmission.currentWardType}</p>
-                    <p className="text-sm"><strong>Admission Date:</strong> {formatDate(currentAdmission.admissionDate)}</p>
+                    <p className="text-sm">
+                      <strong>Room:</strong>{" "}
+                      {currentAdmission.currentRoomNumber}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Ward Type:</strong>{" "}
+                      {currentAdmission.currentWardType}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Admission Date:</strong>{" "}
+                      {formatDate(currentAdmission.admissionDate)}
+                    </p>
                   </div>
                 );
               }
@@ -3205,23 +3921,31 @@ export default function PatientDetail() {
               disabled={dischargePatientMutation.isPending}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {dischargePatientMutation.isPending ? "Discharging..." : "Discharge Patient"}
+              {dischargePatientMutation.isPending
+                ? "Discharging..."
+                : "Discharge Patient"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Room Update Dialog */}
-      <Dialog open={isRoomUpdateDialogOpen} onOpenChange={setIsRoomUpdateDialogOpen}>
+      <Dialog
+        open={isRoomUpdateDialogOpen}
+        onOpenChange={setIsRoomUpdateDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Room Assignment</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={roomUpdateForm.handleSubmit(onRoomUpdate)} className="space-y-4">
+          <form
+            onSubmit={roomUpdateForm.handleSubmit(onRoomUpdate)}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label>Ward Type *</Label>
-              <Select 
+              <Select
                 value={roomUpdateForm.watch("wardType")}
                 onValueChange={(value) => {
                   roomUpdateForm.setValue("wardType", value);
@@ -3235,7 +3959,8 @@ export default function PatientDetail() {
                 <SelectContent>
                   {roomTypes.map((roomType: any) => (
                     <SelectItem key={roomType.id} value={roomType.name}>
-                      {roomType.name} ({roomType.category}) - ₹{roomType.dailyCost}/day
+                      {roomType.name} ({roomType.category}) - ₹
+                      {roomType.dailyCost}/day
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -3246,24 +3971,35 @@ export default function PatientDetail() {
               <Label>Room Number *</Label>
               <Select
                 value={roomUpdateForm.watch("roomNumber")}
-                onValueChange={(value) => roomUpdateForm.setValue("roomNumber", value)}
+                onValueChange={(value) =>
+                  roomUpdateForm.setValue("roomNumber", value)
+                }
                 disabled={!roomUpdateForm.watch("wardType")}
                 data-testid="select-update-room-number"
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={roomUpdateForm.watch("wardType") ? "Select available room" : "Select ward type first"} />
+                  <SelectValue
+                    placeholder={
+                      roomUpdateForm.watch("wardType")
+                        ? "Select available room"
+                        : "Select ward type first"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {(() => {
                     const selectedWardType = roomUpdateForm.watch("wardType");
-                    const selectedRoomType = roomTypes.find((rt: any) => rt.name === selectedWardType);
+                    const selectedRoomType = roomTypes.find(
+                      (rt: any) => rt.name === selectedWardType,
+                    );
 
                     if (!selectedRoomType) return null;
 
                     // Get all rooms for this room type
-                    const allRoomsForType = rooms.filter((room: any) => 
-                      room.roomTypeId === selectedRoomType.id && 
-                      room.isActive
+                    const allRoomsForType = rooms.filter(
+                      (room: any) =>
+                        room.roomTypeId === selectedRoomType.id &&
+                        room.isActive,
                     );
 
                     if (allRoomsForType.length === 0) {
@@ -3277,24 +4013,32 @@ export default function PatientDetail() {
                     // Check which rooms are actually occupied based on current admissions
                     const occupiedRoomNumbers = new Set(
                       allCurrentAdmissions
-                        .filter((admission: any) => 
-                          admission.currentWardType === selectedWardType && 
-                          admission.status === 'admitted'
+                        .filter(
+                          (admission: any) =>
+                            admission.currentWardType === selectedWardType &&
+                            admission.status === "admitted",
                         )
-                        .map((admission: any) => admission.currentRoomNumber)
+                        .map((admission: any) => admission.currentRoomNumber),
                     );
 
                     return allRoomsForType.map((room: any) => {
-                      const isOccupied = occupiedRoomNumbers.has(room.roomNumber);
+                      const isOccupied = occupiedRoomNumbers.has(
+                        room.roomNumber,
+                      );
 
                       return (
-                        <SelectItem 
-                          key={room.id} 
+                        <SelectItem
+                          key={room.id}
                           value={room.roomNumber}
                           disabled={isOccupied}
-                          className={isOccupied ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800" : ""}
+                          className={
+                            isOccupied
+                              ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800"
+                              : ""
+                          }
                         >
-                          {room.roomNumber}{isOccupied ? " (Occupied)" : ""}
+                          {room.roomNumber}
+                          {isOccupied ? " (Occupied)" : ""}
                         </SelectItem>
                       );
                     });
@@ -3311,10 +4055,7 @@ export default function PatientDetail() {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={updateRoomMutation.isPending}
-              >
+              <Button type="submit" disabled={updateRoomMutation.isPending}>
                 {updateRoomMutation.isPending ? "Updating..." : "Update Room"}
               </Button>
             </div>
@@ -3373,24 +4114,33 @@ export default function PatientDetail() {
               onClick={() => {
                 const amount = parseFloat(paymentAmount);
                 if (amount > 0) {
-                  addPaymentMutation.mutate({ 
+                  addPaymentMutation.mutate({
                     amount: amount,
                     paymentMethod: "cash", // Default to cash, can be extended with a dropdown
-                    reason: "Payment"
+                    reason: "Payment",
                   });
                 }
               }}
-              disabled={addPaymentMutation.isPending || !paymentAmount || parseFloat(paymentAmount) <= 0}
+              disabled={
+                addPaymentMutation.isPending ||
+                !paymentAmount ||
+                parseFloat(paymentAmount) <= 0
+              }
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              {addPaymentMutation.isPending ? "Adding Payment..." : "Add Payment"}
+              {addPaymentMutation.isPending
+                ? "Adding Payment..."
+                : "Add Payment"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Discount Dialog */}
-      <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
+      <Dialog
+        open={isDiscountDialogOpen}
+        onOpenChange={setIsDiscountDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Discount</DialogTitle>
@@ -3437,10 +4187,10 @@ export default function PatientDetail() {
                 const amount = parseFloat(discountAmount);
 
                 if (amount > 0) {
-                  addDiscountMutation.mutate({ 
+                  addDiscountMutation.mutate({
                     amount: amount,
                     reason: discountReason.trim() || "Manual discount",
-                    discountType: "manual"
+                    discountType: "manual",
                   });
                 } else {
                   toast({
@@ -3450,10 +4200,16 @@ export default function PatientDetail() {
                   });
                 }
               }}
-              disabled={addDiscountMutation.isPending || !discountAmount || parseFloat(discountAmount) <= 0}
+              disabled={
+                addDiscountMutation.isPending ||
+                !discountAmount ||
+                parseFloat(discountAmount) <= 0
+              }
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {addDiscountMutation.isPending ? "Adding Discount..." : "Add Discount"}
+              {addDiscountMutation.isPending
+                ? "Adding Discount..."
+                : "Add Discount"}
             </Button>
           </div>
         </DialogContent>
