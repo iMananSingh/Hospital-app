@@ -51,7 +51,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   );
 
   // Calculate totals
-  const totalCharges = billItems.reduce((sum, item) => sum + (item.quantity * item.amount), 0);
+  const totalCharges = billItems.reduce((sum, item) => sum + item.amount, 0);
   const balance = totalCharges - paid - discount;
 
   const formatCurrency = (amount: number) => {
@@ -144,7 +144,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Fake Bill - ${escapeHtml(selectedPatient.name)}</title>
+          <title>Comprehensive Financial Statement</title>
           <style>
             * {
               margin: 0;
@@ -158,6 +158,18 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               color: #333;
               background: white;
               font-size: 14px;
+            }
+
+            @media print {
+              @page {
+                margin: 0;
+                size: A4;
+              }
+              
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
             }
 
             .bill {
