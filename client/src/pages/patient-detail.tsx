@@ -106,11 +106,11 @@ export default function PatientDetail() {
 
   // Hospital info for receipts and comprehensive bill
   const hospitalInfo = {
-    name: hospitalSettings?.name || "MedCare Pro Hospital",
-    address: hospitalSettings?.address || "123 Healthcare Street, Medical District, City - 123456",
-    phone: hospitalSettings?.phone || "+91 98765 43210",
-    email: hospitalSettings?.email || "info@medcarepro.com",
-    registrationNumber: hospitalSettings?.registrationNumber || "",
+    name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+    address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+    phone: hospitalSettings?.phone || "8889762101, 9826325958",
+    email: hospitalSettings?.email || "hospital@healthcare.in",
+    registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
     logo: hospitalSettings?.logoPath || undefined
   };
 
