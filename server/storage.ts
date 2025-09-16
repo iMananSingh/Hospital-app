@@ -4353,7 +4353,7 @@ export class SqliteStorage implements IStorage {
               receiptNumber: po.order.receiptNumber,
               status: po.order.status,
               testsCount: tests.length,
-              quantity: tests.length,
+              quantity: 1, // Always 1 for pathology orders (one order)
               tests: tests.map((t) => ({
                 name: t.testName,
                 category: t.testCategory,
