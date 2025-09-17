@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
@@ -122,7 +122,16 @@ export default function PatientDetail() {
 
   // Fetch hospital settings for receipts and other uses
   const { data: hospitalSettings } = useQuery({
-    queryKey: ["/api/hospital-settings"],
+    queryKey: ["/api/settings/hospital"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/hospital", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch hospital settings");
+      return response.json();
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -136,10 +145,6 @@ export default function PatientDetail() {
       registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
       logo: hospitalSettings?.logoPath || undefined,
     };
-
-    // Debug log to see what hospital info is being used
-    console.log("Hospital settings from query:", hospitalSettings);
-    console.log("Final hospital info being constructed:", info);
 
     return info;
   }, [hospitalSettings]);
@@ -1263,7 +1268,7 @@ export default function PatientDetail() {
     }
 
     // Wait for hospital settings to load before generating bill
-    if (isHospitalSettingsLoading) {
+    if (!hospitalSettings) {
       toast({
         title: "Loading...",
         description: "Please wait for hospital settings to load.",
@@ -1315,12 +1320,12 @@ export default function PatientDetail() {
         actions={
           <Button
             onClick={handleOpenComprehensiveBill}
-            disabled={isLoadingBill || isHospitalSettingsLoading}
+            disabled={isLoadingBill || !hospitalSettings}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
-            {isLoadingBill || isHospitalSettingsLoading ? (
-              isHospitalSettingsLoading ? "Loading Settings..." : "Generating..."
+            {isLoadingBill || !hospitalSettings ? (
+              !hospitalSettings ? "Loading Settings..." : "Generating..."
             ) : (
               <>
                 <FileText className="h-4 w-4" />
