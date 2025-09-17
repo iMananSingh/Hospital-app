@@ -121,22 +121,12 @@ export default function PatientDetail() {
   const [isLoadingBill, setIsLoadingBill] = useState(false);
 
   // Fetch hospital settings for receipts and other uses
-  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading } = useQuery({
-    queryKey: ["/api/settings/hospital"],
-    queryFn: async () => {
-      const response = await fetch("/api/settings/hospital", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch hospital settings");
-      const data = await response.json();
-      console.log("Hospital settings loaded:", data);
-      return data;
-    },
+  const { data: hospitalSettings } = useQuery({
+    queryKey: ["/api/hospital-settings"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Hospital info for receipts and comprehensive bill - use actual data when available
+  // Create hospital info object from settings - exactly like receipts
   const hospitalInfo = React.useMemo(() => {
     const info = {
       name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
@@ -146,11 +136,11 @@ export default function PatientDetail() {
       registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
       logo: hospitalSettings?.logoPath || undefined,
     };
-    
+
     // Debug log to see what hospital info is being used
     console.log("Hospital settings from query:", hospitalSettings);
     console.log("Final hospital info being constructed:", info);
-    
+
     return info;
   }, [hospitalSettings]);
 
@@ -538,12 +528,12 @@ export default function PatientDetail() {
       calculateBillingPreview();
     }
   }, [
-    selectedCatalogService,
+    selectedServiceType,
     watchedServiceValues.quantity,
     watchedServiceValues.hours,
     watchedServiceValues.distance,
     watchedServiceValues.price,
-    selectedServiceType,
+    selectedCatalogService,
   ]);
 
   const calculateBillingPreview = () => {
@@ -1296,12 +1286,6 @@ export default function PatientDetail() {
 
       const billData = await response.json();
       console.log("Comprehensive bill data:", billData);
-      console.log("Hospital settings available:", !!hospitalSettings);
-      console.log("Hospital info being passed to comprehensive bill:", hospitalInfo);
-      
-      // Force a small delay to ensure React has processed the hospital settings update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       setComprehensiveBillData(billData);
       setIsComprehensiveBillOpen(true);
     } catch (error) {

@@ -187,6 +187,8 @@ export function ComprehensiveBillTemplate({
     
     // Debug log to ensure we have the correct hospital info
     console.log('Hospital info being used in comprehensive bill:', hospitalInfo);
+    console.log('Hospital name from props:', hospitalInfo.name);
+    console.log('Hospital phone from props:', hospitalInfo.phone);
 
     const billHtml = `
       <!DOCTYPE html>
