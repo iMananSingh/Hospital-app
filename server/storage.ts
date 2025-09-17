@@ -1942,7 +1942,7 @@ export class SqliteStorage implements IStorage {
 
             if (service) {
               billingType = service.billingType || "per_instance";
-              
+
               // For variable billing, use the client-provided amount directly
               if (service.billingType === "variable") {
                 calculatedAmount = serviceData.calculatedAmount || serviceData.price || 0;
@@ -1952,7 +1952,7 @@ export class SqliteStorage implements IStorage {
                 const customParams = serviceData.billingParameters
                   ? JSON.parse(serviceData.billingParameters)
                   : {};
-                
+
                 const billingResult = SmartCostingEngine.calculateBilling({
                   service: {
                     id: service.id,
@@ -2047,7 +2047,7 @@ export class SqliteStorage implements IStorage {
           const customParams = serviceData.billingParameters
             ? JSON.parse(serviceData.billingParameters)
             : {};
-          
+
           const billingResult = SmartCostingEngine.calculateBilling({
             service: {
               id: service.id,
@@ -2289,7 +2289,7 @@ export class SqliteStorage implements IStorage {
 
   async getAdmissions(patientId?: string): Promise<Admission[]> {
     let admissions: Admission[];
-    
+
     if (patientId) {
       admissions = db
         .select()
@@ -2304,7 +2304,7 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.admissions.createdAt))
         .all();
     }
-    
+
     // Add calculated stay days to each admission using the same logic as frontend
     return admissions.map(admission => ({
       ...admission,
@@ -2654,9 +2654,9 @@ export class SqliteStorage implements IStorage {
           and(
             eq(schema.patientServices.scheduledDate, today),
             sql`(
-              ${schema.patientServices.serviceType} = 'xray' OR 
-              ${schema.patientServices.serviceType} = 'ecg' OR 
-              ${schema.patientServices.serviceType} = 'ultrasound' OR 
+              ${schema.patientServices.serviceType} = 'xray' OR
+              ${schema.patientServices.serviceType} = 'ecg' OR
+              ${schema.patientServices.serviceType} = 'ultrasound' OR
               ${schema.patientServices.serviceType} = 'diagnostic' OR
               LOWER(${schema.patientServices.serviceName}) LIKE '%ecg%' OR
               LOWER(${schema.patientServices.serviceName}) LIKE '%usg%' OR
@@ -2986,42 +2986,41 @@ export class SqliteStorage implements IStorage {
 
   async getHospitalSettings(): Promise<any> {
     try {
-      // Try to get existing settings
-      let settings = db
-        .select()
-        .from(schema.hospitalSettings)
-        .where(eq(schema.hospitalSettings.id, "default"))
-        .get();
-
-      // If no settings exist, create default ones
-      if (!settings) {
-        settings = {
-          id: "default",
-          name: "MedCare Pro Hospital",
-          address: "123 Healthcare Street, Medical District, City - 123456",
-          phone: "+91 98765 43210",
-          email: "info@medcarepro.com",
-          registrationNumber: null,
-          logoPath: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        db.insert(schema.hospitalSettings).values(settings).run();
+      const settings = db.select().from(schema.hospitalSettings).get();
+      if (settings) {
+        return settings;
       }
 
-      return settings;
+      // Create default settings if none exist
+      const defaultSettings = {
+        id: "default",
+        name: "Health Care Hospital and Diagnostic Center",
+        address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+        phone: "8889762101, 9826325958",
+        email: "hospital@healthcare.in",
+        registrationNumber: "NH/3613/JUL-2021",
+        logoPath: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Insert default settings and return them
+      db.insert(schema.hospitalSettings).values(defaultSettings).run();
+      return defaultSettings;
     } catch (error) {
       console.error("Error getting hospital settings:", error);
-      // Return defaults if database operation fails
+
+      // Return custom defaults if database operation fails
       return {
         id: "default",
-        name: "MedCare Pro Hospital",
-        address: "123 Healthcare Street, Medical District, City - 123456",
-        phone: "+91 98765 43210",
-        email: "info@medcarepro.com",
-        registrationNumber: null,
+        name: "Health Care Hospital and Diagnostic Center",
+        address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+        phone: "8889762101, 9826325958",
+        email: "hospital@healthcare.in",
+        registrationNumber: "NH/3613/JUL-2021",
         logoPath: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
     }
   }
