@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import React from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,14 +31,51 @@ export default function Patients() {
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
   const { toast } = useToast();
 
-  // Hospital info for bill generation
-  const hospitalInfo = {
-    name: "MedCare Pro Hospital",
-    address: "123 Healthcare Street, Medical District, City - 123456",
-    phone: "+91 98765 43210",
-    email: "info@medcarepro.com",
-    registrationNumber: "REG123456"
-  };
+  // Fetch hospital settings for bills
+  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
+    queryKey: ["/api/settings/hospital"],
+    queryFn: async () => {
+      console.log("Fetching hospital settings for patients page...");
+      const response = await fetch("/api/settings/hospital", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        console.error("Failed to fetch hospital settings:", response.status, response.statusText);
+        throw new Error("Failed to fetch hospital settings");
+      }
+      const data = await response.json();
+      console.log("Fetched hospital settings for patients page:", data);
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // Create hospital info object from settings - same as patient detail page
+  const hospitalInfo = React.useMemo(() => {
+    console.log("=== Hospital Info Creation (Patients Page) ===");
+    console.log("Hospital settings in patients page:", hospitalSettings);
+    console.log("Hospital settings loading:", isHospitalSettingsLoading);
+    console.log("Hospital settings error:", hospitalSettingsError);
+    
+    // Always create hospital info object, preferring saved settings over defaults
+    const info = {
+      name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+      address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+      phone: hospitalSettings?.phone || "8889762101, 9826325958",
+      email: hospitalSettings?.email || "hospital@healthcare.in",
+      registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
+      logo: hospitalSettings?.logoPath || undefined,
+    };
+
+    console.log("Final hospital info constructed for patients page comprehensive bill:", info);
+    console.log("=== End Hospital Info Creation (Patients Page) ===");
+    return info;
+  }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
 
   const { data: patients = [], isLoading } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
@@ -129,6 +167,19 @@ export default function Patients() {
 
   const generateComprehensiveBillMutation = useMutation({
     mutationFn: async (patientId: string) => {
+      // Wait for hospital settings to load before generating bill
+      if (isHospitalSettingsLoading) {
+        throw new Error("Hospital settings are still loading. Please wait.");
+      }
+
+      if (hospitalSettingsError) {
+        console.warn("Hospital settings error, proceeding with defaults:", hospitalSettingsError);
+      }
+
+      console.log("=== Comprehensive Bill Generation (Patients Page) ===");
+      console.log("Patient ID:", patientId);
+      console.log("Hospital info being used:", hospitalInfo);
+      
       const response = await fetch(`/api/patients/${patientId}/comprehensive-bill`, {
         method: "GET",
         headers: {
@@ -137,10 +188,15 @@ export default function Patients() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to generate comprehensive bill");
+        const errorText = await response.text();
+        console.error("Comprehensive bill API error:", response.status, errorText);
+        throw new Error(`Failed to generate comprehensive bill: ${response.status}`);
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log("Comprehensive bill data received:", data);
+      console.log("=== End Comprehensive Bill Generation (Patients Page) ===");
+      return data;
     },
     onSuccess: (data) => {
       setComprehensiveBillData(data);
@@ -150,16 +206,26 @@ export default function Patients() {
         description: "Comprehensive financial statement is ready for viewing.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Error generating comprehensive bill:", error);
       toast({
         title: "Error generating bill",
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const handleGenerateComprehensiveBill = (patient: Patient) => {
+    // Check if hospital settings are still loading
+    if (isHospitalSettingsLoading) {
+      toast({
+        title: "Loading...",
+        description: "Please wait for hospital settings to load.",
+      });
+      return;
+    }
+
     generateComprehensiveBillMutation.mutate(patient.id);
   };
 
@@ -340,11 +406,11 @@ export default function Patients() {
                             variant="ghost" 
                             size="sm"
                             onClick={() => handleGenerateComprehensiveBill(patient)}
-                            disabled={generateComprehensiveBillMutation.isPending}
+                            disabled={generateComprehensiveBillMutation.isPending || isHospitalSettingsLoading}
                             data-testid={`button-bill-${patient.id}`}
                             title="Generate Comprehensive Bill"
                           >
-                            {generateComprehensiveBillMutation.isPending ? (
+                            {(generateComprehensiveBillMutation.isPending || isHospitalSettingsLoading) ? (
                               <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
                             ) : (
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
