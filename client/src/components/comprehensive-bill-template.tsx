@@ -184,6 +184,9 @@ export function ComprehensiveBillTemplate({
     if (!printWindow) return;
 
     const receiptNumber = generateReceiptNumber();
+    
+    // Debug log to ensure we have the correct hospital info
+    console.log('Hospital info being used in comprehensive bill:', hospitalInfo);
 
     const billHtml = `
       <!DOCTYPE html>
@@ -456,7 +459,13 @@ export function ComprehensiveBillTemplate({
                 ${hospitalInfo.logo ? `
                   <img src="${sanitizeImageUrl(hospitalInfo.logo)}" alt="Hospital Logo" class="hospital-logo">
                 ` : ''}
-                <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+                <div>
+                  <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+                  <div style="text-align: center; font-size: 12px; margin-top: 5px;">${escapeHtml(hospitalInfo.address)}</div>
+                  <div style="text-align: center; font-size: 12px;">
+                    Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}
+                  </div>
+                </div>
               </div>
             </div>
 
