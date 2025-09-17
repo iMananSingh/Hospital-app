@@ -121,7 +121,7 @@ export default function PatientDetail() {
   const [isLoadingBill, setIsLoadingBill] = useState(false);
 
   // Fetch hospital settings for receipts and other uses
-  const { data: hospitalSettings } = useQuery({
+  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
       const response = await fetch("/api/settings/hospital", {
@@ -133,10 +133,15 @@ export default function PatientDetail() {
       return response.json();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
   });
 
   // Create hospital info object from settings - exactly like receipts
   const hospitalInfo = React.useMemo(() => {
+    console.log("Hospital settings in patient detail:", hospitalSettings);
+    console.log("Hospital settings loading:", isHospitalSettingsLoading);
+    console.log("Hospital settings error:", hospitalSettingsError);
+    
     const info = {
       name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
       address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
@@ -146,8 +151,9 @@ export default function PatientDetail() {
       logo: hospitalSettings?.logoPath || undefined,
     };
 
+    console.log("Final hospital info constructed:", info);
     return info;
-  }, [hospitalSettings]);
+  }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
 
   // Helper function to determine service type for receipt numbering</old_str>
 
@@ -1268,12 +1274,16 @@ export default function PatientDetail() {
     }
 
     // Wait for hospital settings to load before generating bill
-    if (!hospitalSettings) {
+    if (isHospitalSettingsLoading) {
       toast({
         title: "Loading...",
         description: "Please wait for hospital settings to load.",
       });
       return;
+    }
+
+    if (hospitalSettingsError) {
+      console.warn("Hospital settings error, proceeding with defaults:", hospitalSettingsError);
     }
 
     try {
@@ -1320,12 +1330,12 @@ export default function PatientDetail() {
         actions={
           <Button
             onClick={handleOpenComprehensiveBill}
-            disabled={isLoadingBill || !hospitalSettings}
+            disabled={isLoadingBill || isHospitalSettingsLoading}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
-            {isLoadingBill || !hospitalSettings ? (
-              !hospitalSettings ? "Loading Settings..." : "Generating..."
+            {isLoadingBill || isHospitalSettingsLoading ? (
+              isHospitalSettingsLoading ? "Loading Settings..." : "Generating..."
             ) : (
               <>
                 <FileText className="h-4 w-4" />

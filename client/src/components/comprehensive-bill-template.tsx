@@ -185,7 +185,10 @@ export function ComprehensiveBillTemplate({
 
     const receiptNumber = generateReceiptNumber();
     
-    // Use the hospital info passed from parent component
+    // Debug log hospital info
+    console.log("Hospital info in comprehensive bill template:", hospitalInfo);
+    console.log("Hospital name being used:", hospitalInfo.name);
+    console.log("Hospital address being used:", hospitalInfo.address);
 
     const billHtml = `
       <!DOCTYPE html>
