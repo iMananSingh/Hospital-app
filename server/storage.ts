@@ -995,6 +995,9 @@ export interface IStorage {
     category: Partial<InsertServiceCategory>,
   ): Promise<ServiceCategory | undefined>;
   deleteServiceCategory(id: string): Promise<boolean>;
+
+  // Comprehensive Bill Generation
+  generateComprehensiveBill(patientId: string): Promise<any>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2306,9 +2309,9 @@ export class SqliteStorage implements IStorage {
     }
 
     // Add calculated stay days to each admission using the same logic as frontend
-    return admissions.map(admission => ({
+    return admissions.map((admission) => ({
       ...admission,
-      stayDays: calculateStayDays(admission.admissionDate, admission.dischargeDate)
+      stayDays: calculateStayDays(admission.admissionDate, admission.dischargeDate),
     }));
   }
 
@@ -2985,44 +2988,32 @@ export class SqliteStorage implements IStorage {
   }
 
   async getHospitalSettings(): Promise<any> {
-    try {
-      const settings = db.select().from(schema.hospitalSettings).get();
-      if (settings) {
-        return settings;
-      }
+    console.log("=== getHospitalSettings Storage Function ===");
+    const settings = db.select().from(schema.hospitalSettings).get();
+    console.log("Raw settings from database:", settings);
 
-      // Create default settings if none exist
-      const defaultSettings = {
-        id: "default",
-        name: "Health Care Hospital and Diagnostic Center",
-        address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
-        phone: "8889762101, 9826325958",
-        email: "hospital@healthcare.in",
-        registrationNumber: "NH/3613/JUL-2021",
-        logoPath: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Insert default settings and return them
-      db.insert(schema.hospitalSettings).values(defaultSettings).run();
-      return defaultSettings;
-    } catch (error) {
-      console.error("Error getting hospital settings:", error);
-
-      // Return custom defaults if database operation fails
-      return {
-        id: "default",
-        name: "Health Care Hospital and Diagnostic Center",
-        address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
-        phone: "8889762101, 9826325958",
-        email: "hospital@healthcare.in",
-        registrationNumber: "NH/3613/JUL-2021",
-        logoPath: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+    if (settings) {
+      return settings;
     }
+
+    // Create default settings if none exist
+    const defaultSettings = {
+      id: "default",
+      name: "Health Care Hospital and Diagnostic Center",
+      address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+      phone: "8889762101, 9826325958",
+      email: "hospital@healthcare.in",
+      registrationNumber: "NH/3613/JUL-2021",
+      logoPath: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Insert default settings and return them
+    db.insert(schema.hospitalSettings).values(defaultSettings).run();
+    console.log("Created default hospital settings:", defaultSettings);
+    console.log("=== End Storage Function (defaults created) ===");
+    return defaultSettings;
   }
 
   async saveHospitalSettings(settings: any): Promise<any> {

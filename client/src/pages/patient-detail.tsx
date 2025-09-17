@@ -120,28 +120,38 @@ export default function PatientDetail() {
   const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
   const [isLoadingBill, setIsLoadingBill] = useState(false);
 
-  // Fetch hospital settings for receipts and other uses
+  // Fetch hospital settings for receipts and other uses with proper error handling
   const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
+      console.log("Fetching hospital settings...");
       const response = await fetch("/api/settings/hospital", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      if (!response.ok) throw new Error("Failed to fetch hospital settings");
-      return response.json();
+      if (!response.ok) {
+        console.error("Failed to fetch hospital settings:", response.status, response.statusText);
+        throw new Error("Failed to fetch hospital settings");
+      }
+      const data = await response.json();
+      console.log("Fetched hospital settings data:", data);
+      return data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Create hospital info object from settings - exactly like receipts
   const hospitalInfo = React.useMemo(() => {
+    console.log("=== Hospital Info Creation ===");
     console.log("Hospital settings in patient detail:", hospitalSettings);
     console.log("Hospital settings loading:", isHospitalSettingsLoading);
     console.log("Hospital settings error:", hospitalSettingsError);
     
+    // Always create hospital info object, preferring saved settings over defaults
     const info = {
       name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
       address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
@@ -151,7 +161,8 @@ export default function PatientDetail() {
       logo: hospitalSettings?.logoPath || undefined,
     };
 
-    console.log("Final hospital info constructed:", info);
+    console.log("Final hospital info constructed for comprehensive bill:", info);
+    console.log("=== End Hospital Info Creation ===");
     return info;
   }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
 
@@ -1284,10 +1295,20 @@ export default function PatientDetail() {
 
     if (hospitalSettingsError) {
       console.warn("Hospital settings error, proceeding with defaults:", hospitalSettingsError);
+      toast({
+        title: "Warning",
+        description: "Hospital settings could not be loaded. Using default values.",
+        variant: "destructive",
+      });
     }
 
     try {
       setIsLoadingBill(true);
+      
+      console.log("=== Comprehensive Bill Generation ===");
+      console.log("Patient ID:", patient.id);
+      console.log("Hospital info being passed:", hospitalInfo);
+      
       const response = await fetch(
         `/api/patients/${patient.id}/comprehensive-bill`,
         {
@@ -1297,10 +1318,16 @@ export default function PatientDetail() {
         },
       );
 
-      if (!response.ok) throw new Error("Failed to fetch comprehensive bill");
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Comprehensive bill API error:", response.status, errorText);
+        throw new Error(`Failed to fetch comprehensive bill: ${response.status}`);
+      }
 
       const billData = await response.json();
-      console.log("Comprehensive bill data:", billData);
+      console.log("Comprehensive bill data received:", billData);
+      console.log("=== End Comprehensive Bill Generation ===");
+      
       setComprehensiveBillData(billData);
       setIsComprehensiveBillOpen(true);
     } catch (error) {
@@ -4239,7 +4266,10 @@ export default function PatientDetail() {
           billData={comprehensiveBillData}
           hospitalInfo={hospitalInfo}
           isOpen={isComprehensiveBillOpen}
-          onClose={() => setIsComprehensiveBillOpen(false)}
+          onClose={() => {
+            console.log("Closing comprehensive bill dialog");
+            setIsComprehensiveBillOpen(false);
+          }}
         />
       )}
     </div>

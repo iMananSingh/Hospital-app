@@ -48,6 +48,20 @@ export function ComprehensiveBillTemplate({
   onClose 
 }: ComprehensiveBillTemplateProps) {
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log("=== ComprehensiveBillTemplate Render ===");
+    console.log("Hospital info received in template:", hospitalInfo);
+    console.log("Hospital name:", hospitalInfo?.name);
+    console.log("Hospital address:", hospitalInfo?.address);
+    console.log("Hospital phone:", hospitalInfo?.phone);
+    console.log("Hospital email:", hospitalInfo?.email);
+    console.log("Hospital registration:", hospitalInfo?.registrationNumber);
+    console.log("Hospital logo:", hospitalInfo?.logo);
+    console.log("Bill data:", billData);
+    console.log("=== End Template Debug ===");
+  }, [hospitalInfo, billData]);
+
   // Security: HTML escape functions to prevent XSS
   const escapeHtml = (text: string) => {
     const div = document.createElement('div');
@@ -185,10 +199,27 @@ export function ComprehensiveBillTemplate({
 
     const receiptNumber = generateReceiptNumber();
     
-    // Debug log hospital info
-    console.log("Hospital info in comprehensive bill template:", hospitalInfo);
-    console.log("Hospital name being used:", hospitalInfo.name);
-    console.log("Hospital address being used:", hospitalInfo.address);
+    // Comprehensive debug logging
+    console.log("=== COMPREHENSIVE BILL PRINT DEBUG ===");
+    console.log("Hospital info received in print function:", hospitalInfo);
+    console.log("Hospital name being used:", hospitalInfo?.name);
+    console.log("Hospital address being used:", hospitalInfo?.address);
+    console.log("Hospital phone being used:", hospitalInfo?.phone);
+    console.log("Hospital email being used:", hospitalInfo?.email);
+    console.log("Hospital registration being used:", hospitalInfo?.registrationNumber);
+    console.log("Hospital logo being used:", hospitalInfo?.logo);
+    console.log("Bill data:", billData);
+    console.log("Patient data:", billData?.patient);
+    
+    // Validate required data
+    if (!hospitalInfo) {
+      console.error("ERROR: Hospital info is null or undefined!");
+    }
+    if (!billData) {
+      console.error("ERROR: Bill data is null or undefined!");
+    }
+    
+    console.log("=== END PRINT DEBUG ===");
 
     const billHtml = `
       <!DOCTYPE html>
@@ -458,10 +489,10 @@ export function ComprehensiveBillTemplate({
             <!-- Header -->
             <div class="header">
               <div class="hospital-info">
-                ${hospitalInfo.logo ? `
+                ${hospitalInfo?.logo ? `
                   <img src="${sanitizeImageUrl(hospitalInfo.logo)}" alt="Hospital Logo" class="hospital-logo">
                 ` : ''}
-                <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+                <div class="hospital-name">${escapeHtml(hospitalInfo?.name || "Hospital Name Not Set")}</div>
               </div>
             </div>
 
@@ -552,8 +583,8 @@ export function ComprehensiveBillTemplate({
 
             <!-- Footer -->
             <div class="footer">
-              <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
-              <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+              <div class="footer-line">Address: ${escapeHtml(hospitalInfo?.address || "Address Not Set")}</div>
+              <div class="footer-line">Phone: ${escapeHtml(hospitalInfo?.phone || "Phone Not Set")} | Email: ${escapeHtml(hospitalInfo?.email || "Email Not Set")}${hospitalInfo?.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
               <div class="bill-id">
                 Bill ID: ${escapeHtml(receiptNumber)} | Generated on ${new Date().toLocaleString()}
               </div>

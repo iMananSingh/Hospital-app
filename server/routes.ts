@@ -1286,7 +1286,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hospital Settings Routes
   app.get("/api/settings/hospital", authenticateToken, async (req, res) => {
     try {
+      console.log("=== Hospital Settings API Call ===");
       const settings = await storage.getHospitalSettings();
+      console.log("Hospital settings from storage:", settings);
+      console.log("=== End Hospital Settings API ===");
       res.json(settings);
     } catch (error) {
       console.error("Error fetching hospital settings:", error);
