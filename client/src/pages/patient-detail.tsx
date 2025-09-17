@@ -130,23 +130,25 @@ export default function PatientDetail() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch hospital settings");
-      return response.json();
+      const data = await response.json();
+      console.log("Hospital settings loaded:", data);
+      return data;
     },
   });
 
   // Hospital info for receipts and comprehensive bill
   const hospitalInfo = {
-    name:
-      hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
-    address:
-      hospitalSettings?.address ||
-      "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+    name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+    address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
     phone: hospitalSettings?.phone || "8889762101, 9826325958",
     email: hospitalSettings?.email || "hospital@healthcare.in",
-    registrationNumber:
-      hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
+    registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
     logo: hospitalSettings?.logoPath || undefined,
   };
+
+  // Debug log to see what hospital info is being used
+  console.log("Hospital settings from query:", hospitalSettings);
+  console.log("Final hospital info:", hospitalInfo);
 
   // Helper function to determine service type for receipt numbering</old_str>
 
@@ -1257,11 +1259,10 @@ export default function PatientDetail() {
 
   // Function to open the comprehensive bill dialog
   const handleOpenComprehensiveBill = async () => {
-    if (!patient || !hospitalSettings) {
+    if (!patient) {
       toast({
         title: "Error",
-        description:
-          "Hospital settings not loaded yet. Please wait a moment and try again.",
+        description: "Patient data not loaded yet. Please wait a moment and try again.",
         variant: "destructive",
       });
       return;
@@ -1281,6 +1282,7 @@ export default function PatientDetail() {
       if (!response.ok) throw new Error("Failed to fetch comprehensive bill");
 
       const billData = await response.json();
+      console.log("Comprehensive bill data:", billData);
       setComprehensiveBillData(billData);
       setIsComprehensiveBillOpen(true);
     } catch (error) {
@@ -1310,14 +1312,12 @@ export default function PatientDetail() {
         actions={
           <Button
             onClick={handleOpenComprehensiveBill}
-            disabled={isLoadingBill || !hospitalSettings}
+            disabled={isLoadingBill}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
             {isLoadingBill ? (
               "Generating..."
-            ) : !hospitalSettings ? (
-              "Loading..."
             ) : (
               <>
                 <FileText className="h-4 w-4" />
