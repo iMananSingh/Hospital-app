@@ -459,13 +459,7 @@ export function ComprehensiveBillTemplate({
                 ${hospitalInfo.logo ? `
                   <img src="${sanitizeImageUrl(hospitalInfo.logo)}" alt="Hospital Logo" class="hospital-logo">
                 ` : ''}
-                <div>
-                  <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
-                  <div style="text-align: center; font-size: 12px; margin-top: 5px;">${escapeHtml(hospitalInfo.address)}</div>
-                  <div style="text-align: center; font-size: 12px;">
-                    Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}
-                  </div>
-                </div>
+                <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
               </div>
             </div>
 
