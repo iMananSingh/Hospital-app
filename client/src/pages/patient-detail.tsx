@@ -121,7 +121,7 @@ export default function PatientDetail() {
   const [isLoadingBill, setIsLoadingBill] = useState(false);
 
   // Fetch hospital settings for receipts and other uses
-  const { data: hospitalSettings } = useQuery({
+  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
       const response = await fetch("/api/settings/hospital", {
@@ -136,7 +136,7 @@ export default function PatientDetail() {
     },
   });
 
-  // Hospital info for receipts and comprehensive bill
+  // Hospital info for receipts and comprehensive bill - use actual data when available
   const hospitalInfo = {
     name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
     address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
@@ -1268,6 +1268,15 @@ export default function PatientDetail() {
       return;
     }
 
+    // Wait for hospital settings to load before generating bill
+    if (isHospitalSettingsLoading) {
+      toast({
+        title: "Loading...",
+        description: "Please wait for hospital settings to load.",
+      });
+      return;
+    }
+
     try {
       setIsLoadingBill(true);
       const response = await fetch(
@@ -1283,6 +1292,7 @@ export default function PatientDetail() {
 
       const billData = await response.json();
       console.log("Comprehensive bill data:", billData);
+      console.log("Hospital info being passed to comprehensive bill:", hospitalInfo);
       setComprehensiveBillData(billData);
       setIsComprehensiveBillOpen(true);
     } catch (error) {
@@ -1312,12 +1322,12 @@ export default function PatientDetail() {
         actions={
           <Button
             onClick={handleOpenComprehensiveBill}
-            disabled={isLoadingBill}
+            disabled={isLoadingBill || isHospitalSettingsLoading}
             className="flex items-center gap-2"
             data-testid="button-comprehensive-bill"
           >
-            {isLoadingBill ? (
-              "Generating..."
+            {isLoadingBill || isHospitalSettingsLoading ? (
+              isHospitalSettingsLoading ? "Loading Settings..." : "Generating..."
             ) : (
               <>
                 <FileText className="h-4 w-4" />
