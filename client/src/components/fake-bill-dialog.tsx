@@ -234,6 +234,12 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               gap: 15px;
             }
 
+            .hospital-logo {
+              width: 60px;
+              height: 60px;
+              object-fit: contain;
+            }
+
             .hospital-name {
               font-size: 24px;
               font-weight: bold;
@@ -354,15 +360,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
         </head>
         <body>
           <div class="bill">
+            <!-- Header -->
             <div class="header">
               <div class="hospital-info">
-                <div>
-                  <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
-                  <div style="text-align: center; font-size: 12px; margin-top: 5px;">${escapeHtml(hospitalInfo.address)}</div>
-                  <div style="text-align: center; font-size: 12px;">
-                    Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}
-                  </div>
-                </div>
+                ${hospitalInfo.logoPath ? `
+                  <img src="${hospitalInfo.logoPath}" alt="Hospital Logo" class="hospital-logo">
+                ` : ''}
+                <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
               </div>
             </div>
 
@@ -448,10 +452,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               </div>
             </div>
 
+            <!-- Footer -->
             <div class="footer">
-              <div class="footer-line">Thank you for choosing ${escapeHtml(hospitalInfo.name)}</div>
-              <div class="footer-line">For any queries, please contact us at ${escapeHtml(hospitalInfo.phone)}</div>
-              <div class="bill-id">Bill ID: ${receiptNumber} | Generated on ${new Date().toISOString()}</div>
+              <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
+              <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+              <div class="bill-id">
+                Bill ID: ${receiptNumber} | Generated on ${new Date().toLocaleString()}
+              </div>
             </div>
           </div>
         </body>
