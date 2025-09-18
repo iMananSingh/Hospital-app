@@ -205,6 +205,12 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               @page {
                 margin: 0;
                 size: A4;
+                @top-center {
+                  content: element(page-header);
+                }
+                @bottom-center {
+                  content: element(page-footer);
+                }
               }
               
               body {
@@ -219,6 +225,63 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               padding: 20px;
               display: flex;
               flex-direction: column;
+            }
+
+            @media print {
+              .bill {
+                margin: 80px 20px 60px 20px !important;
+                padding: 0 !important;
+                max-width: none !important;
+              }
+
+              .header {
+                display: none !important;
+              }
+
+              .footer {
+                display: none !important;
+              }
+
+              .page-header {
+                display: flex !important;
+              }
+
+              .page-footer {
+                display: block !important;
+              }
+
+              .bill-table {
+                page-break-inside: auto;
+              }
+
+              .bill-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+              }
+            }
+
+            /* Page Header for printing */
+            .page-header {
+              position: running(page-header);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 10px 20px 15px 20px;
+              border-bottom: 2px solid #333;
+              background: white;
+              width: 100%;
+            }
+
+            /* Page Footer for printing */
+            .page-footer {
+              position: running(page-footer);
+              text-align: center;
+              font-size: 12px;
+              line-height: 1.5;
+              padding: 8px 20px;
+              border-top: 2px solid #333;
+              background: white;
+              width: 100%;
             }
 
             .header {
@@ -361,6 +424,22 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
           </style>
         </head>
         <body>
+          <!-- Page Header for printing -->
+          <div class="page-header">
+            <div class="hospital-info">
+              ${hospitalInfo.logoPath ? `
+                <img src="${hospitalInfo.logoPath}" alt="Hospital Logo" class="hospital-logo">
+              ` : ''}
+              <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
+            </div>
+          </div>
+
+          <!-- Page Footer for printing -->
+          <div class="page-footer">
+            <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
+            <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+          </div>
+
           <div class="bill">
             <!-- Header -->
             <div class="header">

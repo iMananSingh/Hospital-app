@@ -249,6 +249,30 @@ export function ComprehensiveBillTemplate({
               flex-direction: column;
             }
 
+            /* Page Header for printing */
+            .page-header {
+              position: running(page-header);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 10px 20px 15px 20px;
+              border-bottom: 2px solid #333;
+              background: white;
+              width: 100%;
+            }
+
+            /* Page Footer for printing */
+            .page-footer {
+              position: running(page-footer);
+              text-align: center;
+              font-size: 12px;
+              line-height: 1.5;
+              padding: 8px 20px;
+              border-top: 2px solid #333;
+              background: white;
+              width: 100%;
+            }
+
             /* Header */
             .header {
               display: flex;
@@ -452,6 +476,12 @@ export function ComprehensiveBillTemplate({
             @page {
               margin: 0;
               size: A4;
+              @top-center {
+                content: element(page-header);
+              }
+              @bottom-center {
+                content: element(page-footer);
+              }
             }
 
             @media print {
@@ -468,23 +498,59 @@ export function ComprehensiveBillTemplate({
               }
 
               body {
-                padding: 10px !important;
+                padding: 0 !important;
               }
 
               .bill {
-                margin: 0 !important;
-                padding: 10px !important;
+                margin: 80px 20px 60px 20px !important;
+                padding: 0 !important;
                 page-break-inside: avoid;
               }
 
               .header {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+                display: none !important;
+              }
+
+              .footer {
+                display: none !important;
+              }
+
+              .page-header {
+                display: flex !important;
+              }
+
+              .page-footer {
+                display: block !important;
+              }
+
+              .bill-table {
+                page-break-inside: auto;
+              }
+
+              .bill-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
               }
             }
           </style>
         </head>
         <body>
+          <!-- Page Header for printing -->
+          <div class="page-header">
+            <div class="hospital-info">
+              ${hospitalInfo?.logo ? `
+                <img src="${sanitizeImageUrl(hospitalInfo.logo)}" alt="Hospital Logo" class="hospital-logo">
+              ` : ''}
+              <div class="hospital-name">${escapeHtml(hospitalInfo?.name || "Hospital Name Not Set")}</div>
+            </div>
+          </div>
+
+          <!-- Page Footer for printing -->
+          <div class="page-footer">
+            <div class="footer-line">Address: ${escapeHtml(hospitalInfo?.address || "Address Not Set")}</div>
+            <div class="footer-line">Phone: ${escapeHtml(hospitalInfo?.phone || "Phone Not Set")} | Email: ${escapeHtml(hospitalInfo?.email || "Email Not Set")}${hospitalInfo?.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+          </div>
+
           <div class="bill">
             <!-- Header -->
             <div class="header">

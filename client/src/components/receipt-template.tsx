@@ -138,6 +138,30 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               flex-direction: column;
             }
             
+            /* Page Header for printing */
+            .page-header {
+              position: running(page-header);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 10px 20px 15px 20px;
+              border-bottom: 2px solid #333;
+              background: white;
+              width: 100%;
+            }
+
+            /* Page Footer for printing */
+            .page-footer {
+              position: running(page-footer);
+              text-align: center;
+              font-size: 12px;
+              line-height: 1.5;
+              padding: 8px 20px;
+              border-top: 2px solid #333;
+              background: white;
+              width: 100%;
+            }
+
             /* Header - Logo and Hospital Name only */
             .header {
               display: flex;
@@ -307,6 +331,12 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             @page {
               margin: 0;
               size: A4;
+              @top-center {
+                content: element(page-header);
+              }
+              @bottom-center {
+                content: element(page-footer);
+              }
             }
             
             @media print {
@@ -323,23 +353,50 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               }
               
               body {
-                padding: 10px !important;
+                padding: 0 !important;
               }
               
               .receipt {
-                margin: 0 !important;
-                padding: 10px !important;
+                margin: 80px 20px 60px 20px !important;
+                padding: 0 !important;
                 page-break-inside: avoid;
               }
               
               .header {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+                display: none !important;
+              }
+
+              .footer {
+                display: none !important;
+              }
+
+              .page-header {
+                display: flex !important;
+              }
+
+              .page-footer {
+                display: block !important;
               }
             }
           </style>
         </head>
         <body>
+          <!-- Page Header for printing -->
+          <div class="page-header">
+            <div class="hospital-info">
+              ${hospitalInfo.logo ? `
+                <img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo">
+              ` : ''}
+              <div class="hospital-name">${hospitalInfo.name}</div>
+            </div>
+          </div>
+
+          <!-- Page Footer for printing -->
+          <div class="page-footer">
+            <div class="footer-line">Address: ${hospitalInfo.address}</div>
+            <div class="footer-line">Phone: ${hospitalInfo.phone} | Email: ${hospitalInfo.email}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${hospitalInfo.registrationNumber}` : ''}</div>
+          </div>
+
           <div class="receipt">
             <!-- Header - Logo and Hospital Name Only -->
             <div class="header">
