@@ -13,10 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
-import { insertPatientSchema } from "@shared/schema";
+import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { TestTube, Search, Check, ChevronsUpDown, Eye } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -38,6 +43,11 @@ interface Activity {
 export default function Dashboard() {
   const [isFakeBillDialogOpen, setIsFakeBillDialogOpen] = useState(false);
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [isPathologyOrderOpen, setIsPathologyOrderOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -71,6 +81,28 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Failed to fetch recent activities");
       return response.json();
     },
+  });
+
+  const { data: combinedTestData } = useQuery({
+    queryKey: ["/api/pathology-tests/combined"],
+  });
+
+  // Extract tests and categories from combined data
+  const testCatalog = combinedTestData?.categories?.flatMap(cat => 
+    cat.tests?.map(test => ({
+      ...test,
+      category: cat.name
+    })) || []
+  ) || [];
+
+  const categories = combinedTestData?.categories?.map(cat => cat.name) || [];
+
+  const { data: patients = [] } = useQuery({
+    queryKey: ["/api/patients"],
+  });
+
+  const { data: doctors } = useQuery({
+    queryKey: ["/api/doctors"],
   });
 
   const createPatientMutation = useMutation({
@@ -119,6 +151,50 @@ export default function Dashboard() {
     },
   });
 
+  const createOrderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      console.log("Sending order data:", data);
+      const response = await fetch("/api/pathology", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("Order creation failed:", errorData);
+        throw new Error(`Failed to create pathology order: ${errorData}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (createdOrder) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      setIsPathologyOrderOpen(false);
+      setSelectedCatalogTests([]);
+      pathologyForm.reset();
+      toast({
+        title: "Order placed successfully",
+        description: "The pathology order has been placed.",
+      });
+      
+      // Automatically open the order details dialog
+      setSelectedOrder(createdOrder);
+    },
+    onError: (error) => {
+      console.error("Order mutation error:", error);
+      toast({
+        title: "Error placing order",
+        description: `Please try again. ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
@@ -131,6 +207,22 @@ export default function Dashboard() {
       emergencyContact: "",
     },
     mode: "onChange",
+  });
+
+  const pathologyForm = useForm({
+    resolver: zodResolver(insertPathologyOrderSchema),
+    defaultValues: {
+      patientId: "",
+      doctorId: "",
+      orderedDate: (() => {
+        // Use local timezone for pathology order date
+        const now = new Date();
+        return now.getFullYear() + '-' + 
+          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+          String(now.getDate()).padStart(2, '0');
+      })(),
+      remarks: "",
+    },
   });
 
   const onSubmit = (data: any) => {
@@ -157,6 +249,256 @@ export default function Dashboard() {
     
     createPatientMutation.mutate(data);
   };
+
+  const onPathologySubmit = (data: any) => {
+    if (selectedCatalogTests.length === 0) {
+      toast({
+        title: "No tests selected",
+        description: "Please select at least one test from the catalog.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create single order with multiple tests
+    const orderData = {
+      patientId: data.patientId,
+      doctorId: data.doctorId === "external" || data.doctorId === "" ? null : data.doctorId, // Make doctor optional
+      orderedDate: data.orderedDate,
+      remarks: data.remarks,
+    };
+
+    const tests = selectedCatalogTests.map(test => ({
+      testName: test.test_name,
+      testCategory: test.category,
+      price: test.price,
+    }));
+
+    createOrderMutation.mutate({ orderData, tests });
+  };
+
+  // Patient Search Combobox Component for pathology
+  function PatientSearchCombobox({ value, onValueChange, patients }: {
+    value: string;
+    onValueChange: (value: string) => void;
+    patients: any[];
+  }) {
+    const [open, setOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
+
+    const filteredPatients = (patients || []).filter((patient: any) => {
+      if (!searchValue.trim()) return true; // Show all patients when no search
+      const searchLower = searchValue.toLowerCase().trim();
+      return (
+        patient.name?.toLowerCase().includes(searchLower) ||
+        patient.patientId?.toLowerCase().includes(searchLower) ||
+        patient.phone?.includes(searchValue.trim()) ||
+        patient.email?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    const selectedPatient = patients?.find((patient: any) => patient.id === value);
+
+    const formatPatientDisplay = (patient: any) => {
+      return `${patient.name}, ${patient.age} ${patient.gender} (${patient.patientId})`;
+    };
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between text-left font-normal"
+          >
+            {selectedPatient ? formatPatientDisplay(selectedPatient) : "Search and select patient..."}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+          <Command shouldFilter={false}>
+            <CommandInput 
+              placeholder="Type to search patients..." 
+              value={searchValue}
+              onValueChange={setSearchValue}
+            />
+            <CommandList className="max-h-[300px] overflow-y-auto">
+              <CommandEmpty>No patients found.</CommandEmpty>
+              <CommandGroup>
+                {filteredPatients.map((patient: any) => (
+                  <CommandItem
+                    key={patient.id}
+                    value={patient.name}
+                    onSelect={() => {
+                      onValueChange(patient.id);
+                      setOpen(false);
+                      setSearchValue("");
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Check
+                      className={`mr-2 h-4 w-4 ${
+                        value === patient.id ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{patient.name}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {patient.age} years, {patient.gender} • {patient.patientId}
+                      </span>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  // Order Details Dialog Component
+  function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => void }) {
+    const { data: orderDetails } = useQuery({
+      queryKey: ["/api/pathology", order.id],
+      queryFn: async () => {
+        const response = await fetch(`/api/pathology/${order.id}`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch order details");
+        return response.json();
+      },
+    });
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'completed':
+          return 'bg-green-100 text-green-800';
+        case 'processing':
+          return 'bg-blue-100 text-blue-800';
+        case 'collected':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'ordered':
+          return 'bg-orange-100 text-orange-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    };
+
+    const formatDate = (dateString: string) => {
+      if (!dateString) return "N/A";
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    };
+
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Order Details - {order.orderId}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+            <div className="space-y-4 px-6 pb-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Patient</Label>
+                  <p className="text-sm text-muted-foreground">{orderDetails?.patient?.name || "Unknown Patient"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Doctor</Label>
+                  <p className="text-sm text-muted-foreground">{orderDetails?.doctor?.name || "External Patient"}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge className={getStatusColor(order.status)} variant="secondary">
+                    {order.status}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Date Ordered</Label>
+                  <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Total Price</Label>
+                  <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
+                </div>
+              </div>
+              {order.remarks && (
+                <div>
+                  <Label className="text-sm font-medium">Remarks</Label>
+                  <p className="text-sm text-muted-foreground">{order.remarks}</p>
+                </div>
+              )}
+              
+              <div className="mt-6">
+                <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+                <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background z-10">
+                      <TableRow>
+                        <TableHead className="bg-background">Test Name</TableHead>
+                        <TableHead className="bg-background">Category</TableHead>
+                        <TableHead className="bg-background">Status</TableHead>
+                        <TableHead className="bg-background">Price (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orderDetails?.tests ? (
+                        orderDetails.tests.map((test: any, index: number) => (
+                          <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
+                            <TableCell className="font-medium">{test.testName}</TableCell>
+                            <TableCell>{test.testCategory}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(test.status)} variant="secondary">
+                                {test.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>₹{test.price}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            Loading test details...
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const toggleTestSelection = (test: any) => {
+    const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+    if (isSelected) {
+      setSelectedCatalogTests(prev => prev.filter(t => t.test_name !== test.test_name));
+    } else {
+      setSelectedCatalogTests(prev => [...prev, test]);
+    }
+  };
+
+  const getTotalPrice = () => {
+    return selectedCatalogTests.reduce((total, test) => total + test.price, 0);
+  };
+
+  const filteredCatalog = (testCatalog || []).filter((test: any) => {
+    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
+    const matchesSearch = test.test_name?.toLowerCase().includes(catalogSearchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   if (isLoading) {
     return (
@@ -311,7 +653,11 @@ export default function Dashboard() {
                   </div>
                 </button>
                 
-                <button className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" data-testid="quick-new-test">
+                <button 
+                  onClick={() => setIsPathologyOrderOpen(true)}
+                  className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" 
+                  data-testid="quick-new-test"
+                >
                   <div className="text-center">
                     <div className="text-lg font-semibold">Lab Test</div>
                     <div className="text-sm opacity-90">Order test</div>
@@ -461,6 +807,171 @@ export default function Dashboard() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Order Pathology Tests Dialog */}
+      <Dialog open={isPathologyOrderOpen} onOpenChange={setIsPathologyOrderOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Pathology Tests</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={pathologyForm.handleSubmit(onPathologySubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="patientId">Patient *</Label>
+                <PatientSearchCombobox
+                  value={pathologyForm.watch("patientId")}
+                  onValueChange={(value) => pathologyForm.setValue("patientId", value)}
+                  patients={patients || []}
+                />
+                {pathologyForm.formState.errors.patientId && (
+                  <p className="text-sm text-red-500">{pathologyForm.formState.errors.patientId.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
+                <Select 
+                  onValueChange={(value) => pathologyForm.setValue("doctorId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select doctor (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="external">External Patient (No Doctor)</SelectItem>
+                    {(doctors || []).map((doctor: any) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name} - {doctor.specialization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Select Tests from Catalog</Label>
+                <div className="flex items-center space-x-2">
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {(categories || []).map((category: string) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search tests by name..."
+                      value={catalogSearchQuery}
+                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">Select</TableHead>
+                      <TableHead>Test Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price (₹)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCatalog.map((test: any, index: number) => {
+                      const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+                      return (
+                        <TableRow 
+                          key={`${test.category}-${test.test_name}-${index}`}
+                          className={isSelected ? "bg-blue-50" : ""}
+                        >
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleTestSelection(test)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">{test.test_name}</TableCell>
+                          <TableCell>{test.category}</TableCell>
+                          <TableCell>₹{test.price}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedCatalogTests.length > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Tests ({selectedCatalogTests.length})</h4>
+                  <div className="space-y-1">
+                    {selectedCatalogTests.map((test, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span>{test.test_name}</span>
+                        <span>₹{test.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-blue-200 mt-2 pt-2 font-medium text-blue-900">
+                    Total: ₹{getTotalPrice()}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="remarks">Remarks</Label>
+              <Textarea
+                {...pathologyForm.register("remarks")}
+                placeholder="Enter any additional remarks or instructions"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsPathologyOrderOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createOrderMutation.isPending || selectedCatalogTests.length === 0}
+              >
+                {createOrderMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Order Details Dialog */}
+      {selectedOrder && (
+        <OrderDetailsDialog 
+          order={selectedOrder} 
+          onClose={() => {
+            setSelectedOrder(null);
+            // No redirect needed since we're already on dashboard
+          }} 
+        />
+      )}
     </div>
   );
 }
