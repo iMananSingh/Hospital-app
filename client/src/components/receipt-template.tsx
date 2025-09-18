@@ -315,7 +315,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             @page {
-              margin: 0.75in 0.5in 0.75in 0.5in;
+              margin: 1.5in 1in 1in 1in;
               size: A4;
             }
             
@@ -334,22 +334,79 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               
               .receipt {
                 margin: 0 !important;
-                padding: 20px !important;
+                padding: 0 !important;
                 page-break-inside: avoid;
               }
               
-              /* Keep regular header and footer visible */
-              .header {
+              /* Show headers and footers on every page */
+              .page-header {
                 display: flex !important;
+                align-items: center;
+                justify-content: center;
+                padding: 15px 0;
+                border-bottom: 2px solid #333;
+                background: white;
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+              }
+
+              .page-footer {
+                display: block !important;
+                text-align: center;
+                font-size: 12px;
+                line-height: 1.5;
+                padding: 10px 0;
+                border-top: 2px solid #333;
+                background: white;
+                width: 100%;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+              }
+
+              /* Hide the regular header and footer in print */
+              .header {
+                display: none !important;
               }
 
               .footer {
-                display: block !important;
+                display: none !important;
+              }
+
+              /* Ensure content doesn't overlap with fixed header/footer */
+              .receipt-title {
+                margin-top: 100px !important;
+              }
+
+              .signature-section {
+                margin-bottom: 80px !important;
               }
             }
           </style>
         </head>
         <body>
+          <!-- Page Header for printing -->
+          <div class="page-header">
+            <div class="hospital-info">
+              ${hospitalInfo.logo ? `
+                <img src="${hospitalInfo.logo}" alt="Hospital Logo" class="hospital-logo">
+              ` : ''}
+              <div class="hospital-name">${hospitalInfo.name}</div>
+            </div>
+          </div>
+
+          <!-- Page Footer for printing -->
+          <div class="page-footer">
+            <div class="footer-line">Address: ${hospitalInfo.address}</div>
+            <div class="footer-line">Phone: ${hospitalInfo.phone} | Email: ${hospitalInfo.email}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${hospitalInfo.registrationNumber}` : ''}</div>
+          </div>
+
           <div class="receipt">
             <!-- Header - Logo and Hospital Name Only -->
             <div class="header">
