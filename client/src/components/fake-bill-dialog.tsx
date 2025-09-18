@@ -59,13 +59,15 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
     address: hospitalSettings.address || "123 Healthcare Street, Medical District, City - 123456",
     phone: hospitalSettings.phone || "+91 98765 43210",
     email: hospitalSettings.email || "info@medcarepro.com",
-    registrationNumber: hospitalSettings.registrationNumber || "REG123456"
+    registrationNumber: hospitalSettings.registrationNumber || "REG123456",
+    logoPath: hospitalSettings.logoPath || null
   } : {
     name: "MedCare Pro Hospital",
     address: "123 Healthcare Street, Medical District, City - 123456",
     phone: "+91 98765 43210",
     email: "info@medcarepro.com",
-    registrationNumber: "REG123456"
+    registrationNumber: "REG123456",
+    logoPath: null
   };
 
   // Filter patients based on search query
