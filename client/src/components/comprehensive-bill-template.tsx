@@ -251,26 +251,12 @@ export function ComprehensiveBillTemplate({
 
             /* Page Header for printing */
             .page-header {
-              position: running(page-header);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 10px 20px 15px 20px;
-              border-bottom: 2px solid #333;
-              background: white;
-              width: 100%;
+              display: none;
             }
 
             /* Page Footer for printing */
             .page-footer {
-              position: running(page-footer);
-              text-align: center;
-              font-size: 12px;
-              line-height: 1.5;
-              padding: 8px 20px;
-              border-top: 2px solid #333;
-              background: white;
-              width: 100%;
+              display: none;
             }
 
             /* Header */
@@ -474,14 +460,8 @@ export function ComprehensiveBillTemplate({
             }
 
             @page {
-              margin: 0;
+              margin: 1.5in 1in 1in 1in;
               size: A4;
-              @top-center {
-                content: element(page-header);
-              }
-              @bottom-center {
-                content: element(page-footer);
-              }
             }
 
             @media print {
@@ -497,16 +477,45 @@ export function ComprehensiveBillTemplate({
                 background: white !important;
               }
 
-              body {
-                padding: 0 !important;
-              }
-
               .bill {
-                margin: 80px 20px 60px 20px !important;
+                margin: 0 !important;
                 padding: 0 !important;
                 page-break-inside: avoid;
               }
 
+              /* Show headers and footers on every page */
+              .page-header {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                padding: 15px 0;
+                border-bottom: 2px solid #333;
+                background: white;
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+              }
+
+              .page-footer {
+                display: block !important;
+                text-align: center;
+                font-size: 12px;
+                line-height: 1.5;
+                padding: 10px 0;
+                border-top: 2px solid #333;
+                background: white;
+                width: 100%;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+              }
+
+              /* Hide the regular header and footer in print */
               .header {
                 display: none !important;
               }
@@ -515,12 +524,13 @@ export function ComprehensiveBillTemplate({
                 display: none !important;
               }
 
-              .page-header {
-                display: flex !important;
+              /* Ensure content doesn't overlap with fixed header/footer */
+              .bill-title {
+                margin-top: 100px !important;
               }
 
-              .page-footer {
-                display: block !important;
+              .signature-section {
+                margin-bottom: 80px !important;
               }
 
               .bill-table {

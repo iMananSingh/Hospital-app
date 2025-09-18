@@ -128,7 +128,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
     if (field === 'amount' && typeof value === 'number') {
       value = Math.max(0, value);
     }
-    
+
     setBillItems(items =>
       items.map(item => {
         if (item.id === id) {
@@ -212,7 +212,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                   content: element(page-footer);
                 }
               }
-              
+
               body {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
@@ -262,26 +262,12 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
 
             /* Page Header for printing */
             .page-header {
-              position: running(page-header);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 10px 20px 15px 20px;
-              border-bottom: 2px solid #333;
-              background: white;
-              width: 100%;
+              display: none;
             }
 
             /* Page Footer for printing */
             .page-footer {
-              position: running(page-footer);
-              text-align: center;
-              font-size: 12px;
-              line-height: 1.5;
-              padding: 8px 20px;
-              border-top: 2px solid #333;
-              background: white;
-              width: 100%;
+              display: none;
             }
 
             .header {
