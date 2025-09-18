@@ -1,10 +1,22 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
 import StatsCards from "@/components/stats-cards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
+import { insertPatientSchema } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   opdPatients: number;
@@ -25,6 +37,9 @@ interface Activity {
 
 export default function Dashboard() {
   const [isFakeBillDialogOpen, setIsFakeBillDialogOpen] = useState(false);
+  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -57,6 +72,91 @@ export default function Dashboard() {
       return response.json();
     },
   });
+
+  const createPatientMutation = useMutation({
+    mutationFn: async (patientData: any) => {
+      const response = await fetch("/api/patients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(patientData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create patient");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      setIsNewPatientOpen(false);
+      form.reset({
+        name: "",
+        age: 0,
+        gender: "",
+        phone: "",
+        address: "",
+        email: "",
+        emergencyContact: "",
+      });
+      toast({
+        title: "Patient created successfully",
+        description: "The patient has been registered in the system.",
+      });
+      // Navigate to the patient's detail page
+      navigate(`/patients/${data.id}`);
+    },
+    onError: () => {
+      toast({
+        title: "Error creating patient",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const form = useForm({
+    resolver: zodResolver(insertPatientSchema),
+    defaultValues: {
+      name: "",
+      age: undefined,
+      gender: "",
+      phone: "",
+      address: "",
+      email: "",
+      emergencyContact: "",
+    },
+    mode: "onChange",
+  });
+
+  const onSubmit = (data: any) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Validate required fields explicitly
+    if (!data.name?.trim()) {
+      form.setError("name", { message: "Name is required" });
+      return;
+    }
+    if (!data.age || data.age <= 0) {
+      form.setError("age", { message: "Valid age is required" });
+      return;
+    }
+    if (!data.gender?.trim()) {
+      form.setError("gender", { message: "Gender is required" });
+      return;
+    }
+    if (!data.phone?.trim()) {
+      form.setError("phone", { message: "Phone number is required" });
+      return;
+    }
+    
+    createPatientMutation.mutate(data);
+  };
 
   if (isLoading) {
     return (
@@ -200,7 +300,11 @@ export default function Dashboard() {
                   </div>
                 </button>
                 
-                <button className="p-4 bg-healthcare-green text-white rounded-lg hover:bg-healthcare-green/90 transition-colors" data-testid="quick-new-patient">
+                <button 
+                  onClick={() => setIsNewPatientOpen(true)}
+                  className="p-4 bg-healthcare-green text-white rounded-lg hover:bg-healthcare-green/90 transition-colors" 
+                  data-testid="quick-new-patient"
+                >
                   <div className="text-center">
                     <div className="text-lg font-semibold">Add Patient</div>
                     <div className="text-sm opacity-90">Register new</div>
@@ -231,6 +335,132 @@ export default function Dashboard() {
         isOpen={isFakeBillDialogOpen}
         onClose={() => setIsFakeBillDialogOpen(false)}
       />
+
+      {/* New Patient Dialog */}
+      <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
+        <DialogContent className="max-w-2xl" data-testid="new-patient-dialog">
+          <DialogHeader>
+            <DialogTitle>Register New Patient</DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  id="name"
+                  {...form.register("name")}
+                  placeholder="Enter patient's full name"
+                  data-testid="input-patient-name"
+                />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="age">Age *</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  {...form.register("age", { valueAsNumber: true })}
+                  placeholder="Enter age"
+                  data-testid="input-patient-age"
+                />
+                {form.formState.errors.age && (
+                  <p className="text-sm text-destructive">{form.formState.errors.age.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="gender">Gender *</Label>
+                <Select 
+                  value={form.watch("gender")}
+                  onValueChange={(value) => form.setValue("gender", value, { shouldValidate: true })}
+                >
+                  <SelectTrigger data-testid="select-patient-gender">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.gender && (
+                  <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  {...form.register("phone")}
+                  placeholder="+91 XXXXX XXXXX"
+                  data-testid="input-patient-phone"
+                />
+                {form.formState.errors.phone && (
+                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                {...form.register("email")}
+                placeholder="patient@example.com"
+                data-testid="input-patient-email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                {...form.register("address")}
+                placeholder="Enter complete address"
+                rows={3}
+                data-testid="input-patient-address"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Emergency Contact</Label>
+              <Input
+                id="emergencyContact"
+                {...form.register("emergencyContact")}
+                placeholder="+91 XXXXX XXXXX"
+                data-testid="input-patient-emergency"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsNewPatientOpen(false)}
+                data-testid="button-cancel-patient"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createPatientMutation.isPending || !form.formState.isValid}
+                className="bg-medical-blue hover:bg-medical-blue/90"
+                data-testid="button-save-patient"
+              >
+                {createPatientMutation.isPending ? "Saving..." : "Register Patient"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
