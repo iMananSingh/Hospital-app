@@ -29,20 +29,44 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   const [paid, setPaid] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
 
-  // Hospital info for bill generation
-  const hospitalInfo = {
+  // Fetch patients for search
+  const { data: patients = [] } = useQuery<Patient[]>({
+    queryKey: ["/api/patients"],
+    enabled: isOpen,
+  });
+
+  // Fetch hospital settings for bill generation
+  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading } = useQuery({
+    queryKey: ["/api/settings/hospital"],
+    queryFn: async () => {
+      const response = await fetch("/api/settings/hospital", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch hospital settings");
+      }
+      return response.json();
+    },
+    enabled: isOpen,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Use hospital settings or fallback to defaults
+  const hospitalInfo = hospitalSettings ? {
+    name: hospitalSettings.name || "MedCare Pro Hospital",
+    address: hospitalSettings.address || "123 Healthcare Street, Medical District, City - 123456",
+    phone: hospitalSettings.phone || "+91 98765 43210",
+    email: hospitalSettings.email || "info@medcarepro.com",
+    registrationNumber: hospitalSettings.registrationNumber || "REG123456"
+  } : {
     name: "MedCare Pro Hospital",
     address: "123 Healthcare Street, Medical District, City - 123456",
     phone: "+91 98765 43210",
     email: "info@medcarepro.com",
     registrationNumber: "REG123456"
   };
-
-  // Fetch patients for search
-  const { data: patients = [] } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
-    enabled: isOpen,
-  });
 
   // Filter patients based on search query
   const filteredPatients = patients.filter(patient =>
@@ -702,11 +726,11 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 <Button
                   onClick={handlePrint}
                   className="flex items-center gap-2"
-                  disabled={!selectedPatient || billItems.length === 0}
+                  disabled={!selectedPatient || billItems.length === 0 || isHospitalSettingsLoading}
                   data-testid="button-print-fake-bill"
                 >
                   <Printer className="h-4 w-4" />
-                  Print/Download PDF
+                  {isHospitalSettingsLoading ? "Loading..." : "Print/Download PDF"}
                 </Button>
               </div>
             </>
