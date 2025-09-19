@@ -1,7 +1,8 @@
-import { Search, Bell, Plus } from "lucide-react";
+import { Search, Bell, Plus, CalendarDays } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface TopBarProps {
   title: string;
@@ -11,6 +12,12 @@ interface TopBarProps {
   newActionLabel?: string;
   showNotifications?: boolean;
   notificationCount?: number;
+  showDateFilter?: boolean;
+  fromDate?: string;
+  toDate?: string;
+  onFromDateChange?: (date: string) => void;
+  onToDateChange?: (date: string) => void;
+  onTodayClick?: () => void;
 }
 
 export default function TopBar({
@@ -21,6 +28,12 @@ export default function TopBar({
   newActionLabel = "New",
   showNotifications = true,
   notificationCount = 0,
+  showDateFilter = false,
+  fromDate,
+  toDate,
+  onFromDateChange,
+  onToDateChange,
+  onTodayClick,
 }: TopBarProps) {
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -44,6 +57,43 @@ export default function TopBar({
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Date Range Filter */}
+          {showDateFilter && (
+            <div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg border">
+              <CalendarDays className="w-4 h-4 text-text-muted" />
+              <div className="flex items-center gap-2">
+                <Label htmlFor="navbar-from-date" className="text-sm font-medium">From:</Label>
+                <Input
+                  id="navbar-from-date"
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => onFromDateChange?.(e.target.value)}
+                  className="w-36 text-sm"
+                  data-testid="input-navbar-from-date"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="navbar-to-date" className="text-sm font-medium">To:</Label>
+                <Input
+                  id="navbar-to-date"
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => onToDateChange?.(e.target.value)}
+                  className="w-36 text-sm"
+                  data-testid="input-navbar-to-date"
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onTodayClick}
+                data-testid="button-navbar-today"
+              >
+                Today
+              </Button>
+            </div>
+          )}
+          
           {/* Search Bar */}
           {onSearch && (
             <div className="relative">

@@ -94,57 +94,18 @@ export default function Billing() {
         searchPlaceholder="Search revenue data..."
         showNotifications={true}
         notificationCount={3}
+        showDateFilter={true}
+        fromDate={fromDate}
+        toDate={toDate}
+        onFromDateChange={setFromDate}
+        onToDateChange={setToDate}
+        onTodayClick={() => {
+          setFromDate(today);
+          setToDate(today);
+        }}
       />
       
-      {/* Date Filter Controls */}
-      <div className="px-6 pt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
-              Date Range Filter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="from-date">From:</Label>
-                <Input
-                  id="from-date"
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-40"
-                  data-testid="input-from-date"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="to-date">To:</Label>
-                <Input
-                  id="to-date"
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-40"
-                  data-testid="input-to-date"
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setFromDate(today);
-                  setToDate(today);
-                }}
-                data-testid="button-today"
-              >
-                Today
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="px-6 pb-6">
+      <div className="px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Half - Service Revenue */}
           <div className="space-y-4">
