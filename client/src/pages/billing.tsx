@@ -21,6 +21,9 @@ export default function Billing() {
   
   // OPD specific filters
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
+  
+  // Diagnostic specific filters
+  const [selectedDiagnosticService, setSelectedDiagnosticService] = useState<string>("all");
 
   // Fetch doctors for filter dropdown
   const { data: doctors = [] } = useQuery<any[]>({
@@ -42,7 +45,7 @@ export default function Billing() {
   });
 
   // Fetch Diagnostic revenue data
-  const diagnosticUrl = `/api/patient-services?serviceType=diagnostic&fromDate=${fromDate}&toDate=${toDate}`;
+  const diagnosticUrl = `/api/patient-services?serviceType=diagnostic&fromDate=${fromDate}&toDate=${toDate}${selectedDiagnosticService !== "all" ? `&serviceName=${encodeURIComponent(selectedDiagnosticService)}` : ""}`;
   const { data: diagnosticData = [], isLoading: diagnosticLoading } = useQuery<any[]>({
     queryKey: [diagnosticUrl],
     enabled: leftActiveTab === "diagnostic",
@@ -144,7 +147,7 @@ export default function Billing() {
 
                     {/* OPD Data Table */}
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -194,7 +197,7 @@ export default function Billing() {
                   {/* Lab Tab */}
                   <TabsContent value="lab" className="flex-1 flex flex-col mt-4 space-y-4">
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -245,8 +248,26 @@ export default function Billing() {
 
                   {/* Diagnostic Tab */}
                   <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-4 space-y-4">
+                    {/* Service Filter */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Label htmlFor="diagnostic-service-filter">Service:</Label>
+                      <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
+                        <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
+                          <SelectValue placeholder="Select service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Services</SelectItem>
+                          {Array.from(new Set(diagnosticData.map((item: any) => item.serviceName))).sort().map((serviceName: string) => (
+                            <SelectItem key={serviceName} value={serviceName}>
+                              {serviceName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -271,7 +292,9 @@ export default function Billing() {
                                 </td>
                               </tr>
                             ) : (
-                              diagnosticData.map((item: any, index: number) => (
+                              diagnosticData
+                                .filter((item: any) => selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService)
+                                .map((item: any, index: number) => (
                                 <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-diagnostic-${index}`}>
                                   <td className="p-3" data-testid={`text-diagnostic-sno-${index}`}>{index + 1}</td>
                                   <td className="p-3" data-testid={`text-diagnostic-name-${index}`}>{item.patient?.name || 'N/A'}</td>
@@ -289,7 +312,7 @@ export default function Billing() {
                       <div className="border-t p-3 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
-                          <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(diagnosticData))}</span>
+                          <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(diagnosticData.filter((item: any) => selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService)))}</span>
                         </div>
                       </div>
                     </div>
