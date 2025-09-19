@@ -4588,6 +4588,9 @@ export class SqliteStorage implements IStorage {
               },
             });
           }
+        }
+      });
+
       // 4. Get all payments (including admission deposits)
       const payments = db
         .select()
