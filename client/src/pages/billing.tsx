@@ -126,9 +126,9 @@ export default function Billing() {
                   </TabsList>
 
                   {/* OPD Tab */}
-                  <TabsContent value="opd" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="opd" className="flex-1 flex flex-col mt-2">
                     {/* Doctor Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 mb-3">
                       <Label htmlFor="doctor-filter">Doctor:</Label>
                       <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                         <SelectTrigger className="w-48" data-testid="select-doctor">
@@ -195,7 +195,7 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Lab Tab */}
-                  <TabsContent value="lab" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="lab" className="flex-1 flex flex-col mt-2">
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                       <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
@@ -247,9 +247,9 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Diagnostic Tab */}
-                  <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-2">
                     {/* Service Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 mb-3">
                       <Label htmlFor="diagnostic-service-filter">Service:</Label>
                       <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
                         <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
@@ -319,7 +319,7 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Inpatient Tab */}
-                  <TabsContent value="inpatient" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="inpatient" className="flex-1 flex flex-col mt-2">
                     <div className="text-center py-8 text-muted-foreground flex-1 flex items-center justify-center">
                       Inpatient revenue data will be displayed here
                     </div>
@@ -342,7 +342,7 @@ export default function Billing() {
                     <TabsTrigger value="debit" data-testid="tab-debit">Debit</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="credit" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="credit" className="flex-1 flex flex-col mt-2">
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
@@ -393,7 +393,7 @@ export default function Billing() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="debit" className="flex-1 flex flex-col mt-4 space-y-4">
+                  <TabsContent value="debit" className="flex-1 flex flex-col mt-2">
                     <div className="text-center py-8 text-muted-foreground flex-1 flex items-center justify-center">
                       Debit transactions will be displayed here
                     </div>
