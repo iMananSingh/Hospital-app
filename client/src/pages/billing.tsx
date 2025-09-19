@@ -155,6 +155,7 @@ export default function Billing() {
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
                               <th className="text-left p-3 font-medium">S.No</th>
+                              <th className="text-left p-3 font-medium">Date</th>
                               <th className="text-left p-3 font-medium">Name</th>
                               <th className="text-left p-3 font-medium">Sex/Age</th>
                               <th className="text-right p-3 font-medium">Fees</th>
@@ -163,13 +164,13 @@ export default function Billing() {
                           <tbody>
                             {opdLoading ? (
                               <tr>
-                                <td colSpan={4} className="text-center py-4 text-muted-foreground">
+                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
                                   Loading OPD data...
                                 </td>
                               </tr>
                             ) : opdData.length === 0 ? (
                               <tr>
-                                <td colSpan={4} className="text-center py-4 text-muted-foreground">
+                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
                                   No OPD records found for the selected period
                                 </td>
                               </tr>
@@ -177,6 +178,9 @@ export default function Billing() {
                               opdData.map((item: any, index: number) => (
                                 <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-opd-${index}`}>
                                   <td className="p-3" data-testid={`text-opd-sno-${index}`}>{index + 1}</td>
+                                  <td className="p-3" data-testid={`text-opd-date-${index}`}>
+                                    {new Date(item.scheduledDate).toLocaleDateString('en-GB')}
+                                  </td>
                                   <td className="p-3" data-testid={`text-opd-name-${index}`}>{item.patient?.name || 'N/A'}</td>
                                   <td className="p-3" data-testid={`text-opd-age-${index}`}>{formatGenderAge(item.patient)}</td>
                                   <td className="p-3 text-right" data-testid={`text-opd-fees-${index}`}>

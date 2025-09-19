@@ -8,6 +8,8 @@ import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServic
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
+import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
+import { eq, gte, lte, and } from "drizzle-orm"; // Import Drizzle ORM operators
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -572,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
 
-      // Check if it's a system category (string ID that matches system category names)
+      // Check if it's a system category (categoryId is a string that matches system category name)
       const systemCategories = getCategories();
       const isSystemCategory = systemCategories.includes(id);
 
@@ -836,19 +838,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/bills", authenticateToken, async (req, res) => {
     try {
       const { fromDate, toDate, paymentStatus } = req.query;
-      
+
       const bills = await storage.getBillsWithFilters({
         fromDate: fromDate as string,
         toDate: toDate as string,
         paymentStatus: paymentStatus as string
       });
-      
+
       console.log(`Retrieved ${bills.length} bills with filters:`, {
         fromDate,
         toDate,
         paymentStatus
       });
-      
+
       res.json(bills);
     } catch (error) {
       console.error("Error fetching bills:", error);
@@ -988,10 +990,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patient Services Routes
-  app.get("/api/patient-services", authenticateToken, async (req, res) => {
+  app.get("/api/patient-services", requireAuth, (req, res) => {
     try {
-      const { patientId, serviceType, fromDate, toDate, doctorId, serviceName, status } = req.query;
-      
+      const { serviceType, fromDate, toDate, doctorId, serviceName, status } = req.query;
+
       // Map frontend serviceType values to database values
       const serviceTypeMapping: { [key: string]: string } = {
         'labtest': 'diagnostic', // Map labtest to diagnostic or whichever exists
@@ -1002,34 +1004,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'procedure': 'procedure',
         'procedures': 'procedure'
       };
-      
+
       // Normalize the serviceType
       const normalizedServiceType = serviceType ? serviceTypeMapping[serviceType as string] || serviceType : undefined;
-      
+
       // For revenue calculations, default to completed status only
       const defaultStatus = serviceType ? 'completed' : undefined;
       const filterStatus = status as string || defaultStatus;
-      
-      const services = await storage.getPatientServicesWithFilters({
-        patientId: patientId as string,
-        serviceType: normalizedServiceType as string,
-        fromDate: fromDate as string,
-        toDate: toDate as string,
-        doctorId: doctorId as string,
-        serviceName: serviceName as string,
-        status: filterStatus
-      });
 
-      console.log(`Retrieved ${services.length} services with filters:`, {
-        originalServiceType: serviceType,
-        normalizedServiceType,
-        fromDate,
-        toDate,
-        status: filterStatus,
-        doctorId,
-        serviceName
-      });
+      let query = db.select({
+        id: schema.patientServices.id,
+        serviceId: schema.patientServices.serviceId,
+        patientId: schema.patientServices.patientId,
+        visitId: schema.patientServices.visitId,
+        doctorId: schema.patientServices.doctorId,
+        serviceType: schema.patientServices.serviceType,
+        serviceName: schema.patientServices.serviceName,
+        orderId: schema.patientServices.orderId,
+        status: schema.patientServices.status,
+        scheduledDate: schema.patientServices.scheduledDate,
+        scheduledTime: schema.patientServices.scheduledTime,
+        completedDate: schema.patientServices.completedDate,
+        notes: schema.patientServices.notes,
+        price: schema.patientServices.price,
+        billingType: schema.patientServices.billingType,
+        billingQuantity: schema.patientServices.billingQuantity,
+        billingParameters: schema.patientServices.billingParameters,
+        calculatedAmount: schema.patientServices.calculatedAmount,
+        receiptNumber: schema.patientServices.receiptNumber,
+        createdAt: schema.patientServices.createdAt,
+        updatedAt: schema.patientServices.updatedAt,
+        patient: {
+          id: schema.patients.id,
+          name: schema.patients.name,
+          age: schema.patients.age,
+          gender: schema.patients.gender,
+          phone: schema.patients.phone,
+          patientId: schema.patients.patientId
+        }
+      })
+      .from(schema.patientServices)
+      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id));
 
+      const conditions = [];
+
+      if (normalizedServiceType) {
+        conditions.push(eq(schema.patientServices.serviceType, normalizedServiceType));
+      }
+
+      if (fromDate) {
+        conditions.push(gte(schema.patientServices.scheduledDate, fromDate as string));
+      }
+
+      if (toDate) {
+        conditions.push(lte(schema.patientServices.scheduledDate, toDate as string));
+      }
+
+      if (doctorId && doctorId !== "all") {
+        conditions.push(eq(schema.patientServices.doctorId, doctorId as string));
+      }
+
+      if (serviceName && serviceName !== "all") {
+        conditions.push(eq(schema.patientServices.serviceName, serviceName as string));
+      }
+
+      if (filterStatus) {
+        conditions.push(eq(schema.patientServices.status, filterStatus));
+      }
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const services = query.all();
       res.json(services);
     } catch (error) {
       console.error("Error fetching patient services:", error);
@@ -1057,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patient-services/batch", authenticateToken, async (req: any, res) => {
     try {
       console.log("Creating batch patient services with data:", req.body);
-      
+
       // Validate array of services
       if (!Array.isArray(req.body)) {
         return res.status(400).json({ message: "Request body must be an array of services" });
@@ -1113,7 +1160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Invalid discharge date format" });
         }
       }
-      
+
       const admission = await storage.createAdmission(requestBody);
       res.json(admission);
     } catch (error) {
@@ -1140,7 +1187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Invalid discharge date format" });
         }
       }
-      
+
       const admission = await storage.updateAdmission(req.params.id, requestBody);
       res.json(admission);
     } catch (error) {
@@ -1167,7 +1214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "Invalid discharge date format" });
         }
       }
-      
+
       const admission = await storage.updateAdmission(req.params.id, requestBody);
       res.json(admission);
     } catch (error) {
@@ -1721,11 +1768,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      
+
       console.log(`Generating comprehensive bill for patient: ${patientId}`);
       const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
       console.log(`Generated comprehensive bill with ${comprehensiveBill.billItems.length} items`);
-      
+
       res.json(comprehensiveBill);
     } catch (error) {
       console.error("Error generating comprehensive bill:", error);
