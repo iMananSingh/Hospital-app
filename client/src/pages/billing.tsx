@@ -109,11 +109,11 @@ export default function Billing() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
           {/* Left Half - Service Revenue */}
           <div className="flex flex-col h-full">
-            <Card className="flex-1 flex flex-col overflow-hidden">
+            <Card className="flex-1 flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Service Revenue</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-6 pt-0">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
                 <Tabs value={leftActiveTab} onValueChange={setLeftActiveTab} className="w-full h-full flex flex-col">
                   <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
                     <TabsTrigger value="opd" data-testid="tab-opd">OPD</TabsTrigger>
@@ -143,8 +143,8 @@ export default function Billing() {
                     </div>
 
                     {/* OPD Data Table */}
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0 overflow-hidden">
-                      <div className="overflow-y-auto flex-1">
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -193,8 +193,8 @@ export default function Billing() {
 
                   {/* Lab Tab */}
                   <TabsContent value="lab" className="flex-1 flex flex-col mt-4 space-y-4">
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0 overflow-hidden">
-                      <div className="overflow-y-auto flex-1">
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -245,8 +245,8 @@ export default function Billing() {
 
                   {/* Diagnostic Tab */}
                   <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-4 space-y-4">
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0 overflow-hidden">
-                      <div className="overflow-y-auto flex-1">
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -308,11 +308,11 @@ export default function Billing() {
 
           {/* Right Half - Payment Transactions */}
           <div className="flex flex-col h-full">
-            <Card className="flex-1 flex flex-col overflow-hidden">
+            <Card className="flex-1 flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Payment Transactions</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col p-6 pt-0">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
                 <Tabs value={rightActiveTab} onValueChange={setRightActiveTab} className="w-full h-full flex flex-col">
                   <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                     <TabsTrigger value="credit" data-testid="tab-credit">Credit</TabsTrigger>
@@ -320,8 +320,8 @@ export default function Billing() {
                   </TabsList>
 
                   <TabsContent value="credit" className="flex-1 flex flex-col mt-4 space-y-4">
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0 overflow-hidden">
-                      <div className="overflow-y-auto flex-1">
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
