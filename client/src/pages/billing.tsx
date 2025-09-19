@@ -196,11 +196,6 @@ export default function Billing() {
 
                   {/* Lab Tab */}
                   <TabsContent value="lab" className="flex-1 flex flex-col mt-2">
-                    {/* Empty filter space for consistency */}
-                    <div className="flex-shrink-0 mb-3">
-                      {/* No filter for lab, but maintaining spacing consistency */}
-                    </div>
-                    
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                       <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
