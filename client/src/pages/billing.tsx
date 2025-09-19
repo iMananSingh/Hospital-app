@@ -88,7 +88,7 @@ export default function Billing() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-screen">
       <TopBar 
         title="Revenue and Payments"
         searchPlaceholder="Search revenue data..."
@@ -105,17 +105,17 @@ export default function Billing() {
         }}
       />
       
-      <div className="px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex-1 p-6 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
           {/* Left Half - Service Revenue */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
+          <div className="flex flex-col h-full">
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle>Service Revenue</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Tabs value={leftActiveTab} onValueChange={setLeftActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={leftActiveTab} onValueChange={setLeftActiveTab} className="w-full h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
                     <TabsTrigger value="opd" data-testid="tab-opd">OPD</TabsTrigger>
                     <TabsTrigger value="lab" data-testid="tab-lab">Lab</TabsTrigger>
                     <TabsTrigger value="diagnostic" data-testid="tab-diagnostic">Diagnostic</TabsTrigger>
@@ -123,9 +123,9 @@ export default function Billing() {
                   </TabsList>
 
                   {/* OPD Tab */}
-                  <TabsContent value="opd" className="mt-4 space-y-4">
+                  <TabsContent value="opd" className="flex-1 flex flex-col mt-4 space-y-4">
                     {/* Doctor Filter */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <Label htmlFor="doctor-filter">Doctor:</Label>
                       <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                         <SelectTrigger className="w-48" data-testid="select-doctor">
@@ -143,8 +143,8 @@ export default function Billing() {
                     </div>
 
                     {/* OPD Data Table */}
-                    <div className="border rounded-lg">
-                      <div className="max-h-96 overflow-y-auto">
+                    <div className="border rounded-lg flex-1 flex flex-col">
+                      <div className="flex-1 overflow-y-auto">
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -182,7 +182,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30">
+                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-opd-total">{formatCurrency(calculateOpdTotal(opdData))}</span>
@@ -192,9 +192,9 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Lab Tab */}
-                  <TabsContent value="lab" className="mt-4 space-y-4">
-                    <div className="border rounded-lg">
-                      <div className="max-h-96 overflow-y-auto">
+                  <TabsContent value="lab" className="flex-1 flex flex-col mt-4 space-y-4">
+                    <div className="border rounded-lg flex-1 flex flex-col">
+                      <div className="flex-1 overflow-y-auto">
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -234,7 +234,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30">
+                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-lab-total">{formatCurrency(calculateLabTotal(labData))}</span>
@@ -244,9 +244,9 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Diagnostic Tab */}
-                  <TabsContent value="diagnostic" className="mt-4 space-y-4">
-                    <div className="border rounded-lg">
-                      <div className="max-h-96 overflow-y-auto">
+                  <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-4 space-y-4">
+                    <div className="border rounded-lg flex-1 flex flex-col">
+                      <div className="flex-1 overflow-y-auto">
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -286,7 +286,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30">
+                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(diagnosticData))}</span>
@@ -296,8 +296,8 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Inpatient Tab */}
-                  <TabsContent value="inpatient" className="mt-4 space-y-4">
-                    <div className="text-center py-8 text-muted-foreground">
+                  <TabsContent value="inpatient" className="flex-1 flex flex-col mt-4 space-y-4">
+                    <div className="text-center py-8 text-muted-foreground flex-1 flex items-center justify-center">
                       Inpatient revenue data will be displayed here
                     </div>
                   </TabsContent>
@@ -307,21 +307,21 @@ export default function Billing() {
           </div>
 
           {/* Right Half - Payment Transactions */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
+          <div className="flex flex-col h-full">
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="flex-shrink-0">
                 <CardTitle>Payment Transactions</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Tabs value={rightActiveTab} onValueChange={setRightActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={rightActiveTab} onValueChange={setRightActiveTab} className="w-full h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
                     <TabsTrigger value="credit" data-testid="tab-credit">Credit</TabsTrigger>
                     <TabsTrigger value="debit" data-testid="tab-debit">Debit</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="credit" className="mt-4 space-y-4">
-                    <div className="border rounded-lg">
-                      <div className="max-h-96 overflow-y-auto">
+                  <TabsContent value="credit" className="flex-1 flex flex-col mt-4 space-y-4">
+                    <div className="border rounded-lg flex-1 flex flex-col">
+                      <div className="flex-1 overflow-y-auto">
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
@@ -361,7 +361,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30">
+                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsData))}</span>
@@ -370,8 +370,8 @@ export default function Billing() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="debit" className="mt-4 space-y-4">
-                    <div className="text-center py-8 text-muted-foreground">
+                  <TabsContent value="debit" className="flex-1 flex flex-col mt-4 space-y-4">
+                    <div className="text-center py-8 text-muted-foreground flex-1 flex items-center justify-center">
                       Debit transactions will be displayed here
                     </div>
                   </TabsContent>
