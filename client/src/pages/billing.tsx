@@ -195,11 +195,8 @@ export default function Billing() {
                   </TabsContent>
 
                   {/* Lab Tab */}
-                  <TabsContent value="lab" className="flex-1 flex flex-col mt-2">
-                    {/* Maintain consistent spacing with other tabs */}
-                    <div className="h-12 flex-shrink-0"></div>
-                    
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                  <TabsContent value="lab" className="flex-1 flex flex-col mt-0">
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0 mt-2">
                       <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
                           <thead className="border-b bg-muted/50 sticky top-0">
