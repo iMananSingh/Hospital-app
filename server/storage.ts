@@ -2197,7 +2197,7 @@ export class SqliteStorage implements IStorage {
         .select()
         .from(schema.patientServices)
         .where(eq(schema.patientServices.patientId, patientId))
-        .orderBy(desc(schema.patientServices.scheduledDate))
+        .orderBy(desc(schema.patientServices.createdAt))
         .all();
     }
     return db
@@ -2207,51 +2207,11 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]> {
-    // Build WHERE conditions based on filters
-    const whereConditions: any[] = [];
+  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<any[]> {
+    const conditions: any[] = [];
 
-    if (filters.patientId) {
-      whereConditions.push(eq(schema.patientServices.patientId, filters.patientId));
-    }
-
-    if (filters.serviceType) {
-      whereConditions.push(eq(schema.patientServices.serviceType, filters.serviceType));
-    }
-
-    if (filters.status) {
-      whereConditions.push(eq(schema.patientServices.status, filters.status));
-    }
-
-    if (filters.doctorId) {
-      whereConditions.push(eq(schema.patientServices.doctorId, filters.doctorId));
-    }
-
-    if (filters.serviceName) {
-      whereConditions.push(like(schema.patientServices.serviceName, `%${filters.serviceName}%`));
-    }
-
-    // Date filtering - use completedDate for completed services, scheduledDate for others
-    const dateField = filters.status === 'completed' ? schema.patientServices.completedDate : schema.patientServices.scheduledDate;
-    
-    if (filters.fromDate) {
-      if (filters.status === 'completed') {
-        whereConditions.push(sql`DATE(${schema.patientServices.completedDate}) >= DATE(${filters.fromDate})`);
-      } else {
-        whereConditions.push(sql`DATE(${schema.patientServices.scheduledDate}) >= DATE(${filters.fromDate})`);
-      }
-    }
-
-    if (filters.toDate) {
-      if (filters.status === 'completed') {
-        whereConditions.push(sql`DATE(${schema.patientServices.completedDate}) <= DATE(${filters.toDate})`);
-      } else {
-        whereConditions.push(sql`DATE(${schema.patientServices.scheduledDate}) <= DATE(${filters.toDate})`);
-      }
-    }
-
-    // Build the query with all conditions
-    const query = db
+    // Build the query with patient data joined
+    let query = db
       .select({
         id: schema.patientServices.id,
         serviceId: schema.patientServices.serviceId,
@@ -2274,28 +2234,56 @@ export class SqliteStorage implements IStorage {
         receiptNumber: schema.patientServices.receiptNumber,
         createdAt: schema.patientServices.createdAt,
         updatedAt: schema.patientServices.updatedAt,
-        // Include patient data
         patient: {
           id: schema.patients.id,
           name: schema.patients.name,
           age: schema.patients.age,
           gender: schema.patients.gender,
           phone: schema.patients.phone,
-        },
-        // Include doctor data
-        doctor: {
-          id: schema.doctors.id,
-          name: schema.doctors.name,
-          specialization: schema.doctors.specialization,
-        },
+          patientId: schema.patients.patientId
+        }
       })
       .from(schema.patientServices)
-      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
-      .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-      .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.scheduledTime));
+      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id));
 
-    return query.all();
+    // Apply filters
+    if (filters.patientId) {
+      conditions.push(eq(schema.patientServices.patientId, filters.patientId));
+    }
+
+    if (filters.serviceType) {
+      conditions.push(eq(schema.patientServices.serviceType, filters.serviceType));
+    }
+
+    if (filters.fromDate) {
+      conditions.push(sql`DATE(${schema.patientServices.scheduledDate}) >= DATE(${filters.fromDate})`);
+    }
+
+    if (filters.toDate) {
+      conditions.push(sql`DATE(${schema.patientServices.scheduledDate}) <= DATE(${filters.toDate})`);
+    }
+
+    if (filters.doctorId) {
+      conditions.push(eq(schema.patientServices.doctorId, filters.doctorId));
+    }
+
+    if (filters.serviceName) {
+      conditions.push(eq(schema.patientServices.serviceName, filters.serviceName));
+    }
+
+    if (filters.status) {
+      conditions.push(eq(schema.patientServices.status, filters.status));
+    }
+
+    // Apply where conditions if any exist
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Order by scheduled date and time
+    return query
+      .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.scheduledTime))
+      .all();
   }
 
   async getPatientServiceById(id: string): Promise<PatientService | undefined> {
@@ -4600,9 +4588,6 @@ export class SqliteStorage implements IStorage {
               },
             });
           }
-        }
-      });
-
       // 4. Get all payments (including admission deposits)
       const payments = db
         .select()

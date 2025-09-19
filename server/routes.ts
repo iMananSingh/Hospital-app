@@ -990,93 +990,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Patient Services Routes
-  app.get("/api/patient-services", requireAuth, (req, res) => {
+  app.get("/api/patient-services", requireAuth, async (req, res) => {
     try {
-      const { serviceType, fromDate, toDate, doctorId, serviceName, status } = req.query;
+      const { serviceType, fromDate, toDate, doctorId, serviceName, status, patientId } = req.query;
 
-      // Map frontend serviceType values to database values
-      const serviceTypeMapping: { [key: string]: string } = {
-        'labtest': 'diagnostic', // Map labtest to diagnostic or whichever exists
-        'lab': 'diagnostic',
-        'opd': 'opd',
-        'diagnostic': 'diagnostic',
-        'diagnostics': 'diagnostic',
-        'procedure': 'procedure',
-        'procedures': 'procedure'
-      };
+      // Build filters object
+      const filters: any = {};
 
-      // Normalize the serviceType
-      const normalizedServiceType = serviceType ? serviceTypeMapping[serviceType as string] || serviceType : undefined;
+      if (patientId) {
+        filters.patientId = patientId as string;
+      }
 
-      // For revenue calculations, default to completed status only
-      const defaultStatus = serviceType ? 'completed' : undefined;
-      const filterStatus = status as string || defaultStatus;
-
-      let query = db.select({
-        id: schema.patientServices.id,
-        serviceId: schema.patientServices.serviceId,
-        patientId: schema.patientServices.patientId,
-        visitId: schema.patientServices.visitId,
-        doctorId: schema.patientServices.doctorId,
-        serviceType: schema.patientServices.serviceType,
-        serviceName: schema.patientServices.serviceName,
-        orderId: schema.patientServices.orderId,
-        status: schema.patientServices.status,
-        scheduledDate: schema.patientServices.scheduledDate,
-        scheduledTime: schema.patientServices.scheduledTime,
-        completedDate: schema.patientServices.completedDate,
-        notes: schema.patientServices.notes,
-        price: schema.patientServices.price,
-        billingType: schema.patientServices.billingType,
-        billingQuantity: schema.patientServices.billingQuantity,
-        billingParameters: schema.patientServices.billingParameters,
-        calculatedAmount: schema.patientServices.calculatedAmount,
-        receiptNumber: schema.patientServices.receiptNumber,
-        createdAt: schema.patientServices.createdAt,
-        updatedAt: schema.patientServices.updatedAt,
-        patient: {
-          id: schema.patients.id,
-          name: schema.patients.name,
-          age: schema.patients.age,
-          gender: schema.patients.gender,
-          phone: schema.patients.phone,
-          patientId: schema.patients.patientId
-        }
-      })
-      .from(schema.patientServices)
-      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id));
-
-      const conditions = [];
-
-      if (normalizedServiceType) {
-        conditions.push(eq(schema.patientServices.serviceType, normalizedServiceType));
+      if (serviceType) {
+        // Map frontend serviceType values to database values
+        const serviceTypeMapping: { [key: string]: string } = {
+          'labtest': 'diagnostic',
+          'lab': 'diagnostic',
+          'opd': 'opd',
+          'diagnostic': 'diagnostic',
+          'diagnostics': 'diagnostic',
+          'procedure': 'procedure',
+          'procedures': 'procedure'
+        };
+        
+        filters.serviceType = serviceTypeMapping[serviceType as string] || serviceType as string;
       }
 
       if (fromDate) {
-        conditions.push(gte(schema.patientServices.scheduledDate, fromDate as string));
+        filters.fromDate = fromDate as string;
       }
 
       if (toDate) {
-        conditions.push(lte(schema.patientServices.scheduledDate, toDate as string));
+        filters.toDate = toDate as string;
       }
 
       if (doctorId && doctorId !== "all") {
-        conditions.push(eq(schema.patientServices.doctorId, doctorId as string));
+        filters.doctorId = doctorId as string;
       }
 
       if (serviceName && serviceName !== "all") {
-        conditions.push(eq(schema.patientServices.serviceName, serviceName as string));
+        filters.serviceName = serviceName as string;
       }
 
-      if (filterStatus) {
-        conditions.push(eq(schema.patientServices.status, filterStatus));
+      if (status) {
+        filters.status = status as string;
       }
 
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions));
-      }
-
-      const services = query.all();
+      // Use storage method with filters
+      const services = await storage.getPatientServicesWithFilters(filters);
       res.json(services);
     } catch (error) {
       console.error("Error fetching patient services:", error);
