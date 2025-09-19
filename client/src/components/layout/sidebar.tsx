@@ -22,7 +22,7 @@ const navigation = [
   { name: "Scheduler", href: "/scheduler", icon: Calendar },
   { name: "Doctor Management", href: "/doctors", icon: UserPlus },
   { name: "Service Management", href: "/services", icon: Building2 },
-  { name: "Billing & Invoicing", href: "/billing", icon: FileText },
+  { name: "Revenue & Payments", href: "/revenue", icon: FileText },
   { name: "System Settings", href: "/settings", icon: Settings },
 ];
 
