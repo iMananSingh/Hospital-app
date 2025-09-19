@@ -52,7 +52,9 @@ export default function Billing() {
   });
 
   // Fetch Bills for credit/debit data
-  const billsUrl = `/api/bills?fromDate=${fromDate}&toDate=${toDate}`;
+  const billsUrl = rightActiveTab === "credit" 
+    ? `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
+    : `/api/bills?fromDate=${fromDate}&toDate=${toDate}`;
   const { data: billsData = [], isLoading: billsLoading } = useQuery<any[]>({
     queryKey: [billsUrl],
     enabled: rightActiveTab === "credit" || rightActiveTab === "debit",
@@ -72,7 +74,8 @@ export default function Billing() {
   };
 
   const calculateCreditTotal = (data: any[]) => {
-    return data.filter((bill: any) => bill.paymentStatus === 'paid').reduce((sum: number, bill: any) => sum + bill.totalAmount, 0);
+    // Data is already filtered by paymentStatus=paid on the backend for credit tab
+    return data.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0);
   };
 
   const formatGenderAge = (patient: any) => {
@@ -362,14 +365,14 @@ export default function Billing() {
                                   Loading Credit data...
                                 </td>
                               </tr>
-                            ) : billsData.filter((bill: any) => bill.paymentStatus === 'paid').length === 0 ? (
+                            ) : billsData.length === 0 ? (
                               <tr>
                                 <td colSpan={5} className="text-center py-4 text-muted-foreground">
                                   No Credit transactions found for the selected period
                                 </td>
                               </tr>
                             ) : (
-                              billsData.filter((bill: any) => bill.paymentStatus === 'paid').map((bill: any, index: number) => (
+                              billsData.map((bill: any, index: number) => (
                                 <tr key={bill.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
                                   <td className="p-3" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
                                   <td className="p-3" data-testid={`text-credit-bill-${index}`}>{bill.billNumber}</td>

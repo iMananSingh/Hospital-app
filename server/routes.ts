@@ -835,9 +835,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bill routes
   app.get("/api/bills", authenticateToken, async (req, res) => {
     try {
-      const bills = await storage.getBillsWithPatients();
+      const { fromDate, toDate, paymentStatus } = req.query;
+      
+      const bills = await storage.getBillsWithFilters({
+        fromDate: fromDate as string,
+        toDate: toDate as string,
+        paymentStatus: paymentStatus as string
+      });
+      
+      console.log(`Retrieved ${bills.length} bills with filters:`, {
+        fromDate,
+        toDate,
+        paymentStatus
+      });
+      
       res.json(bills);
     } catch (error) {
+      console.error("Error fetching bills:", error);
       res.status(500).json({ message: "Failed to get bills" });
     }
   });
@@ -976,14 +990,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient Services Routes
   app.get("/api/patient-services", authenticateToken, async (req, res) => {
     try {
-      const { patientId, serviceType } = req.query;
-      let services = await storage.getPatientServices(patientId as string);
+      const { patientId, serviceType, fromDate, toDate, doctorId, serviceName, status } = req.query;
+      
+      // Map frontend serviceType values to database values
+      const serviceTypeMapping: { [key: string]: string } = {
+        'labtest': 'diagnostic', // Map labtest to diagnostic or whichever exists
+        'lab': 'diagnostic',
+        'opd': 'opd',
+        'diagnostic': 'diagnostic',
+        'diagnostics': 'diagnostic',
+        'procedure': 'procedure',
+        'procedures': 'procedure'
+      };
+      
+      // Normalize the serviceType
+      const normalizedServiceType = serviceType ? serviceTypeMapping[serviceType as string] || serviceType : undefined;
+      
+      // For revenue calculations, default to completed status only
+      const defaultStatus = serviceType ? 'completed' : undefined;
+      const filterStatus = status as string || defaultStatus;
+      
+      const services = await storage.getPatientServicesWithFilters({
+        patientId: patientId as string,
+        serviceType: normalizedServiceType as string,
+        fromDate: fromDate as string,
+        toDate: toDate as string,
+        doctorId: doctorId as string,
+        serviceName: serviceName as string,
+        status: filterStatus
+      });
 
-      // Filter by service type if specified
-      if (serviceType) {
-        services = services.filter(service => service.serviceType === serviceType);
-        console.log(`Filtered ${services.length} services for type: ${serviceType}`);
-      }
+      console.log(`Retrieved ${services.length} services with filters:`, {
+        originalServiceType: serviceType,
+        normalizedServiceType,
+        fromDate,
+        toDate,
+        status: filterStatus,
+        doctorId,
+        serviceName
+      });
 
       res.json(services);
     } catch (error) {

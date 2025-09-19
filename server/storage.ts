@@ -60,6 +60,25 @@ import bcrypt from "bcrypt";
 import path from "path";
 import fs from "fs";
 
+// Filter types for patient services
+export interface PatientServiceFilters {
+  patientId?: string;
+  serviceType?: string;
+  fromDate?: string;
+  toDate?: string;
+  doctorId?: string;
+  serviceName?: string;
+  status?: string;
+}
+
+// Filter types for bills
+export interface BillFilters {
+  fromDate?: string;
+  toDate?: string;
+  paymentStatus?: string;
+  patientId?: string;
+}
+
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), "hospital.db");
 const sqlite = new Database(dbPath);
@@ -838,6 +857,7 @@ export interface IStorage {
   getBillById(id: string): Promise<Bill | undefined>;
   getBillItems(billId: string): Promise<BillItem[]>;
   getBillsWithPatients(): Promise<any[]>;
+  getBillsWithFilters(filters: BillFilters): Promise<any[]>;
 
   // Pathology order and test management
   createPathologyOrder(
@@ -865,6 +885,7 @@ export interface IStorage {
     userId?: string,
   ): Promise<PatientService>;
   getPatientServices(patientId?: string): Promise<PatientService[]>;
+  getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]>;
   getPatientServiceById(id: string): Promise<PatientService | undefined>;
   updatePatientService(
     id: string,
@@ -1703,6 +1724,64 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
+  async getBillsWithFilters(filters: BillFilters): Promise<any[]> {
+    // Build WHERE conditions based on filters
+    const whereConditions: any[] = [];
+
+    if (filters.patientId) {
+      whereConditions.push(eq(schema.bills.patientId, filters.patientId));
+    }
+
+    if (filters.paymentStatus) {
+      whereConditions.push(eq(schema.bills.paymentStatus, filters.paymentStatus));
+    }
+
+    // Date filtering - use billDate for filtering by date range
+    if (filters.fromDate) {
+      whereConditions.push(sql`DATE(${schema.bills.billDate}) >= DATE(${filters.fromDate})`);
+    }
+
+    if (filters.toDate) {
+      whereConditions.push(sql`DATE(${schema.bills.billDate}) <= DATE(${filters.toDate})`);
+    }
+
+    // Build the query with all conditions
+    const query = db
+      .select({
+        id: schema.bills.id,
+        billNumber: schema.bills.billNumber,
+        patientId: schema.bills.patientId,
+        visitId: schema.bills.visitId,
+        subtotal: schema.bills.subtotal,
+        taxAmount: schema.bills.taxAmount,
+        discountAmount: schema.bills.discountAmount,
+        totalAmount: schema.bills.totalAmount,
+        paymentMethod: schema.bills.paymentMethod,
+        paymentStatus: schema.bills.paymentStatus,
+        paidAmount: schema.bills.paidAmount,
+        createdBy: schema.bills.createdBy,
+        billDate: schema.bills.billDate,
+        dueDate: schema.bills.dueDate,
+        notes: schema.bills.notes,
+        createdAt: schema.bills.createdAt,
+        updatedAt: schema.bills.updatedAt,
+        // Include patient data
+        patient: {
+          id: schema.patients.id,
+          name: schema.patients.name,
+          age: schema.patients.age,
+          gender: schema.patients.gender,
+          phone: schema.patients.phone,
+        },
+      })
+      .from(schema.bills)
+      .leftJoin(schema.patients, eq(schema.bills.patientId, schema.patients.id))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
+      .orderBy(desc(schema.bills.billDate), desc(schema.bills.createdAt));
+
+    return query.all();
+  }
+
   async createPathologyOrder(
     orderData: InsertPathologyOrder,
     tests: InsertPathologyTest[],
@@ -2126,6 +2205,97 @@ export class SqliteStorage implements IStorage {
       .from(schema.patientServices)
       .orderBy(desc(schema.patientServices.createdAt))
       .all();
+  }
+
+  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]> {
+    // Build WHERE conditions based on filters
+    const whereConditions: any[] = [];
+
+    if (filters.patientId) {
+      whereConditions.push(eq(schema.patientServices.patientId, filters.patientId));
+    }
+
+    if (filters.serviceType) {
+      whereConditions.push(eq(schema.patientServices.serviceType, filters.serviceType));
+    }
+
+    if (filters.status) {
+      whereConditions.push(eq(schema.patientServices.status, filters.status));
+    }
+
+    if (filters.doctorId) {
+      whereConditions.push(eq(schema.patientServices.doctorId, filters.doctorId));
+    }
+
+    if (filters.serviceName) {
+      whereConditions.push(like(schema.patientServices.serviceName, `%${filters.serviceName}%`));
+    }
+
+    // Date filtering - use completedDate for completed services, scheduledDate for others
+    const dateField = filters.status === 'completed' ? schema.patientServices.completedDate : schema.patientServices.scheduledDate;
+    
+    if (filters.fromDate) {
+      if (filters.status === 'completed') {
+        whereConditions.push(sql`DATE(${schema.patientServices.completedDate}) >= DATE(${filters.fromDate})`);
+      } else {
+        whereConditions.push(sql`DATE(${schema.patientServices.scheduledDate}) >= DATE(${filters.fromDate})`);
+      }
+    }
+
+    if (filters.toDate) {
+      if (filters.status === 'completed') {
+        whereConditions.push(sql`DATE(${schema.patientServices.completedDate}) <= DATE(${filters.toDate})`);
+      } else {
+        whereConditions.push(sql`DATE(${schema.patientServices.scheduledDate}) <= DATE(${filters.toDate})`);
+      }
+    }
+
+    // Build the query with all conditions
+    const query = db
+      .select({
+        id: schema.patientServices.id,
+        serviceId: schema.patientServices.serviceId,
+        patientId: schema.patientServices.patientId,
+        visitId: schema.patientServices.visitId,
+        doctorId: schema.patientServices.doctorId,
+        serviceType: schema.patientServices.serviceType,
+        serviceName: schema.patientServices.serviceName,
+        orderId: schema.patientServices.orderId,
+        status: schema.patientServices.status,
+        scheduledDate: schema.patientServices.scheduledDate,
+        scheduledTime: schema.patientServices.scheduledTime,
+        completedDate: schema.patientServices.completedDate,
+        notes: schema.patientServices.notes,
+        price: schema.patientServices.price,
+        billingType: schema.patientServices.billingType,
+        billingQuantity: schema.patientServices.billingQuantity,
+        billingParameters: schema.patientServices.billingParameters,
+        calculatedAmount: schema.patientServices.calculatedAmount,
+        receiptNumber: schema.patientServices.receiptNumber,
+        createdAt: schema.patientServices.createdAt,
+        updatedAt: schema.patientServices.updatedAt,
+        // Include patient data
+        patient: {
+          id: schema.patients.id,
+          name: schema.patients.name,
+          age: schema.patients.age,
+          gender: schema.patients.gender,
+          phone: schema.patients.phone,
+        },
+        // Include doctor data
+        doctor: {
+          id: schema.doctors.id,
+          name: schema.doctors.name,
+          specialization: schema.doctors.specialization,
+        },
+      })
+      .from(schema.patientServices)
+      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
+      .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.scheduledTime));
+
+    return query.all();
   }
 
   async getPatientServiceById(id: string): Promise<PatientService | undefined> {
