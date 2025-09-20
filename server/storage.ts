@@ -1850,8 +1850,8 @@ export class SqliteStorage implements IStorage {
     });
   }
 
-  async getPathologyOrders(): Promise<any[]> {
-    return db
+  async getPathologyOrders(fromDate?: string, toDate?: string): Promise<any[]> {
+    let query = db
       .select({
         order: schema.pathologyOrders,
         patient: schema.patients,
@@ -1865,7 +1865,23 @@ export class SqliteStorage implements IStorage {
       .leftJoin(
         schema.doctors,
         eq(schema.pathologyOrders.doctorId, schema.doctors.id),
-      )
+      );
+
+    // Apply date filters if provided
+    if (fromDate && toDate) {
+      query = query.where(
+        and(
+          gte(schema.pathologyOrders.orderedDate, fromDate),
+          lte(schema.pathologyOrders.orderedDate, toDate)
+        )
+      );
+    } else if (fromDate) {
+      query = query.where(gte(schema.pathologyOrders.orderedDate, fromDate));
+    } else if (toDate) {
+      query = query.where(lte(schema.pathologyOrders.orderedDate, toDate));
+    }
+
+    return query
       .orderBy(desc(schema.pathologyOrders.createdAt))
       .all();
   }

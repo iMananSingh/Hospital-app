@@ -922,7 +922,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pathology routes
   app.get("/api/pathology", authenticateToken, async (req, res) => {
     try {
-      const orders = await storage.getPathologyOrders();
+      const { fromDate, toDate } = req.query;
+      const orders = await storage.getPathologyOrders(fromDate as string, toDate as string);
       res.json(orders);
     } catch (error) {
       res.status(500).json({ message: "Failed to get pathology orders" });
