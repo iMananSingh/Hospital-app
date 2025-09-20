@@ -111,11 +111,11 @@ export default function Billing() {
   // Filter inpatient services based on selected service type
   const filteredInpatientServices = combinedInpatientData.filter((item: any) => {
     if (selectedService === "all") return true;
-    
+
     if (item.type === 'admission') {
       return selectedService === "admission";
     }
-    
+
     // For patient services, check the service category/type
     if (item.serviceType === 'procedure' || item.serviceName?.toLowerCase().includes('procedure')) {
       return selectedService === "procedures";
@@ -126,7 +126,7 @@ export default function Billing() {
     if (item.serviceType === 'misc' || item.category === 'misc') {
       return selectedService === "misc";
     }
-    
+
     return false;
   });
 
