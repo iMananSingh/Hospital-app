@@ -4221,7 +4221,7 @@ export class SqliteStorage implements IStorage {
           .all();
 
         // Map rooms with occupancy info
-        const roomsWithOccupancy = rooms.map(room) => {
+        const roomsWithOccupancy = rooms.map((room) => {
           const occupyingAdmission = currentAdmissions.find(
             (admission) =>
               admission.admission.currentRoomNumber === room.roomNumber,
