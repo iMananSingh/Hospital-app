@@ -140,7 +140,7 @@ export default function Billing() {
 
                   <TabsContent value="opd" className="flex-1 flex flex-col mt-2">
                     {/* Doctor Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mb-3">
+                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
                       <Label htmlFor="doctor-filter">Doctor:</Label>
                       <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                         <SelectTrigger className="w-48" data-testid="select-doctor">
@@ -195,7 +195,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
+                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-opd-total">{formatCurrency(calculateOpdTotal(filteredOpdServices))}</span>
@@ -241,7 +241,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
+                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-lab-total">{formatCurrency(calculateLabTotal(filteredLabServices))}</span>
@@ -253,7 +253,7 @@ export default function Billing() {
                   {/* Diagnostic Tab */}
                   <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-2">
                     {/* Service Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mb-3">
+                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
                       <Label htmlFor="diagnostic-service-filter">Service:</Label>
                       <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
                         <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
@@ -305,7 +305,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
+                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(filteredDiagnosticServices))}</span>
@@ -376,7 +376,7 @@ export default function Billing() {
                           </tbody>
                         </table>
                       </div>
-                      <div className="border-t p-3 bg-muted/30 flex-shrink-0">
+                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                         <div className="flex justify-between font-semibold">
                           <span>Total:</span>
                           <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsDataApi))}</span>
