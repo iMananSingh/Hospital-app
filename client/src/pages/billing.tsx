@@ -123,7 +123,7 @@ export default function Billing() {
     if (item.serviceType === 'operation' || item.serviceName?.toLowerCase().includes('operation') || item.serviceName?.toLowerCase().includes('surgery')) {
       return selectedService === "operations";
     }
-    if (item.serviceType === 'misc' || item.category === 'misc') {
+    if (item.serviceType === 'misc' || item.category === 'misc' || item.serviceType === 'service') {
       return selectedService === "misc";
     }
 
