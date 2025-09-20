@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee } from "lucide-react";
+import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet } from "lucide-react";
 import { insertDoctorSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -31,11 +31,11 @@ export default function Doctors() {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: doctors, isLoading } = useQuery({
+  const { data: doctors = [], isLoading } = useQuery({
     queryKey: ["/api/doctors"],
   });
 
-  const { data: deletedDoctors, isLoading: isLoadingDeleted } = useQuery({
+  const { data: deletedDoctors = [], isLoading: isLoadingDeleted } = useQuery({
     queryKey: ["/api/doctors/deleted"],
   });
 
@@ -244,7 +244,7 @@ export default function Doctors() {
       specialization: doctor.specialization,
       qualification: doctor.qualification,
       consultationFee: doctor.consultationFee,
-      userId: doctor.userId,
+      userId: doctor.userId || undefined,
     });
     setIsEditDoctorOpen(true);
   };
@@ -341,7 +341,14 @@ export default function Doctors() {
         <Tabs defaultValue="all-doctors" className="space-y-6">
           <TabsList>
             <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">Active Doctors</TabsTrigger>
-            <TabsTrigger value="schedules" data-testid="tab-schedules">Schedules</TabsTrigger>
+            <TabsTrigger value="manage-salary" data-testid="tab-manage-salary">
+              <Calculator className="w-4 h-4 mr-1" />
+              Manage Salary
+            </TabsTrigger>
+            <TabsTrigger value="salary" data-testid="tab-salary">
+              <Wallet className="w-4 h-4 mr-1" />
+              Salary
+            </TabsTrigger>
             <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Inactive Doctors</TabsTrigger>
           </TabsList>
 
@@ -558,20 +565,200 @@ export default function Doctors() {
 
           
 
-          <TabsContent value="schedules">
+          <TabsContent value="manage-salary">
             <Card>
               <CardHeader>
-                <CardTitle>Doctor Schedules</CardTitle>
+                <CardTitle>Manage Doctor Salary Rates</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Manage doctor availability and appointment slots
+                  Configure commission and salary rates for different services by doctor
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Schedule management feature coming soon</p>
-                  <Button className="mt-4" disabled>
-                    Configure Schedules
-                  </Button>
+                <div className="space-y-6">
+                  {/* Doctor Selection */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex-1">
+                      <Label htmlFor="doctor-select">Select Doctor</Label>
+                      <Select>
+                        <SelectTrigger id="doctor-select" data-testid="select-doctor-salary">
+                          <SelectValue placeholder="Choose a doctor to configure salary rates" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredDoctors.map((doctor: Doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button data-testid="button-add-rate">
+                        <Calculator className="w-4 h-4 mr-1" />
+                        Add Rate
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Service Categories */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[
+                      { name: 'OPD Consultations', icon: '🩺', services: ['General Consultation', 'Follow-up Consultation', 'Emergency Consultation'] },
+                      { name: 'Diagnostics', icon: '🔬', services: ['ECG', 'USG', 'X-Ray', 'CT Scan', 'MRI'] },
+                      { name: 'Lab Tests', icon: '🧪', services: ['Blood Test', 'Urine Test', 'Pathology', 'Microbiology'] },
+                      { name: 'Admission Services', icon: '🏥', services: ['IPD Care', 'ICU Care', 'Surgery Assistance', 'Round Visits'] }
+                    ].map((category) => (
+                      <Card key={category.name} className="p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-lg">{category.icon}</span>
+                          <h3 className="font-medium">{category.name}</h3>
+                        </div>
+                        <div className="space-y-2">
+                          {category.services.map((service) => (
+                            <div key={service} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                              <span className="text-sm">{service}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">₹0</span>
+                                <Button variant="ghost" size="sm" data-testid={`button-edit-${service.toLowerCase().replace(/\s+/g, '-')}`}>
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <div className="text-center py-4 text-sm text-muted-foreground">
+                    Select a doctor above to configure their salary rates for different services
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="salary">
+            <Card>
+              <CardHeader>
+                <CardTitle>Doctor Salary & Earnings</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  View earnings, process payments, and track payment history for doctors
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                          <Wallet className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Pending</p>
+                          <p className="text-xl font-semibold text-green-600">₹0</p>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <IndianRupee className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Paid This Month</p>
+                          <p className="text-xl font-semibold text-blue-600">₹0</p>
+                        </div>
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Calculator className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Doctors</p>
+                          <p className="text-xl font-semibold text-purple-600">{filteredDoctors.length}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/* Doctor Earnings Table */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-medium">Doctor Earnings</h3>
+                      <Button data-testid="button-process-payments">
+                        <Wallet className="w-4 h-4 mr-1" />
+                        Process Payments
+                      </Button>
+                    </div>
+                    
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Doctor</TableHead>
+                            <TableHead>Services This Month</TableHead>
+                            <TableHead>Pending Amount</TableHead>
+                            <TableHead>Last Payment</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredDoctors.length > 0 ? filteredDoctors.map((doctor: Doctor) => (
+                            <TableRow key={doctor.id}>
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-medium">
+                                      {doctor.name.split(' ').map(n => n[0]).join('')}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium" data-testid={`salary-doctor-name-${doctor.id}`}>{doctor.name}</p>
+                                    <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell data-testid={`salary-services-${doctor.id}`}>0</TableCell>
+                              <TableCell data-testid={`salary-pending-${doctor.id}`}>
+                                <span className="font-medium text-green-600">₹0</span>
+                              </TableCell>
+                              <TableCell data-testid={`salary-last-payment-${doctor.id}`}>
+                                <span className="text-sm text-muted-foreground">No payments yet</span>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" data-testid={`salary-status-${doctor.id}`}>No Activity</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-1">
+                                  <Button variant="ghost" size="sm" data-testid={`button-view-earnings-${doctor.id}`}>
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" data-testid={`button-pay-doctor-${doctor.id}`}>
+                                    <Wallet className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )) : (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8">
+                                <div className="flex flex-col items-center space-y-2">
+                                  <Wallet className="w-8 h-8 text-muted-foreground" />
+                                  <p className="text-muted-foreground">No doctors found</p>
+                                  <p className="text-sm text-muted-foreground">Add doctors to start tracking salary earnings</p>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

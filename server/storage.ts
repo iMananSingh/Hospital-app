@@ -44,6 +44,12 @@ import type {
   InsertScheduleEvent,
   ServiceCategory,
   InsertServiceCategory,
+  DoctorServiceRate,
+  InsertDoctorServiceRate,
+  DoctorEarning,
+  InsertDoctorEarning,
+  DoctorPayment,
+  InsertDoctorPayment,
 } from "@shared/schema";
 import {
   eq,
@@ -1024,6 +1030,25 @@ export interface IStorage {
 
   // Comprehensive Bill Generation
   generateComprehensiveBill(patientId: string): Promise<any>;
+
+  // Doctor Salary Management
+  createDoctorServiceRate(rate: InsertDoctorServiceRate): Promise<DoctorServiceRate>;
+  getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]>;
+  getDoctorServiceRateById(id: string): Promise<DoctorServiceRate | undefined>;
+  updateDoctorServiceRate(id: string, rate: Partial<InsertDoctorServiceRate>): Promise<DoctorServiceRate | undefined>;
+  deleteDoctorServiceRate(id: string): Promise<boolean>;
+
+  // Doctor Earnings Management
+  createDoctorEarning(earning: InsertDoctorEarning): Promise<DoctorEarning>;
+  getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]>;
+  getDoctorEarningById(id: string): Promise<DoctorEarning | undefined>;
+  updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined>;
+
+  // Doctor Payments Management
+  createDoctorPayment(payment: InsertDoctorPayment): Promise<DoctorPayment>;
+  getDoctorPayments(doctorId?: string): Promise<DoctorPayment[]>;
+  getDoctorPaymentById(id: string): Promise<DoctorPayment | undefined>;
+  getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -1100,6 +1125,30 @@ export class SqliteStorage implements IStorage {
       console.error("Error querying patient_discounts table:", error);
       const timestamp = Date.now().toString().slice(-6);
       return `DISC-${year}-${timestamp}`;
+    }
+  }
+
+  private generateEarningId(): string {
+    const year = new Date().getFullYear();
+    try {
+      const count = db.select().from(schema.doctorEarnings).all().length + 1;
+      return `EARN-${year}-${count.toString().padStart(3, "0")}`;
+    } catch (error) {
+      console.error("Error querying doctor_earnings table:", error);
+      const timestamp = Date.now().toString().slice(-6);
+      return `EARN-${year}-${timestamp}`;
+    }
+  }
+
+  private generateDoctorPaymentId(): string {
+    const year = new Date().getFullYear();
+    try {
+      const count = db.select().from(schema.doctorPayments).all().length + 1;
+      return `DPAY-${year}-${count.toString().padStart(3, "0")}`;
+    } catch (error) {
+      console.error("Error querying doctor_payments table:", error);
+      const timestamp = Date.now().toString().slice(-6);
+      return `DPAY-${year}-${timestamp}`;
     }
   }
 

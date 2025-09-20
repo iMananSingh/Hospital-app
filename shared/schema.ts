@@ -389,6 +389,62 @@ export const activities = sqliteTable("activities", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
+// Doctor Service Rates - Maps doctors to services with commission/salary rates
+export const doctorServiceRates = sqliteTable("doctor_service_rates", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  doctorId: text("doctor_id").notNull().references(() => doctors.id),
+  serviceId: text("service_id").notNull().references(() => services.id),
+  serviceName: text("service_name").notNull(), // Denormalized for easier querying
+  serviceCategory: text("service_category").notNull(), // opd, diagnostics, lab_tests, admission, pathology
+  rateType: text("rate_type").notNull().default("per_instance"), // per_instance, percentage, fixed_daily
+  rateAmount: real("rate_amount").notNull(), // Amount or percentage
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  notes: text("notes"),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Doctor Earnings - Tracks what doctors have earned based on services performed
+export const doctorEarnings = sqliteTable("doctor_earnings", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  earningId: text("earning_id").notNull().unique(), // EARN-2024-001 format
+  doctorId: text("doctor_id").notNull().references(() => doctors.id),
+  patientId: text("patient_id").notNull().references(() => patients.id),
+  serviceId: text("service_id").notNull().references(() => services.id),
+  patientServiceId: text("patient_service_id").references(() => patientServices.id), // Link to actual service performed
+  serviceName: text("service_name").notNull(),
+  serviceCategory: text("service_category").notNull(),
+  serviceDate: text("service_date").notNull(),
+  rateType: text("rate_type").notNull(), // per_instance, percentage, fixed_daily
+  rateAmount: real("rate_amount").notNull(), // The rate applied
+  servicePrice: real("service_price").notNull(), // Original service price
+  earnedAmount: real("earned_amount").notNull(), // Calculated earning amount
+  status: text("status").notNull().default("pending"), // pending, paid
+  notes: text("notes"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Doctor Payments - Tracks payments made to doctors
+export const doctorPayments = sqliteTable("doctor_payments", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  paymentId: text("payment_id").notNull().unique(), // DPAY-2024-001 format
+  doctorId: text("doctor_id").notNull().references(() => doctors.id),
+  paymentDate: text("payment_date").notNull(),
+  totalAmount: real("total_amount").notNull(),
+  paymentMethod: text("payment_method").notNull(), // cash, bank_transfer, cheque
+  earningsIncluded: text("earnings_included").notNull(), // JSON array of earning IDs
+  startDate: text("start_date").notNull(), // Period start date
+  endDate: text("end_date").notNull(), // Period end date
+  description: text("description"),
+  processedBy: text("processed_by").notNull().references(() => users.id),
+  receiptNumber: text("receipt_number"),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+});
+
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -598,6 +654,60 @@ export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
   createdAt: true,
 });
 
+export const insertDoctorServiceRateSchema = createInsertSchema(doctorServiceRates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  doctorId: z.string().min(1, "Doctor ID is required"),
+  serviceId: z.string().min(1, "Service ID is required"),
+  serviceName: z.string().min(1, "Service name is required"),
+  serviceCategory: z.enum(["opd", "diagnostics", "lab_tests", "admission", "pathology"], {
+    errorMap: () => ({ message: "Service category must be opd, diagnostics, lab_tests, admission, or pathology" })
+  }),
+  rateType: z.enum(["per_instance", "percentage", "fixed_daily"], {
+    errorMap: () => ({ message: "Rate type must be per_instance, percentage, or fixed_daily" })
+  }).default("per_instance"),
+  rateAmount: z.number().min(0, "Rate amount must be non-negative"),
+  createdBy: z.string().min(1, "Created by user ID is required"),
+});
+
+export const insertDoctorEarningSchema = createInsertSchema(doctorEarnings).omit({
+  id: true,
+  earningId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  doctorId: z.string().min(1, "Doctor ID is required"),
+  patientId: z.string().min(1, "Patient ID is required"),
+  serviceId: z.string().min(1, "Service ID is required"),
+  serviceName: z.string().min(1, "Service name is required"),
+  serviceCategory: z.string().min(1, "Service category is required"),
+  serviceDate: z.string().min(1, "Service date is required"),
+  rateType: z.enum(["per_instance", "percentage", "fixed_daily"]),
+  rateAmount: z.number().min(0, "Rate amount must be non-negative"),
+  servicePrice: z.number().min(0, "Service price must be non-negative"),
+  earnedAmount: z.number().min(0, "Earned amount must be non-negative"),
+});
+
+export const insertDoctorPaymentSchema = createInsertSchema(doctorPayments).omit({
+  id: true,
+  paymentId: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  doctorId: z.string().min(1, "Doctor ID is required"),
+  paymentDate: z.string().min(1, "Payment date is required"),
+  totalAmount: z.number().min(0.01, "Total amount must be greater than 0"),
+  paymentMethod: z.enum(["cash", "bank_transfer", "cheque"], {
+    errorMap: () => ({ message: "Payment method must be cash, bank_transfer, or cheque" })
+  }),
+  earningsIncluded: z.string().min(1, "Earnings included is required"),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().min(1, "End date is required"),
+  processedBy: z.string().min(1, "Processed by user ID is required"),
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -651,6 +761,15 @@ export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+export type DoctorServiceRate = typeof doctorServiceRates.$inferSelect;
+export type InsertDoctorServiceRate = z.infer<typeof insertDoctorServiceRateSchema>;
+
+export type DoctorEarning = typeof doctorEarnings.$inferSelect;
+export type InsertDoctorEarning = z.infer<typeof insertDoctorEarningSchema>;
+
+export type DoctorPayment = typeof doctorPayments.$inferSelect;
+export type InsertDoctorPayment = z.infer<typeof insertDoctorPaymentSchema>;
 
 
 // Update schema for PATCH (partial updates allowed)

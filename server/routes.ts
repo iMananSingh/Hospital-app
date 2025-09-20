@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema, insertDoctorServiceRateSchema, insertDoctorEarningSchema, insertDoctorPaymentSchema } from "@shared/schema";
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
