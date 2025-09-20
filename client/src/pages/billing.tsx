@@ -59,6 +59,18 @@ export default function Billing() {
     enabled: leftActiveTab === "diagnostic",
   });
 
+  // Fetch inpatient services (procedures, operations, misc)
+  const { data: inpatientServicesApi = [] } = useQuery<any[]>({
+    queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}&serviceType=procedure,operation,misc`],
+    enabled: leftActiveTab === "inpatient",
+  });
+
+  // Fetch admissions data
+  const { data: admissionsDataApi = [] } = useQuery<any[]>({
+    queryKey: [`/api/admissions?fromDate=${fromDate}&toDate=${toDate}`],
+    enabled: leftActiveTab === "inpatient",
+  });
+
   const { data: billsDataApi = [] } = useQuery<any[]>({
     queryKey: [rightActiveTab === "credit"
       ? `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
@@ -76,6 +88,47 @@ export default function Billing() {
     orderedDate: orderData.order?.orderedDate
   }));
   const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService);
+
+  // Combine inpatient services and admissions
+  const combinedInpatientData = [
+    // Map patient services for procedures, operations, misc
+    ...inpatientServicesApi.map((service: any) => ({
+      ...service,
+      type: 'service',
+      price: service.calculatedAmount || service.price || 0
+    })),
+    // Map admissions data
+    ...admissionsDataApi.map((admission: any) => ({
+      ...admission,
+      type: 'admission',
+      patient: admission.patient,
+      serviceName: `Admission - ${admission.currentWardType || 'General Ward'}`,
+      scheduledDate: admission.admissionDate,
+      price: admission.totalCost || admission.dailyCost || 0
+    }))
+  ];
+
+  // Filter inpatient services based on selected service type
+  const filteredInpatientServices = combinedInpatientData.filter((item: any) => {
+    if (selectedService === "all") return true;
+    
+    if (item.type === 'admission') {
+      return selectedService === "admission";
+    }
+    
+    // For patient services, check the service category/type
+    if (item.serviceType === 'procedure' || item.serviceName?.toLowerCase().includes('procedure')) {
+      return selectedService === "procedures";
+    }
+    if (item.serviceType === 'operation' || item.serviceName?.toLowerCase().includes('operation') || item.serviceName?.toLowerCase().includes('surgery')) {
+      return selectedService === "operations";
+    }
+    if (item.serviceType === 'misc' || item.category === 'misc') {
+      return selectedService === "misc";
+    }
+    
+    return false;
+  });
 
 
   const formatGenderAge = (patient: any) => {
@@ -107,6 +160,10 @@ export default function Billing() {
 
   const calculateCreditTotal = (data: any[]) => {
     return data.reduce((sum: number, bill: any) => sum + (bill.totalAmount || 0), 0);
+  };
+
+  const calculateInpatientTotal = (data: any[]) => {
+    return data.reduce((sum, item) => sum + (item.price || 0), 0);
   };
 
   return (
@@ -330,10 +387,71 @@ export default function Billing() {
 
                   {/* Inpatient Tab */}
                   <TabsContent value="inpatient" className="flex-1 flex flex-col mt-2">
-                    <div className="border rounded-lg flex-1 flex items-center justify-center">
-                      <p className="text-center py-8 text-muted-foreground">
-                        Inpatient revenue data will be displayed here
-                      </p>
+                    {/* Service Filter for Inpatient */}
+                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                      <Label htmlFor="inpatient-service-filter">Service:</Label>
+                      <Select value={selectedService} onValueChange={setSelectedService}>
+                        <SelectTrigger className="w-48" data-testid="select-inpatient-service">
+                          <SelectValue placeholder="Select service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Services</SelectItem>
+                          <SelectItem value="procedures">Medical Procedures</SelectItem>
+                          <SelectItem value="operations">Surgical Operations</SelectItem>
+                          <SelectItem value="misc">Miscellaneous Services</SelectItem>
+                          <SelectItem value="admission">Admission Services</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                        <table className="w-full">
+                          <thead className="border-b bg-muted/50 sticky top-0">
+                            <tr>
+                              <th className="text-left p-3 font-medium">S.No</th>
+                              <th className="text-left p-3 font-medium">Date</th>
+                              <th className="text-left p-3 font-medium">Name</th>
+                              <th className="text-left p-3 font-medium">Sex/Age</th>
+                              <th className="text-left p-3 font-medium">Service</th>
+                              <th className="text-right p-3 font-medium">Fees</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredInpatientServices.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                  No Inpatient records found for the selected period
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredInpatientServices.map((item: any, index: number) => (
+                                <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-inpatient-${index}`}>
+                                  <td className="p-3" data-testid={`text-inpatient-sno-${index}`}>{index + 1}</td>
+                                  <td className="p-3" data-testid={`text-inpatient-date-${index}`}>
+                                    {item.admissionDate ? new Date(item.admissionDate).toLocaleDateString('en-GB') : 
+                                     item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
+                                  </td>
+                                  <td className="p-3" data-testid={`text-inpatient-name-${index}`}>{item.patient?.name || 'N/A'}</td>
+                                  <td className="p-3" data-testid={`text-inpatient-age-${index}`}>{formatGenderAge(item.patient)}</td>
+                                  <td className="p-3" data-testid={`text-inpatient-service-${index}`}>
+                                    {item.serviceName || item.reason || 'Service'}
+                                  </td>
+                                  <td className="p-3 text-right" data-testid={`text-inpatient-fees-${index}`}>
+                                    {formatCurrency(item.price || item.dailyCost || item.totalCost || 0)}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                        <div className="flex justify-between font-semibold">
+                          <span>Total:</span>
+                          <span data-testid="text-inpatient-total">{formatCurrency(calculateInpatientTotal(filteredInpatientServices))}</span>
+                        </div>
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>

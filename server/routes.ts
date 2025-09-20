@@ -1004,18 +1004,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (serviceType) {
-        // Map frontend serviceType values to database values
-        const serviceTypeMapping: { [key: string]: string } = {
-          'labtest': 'diagnostic',
-          'lab': 'diagnostic',
-          'opd': 'opd',
-          'diagnostic': 'diagnostic',
-          'diagnostics': 'diagnostic',
-          'procedure': 'procedure',
-          'procedures': 'procedure'
-        };
+        // Handle multiple service types (comma-separated)
+        if ((serviceType as string).includes(',')) {
+          const serviceTypes = (serviceType as string).split(',').map(type => {
+            const serviceTypeMapping: { [key: string]: string } = {
+              'labtest': 'diagnostic',
+              'lab': 'diagnostic',
+              'opd': 'opd',
+              'diagnostic': 'diagnostic',
+              'diagnostics': 'diagnostic',
+              'procedure': 'procedure',
+              'procedures': 'procedure',
+              'operation': 'operation',
+              'operations': 'operation',
+              'misc': 'misc'
+            };
+            return serviceTypeMapping[type.trim()] || type.trim();
+          });
+          filters.serviceTypes = serviceTypes;
+        } else {
+          // Map frontend serviceType values to database values
+          const serviceTypeMapping: { [key: string]: string } = {
+            'labtest': 'diagnostic',
+            'lab': 'diagnostic',
+            'opd': 'opd',
+            'diagnostic': 'diagnostic',
+            'diagnostics': 'diagnostic',
+            'procedure': 'procedure',
+            'procedures': 'procedure',
+            'operation': 'operation',
+            'operations': 'operation',
+            'misc': 'misc'
+          };
 
-        filters.serviceType = serviceTypeMapping[serviceType as string] || serviceType as string;
+          filters.serviceType = serviceTypeMapping[serviceType as string] || serviceType as string;
+        }
       }
 
       if (fromDate) {
@@ -1096,8 +1119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Patient Admissions Routes
   app.get("/api/admissions", authenticateToken, async (req, res) => {
     try {
-      const { patientId } = req.query;
-      const admissions = await storage.getAdmissions(patientId as string);
+      const { patientId, fromDate, toDate } = req.query;
+      const admissions = await storage.getAdmissions(patientId as string, fromDate as string, toDate as string);
       res.json(admissions);
     } catch (error) {
       console.error("Error fetching admissions:", error);

@@ -47,16 +47,18 @@ import type {
 } from "@shared/schema";
 import {
   eq,
-  desc,
-  and,
-  sql,
-  asc,
-  ne,
-  like,
-  isNotNull,
-  inArray,
   gte,
   lte,
+  and,
+  desc,
+  asc,
+  isNull,
+  isNotNull,
+  like,
+  sql,
+  ne,
+  inArray,
+  or,
 } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import path from "path";
@@ -66,6 +68,7 @@ import fs from "fs";
 export interface PatientServiceFilters {
   patientId?: string;
   serviceType?: string;
+  serviceTypes?: string[]; // Added for multiple service types
   fromDate?: string;
   toDate?: string;
   doctorId?: string;
@@ -896,7 +899,7 @@ export interface IStorage {
 
   // Patient Admissions
   createAdmission(admission: InsertAdmission): Promise<Admission>;
-  getAdmissions(patientId?: string): Promise<Admission[]>;
+  getAdmissions(patientId?: string, fromDate?: string, toDate?: string): Promise<Admission[]>;
   getAdmissionById(id: string): Promise<Admission | undefined>;
   updateAdmission(
     id: string,
@@ -2274,8 +2277,17 @@ export class SqliteStorage implements IStorage {
       conditions.push(eq(schema.patientServices.patientId, filters.patientId));
     }
 
+    // Apply service type filter
     if (filters.serviceType) {
       conditions.push(eq(schema.patientServices.serviceType, filters.serviceType));
+    } else if (filters.serviceTypes && Array.isArray(filters.serviceTypes)) {
+      // Handle multiple service types with OR condition
+      const serviceTypeConditions = filters.serviceTypes.map((type: string) =>
+        eq(schema.patientServices.serviceType, type)
+      );
+      if (serviceTypeConditions.length > 0) {
+        conditions.push(or(...serviceTypeConditions));
+      }
     }
 
     if (filters.fromDate) {
@@ -2454,7 +2466,7 @@ export class SqliteStorage implements IStorage {
             "system",
             "patient_admitted",
             "Patient admitted",
-            `${patient.name} - ${admissionId}`,
+            `${patient.name} - ${admission.admissionId}`,
             created.id,
             "admission",
             {
@@ -2471,29 +2483,47 @@ export class SqliteStorage implements IStorage {
     });
   }
 
-  async getAdmissions(patientId?: string): Promise<Admission[]> {
-    let admissions: Admission[];
+  async getAdmissions(patientId?: string, fromDate?: string, toDate?: string): Promise<any[]> {
+    try {
+      let conditions: any[] = [];
 
-    if (patientId) {
-      admissions = db
-        .select()
+      if (patientId) {
+        conditions.push(eq(schema.admissions.patientId, patientId));
+      }
+
+      if (fromDate) {
+        conditions.push(gte(schema.admissions.admissionDate, fromDate));
+      }
+
+      if (toDate) {
+        conditions.push(lte(schema.admissions.admissionDate, toDate));
+      }
+
+      let query = db
+        .select({
+          admission: schema.admissions,
+          patient: schema.patients,
+          doctor: schema.doctors
+        })
         .from(schema.admissions)
-        .where(eq(schema.admissions.patientId, patientId))
-        .orderBy(desc(schema.admissions.admissionDate))
-        .all();
-    } else {
-      admissions = db
-        .select()
-        .from(schema.admissions)
-        .orderBy(desc(schema.admissions.createdAt))
-        .all();
+        .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
+        .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id));
+
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+
+      const results = query.orderBy(desc(schema.admissions.admissionDate)).all();
+
+      return results.map(row => ({
+        ...row.admission,
+        patient: row.patient,
+        doctor: row.doctor
+      }));
+    } catch (error) {
+      console.error("Error fetching admissions:", error);
+      throw error;
     }
-
-    // Add calculated stay days to each admission using the same logic as frontend
-    return admissions.map((admission) => ({
-      ...admission,
-      stayDays: calculateStayDays(admission.admissionDate, admission.dischargeDate),
-    }));
   }
 
   async getAdmissionById(id: string): Promise<Admission | undefined> {
@@ -4191,7 +4221,7 @@ export class SqliteStorage implements IStorage {
           .all();
 
         // Map rooms with occupancy info
-        const roomsWithOccupancy = rooms.map((room) => {
+        const roomsWithOccupancy = rooms.map(room) => {
           const occupyingAdmission = currentAdmissions.find(
             (admission) =>
               admission.admission.currentRoomNumber === room.roomNumber,
@@ -4209,26 +4239,26 @@ export class SqliteStorage implements IStorage {
           };
         });
 
-        // Calculate actual occupied beds from rooms that are occupied
-        const actualOccupiedBeds = roomsWithOccupancy.filter(
-          (room) => room.isOccupied,
-        ).length;
+      // Calculate actual occupied beds from rooms that are occupied
+      const actualOccupiedBeds = roomsWithOccupancy.filter(
+        (room) => room.isOccupied,
+      ).length;
 
-        // Calculate total beds from all active rooms for this room type
-        const totalBeds = rooms.reduce(
-          (sum, room) => sum + (room.capacity || 1),
-          0,
-        );
+      // Calculate total beds from all active rooms for this room type
+      const totalBeds = rooms.reduce(
+        (sum, room) => sum + (room.capacity || 1),
+        0,
+      );
 
-        return {
-          ...roomType,
-          rooms: roomsWithOccupancy,
-          occupiedBeds: actualOccupiedBeds,
-          totalBeds: totalBeds,
-          // Keep these for backwards compatibility
-          actualOccupiedBeds: actualOccupiedBeds,
-        };
-      });
+      return {
+        ...roomType,
+        rooms: roomsWithOccupancy,
+        occupiedBeds: actualOccupiedBeds,
+        totalBeds: totalBeds,
+        // Keep these for backwards compatibility
+        actualOccupiedBeds: actualOccupiedBeds,
+      };
+    });
 
       return bedOccupancyData;
     } catch (error) {
