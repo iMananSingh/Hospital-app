@@ -40,61 +40,29 @@ export default function Billing() {
   const [selectedDiagnosticService, setSelectedDiagnosticService] = useState<string>("all");
   const [selectedService, setSelectedService] = useState<string>("all"); // For diagnostic filter
 
-  // Dummy data for demonstration if API calls fail or are not set up
-  const doctors = [{ id: "1", name: "Dr. John Doe" }, { id: "2", name: "Dr. Jane Smith" }];
-  const patients = [{ id: "p1", patientId: "P001", name: "Alice", gender: "female", age: 30 }, { id: "p2", patientId: "P002", name: "Bob", gender: "male", age: 45 }];
-  const hospitalInfo = { name: "City Hospital", address: "123 Main St", phone: "555-1234" };
-
-  // Mock fetch calls for query hooks
   const { data: doctorsFromApi = [] } = useQuery<any[]>({
     queryKey: ["/api/doctors"],
-    initialData: doctors, // Fallback to dummy data
   });
 
-  // OPD Data Simulation (replace with actual API fetch)
-  const opdData = [
-    { id: "opd1", patientId: "p1", scheduledDate: "2023-10-26T10:00:00Z", doctorId: "1", price: 500, description: "Consultation", receiptNumber: "R1001" },
-    { id: "opd2", patientId: "p2", scheduledDate: "2023-10-27T11:00:00Z", doctorId: "2", price: 600, description: "Follow-up", receiptNumber: "R1002" },
-  ];
   const { data: opdDataApi = [] } = useQuery<any[]>({
     queryKey: [`/api/patient-services?serviceType=opd&fromDate=${fromDate}&toDate=${toDate}${selectedDoctor !== "all" ? `&doctorId=${selectedDoctor}` : ""}`],
-    initialData: opdData, // Fallback to dummy data
     enabled: leftActiveTab === "opd",
   });
 
-  // Lab Data Simulation
-  const labData = [
-    { id: "lab1", patientId: "p1", scheduledDate: "2023-10-26T10:00:00Z", doctorId: "1", price: 200, title: "Blood Test", description: "Routine Blood Work", receiptNumber: "R1003" },
-    { id: "lab2", patientId: "p2", scheduledDate: "2023-10-27T11:00:00Z", doctorId: "2", price: 350, title: "X-Ray", description: "Chest X-Ray", receiptNumber: "R1004" },
-  ];
   const { data: labDataApi = [] } = useQuery<any[]>({
-    queryKey: ["/api/patient-services?serviceType=labtest&fromDate=${fromDate}&toDate=${toDate}"],
-    initialData: labData, // Fallback to dummy data
+    queryKey: [`/api/patient-services?serviceType=labtest&fromDate=${fromDate}&toDate=${toDate}`],
     enabled: leftActiveTab === "lab",
   });
 
-  // Diagnostic Data Simulation
-  const diagnosticData = [
-    { id: "diag1", patientId: "p1", scheduledDate: "2023-10-26T10:00:00Z", doctorId: "1", price: 400, title: "ECG", description: "Electrocardiogram", category: "diagnostics", receiptNumber: "R1005" },
-    { id: "diag2", patientId: "p2", scheduledDate: "2023-10-27T11:00:00Z", doctorId: "2", price: 700, title: "MRI Scan", description: "Brain MRI", category: "diagnostics", receiptNumber: "R1006" },
-  ];
   const { data: diagnosticDataApi = [] } = useQuery<any[]>({
     queryKey: [`/api/patient-services?serviceType=diagnostic&fromDate=${fromDate}&toDate=${toDate}${selectedDiagnosticService !== "all" ? `&serviceName=${encodeURIComponent(selectedDiagnosticService)}` : ""}`],
-    initialData: diagnosticData, // Fallback to dummy data
     enabled: leftActiveTab === "diagnostic",
   });
 
-  // Bills Data Simulation
-  const billsData = [
-    { id: "bill1", billNumber: "B101", patientId: "p1", paymentMethod: "credit", totalAmount: 500, scheduledDate: "2023-10-26T10:00:00Z", patient: { name: "Alice" } },
-    { id: "bill2", billNumber: "B102", patientId: "p2", paymentMethod: "debit", totalAmount: 600, scheduledDate: "2023-10-27T11:00:00Z", patient: { name: "Bob" } },
-    { id: "bill3", billNumber: "B103", patientId: "p1", paymentMethod: "credit", totalAmount: 200, scheduledDate: "2023-10-26T10:00:00Z", patient: { name: "Alice" } },
-  ];
   const { data: billsDataApi = [] } = useQuery<any[]>({
     queryKey: [rightActiveTab === "credit"
       ? `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
       : `/api/bills?fromDate=${fromDate}&toDate=${toDate}`],
-    initialData: billsData, // Fallback to dummy data
     enabled: rightActiveTab === "credit" || rightActiveTab === "debit",
   });
 
