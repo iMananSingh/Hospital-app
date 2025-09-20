@@ -69,7 +69,7 @@ export default function Billing() {
   // Filtered Data for display
   const filteredOpdServices = opdDataApi.filter(item => selectedDoctor === "all" || String(item.doctorId) === selectedDoctor);
   const filteredLabServices = labDataApi;
-  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedService === "all" || item.category === selectedService);
+  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedDiagnosticService === "all" || item.category === selectedDiagnosticService);
 
 
   const formatGenderAge = (patient: any) => {
@@ -261,7 +261,7 @@ export default function Billing() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Services</SelectItem>
-                          {Array.from(new Set(diagnosticDataApi.map((item: any) => item.category))).sort().map((serviceCategory: string) => (
+                          {Array.from(new Set(diagnosticDataApi.map((item: any) => item.category).filter(Boolean))).sort().map((serviceCategory: string) => (
                             <SelectItem key={serviceCategory} value={serviceCategory}>
                               {serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}
                             </SelectItem>
