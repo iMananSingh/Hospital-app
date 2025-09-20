@@ -55,6 +55,8 @@ import {
   like,
   isNotNull,
   inArray,
+  gte,
+  lte,
 } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import path from "path";
@@ -1851,39 +1853,44 @@ export class SqliteStorage implements IStorage {
   }
 
   async getPathologyOrders(fromDate?: string, toDate?: string): Promise<any[]> {
-    let query = db
-      .select({
-        order: schema.pathologyOrders,
-        patient: schema.patients,
-        doctor: schema.doctors,
-      })
-      .from(schema.pathologyOrders)
-      .leftJoin(
-        schema.patients,
-        eq(schema.pathologyOrders.patientId, schema.patients.id),
-      )
-      .leftJoin(
-        schema.doctors,
-        eq(schema.pathologyOrders.doctorId, schema.doctors.id),
-      );
-
-    // Apply date filters if provided
-    if (fromDate && toDate) {
-      query = query.where(
-        and(
-          gte(schema.pathologyOrders.orderedDate, fromDate),
-          lte(schema.pathologyOrders.orderedDate, toDate)
+    try {
+      let query = db
+        .select({
+          order: schema.pathologyOrders,
+          patient: schema.patients,
+          doctor: schema.doctors,
+        })
+        .from(schema.pathologyOrders)
+        .leftJoin(
+          schema.patients,
+          eq(schema.pathologyOrders.patientId, schema.patients.id),
         )
-      );
-    } else if (fromDate) {
-      query = query.where(gte(schema.pathologyOrders.orderedDate, fromDate));
-    } else if (toDate) {
-      query = query.where(lte(schema.pathologyOrders.orderedDate, toDate));
-    }
+        .leftJoin(
+          schema.doctors,
+          eq(schema.pathologyOrders.doctorId, schema.doctors.id),
+        );
 
-    return query
-      .orderBy(desc(schema.pathologyOrders.createdAt))
-      .all();
+      // Apply date filters if provided
+      if (fromDate && toDate) {
+        query = query.where(
+          and(
+            gte(schema.pathologyOrders.orderedDate, fromDate),
+            lte(schema.pathologyOrders.orderedDate, toDate)
+          )
+        );
+      } else if (fromDate) {
+        query = query.where(gte(schema.pathologyOrders.orderedDate, fromDate));
+      } else if (toDate) {
+        query = query.where(lte(schema.pathologyOrders.orderedDate, toDate));
+      }
+
+      return query
+        .orderBy(desc(schema.pathologyOrders.createdAt))
+        .all();
+    } catch (error) {
+      console.error("Error in getPathologyOrders:", error);
+      throw error;
+    }
   }
 
   async getPathologyOrderById(id: string): Promise<any> {
