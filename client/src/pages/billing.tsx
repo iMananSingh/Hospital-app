@@ -50,7 +50,7 @@ export default function Billing() {
   });
 
   const { data: labDataApi = [] } = useQuery<any[]>({
-    queryKey: [`/api/patient-services?serviceType=labtest&fromDate=${fromDate}&toDate=${toDate}`],
+    queryKey: [`/api/pathology?fromDate=${fromDate}&toDate=${toDate}`],
     enabled: leftActiveTab === "lab",
   });
 
@@ -68,8 +68,14 @@ export default function Billing() {
 
   // Filtered Data for display
   const filteredOpdServices = opdDataApi.filter(item => selectedDoctor === "all" || String(item.doctorId) === selectedDoctor);
-  const filteredLabServices = labDataApi;
-  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedDiagnosticService === "all" || item.category === selectedDiagnosticService);
+  const filteredLabServices = labDataApi.map((orderData: any) => ({
+    id: orderData.order?.id,
+    patient: orderData.patient,
+    title: orderData.order?.testName || 'Lab Test',
+    price: orderData.order?.totalPrice || 0,
+    orderedDate: orderData.order?.orderedDate
+  }));
+  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService);
 
 
   const formatGenderAge = (patient: any) => {
@@ -212,6 +218,7 @@ export default function Billing() {
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
                               <th className="text-left p-3 font-medium">S.No</th>
+                              <th className="text-left p-3 font-medium">Date</th>
                               <th className="text-left p-3 font-medium">Name</th>
                               <th className="text-left p-3 font-medium">Sex/Age</th>
                               <th className="text-left p-3 font-medium">Test</th>
@@ -221,7 +228,7 @@ export default function Billing() {
                           <tbody>
                             {filteredLabServices.length === 0 ? (
                               <tr>
-                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
+                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
                                   No Lab records found for the selected period
                                 </td>
                               </tr>
@@ -229,9 +236,12 @@ export default function Billing() {
                               filteredLabServices.map((item: any, index: number) => (
                                 <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-lab-${index}`}>
                                   <td className="p-3" data-testid={`text-lab-sno-${index}`}>{index + 1}</td>
+                                  <td className="p-3" data-testid={`text-lab-date-${index}`}>
+                                    {item.orderedDate ? new Date(item.orderedDate).toLocaleDateString('en-GB') : 'N/A'}
+                                  </td>
                                   <td className="p-3" data-testid={`text-lab-name-${index}`}>{item.patient?.name || 'N/A'}</td>
                                   <td className="p-3" data-testid={`text-lab-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3" data-testid={`text-lab-test-${index}`}>{item.title || item.description || 'Lab Test'}</td>
+                                  <td className="p-3" data-testid={`text-lab-test-${index}`}>{item.title || 'Lab Test'}</td>
                                   <td className="p-3 text-right" data-testid={`text-lab-fees-${index}`}>
                                     {formatCurrency(item.price || 0)}
                                   </td>
@@ -261,9 +271,9 @@ export default function Billing() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Services</SelectItem>
-                          {Array.from(new Set(diagnosticDataApi.map((item: any) => item.category).filter(Boolean))).sort().map((serviceCategory: string) => (
-                            <SelectItem key={serviceCategory} value={serviceCategory}>
-                              {serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}
+                          {Array.from(new Set(diagnosticDataApi.map((item: any) => item.serviceName).filter(Boolean))).sort().map((serviceName: string) => (
+                            <SelectItem key={serviceName} value={serviceName}>
+                              {serviceName}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -276,6 +286,7 @@ export default function Billing() {
                           <thead className="border-b bg-muted/50 sticky top-0">
                             <tr>
                               <th className="text-left p-3 font-medium">S.No</th>
+                              <th className="text-left p-3 font-medium">Date</th>
                               <th className="text-left p-3 font-medium">Name</th>
                               <th className="text-left p-3 font-medium">Sex/Age</th>
                               <th className="text-left p-3 font-medium">Service</th>
@@ -285,7 +296,7 @@ export default function Billing() {
                           <tbody>
                             {filteredDiagnosticServices.length === 0 ? (
                               <tr>
-                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
+                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
                                   No Diagnostic records found for the selected period
                                 </td>
                               </tr>
@@ -293,9 +304,12 @@ export default function Billing() {
                               filteredDiagnosticServices.map((item: any, index: number) => (
                                 <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-diagnostic-${index}`}>
                                   <td className="p-3" data-testid={`text-diagnostic-sno-${index}`}>{index + 1}</td>
+                                  <td className="p-3" data-testid={`text-diagnostic-date-${index}`}>
+                                    {new Date(item.scheduledDate).toLocaleDateString('en-GB')}
+                                  </td>
                                   <td className="p-3" data-testid={`text-diagnostic-name-${index}`}>{item.patient?.name || 'N/A'}</td>
                                   <td className="p-3" data-testid={`text-diagnostic-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3" data-testid={`text-diagnostic-service-${index}`}>{item.title || item.description || 'Service'}</td>
+                                  <td className="p-3" data-testid={`text-diagnostic-service-${index}`}>{item.serviceName || 'Service'}</td>
                                   <td className="p-3 text-right" data-testid={`text-diagnostic-fees-${index}`}>
                                     {formatCurrency(item.price || 0)}
                                   </td>

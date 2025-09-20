@@ -10,6 +10,7 @@ import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
 import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
 import { eq, gte, lte, and } from "drizzle-orm"; // Import Drizzle ORM operators
+import { patientServices, patients } from "@shared/schema"; // Import necessary schemas
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -1012,7 +1013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'procedure': 'procedure',
           'procedures': 'procedure'
         };
-        
+
         filters.serviceType = serviceTypeMapping[serviceType as string] || serviceType as string;
       }
 
