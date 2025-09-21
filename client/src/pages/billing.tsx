@@ -422,7 +422,7 @@ export default function Billing() {
                       <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                         <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                           <table className="w-full">
-                            <thead className="border-b bg-muted/50 sticky top-0">
+                            <thead className="border-b bg-muted/50 sticky top-0 z-10">
                               <tr>
                                 <th className="text-left p-3 font-medium">S.No</th>
                                 <th className="text-left p-3 font-medium">Date</th>
@@ -497,7 +497,7 @@ export default function Billing() {
                       <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                         <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                           <table className="w-full">
-                            <thead className="border-b bg-muted/50 sticky top-0">
+                            <thead className="border-b bg-muted/50 sticky top-0 z-10">
                               <tr>
                                 <th className="text-left p-3 font-medium">S.No</th>
                                 <th className="text-left p-3 font-medium">Date</th>
