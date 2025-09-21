@@ -48,6 +48,7 @@ export default function Billing() {
 
   const { data: doctorsFromApi = [] } = useQuery<any[]>({
     queryKey: ["/api/doctors"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: opdDataApi = [] } = useQuery<any[]>({
@@ -173,6 +174,12 @@ export default function Billing() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getDoctorName = (doctorId: string | null) => {
+    if (!doctorId) return "N/A";
+    const doctor = doctorsFromApi.find(d => d.id === doctorId);
+    return doctor ? doctor.name : "N/A";
   };
 
   const calculateOpdTotal = (data: any[]) => {
@@ -310,7 +317,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patient?.name || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge(item.patient)}</td>
-                                    <td className="p-3">{item.doctor?.name || "N/A"}</td>
+                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
                                     <td className="p-3 text-right" data-testid={`opd-fee-${index}`}>
                                       {formatCurrency(item.calculatedAmount || item.price || 0)}
                                     </td>
