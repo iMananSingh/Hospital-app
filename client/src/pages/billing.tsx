@@ -567,15 +567,15 @@ export default function Billing() {
                     <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                       <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                         <table className="w-full">
-                          <thead className="border-b bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left p-3 font-medium">S.No</th>
-                              <th className="text-left p-3 font-medium">Bill No.</th>
-                              <th className="text-left p-3 font-medium">Patient</th>
-                              <th className="text-left p-3 font-medium">Payment Method</th>
-                              <th className="text-right p-3 font-medium">Amount</th>
-                            </tr>
-                          </thead>
+                          <thead className="border-b bg-background sticky top-0 z-10">
+                              <tr>
+                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background">Bill No.</th>
+                                <th className="text-left p-3 font-medium bg-background">Patient</th>
+                                <th className="text-left p-3 font-medium bg-background">Payment Method</th>
+                                <th className="text-right p-3 font-medium bg-background">Amount</th>
+                              </tr>
+                            </thead>
                           <tbody>
                             {billsDataApi.length === 0 ? (
                               <tr>
