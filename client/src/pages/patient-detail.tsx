@@ -1490,7 +1490,7 @@ export default function PatientDetail() {
                   );
                   setIsServiceDialogOpen(true);
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                 data-testid="button-schedule-opd"
               >
                 <Stethoscope className="h-4 w-4" />
@@ -1503,7 +1503,6 @@ export default function PatientDetail() {
                     `/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || "")}`,
                   )
                 }
-                variant="outline"
                 className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
                 data-testid="button-pathology-tests"
               >
@@ -1548,8 +1547,7 @@ export default function PatientDetail() {
 
                   setIsServiceDialogOpen(true);
                 }}
-                variant="outline"
-                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white"
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
                 data-testid="button-add-medical-service"
               >
                 <Plus className="h-4 w-4" />
