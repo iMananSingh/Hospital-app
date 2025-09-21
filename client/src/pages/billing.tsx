@@ -193,268 +193,298 @@ export default function Billing() {
                 <CardTitle>Service Revenue</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col overflow-hidden">
-                <Tabs value={leftActiveTab} onValueChange={setLeftActiveTab} className="w-full h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-                    <TabsTrigger value="opd" data-testid="tab-opd">OPD</TabsTrigger>
-                    <TabsTrigger value="lab" data-testid="tab-lab">Lab</TabsTrigger>
-                    <TabsTrigger value="diagnostic" data-testid="tab-diagnostic">Diagnostic</TabsTrigger>
-                    <TabsTrigger value="inpatient" data-testid="tab-inpatient">Inpatient</TabsTrigger>
-                  </TabsList>
+                <div className="w-full h-full flex flex-col">
+                  <div className="grid w-full grid-cols-4 flex-shrink-0 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+                    <button
+                      onClick={() => setLeftActiveTab("opd")}
+                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${leftActiveTab === "opd" ? "bg-background text-foreground shadow-sm" : ""}`}
+                      data-testid="tab-opd"
+                    >
+                      OPD
+                    </button>
+                    <button
+                      onClick={() => setLeftActiveTab("lab")}
+                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${leftActiveTab === "lab" ? "bg-background text-foreground shadow-sm" : ""}`}
+                      data-testid="tab-lab"
+                    >
+                      Lab
+                    </button>
+                    <button
+                      onClick={() => setLeftActiveTab("diagnostic")}
+                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${leftActiveTab === "diagnostic" ? "bg-background text-foreground shadow-sm" : ""}`}
+                      data-testid="tab-diagnostic"
+                    >
+                      Diagnostic
+                    </button>
+                    <button
+                      onClick={() => setLeftActiveTab("inpatient")}
+                      className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${leftActiveTab === "inpatient" ? "bg-background text-foreground shadow-sm" : ""}`}
+                      data-testid="tab-inpatient"
+                    >
+                      Inpatient
+                    </button>
+                  </div>
 
-                  <TabsContent value="opd" className="flex-1 flex flex-col mt-2">
-                    {/* Doctor Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
-                      <Label htmlFor="doctor-filter">Doctor:</Label>
-                      <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                        <SelectTrigger className="w-48" data-testid="select-doctor">
-                          <SelectValue placeholder="Select doctor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Doctors</SelectItem>
-                          {doctorsFromApi.map((doctor: any) => (
-                            <SelectItem key={doctor.id} value={String(doctor.id)}>
-                              {doctor.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {leftActiveTab === "opd" && (
+                    <div className="flex-1 flex flex-col mt-2">
+                      {/* Doctor Filter */}
+                      <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Label htmlFor="doctor-filter">Doctor:</Label>
+                        <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                          <SelectTrigger className="w-48" data-testid="select-doctor">
+                            <SelectValue placeholder="Select doctor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Doctors</SelectItem>
+                            {doctorsFromApi.map((doctor: any) => (
+                              <SelectItem key={doctor.id} value={String(doctor.id)}>
+                                {doctor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* OPD Data Table */}
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                        <table className="w-full">
-                          <thead className="border-b bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left p-3 font-medium">S.No</th>
-                              <th className="text-left p-3 font-medium">Date</th>
-                              <th className="text-left p-3 font-medium">Name</th>
-                              <th className="text-left p-3 font-medium">Sex/Age</th>
-                              <th className="text-right p-3 font-medium">Fees</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredOpdServices.length === 0 ? (
+                      <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                          <table className="w-full">
+                            <thead className="border-b bg-muted/50 sticky top-0">
                               <tr>
-                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
-                                  No OPD records found for the selected period
-                                </td>
+                                <th className="text-left p-3 font-medium">S.No</th>
+                                <th className="text-left p-3 font-medium">Date</th>
+                                <th className="text-left p-3 font-medium">Name</th>
+                                <th className="text-left p-3 font-medium">Sex/Age</th>
+                                <th className="text-left p-3 font-medium">Doctor</th>
+                                <th className="text-right p-3 font-medium">Fees</th>
                               </tr>
-                            ) : (
-                              filteredOpdServices.map((item: any, index: number) => (
-                                <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-opd-${index}`}>
-                                  <td className="p-3" data-testid={`text-opd-sno-${index}`}>{index + 1}</td>
-                                  <td className="p-3" data-testid={`text-opd-date-${index}`}>
-                                    {new Date(item.scheduledDate).toLocaleDateString('en-GB')}
-                                  </td>
-                                  <td className="p-3" data-testid={`text-opd-name-${index}`}>{item.patient?.name || 'N/A'}</td>
-                                  <td className="p-3" data-testid={`text-opd-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3 text-right" data-testid={`text-opd-fees-${index}`}>
-                                    {formatCurrency(item.price || 0)}
+                            </thead>
+                            <tbody>
+                              {filteredOpdServices.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                    No OPD records found for the selected period
                                   </td>
                                 </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total:</span>
-                          <span data-testid="text-opd-total">{formatCurrency(calculateOpdTotal(filteredOpdServices))}</span>
+                              ) : (
+                                filteredOpdServices.map((item: any, index: number) => (
+                                  <tr key={item.id} className="border-b hover:bg-muted/30">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3">
+                                      {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
+                                    </td>
+                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{item.doctor?.name || "N/A"}</td>
+                                    <td className="p-3 text-right" data-testid={`opd-fee-${index}`}>
+                                      {formatCurrency(item.calculatedAmount || item.price || 0)}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                          <div className="flex justify-between font-semibold">
+                            <span>Total:</span>
+                            <span data-testid="text-opd-total">{formatCurrency(calculateOpdTotal(filteredOpdServices))}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
+                  )}
 
-                  {/* Lab Tab */}
-                  <TabsContent value="lab" className="flex-1 flex flex-col mt-2">
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                        <table className="w-full">
-                          <thead className="border-b bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left p-3 font-medium">S.No</th>
-                              <th className="text-left p-3 font-medium">Date</th>
-                              <th className="text-left p-3 font-medium">Name</th>
-                              <th className="text-left p-3 font-medium">Sex/Age</th>
-                              <th className="text-left p-3 font-medium">Test</th>
-                              <th className="text-right p-3 font-medium">Fees</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredLabServices.length === 0 ? (
+                  {leftActiveTab === "lab" && (
+                    <div className="flex-1 flex flex-col mt-2">
+                      <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                          <table className="w-full">
+                            <thead className="border-b bg-muted/50 sticky top-0">
                               <tr>
-                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
-                                  No Lab records found for the selected period
-                                </td>
+                                <th className="text-left p-3 font-medium">S.No</th>
+                                <th className="text-left p-3 font-medium">Date</th>
+                                <th className="text-left p-3 font-medium">Name</th>
+                                <th className="text-left p-3 font-medium">Sex/Age</th>
+                                <th className="text-left p-3 font-medium">Test</th>
+                                <th className="text-right p-3 font-medium">Fees</th>
                               </tr>
-                            ) : (
-                              filteredLabServices.map((item: any, index: number) => (
-                                <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-lab-${index}`}>
-                                  <td className="p-3" data-testid={`text-lab-sno-${index}`}>{index + 1}</td>
-                                  <td className="p-3" data-testid={`text-lab-date-${index}`}>
-                                    {item.orderedDate ? new Date(item.orderedDate).toLocaleDateString('en-GB') : 'N/A'}
-                                  </td>
-                                  <td className="p-3" data-testid={`text-lab-name-${index}`}>{item.patient?.name || 'N/A'}</td>
-                                  <td className="p-3" data-testid={`text-lab-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3" data-testid={`text-lab-test-${index}`}>{item.title || 'Lab Test'}</td>
-                                  <td className="p-3 text-right" data-testid={`text-lab-fees-${index}`}>
-                                    {formatCurrency(item.price || 0)}
+                            </thead>
+                            <tbody>
+                              {filteredLabServices.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                    No Lab records found for the selected period
                                   </td>
                                 </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total:</span>
-                          <span data-testid="text-lab-total">{formatCurrency(calculateLabTotal(filteredLabServices))}</span>
+                              ) : (
+                                filteredLabServices.map((item: any, index: number) => (
+                                  <tr key={item.id} className="border-b hover:bg-muted/30">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3">
+                                      {item.orderedDate ? new Date(item.orderedDate).toLocaleDateString('en-GB') : 'N/A'}
+                                    </td>
+                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{item.title || "N/A"}</td>
+                                    <td className="p-3 text-right" data-testid={`lab-fee-${index}`}>
+                                      {formatCurrency(item.price || 0)}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                          <div className="flex justify-between font-semibold">
+                            <span>Total:</span>
+                            <span data-testid="text-lab-total">{formatCurrency(calculateLabTotal(filteredLabServices))}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
+                  )}
 
-                  {/* Diagnostic Tab */}
-                  <TabsContent value="diagnostic" className="flex-1 flex flex-col mt-2">
-                    {/* Service Filter */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
-                      <Label htmlFor="diagnostic-service-filter">Service:</Label>
-                      <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
-                        <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
-                          <SelectValue placeholder="Select service" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Services</SelectItem>
-                          {Array.from(new Set(diagnosticDataApi.map((item: any) => item.serviceName).filter(Boolean))).sort().map((serviceName: string) => (
-                            <SelectItem key={serviceName} value={serviceName}>
-                              {serviceName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {leftActiveTab === "diagnostic" && (
+                    <div className="flex-1 flex flex-col mt-2">
+                      {/* Service Filter for Diagnostic */}
+                      <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Label htmlFor="diagnostic-service-filter">Service:</Label>
+                        <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
+                          <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
+                            <SelectValue placeholder="Select service" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Services</SelectItem>
+                            {Array.from(new Set(diagnosticDataApi.map((item: any) => item.serviceName).filter(Boolean))).sort().map((serviceName: string) => (
+                              <SelectItem key={serviceName} value={serviceName}>
+                                {serviceName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                        <table className="w-full">
-                          <thead className="border-b bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left p-3 font-medium">S.No</th>
-                              <th className="text-left p-3 font-medium">Date</th>
-                              <th className="text-left p-3 font-medium">Name</th>
-                              <th className="text-left p-3 font-medium">Sex/Age</th>
-                              <th className="text-left p-3 font-medium">Service</th>
-                              <th className="text-right p-3 font-medium">Fees</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredDiagnosticServices.length === 0 ? (
+                      <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                          <table className="w-full">
+                            <thead className="border-b bg-muted/50 sticky top-0">
                               <tr>
-                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
-                                  No Diagnostic records found for the selected period
-                                </td>
+                                <th className="text-left p-3 font-medium">S.No</th>
+                                <th className="text-left p-3 font-medium">Date</th>
+                                <th className="text-left p-3 font-medium">Name</th>
+                                <th className="text-left p-3 font-medium">Sex/Age</th>
+                                <th className="text-left p-3 font-medium">Service</th>
+                                <th className="text-right p-3 font-medium">Fees</th>
                               </tr>
-                            ) : (
-                              filteredDiagnosticServices.map((item: any, index: number) => (
-                                <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-diagnostic-${index}`}>
-                                  <td className="p-3" data-testid={`text-diagnostic-sno-${index}`}>{index + 1}</td>
-                                  <td className="p-3" data-testid={`text-diagnostic-date-${index}`}>
-                                    {new Date(item.scheduledDate).toLocaleDateString('en-GB')}
-                                  </td>
-                                  <td className="p-3" data-testid={`text-diagnostic-name-${index}`}>{item.patient?.name || 'N/A'}</td>
-                                  <td className="p-3" data-testid={`text-diagnostic-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3" data-testid={`text-diagnostic-service-${index}`}>{item.serviceName || 'Service'}</td>
-                                  <td className="p-3 text-right" data-testid={`text-diagnostic-fees-${index}`}>
-                                    {formatCurrency(item.price || 0)}
+                            </thead>
+                            <tbody>
+                              {filteredDiagnosticServices.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                    No Diagnostic records found for the selected period
                                   </td>
                                 </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total:</span>
-                          <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(filteredDiagnosticServices))}</span>
+                              ) : (
+                                filteredDiagnosticServices.map((item: any, index: number) => (
+                                  <tr key={item.id} className="border-b hover:bg-muted/30">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3">
+                                      {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
+                                    </td>
+                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{item.serviceName || "N/A"}</td>
+                                    <td className="p-3 text-right" data-testid={`diagnostic-fee-${index}`}>
+                                      {formatCurrency(item.price || 0)}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                          <div className="flex justify-between font-semibold">
+                            <span>Total:</span>
+                            <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(filteredDiagnosticServices))}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
+                  )}
 
-                  {/* Inpatient Tab */}
-                  <TabsContent value="inpatient" className="flex-1 flex flex-col mt-2">
-                    {/* Service Filter for Inpatient */}
-                    <div className="flex items-center gap-2 flex-shrink-0 mb-2">
-                      <Label htmlFor="inpatient-service-filter">Service:</Label>
-                      <Select value={selectedService} onValueChange={setSelectedService}>
-                        <SelectTrigger className="w-48" data-testid="select-inpatient-service">
-                          <SelectValue placeholder="Select service" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Services</SelectItem>
-                          <SelectItem value="procedures">Medical Procedures</SelectItem>
-                          <SelectItem value="operations">Surgical Operations</SelectItem>
-                          <SelectItem value="misc">Miscellaneous Services</SelectItem>
-                          <SelectItem value="admission">Admission Services</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {leftActiveTab === "inpatient" && (
+                    <div className="flex-1 flex flex-col mt-2">
+                      {/* Service Filter for Inpatient */}
+                      <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Label htmlFor="inpatient-service-filter">Service:</Label>
+                        <Select value={selectedService} onValueChange={setSelectedService}>
+                          <SelectTrigger className="w-48" data-testid="select-inpatient-service">
+                            <SelectValue placeholder="Select service" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Services</SelectItem>
+                            <SelectItem value="procedures">Medical Procedures</SelectItem>
+                            <SelectItem value="operations">Surgical Operations</SelectItem>
+                            <SelectItem value="misc">Miscellaneous Services</SelectItem>
+                            <SelectItem value="admission">Admission Services</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                        <table className="w-full">
-                          <thead className="border-b bg-muted/50 sticky top-0">
-                            <tr>
-                              <th className="text-left p-3 font-medium">S.No</th>
-                              <th className="text-left p-3 font-medium">Date</th>
-                              <th className="text-left p-3 font-medium">Name</th>
-                              <th className="text-left p-3 font-medium">Sex/Age</th>
-                              <th className="text-left p-3 font-medium">Service</th>
-                              <th className="text-right p-3 font-medium">Fees</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredInpatientServices.length === 0 ? (
+                      <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                        <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                          <table className="w-full">
+                            <thead className="border-b bg-muted/50 sticky top-0">
                               <tr>
-                                <td colSpan={6} className="text-center py-4 text-muted-foreground">
-                                  No Inpatient records found for the selected period
-                                </td>
+                                <th className="text-left p-3 font-medium">S.No</th>
+                                <th className="text-left p-3 font-medium">Date</th>
+                                <th className="text-left p-3 font-medium">Name</th>
+                                <th className="text-left p-3 font-medium">Sex/Age</th>
+                                <th className="text-left p-3 font-medium">Service</th>
+                                <th className="text-right p-3 font-medium">Fees</th>
                               </tr>
-                            ) : (
-                              filteredInpatientServices.map((item: any, index: number) => (
-                                <tr key={item.id} className="border-b hover:bg-muted/50" data-testid={`row-inpatient-${index}`}>
-                                  <td className="p-3" data-testid={`text-inpatient-sno-${index}`}>{index + 1}</td>
-                                  <td className="p-3" data-testid={`text-inpatient-date-${index}`}>
-                                    {item.admissionDate ? new Date(item.admissionDate).toLocaleDateString('en-GB') : 
-                                     item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
-                                  </td>
-                                  <td className="p-3" data-testid={`text-inpatient-name-${index}`}>{item.patient?.name || 'N/A'}</td>
-                                  <td className="p-3" data-testid={`text-inpatient-age-${index}`}>{formatGenderAge(item.patient)}</td>
-                                  <td className="p-3" data-testid={`text-inpatient-service-${index}`}>
-                                    {item.serviceName || item.reason || 'Service'}
-                                  </td>
-                                  <td className="p-3 text-right" data-testid={`text-inpatient-fees-${index}`}>
-                                    {formatCurrency(item.price || item.dailyCost || item.totalCost || 0)}
+                            </thead>
+                            <tbody>
+                              {filteredInpatientServices.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                    No Inpatient records found for the selected period
                                   </td>
                                 </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total:</span>
-                          <span data-testid="text-inpatient-total">{formatCurrency(calculateInpatientTotal(filteredInpatientServices))}</span>
+                              ) : (
+                                filteredInpatientServices.map((item: any, index: number) => (
+                                  <tr key={item.id} className="border-b hover:bg-muted/30">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3">
+                                      {item.type === 'admission' ? (item.admissionDate ? new Date(item.admissionDate).toLocaleDateString('en-GB') : 'N/A') :
+                                       (item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A')}
+                                    </td>
+                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">
+                                      {item.type === 'admission' ? 'Room Charges' : (item.serviceName || "N/A")}
+                                    </td>
+                                    <td className="p-3 text-right" data-testid={`inpatient-fee-${index}`}>
+                                      {formatCurrency(item.price || item.totalAmount || 0)}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                          <div className="flex justify-between font-semibold">
+                            <span>Total:</span>
+                            <span data-testid="text-inpatient-total">{formatCurrency(calculateInpatientTotal(filteredInpatientServices))}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
