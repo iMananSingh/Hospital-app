@@ -33,6 +33,12 @@ export default function Billing() {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
 
+  // Search filters
+  const [opdSearchQuery, setOpdSearchQuery] = useState<string>("");
+  const [labSearchQuery, setLabSearchQuery] = useState<string>("");
+  const [diagnosticSearchQuery, setDiagnosticSearchQuery] = useState<string>("");
+  const [inpatientSearchQuery, setInpatientSearchQuery] = useState<string>("");
+
   // OPD specific filters
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
 
@@ -79,15 +85,33 @@ export default function Billing() {
   });
 
   // Filtered Data for display
-  const filteredOpdServices = opdDataApi.filter(item => selectedDoctor === "all" || String(item.doctorId) === selectedDoctor);
+  const filteredOpdServices = opdDataApi.filter(item => {
+    const doctorMatch = selectedDoctor === "all" || String(item.doctorId) === selectedDoctor;
+    const searchMatch = opdSearchQuery === "" || 
+      item.patient?.name?.toLowerCase().includes(opdSearchQuery.toLowerCase()) ||
+      item.doctor?.name?.toLowerCase().includes(opdSearchQuery.toLowerCase());
+    return doctorMatch && searchMatch;
+  });
+
   const filteredLabServices = labDataApi.map((orderData: any) => ({
     id: orderData.order?.id,
     patient: orderData.patient,
     title: orderData.order?.testName || 'Lab Test',
     price: orderData.order?.totalPrice || 0,
     orderedDate: orderData.order?.orderedDate
-  }));
-  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService);
+  })).filter(item => {
+    return labSearchQuery === "" || 
+      item.patient?.name?.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
+      item.title?.toLowerCase().includes(labSearchQuery.toLowerCase());
+  });
+
+  const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => {
+    const serviceMatch = selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService;
+    const searchMatch = diagnosticSearchQuery === "" || 
+      item.patient?.name?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase()) ||
+      item.serviceName?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase());
+    return serviceMatch && searchMatch;
+  });
 
   // Combine inpatient services and admissions
   const combinedInpatientData = [
@@ -110,24 +134,29 @@ export default function Billing() {
 
   // Filter inpatient services based on selected service type
   const filteredInpatientServices = combinedInpatientData.filter((item: any) => {
-    if (selectedService === "all") return true;
-
-    if (item.type === 'admission') {
-      return selectedService === "admission";
+    let serviceMatch = true;
+    if (selectedService !== "all") {
+      if (item.type === 'admission') {
+        serviceMatch = selectedService === "admission";
+      } else {
+        // For patient services, check the service category/type
+        if (item.serviceType === 'procedure' || item.serviceName?.toLowerCase().includes('procedure')) {
+          serviceMatch = selectedService === "procedures";
+        } else if (item.serviceType === 'operation' || item.serviceName?.toLowerCase().includes('operation') || item.serviceName?.toLowerCase().includes('surgery')) {
+          serviceMatch = selectedService === "operations";
+        } else if (item.serviceType === 'misc' || item.category === 'misc' || item.serviceType === 'service') {
+          serviceMatch = selectedService === "misc";
+        } else {
+          serviceMatch = false;
+        }
+      }
     }
 
-    // For patient services, check the service category/type
-    if (item.serviceType === 'procedure' || item.serviceName?.toLowerCase().includes('procedure')) {
-      return selectedService === "procedures";
-    }
-    if (item.serviceType === 'operation' || item.serviceName?.toLowerCase().includes('operation') || item.serviceName?.toLowerCase().includes('surgery')) {
-      return selectedService === "operations";
-    }
-    if (item.serviceType === 'misc' || item.category === 'misc' || item.serviceType === 'service') {
-      return selectedService === "misc";
-    }
+    const searchMatch = inpatientSearchQuery === "" || 
+      item.patient?.name?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
+      item.serviceName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase());
 
-    return false;
+    return serviceMatch && searchMatch;
   });
 
 
@@ -227,8 +256,15 @@ export default function Billing() {
 
                   {leftActiveTab === "opd" && (
                     <div className="flex-1 flex flex-col mt-2">
-                      {/* Doctor Filter */}
+                      {/* Search and Doctor Filter */}
                       <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Input
+                          placeholder="Search patients or doctors..."
+                          value={opdSearchQuery}
+                          onChange={(e) => setOpdSearchQuery(e.target.value)}
+                          className="flex-1"
+                          data-testid="search-opd"
+                        />
                         <Label htmlFor="doctor-filter">Doctor:</Label>
                         <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                           <SelectTrigger className="w-48" data-testid="select-doctor">
@@ -296,6 +332,17 @@ export default function Billing() {
 
                   {leftActiveTab === "lab" && (
                     <div className="flex-1 flex flex-col mt-2">
+                      {/* Search Filter */}
+                      <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Input
+                          placeholder="Search patients or tests..."
+                          value={labSearchQuery}
+                          onChange={(e) => setLabSearchQuery(e.target.value)}
+                          className="w-full"
+                          data-testid="search-lab"
+                        />
+                      </div>
+
                       <div className="border rounded-lg flex-1 flex flex-col min-h-0">
                         <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                           <table className="w-full">
@@ -347,8 +394,15 @@ export default function Billing() {
 
                   {leftActiveTab === "diagnostic" && (
                     <div className="flex-1 flex flex-col mt-2">
-                      {/* Service Filter for Diagnostic */}
+                      {/* Search and Service Filter for Diagnostic */}
                       <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Input
+                          placeholder="Search patients or services..."
+                          value={diagnosticSearchQuery}
+                          onChange={(e) => setDiagnosticSearchQuery(e.target.value)}
+                          className="flex-1"
+                          data-testid="search-diagnostic"
+                        />
                         <Label htmlFor="diagnostic-service-filter">Service:</Label>
                         <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
                           <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
@@ -416,8 +470,15 @@ export default function Billing() {
 
                   {leftActiveTab === "inpatient" && (
                     <div className="flex-1 flex flex-col mt-2">
-                      {/* Service Filter for Inpatient */}
+                      {/* Search and Service Filter for Inpatient */}
                       <div className="flex items-center gap-2 flex-shrink-0 mb-2">
+                        <Input
+                          placeholder="Search patients or services..."
+                          value={inpatientSearchQuery}
+                          onChange={(e) => setInpatientSearchQuery(e.target.value)}
+                          className="flex-1"
+                          data-testid="search-inpatient"
+                        />
                         <Label htmlFor="inpatient-service-filter">Service:</Label>
                         <Select value={selectedService} onValueChange={setSelectedService}>
                           <SelectTrigger className="w-48" data-testid="select-inpatient-service">
