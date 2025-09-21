@@ -214,9 +214,9 @@ export default function Billing() {
       />
 
       <div className="flex-1 p-6 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
           {/* Left Section - Service Revenue (60%) */}
-          <div className="flex flex-col h-full lg:col-span-3"></div>
+          <div className="flex flex-col h-full lg:col-span-3">
             <Card className="flex-1 flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Service Revenue</CardTitle>
@@ -551,7 +551,7 @@ export default function Billing() {
           </div>
 
           {/* Right Section - Payment Transactions (40%) */}
-          <div className="flex flex-col h-full lg:col-span-2"></div>
+          <div className="flex flex-col h-full lg:col-span-2">
             <Card className="flex-1 flex flex-col">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Payment Transactions</CardTitle>
