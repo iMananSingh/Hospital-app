@@ -293,7 +293,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left font-medium bg-background w-10 px-0">S.No</th>
+                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -311,7 +311,7 @@ export default function Billing() {
                               ) : (
                                 filteredOpdServices.map((item: any, index: number) => (
                                   <tr key={item.id} className="border-b hover:bg-muted/30">
-                                    <td className="py-3 px-0">{index + 1}</td>
+                                    <td className="py-3 pl-3 pr-0">{index + 1}</td>
                                     <td className="p-3">
                                       {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                                     </td>
@@ -355,7 +355,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left font-medium bg-background w-10 px-0">S.No</th>
+                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -373,7 +373,7 @@ export default function Billing() {
                               ) : (
                                 filteredLabServices.map((item: any, index: number) => (
                                   <tr key={item.id} className="border-b hover:bg-muted/30">
-                                    <td className="py-3 px-0">{index + 1}</td>
+                                    <td className="py-3 pl-3 pr-0">{index + 1}</td>
                                     <td className="p-3">
                                       {item.orderedDate ? new Date(item.orderedDate).toLocaleDateString('en-GB') : 'N/A'}
                                     </td>
@@ -431,7 +431,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left font-medium bg-background w-10 px-0">S.No</th>
+                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -449,7 +449,7 @@ export default function Billing() {
                               ) : (
                                 filteredDiagnosticServices.map((item: any, index: number) => (
                                   <tr key={item.id} className="border-b hover:bg-muted/30">
-                                    <td className="py-3 px-0">{index + 1}</td>
+                                    <td className="py-3 pl-3 pr-0">{index + 1}</td>
                                     <td className="p-3">
                                       {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                                     </td>
@@ -506,7 +506,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left font-medium bg-background w-10 px-0">S.No</th>
+                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -524,7 +524,7 @@ export default function Billing() {
                               ) : (
                                 filteredInpatientServices.map((item: any, index: number) => (
                                   <tr key={item.id} className="border-b hover:bg-muted/30">
-                                    <td className="py-3 px-0">{index + 1}</td>
+                                    <td className="py-3 pl-3 pr-0">{index + 1}</td>
                                     <td className="p-3">
                                       {item.type === 'admission' ? (item.admissionDate ? new Date(item.admissionDate).toLocaleDateString('en-GB') : 'N/A') :
                                        (item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A')}
@@ -576,7 +576,7 @@ export default function Billing() {
                         <table className="w-full">
                           <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left font-medium bg-background w-10 px-0">S.No</th>
+                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Bill No.</th>
                                 <th className="text-left p-3 font-medium bg-background">Patient</th>
                                 <th className="text-left p-3 font-medium bg-background">Payment Method</th>
@@ -593,7 +593,7 @@ export default function Billing() {
                             ) : (
                               billsDataApi.map((bill: any, index: number) => (
                                 <tr key={bill.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
-                                  <td className="py-3 px-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
+                                  <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
                                   <td className="p-3" data-testid={`text-credit-bill-${index}`}>{bill.billNumber}</td>
                                   <td className="p-3" data-testid={`text-credit-patient-${index}`}>{bill.patient?.name || 'N/A'}</td>
                                   <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{bill.paymentMethod}</td>
