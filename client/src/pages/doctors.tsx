@@ -30,7 +30,7 @@ export default function Doctors() {
   const [doctorToPermanentlyDelete, setDoctorToPermanentlyDelete] = useState<Doctor | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Salary Management States
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [serviceSelections, setServiceSelections] = useState<{
@@ -41,7 +41,7 @@ export default function Doctors() {
       percentage: number;
     }
   }>({});
-  
+
   const { toast } = useToast();
 
   const { data: doctors = [], isLoading } = useQuery({
@@ -51,17 +51,17 @@ export default function Doctors() {
   const { data: deletedDoctors = [], isLoading: isLoadingDeleted } = useQuery({
     queryKey: ["/api/doctors/deleted"],
   });
-  
+
   // Fetch services for salary management
   const { data: services = [] } = useQuery({
     queryKey: ["/api/services"],
   });
-  
+
   // Fetch pathology tests for salary management
   const { data: pathologyData } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
   });
-  
+
   // Fetch doctor salary rates when doctor is selected
   const { data: doctorRates = [], refetch: refetchDoctorRates } = useQuery({
     queryKey: ["/api/doctors", selectedDoctorId, "salary-rates"],
@@ -100,7 +100,7 @@ export default function Doctors() {
     },
     enabled: filteredDoctors.length > 0,
   });
-  
+
   // Save doctor salary rates mutation
   const saveDoctorRatesMutation = useMutation({
     mutationFn: async (rates: any[]) => {
@@ -112,11 +112,11 @@ export default function Doctors() {
         },
         body: JSON.stringify({ rates }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to save doctor salary rates");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -436,7 +436,7 @@ export default function Doctors() {
         service.name?.toLowerCase().includes('opd') || 
         service.name?.toLowerCase().includes('consultation')
       );
-      
+
       if (opdServices.length > 0) {
         categories.opd.push(...opdServices.map(service => ({
           id: service.id,
@@ -544,12 +544,12 @@ export default function Doctors() {
   };
 
   const categorizedServices = categorizeServices();
-  
+
   // Effect to populate service selections from existing doctor rates only when doctor changes
   useEffect(() => {
     if (selectedDoctorId && doctorRates.length > 0) {
       const newSelections: typeof serviceSelections = {};
-      
+
       doctorRates.forEach((rate: any) => {
         const serviceId = rate.serviceId;
         newSelections[serviceId] = {
@@ -559,18 +559,18 @@ export default function Doctors() {
           percentage: rate.rateType === 'percentage' ? rate.rateAmount : 0,
         };
       });
-      
+
       setServiceSelections(newSelections);
     } else if (selectedDoctorId) {
       // Clear selections when doctor is selected but has no existing rates
       setServiceSelections({});
     }
   }, [selectedDoctorId]); // Remove doctorRates from dependency array
-  
+
   // Function to convert service selections to API format
   const convertSelectionsToRates = () => {
     const rates: any[] = [];
-    
+
     // Helper function to add service to rates
     const addServiceToRates = (services: any[], category: string) => {
       services.forEach((service: any) => {
@@ -578,7 +578,7 @@ export default function Doctors() {
         if (selection?.isSelected && selection.salaryBasis && (selection.amount > 0 || selection.percentage > 0)) {
           let actualServiceId = service.id;
           let actualServiceName = service.name;
-          
+
           // Handle OPD placeholder - find actual OPD service
           if (service.id === 'opd_placeholder') {
             const opdService = services.find(s => 
@@ -594,7 +594,7 @@ export default function Doctors() {
               return;
             }
           }
-          
+
           rates.push({
             serviceId: actualServiceId,
             serviceName: actualServiceName,
@@ -607,7 +607,7 @@ export default function Doctors() {
         }
       });
     };
-    
+
     // Add rates from all categories
     addServiceToRates(categorizedServices.opd, 'opd');
     addServiceToRates(categorizedServices.labTests, 'lab_tests');
@@ -615,10 +615,10 @@ export default function Doctors() {
     addServiceToRates(categorizedServices.operations, 'operations');
     addServiceToRates(categorizedServices.admissions, 'admissions');
     addServiceToRates(categorizedServices.services, 'services');
-    
+
     return rates;
   };
-  
+
   // Handle save rates
   const handleSaveRates = () => {
     if (!selectedDoctorId) {
@@ -629,7 +629,7 @@ export default function Doctors() {
       });
       return;
     }
-    
+
     const rates = convertSelectionsToRates();
     saveDoctorRatesMutation.mutate(rates);
   };
@@ -712,7 +712,7 @@ export default function Doctors() {
                               </div>
                             </div>
                             <Badge 
-                              variant={doctor.isActive ? "default" : "secondary"}
+                              variant={doctor.isActive ? "default" : "secondary"} 
                               data-testid={`doctor-status-${doctor.id}`}
                             >
                               {doctor.isActive ? "Active" : "Inactive"}
@@ -875,7 +875,7 @@ export default function Doctors() {
             </Card>
           </TabsContent>
 
-          
+
 
           <TabsContent value="manage-salary">
             <Card>
@@ -926,8 +926,8 @@ export default function Doctors() {
                             {categorizedServices.opd.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -947,7 +947,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -966,7 +966,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1000,8 +1000,8 @@ export default function Doctors() {
                             {categorizedServices.labTests.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1021,7 +1021,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -1040,7 +1040,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1074,8 +1074,8 @@ export default function Doctors() {
                             {categorizedServices.diagnostic.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1095,7 +1095,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -1114,7 +1114,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1148,8 +1148,8 @@ export default function Doctors() {
                             {categorizedServices.operations.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1169,7 +1169,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -1188,7 +1188,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1222,8 +1222,8 @@ export default function Doctors() {
                             {categorizedServices.admissions.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1243,7 +1243,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -1262,7 +1262,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1296,8 +1296,8 @@ export default function Doctors() {
                             {categorizedServices.services.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
                                 <Checkbox
-                                  checked={serviceSelections[service.id]?.isSelected || false}
-                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
+                                  checked={serviceSelections[service.id]?.isSelected === true}
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, checked === true)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1317,7 +1317,7 @@ export default function Doctors() {
                                       <SelectItem value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                   </Select>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
                                     <Input
@@ -1336,7 +1336,7 @@ export default function Doctors() {
                                       data-testid={`input-amount-${service.id}`}
                                     />
                                   </div>
-                                  
+
                                   <div className="flex items-center gap-2">
                                     <Input
                                       type="number"
@@ -1430,7 +1430,7 @@ export default function Doctors() {
                         Process Payments
                       </Button>
                     </div>
-                    
+
                     <div className="border rounded-lg">
                       <Table>
                         <TableHeader>
@@ -1811,7 +1811,7 @@ export default function Doctors() {
           <DialogHeader>
             <DialogTitle className="text-red-600">Permanently Delete Doctor</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm text-red-800 font-medium mb-2">⚠️ Warning: This action is irreversible</p>
@@ -1820,7 +1820,7 @@ export default function Doctors() {
                 This will completely remove all doctor data and cannot be undone.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="delete-confirmation" className="text-sm font-medium">
                 Type "delete" to confirm permanent deletion:

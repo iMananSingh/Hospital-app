@@ -454,17 +454,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdRates = [];
       for (const rate of rates) {
         if (rate.isSelected && (rate.amount > 0 || rate.percentage > 0)) {
-          // Verify the service exists
-          const service = await storage.getServiceById(rate.serviceId);
-          if (!service) {
-            console.warn(`Service not found: ${rate.serviceId}, skipping rate creation`);
-            continue;
+          // For OPD placeholder, find actual OPD service
+          let actualServiceId = rate.serviceId;
+          let actualServiceName = rate.serviceName;
+          
+          if (rate.serviceId === 'opd_placeholder') {
+            const opdServices = await storage.getServices();
+            const opdService = opdServices.find(s => 
+              s.category?.toLowerCase() === 'consultation' || 
+              s.name?.toLowerCase().includes('opd') || 
+              s.name?.toLowerCase().includes('consultation')
+            );
+            
+            if (opdService) {
+              actualServiceId = opdService.id;
+              actualServiceName = opdService.name;
+            } else {
+              console.warn('No OPD consultation service found in database, skipping');
+              continue;
+            }
+          } else {
+            // For regular services, verify they exist
+            const service = await storage.getServiceById(rate.serviceId);
+            if (!service) {
+              console.warn(`Service not found: ${rate.serviceId}, skipping rate creation`);
+              continue;
+            }
           }
 
           const rateData = {
             doctorId,
-            serviceId: rate.serviceId,
-            serviceName: rate.serviceName,
+            serviceId: actualServiceId,
+            serviceName: actualServiceName,
             serviceCategory: rate.serviceCategory,
             rateType: rate.salaryBasis === 'percentage' ? 'percentage' : 'per_instance',
             rateAmount: rate.salaryBasis === 'percentage' ? rate.percentage : rate.amount,
