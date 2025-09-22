@@ -450,19 +450,13 @@ export default function Doctors() {
       }
     }
 
-    // Add lab tests from pathology data
-    if (pathologyData?.categories) {
-      pathologyData.categories.forEach((category: any) => {
-        if (category.tests && category.tests.length > 0) {
-          category.tests.forEach((test: any) => {
-            categories.labTests.push({
-              id: `lab_${test.id || test.test_name?.replace(/\s+/g, '_').toLowerCase()}`,
-              name: test.test_name || test.testName || test.name,
-              category: 'lab_tests',
-              price: test.price || 0
-            });
-          });
-        }
+    // Add a single "Lab Tests" entry to represent all pathology tests
+    if (pathologyData?.categories && pathologyData.categories.length > 0) {
+      categories.labTests.push({
+        id: 'lab_tests_all',
+        name: 'Lab Tests',
+        category: 'lab_tests',
+        price: 0 // Price will be set based on individual test selection
       });
     }
 
