@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -851,11 +852,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.opd.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -927,11 +926,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.labTests.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1003,11 +1000,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.diagnostic.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1079,11 +1074,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.operations.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1155,11 +1148,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.admissions.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
@@ -1231,11 +1222,9 @@ export default function Doctors() {
                           <div className="space-y-3">
                             {categorizedServices.services.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
-                                <input
-                                  type="checkbox"
+                                <Checkbox
                                   checked={serviceSelections[service.id]?.isSelected || false}
-                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  onCheckedChange={(checked) => handleServiceSelection(service.id, !!checked)}
                                   data-testid={`checkbox-${service.id}`}
                                 />
                                 <div className="flex-1">
