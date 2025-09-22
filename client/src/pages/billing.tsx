@@ -88,7 +88,7 @@ export default function Billing() {
   // Filtered Data for display
   const filteredOpdServices = opdDataApi.filter(item => {
     const doctorMatch = selectedDoctor === "all" || String(item.doctorId) === selectedDoctor;
-    const searchMatch = opdSearchQuery === "" || 
+    const searchMatch = opdSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(opdSearchQuery.toLowerCase()) ||
       item.doctor?.name?.toLowerCase().includes(opdSearchQuery.toLowerCase());
     return doctorMatch && searchMatch;
@@ -101,14 +101,14 @@ export default function Billing() {
     price: orderData.order?.totalPrice || 0,
     orderedDate: orderData.order?.orderedDate
   })).filter(item => {
-    return labSearchQuery === "" || 
+    return labSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
       item.orderId?.toLowerCase().includes(labSearchQuery.toLowerCase());
   });
 
   const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => {
     const serviceMatch = selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService;
-    const searchMatch = diagnosticSearchQuery === "" || 
+    const searchMatch = diagnosticSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase()) ||
       item.serviceName?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase());
     return serviceMatch && searchMatch;
@@ -153,7 +153,7 @@ export default function Billing() {
       }
     }
 
-    const searchMatch = inpatientSearchQuery === "" || 
+    const searchMatch = inpatientSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
       item.serviceName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase());
 
