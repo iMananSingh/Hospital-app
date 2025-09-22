@@ -539,7 +539,7 @@ export default function Doctors() {
 
   const categorizedServices = categorizeServices();
 
-  // Effect to populate service selections from existing doctor rates only when doctor changes
+  // Effect to populate service selections from existing doctor rates
   useEffect(() => {
     if (selectedDoctorId && doctorRates.length > 0) {
       const newSelections: typeof serviceSelections = {};
@@ -555,11 +555,11 @@ export default function Doctors() {
       });
 
       setServiceSelections(newSelections);
-    } else if (selectedDoctorId) {
+    } else if (selectedDoctorId && doctorRates.length === 0) {
       // Clear selections when doctor is selected but has no existing rates
       setServiceSelections({});
     }
-  }, [selectedDoctorId]); // Remove doctorRates from dependency array
+  }, [selectedDoctorId, doctorRates]); // Include doctorRates in dependency array
 
   // Function to convert service selections to API format
   const convertSelectionsToRates = () => {
