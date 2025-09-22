@@ -97,13 +97,13 @@ export default function Billing() {
   const filteredLabServices = labDataApi.map((orderData: any) => ({
     id: orderData.order?.id,
     patient: orderData.patient,
-    title: orderData.order?.testName || 'Lab Test',
+    orderId: orderData.order?.orderId || 'N/A',
     price: orderData.order?.totalPrice || 0,
     orderedDate: orderData.order?.orderedDate
   })).filter(item => {
     return labSearchQuery === "" || 
       item.patient?.name?.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
-      item.title?.toLowerCase().includes(labSearchQuery.toLowerCase());
+      item.orderId?.toLowerCase().includes(labSearchQuery.toLowerCase());
   });
 
   const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => {
@@ -359,7 +359,7 @@ export default function Billing() {
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
-                                <th className="text-left p-3 font-medium bg-background">Test</th>
+                                <th className="text-left p-3 font-medium bg-background">Order ID</th>
                                 <th className="text-right p-3 font-medium bg-background">Fees</th>
                               </tr>
                             </thead>
@@ -379,7 +379,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patient?.name || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge(item.patient)}</td>
-                                    <td className="p-3">{item.title || "N/A"}</td>
+                                    <td className="p-3">{item.orderId || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`lab-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
                                     </td>
