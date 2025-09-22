@@ -67,6 +67,39 @@ export default function Doctors() {
     queryKey: ["/api/doctors", selectedDoctorId, "salary-rates"],
     enabled: !!selectedDoctorId,
   });
+
+  // Fetch doctor earnings for all doctors
+  const { data: allDoctorEarnings = [] } = useQuery({
+    queryKey: ["/api/doctors/all-earnings"],
+    queryFn: async () => {
+      const promises = filteredDoctors.map(async (doctor: Doctor) => {
+        const response = await fetch(`/api/doctors/${doctor.id}/earnings?status=pending`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        });
+        if (response.ok) {
+          const earnings = await response.json();
+          return {
+            doctorId: doctor.id,
+            doctorName: doctor.name,
+            earnings: earnings,
+            totalPending: earnings.reduce((sum: number, earning: any) => sum + earning.earnedAmount, 0),
+            servicesCount: earnings.length,
+          };
+        }
+        return {
+          doctorId: doctor.id,
+          doctorName: doctor.name,
+          earnings: [],
+          totalPending: 0,
+          servicesCount: 0,
+        };
+      });
+      return Promise.all(promises);
+    },
+    enabled: filteredDoctors.length > 0,
+  });
   
   // Save doctor salary rates mutation
   const saveDoctorRatesMutation = useMutation({
@@ -388,13 +421,34 @@ export default function Doctors() {
   // Utility function to categorize services
   const categorizeServices = () => {
     const categories = {
-      opd: [{ id: 'opd', name: 'OPD', category: 'opd', price: 0 }],
+      opd: [],
       labTests: [],
       diagnostic: [],
       operations: [],
       admissions: [],
       services: []
     };
+
+    // Add OPD consultation services from actual services
+    if (services && services.length > 0) {
+      const opdServices = services.filter(service => 
+        service.category?.toLowerCase() === 'consultation' || 
+        service.name?.toLowerCase().includes('opd') || 
+        service.name?.toLowerCase().includes('consultation')
+      );
+      
+      if (opdServices.length > 0) {
+        categories.opd.push(...opdServices.map(service => ({
+          id: service.id,
+          name: service.name,
+          category: 'opd',
+          price: service.price || 0
+        })));
+      } else {
+        // If no OPD services found, create a placeholder that will be handled properly
+        categories.opd.push({ id: 'opd_placeholder', name: 'OPD Consultation', category: 'opd', price: 0 });
+      }
+    }
 
     // Add lab tests from pathology data
     if (pathologyData?.categories) {
@@ -522,9 +576,28 @@ export default function Doctors() {
       services.forEach((service: any) => {
         const selection = serviceSelections[service.id];
         if (selection?.isSelected && selection.salaryBasis && (selection.amount > 0 || selection.percentage > 0)) {
+          let actualServiceId = service.id;
+          let actualServiceName = service.name;
+          
+          // Handle OPD placeholder - find actual OPD service
+          if (service.id === 'opd_placeholder') {
+            const opdService = services.find(s => 
+              s.category?.toLowerCase() === 'consultation' || 
+              s.name?.toLowerCase().includes('opd') || 
+              s.name?.toLowerCase().includes('consultation')
+            );
+            if (opdService) {
+              actualServiceId = opdService.id;
+              actualServiceName = opdService.name;
+            } else {
+              console.warn('No OPD service found in database, skipping');
+              return;
+            }
+          }
+          
           rates.push({
-            serviceId: service.id,
-            serviceName: service.name,
+            serviceId: actualServiceId,
+            serviceName: actualServiceName,
             serviceCategory: category,
             isSelected: true,
             salaryBasis: selection.salaryBasis,
@@ -1318,7 +1391,9 @@ export default function Doctors() {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Total Pending</p>
-                          <p className="text-xl font-semibold text-green-600">₹0</p>
+                          <p className="text-xl font-semibold text-green-600">
+                            ₹{allDoctorEarnings.reduce((sum: number, doctor: any) => sum + doctor.totalPending, 0).toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     </Card>
@@ -1369,37 +1444,44 @@ export default function Doctors() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredDoctors.length > 0 ? filteredDoctors.map((doctor: Doctor) => (
-                            <TableRow key={doctor.id}>
+                          {allDoctorEarnings.length > 0 ? allDoctorEarnings.map((doctorData: any) => (
+                            <TableRow key={doctorData.doctorId}>
                               <TableCell>
                                 <div className="flex items-center space-x-3">
                                   <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center">
                                     <span className="text-white text-xs font-medium">
-                                      {doctor.name.split(' ').map(n => n[0]).join('')}
+                                      {doctorData.doctorName.split(' ').map((n: string) => n[0]).join('')}
                                     </span>
                                   </div>
                                   <div>
-                                    <p className="font-medium" data-testid={`salary-doctor-name-${doctor.id}`}>{doctor.name}</p>
-                                    <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                                    <p className="font-medium" data-testid={`salary-doctor-name-${doctorData.doctorId}`}>{doctorData.doctorName}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {filteredDoctors.find((d: Doctor) => d.id === doctorData.doctorId)?.specialization}
+                                    </p>
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell data-testid={`salary-services-${doctor.id}`}>0</TableCell>
-                              <TableCell data-testid={`salary-pending-${doctor.id}`}>
-                                <span className="font-medium text-green-600">₹0</span>
+                              <TableCell data-testid={`salary-services-${doctorData.doctorId}`}>{doctorData.servicesCount}</TableCell>
+                              <TableCell data-testid={`salary-pending-${doctorData.doctorId}`}>
+                                <span className="font-medium text-green-600">₹{doctorData.totalPending.toFixed(2)}</span>
                               </TableCell>
-                              <TableCell data-testid={`salary-last-payment-${doctor.id}`}>
+                              <TableCell data-testid={`salary-last-payment-${doctorData.doctorId}`}>
                                 <span className="text-sm text-muted-foreground">No payments yet</span>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="secondary" data-testid={`salary-status-${doctor.id}`}>No Activity</Badge>
+                                <Badge 
+                                  variant={doctorData.totalPending > 0 ? "default" : "secondary"} 
+                                  data-testid={`salary-status-${doctorData.doctorId}`}
+                                >
+                                  {doctorData.totalPending > 0 ? "Pending Payment" : "No Activity"}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex space-x-1">
-                                  <Button variant="ghost" size="sm" data-testid={`button-view-earnings-${doctor.id}`}>
+                                  <Button variant="ghost" size="sm" data-testid={`button-view-earnings-${doctorData.doctorId}`}>
                                     <Eye className="w-4 h-4" />
                                   </Button>
-                                  <Button variant="ghost" size="sm" data-testid={`button-pay-doctor-${doctor.id}`}>
+                                  <Button variant="ghost" size="sm" data-testid={`button-pay-doctor-${doctorData.doctorId}`}>
                                     <Wallet className="w-4 h-4" />
                                   </Button>
                                 </div>

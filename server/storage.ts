@@ -1205,6 +1205,67 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  // Calculate and create doctor earning record for a patient service
+  private calculateDoctorEarning(patientService: PatientService, service: Service): void {
+    try {
+      // Find doctor service rate for this doctor and service
+      const doctorRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+            eq(schema.doctorServiceRates.serviceId, service.id),
+            eq(schema.doctorServiceRates.isActive, true)
+          )
+        )
+        .get();
+
+      if (!doctorRate) {
+        console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
+        return;
+      }
+
+      // Calculate earning amount based on rate type
+      let earnedAmount = 0;
+      const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+
+      if (doctorRate.rateType === 'percentage') {
+        earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
+      } else if (doctorRate.rateType === 'per_instance') {
+        earnedAmount = doctorRate.rateAmount;
+      } else if (doctorRate.rateType === 'fixed_daily') {
+        earnedAmount = doctorRate.rateAmount;
+      }
+
+      // Create doctor earning record
+      const earningId = this.generateEarningId();
+      
+      db.insert(schema.doctorEarnings)
+        .values({
+          earningId,
+          doctorId: patientService.doctorId!,
+          patientId: patientService.patientId,
+          serviceId: service.id,
+          patientServiceId: patientService.id,
+          serviceName: service.name,
+          serviceCategory: doctorRate.serviceCategory,
+          serviceDate: patientService.scheduledDate,
+          rateType: doctorRate.rateType,
+          rateAmount: doctorRate.rateAmount,
+          servicePrice,
+          earnedAmount,
+          status: 'pending',
+          notes: `Automatic calculation for ${service.name}`,
+        })
+        .run();
+
+      console.log(`Created doctor earning: ${earningId} for amount ${earnedAmount}`);
+    } catch (error) {
+      console.error('Error calculating doctor earning:', error);
+    }
+  }
+
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
   }
@@ -2218,6 +2279,14 @@ export class SqliteStorage implements IStorage {
               },
             );
           }
+
+          // Calculate doctor earnings if doctor is assigned and service exists
+          if (serviceData.doctorId && service) {
+            // We need to calculate this outside the transaction to avoid issues
+            setImmediate(() => {
+              this.calculateDoctorEarning(created, service);
+            });
+          }
         }
 
         return createdServices;
@@ -2310,6 +2379,11 @@ export class SqliteStorage implements IStorage {
             scheduledDate: serviceData.scheduledDate,
           },
         );
+      }
+
+      // Calculate doctor earnings if doctor is assigned and service has rates
+      if (serviceData.doctorId && service) {
+        this.calculateDoctorEarning(created, service);
       }
 
       return created;

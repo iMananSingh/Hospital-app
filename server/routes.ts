@@ -472,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             notes: null,
             createdBy: req.user.id,
           };
-          
+
           try {
             const validatedData = insertDoctorServiceRateSchema.parse(rateData);
             const created = await storage.createDoctorServiceRate(validatedData);
