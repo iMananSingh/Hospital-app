@@ -293,7 +293,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background w-16">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -355,7 +355,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background w-16">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -431,7 +431,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background w-16">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -506,7 +506,7 @@ export default function Billing() {
                           <table className="w-full">
                             <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background w-16">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
@@ -576,7 +576,7 @@ export default function Billing() {
                         <table className="w-full">
                           <thead className="border-b bg-background sticky top-0 z-10">
                               <tr>
-                                <th className="text-left p-3 font-medium bg-background">S.No</th>
+                                <th className="text-left p-3 font-medium bg-background w-16">S.No</th>
                                 <th className="text-left p-3 font-medium bg-background">Bill No.</th>
                                 <th className="text-left p-3 font-medium bg-background">Patient</th>
                                 <th className="text-left p-3 font-medium bg-background">Payment Method</th>
