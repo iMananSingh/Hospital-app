@@ -491,7 +491,7 @@ export default function Doctors() {
 
   const categorizedServices = categorizeServices();
   
-  // Effect to populate service selections from existing doctor rates
+  // Effect to populate service selections from existing doctor rates only when doctor changes
   useEffect(() => {
     if (selectedDoctorId && doctorRates.length > 0) {
       const newSelections: typeof serviceSelections = {};
@@ -511,7 +511,7 @@ export default function Doctors() {
       // Clear selections when doctor is selected but has no existing rates
       setServiceSelections({});
     }
-  }, [selectedDoctorId, doctorRates]);
+  }, [selectedDoctorId]); // Remove doctorRates from dependency array
   
   // Function to convert service selections to API format
   const convertSelectionsToRates = () => {
