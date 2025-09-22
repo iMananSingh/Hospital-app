@@ -19,11 +19,18 @@ interface Service {
   billingParameters?: string;
 }
 
+interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+}
+
 interface SmartBillingDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: any) => void;
   services: Service[];
+  doctors: Doctor[];
   isPending?: boolean;
   patientId: string;
   currentDate: string;
@@ -35,6 +42,7 @@ export default function SmartBillingDialog({
   onClose,
   onSubmit,
   services,
+  doctors,
   isPending = false,
   patientId,
   currentDate,
@@ -46,6 +54,7 @@ export default function SmartBillingDialog({
   const form = useForm({
     defaultValues: {
       serviceId: "",
+      doctorId: "",
       quantity: 1,
       hours: 1,
       distance: 0,
@@ -160,6 +169,7 @@ export default function SmartBillingDialog({
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
+      doctorId: data.doctorId !== "none" ? data.doctorId : null,
       notes: data.notes,
       status: "scheduled",
     };
@@ -216,6 +226,27 @@ export default function SmartBillingDialog({
                         </Badge>
                         <span className="text-sm">₹{service.price}</span>
                       </div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Doctor Selection Field */}
+          <div className="space-y-2">
+            <Label>Assign Doctor</Label>
+            <Select onValueChange={(value) => form.setValue("doctorId", value)} data-testid="select-doctor">
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a doctor (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Doctor Assigned</SelectItem>
+                {doctors.map((doctor) => (
+                  <SelectItem key={doctor.id} value={doctor.id}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{doctor.name}</span>
+                      <span className="text-sm text-muted-foreground ml-2">{doctor.specialization}</span>
                     </div>
                   </SelectItem>
                 ))}

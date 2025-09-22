@@ -524,10 +524,16 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
+    resolver: zodResolver(
+      insertPatientServiceSchema.extend({
+        doctorId: z.string().min(1, "Doctor selection is required"),
+      })
+    ),
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
       serviceName: "",
+      doctorId: "",
       price: 0,
       quantity: 1,
       hours: 1,
