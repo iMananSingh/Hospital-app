@@ -433,6 +433,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Rates must be an array" });
       }
 
+      // Verify the authenticated user exists
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Verify the doctor exists
+      const doctor = await storage.getDoctorById(doctorId);
+      if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+
       // First, delete existing rates for this doctor
       const existingRates = await storage.getDoctorServiceRates(doctorId);
       for (const existingRate of existingRates) {
@@ -443,6 +454,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdRates = [];
       for (const rate of rates) {
         if (rate.isSelected && (rate.amount > 0 || rate.percentage > 0)) {
+          // Verify the service exists
+          const service = await storage.getServiceById(rate.serviceId);
+          if (!service) {
+            console.warn(`Service not found: ${rate.serviceId}, skipping rate creation`);
+            continue;
+          }
+
           const rateData = {
             doctorId,
             serviceId: rate.serviceId,
@@ -452,12 +470,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rateAmount: rate.salaryBasis === 'percentage' ? rate.percentage : rate.amount,
             isActive: true,
             notes: null,
-            createdBy: req.user?.id,
+            createdBy: req.user.id,
           };
           
-          const validatedData = insertDoctorServiceRateSchema.parse(rateData);
-          const created = await storage.createDoctorServiceRate(validatedData);
-          createdRates.push(created);
+          try {
+            const validatedData = insertDoctorServiceRateSchema.parse(rateData);
+            const created = await storage.createDoctorServiceRate(validatedData);
+            createdRates.push(created);
+          } catch (createError) {
+            console.error(`Failed to create rate for service ${rate.serviceId}:`, createError);
+            // Continue with other rates instead of failing completely
+          }
         }
       }
 
