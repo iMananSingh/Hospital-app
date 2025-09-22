@@ -68,6 +68,12 @@ export default function Doctors() {
     enabled: !!selectedDoctorId,
   });
 
+  const filteredDoctors = doctors?.filter((doctor: Doctor) =>
+    doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doctor.qualification.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
   // Fetch doctor earnings for all doctors
   const { data: allDoctorEarnings = [] } = useQuery({
     queryKey: ["/api/doctors/all-earnings"],
@@ -376,12 +382,6 @@ export default function Doctors() {
       setDeleteConfirmationText("");
     }
   };
-
-  const filteredDoctors = doctors?.filter((doctor: Doctor) =>
-    doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doctor.qualification.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
