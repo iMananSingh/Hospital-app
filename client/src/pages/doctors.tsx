@@ -575,17 +575,29 @@ export default function Doctors() {
 
           // Handle OPD placeholder - find actual OPD service
           if (service.id === 'opd_placeholder') {
-            const opdService = services.find(s => 
-              s.category?.toLowerCase() === 'consultation' || 
-              s.name?.toLowerCase().includes('opd') || 
-              s.name?.toLowerCase().includes('consultation')
+            // First try to find by category
+            let opdService = services?.find(s => 
+              s.category?.toLowerCase() === 'consultation'
             );
+            
+            // If not found by category, try by name patterns
+            if (!opdService) {
+              opdService = services?.find(s => 
+                s.name?.toLowerCase().includes('opd') || 
+                s.name?.toLowerCase().includes('consultation') ||
+                s.name?.toLowerCase().includes('visit')
+              );
+            }
+            
+            // If still not found, create a generic service entry
             if (opdService) {
               actualServiceId = opdService.id;
               actualServiceName = opdService.name;
             } else {
-              console.warn('No OPD service found in database, skipping');
-              return;
+              console.warn('No OPD service found in database, using placeholder');
+              // Use a consistent placeholder ID that we can handle on the backend
+              actualServiceId = 'opd_consultation_placeholder';
+              actualServiceName = 'OPD Consultation';
             }
           }
 

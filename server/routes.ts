@@ -453,25 +453,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Then create new rates
       const createdRates = [];
       for (const rate of rates) {
-        if (rate.isSelected && (rate.amount > 0 || rate.percentage > 0)) {
-          // For OPD placeholder, find actual OPD service
+        if (rate.isSelected && rate.salaryBasis && (rate.amount > 0 || rate.percentage > 0)) {
           let actualServiceId = rate.serviceId;
           let actualServiceName = rate.serviceName;
-          
-          if (rate.serviceId === 'opd_placeholder') {
-            const opdServices = await storage.getServices();
-            const opdService = opdServices.find(s => 
-              s.category?.toLowerCase() === 'consultation' || 
-              s.name?.toLowerCase().includes('opd') || 
-              s.name?.toLowerCase().includes('consultation')
+
+          // Handle special service IDs that might need mapping
+          if (rate.serviceId === 'opd_placeholder' || rate.serviceId === 'opd_consultation_placeholder') {
+            // Try to find an actual OPD/consultation service
+            const services = await storage.getServices();
+            let opdService = services.find(s => 
+              s.category?.toLowerCase() === 'consultation'
             );
-            
+
+            if (!opdService) {
+              opdService = services.find(s => 
+                s.name?.toLowerCase().includes('opd') || 
+                s.name?.toLowerCase().includes('consultation') ||
+                s.name?.toLowerCase().includes('visit')
+              );
+            }
+
             if (opdService) {
               actualServiceId = opdService.id;
               actualServiceName = opdService.name;
             } else {
-              console.warn('No OPD consultation service found in database, skipping');
-              continue;
+              // Create a generic OPD service record if none exists
+              try {
+                const newOpdService = await storage.createService({
+                  name: 'OPD Consultation',
+                  category: 'consultation',
+                  price: 500, // Default consultation fee
+                  description: 'General OPD consultation service',
+                  isActive: true,
+                  createdBy: req.user.id
+                });
+                actualServiceId = newOpdService.id;
+                actualServiceName = newOpdService.name;
+              } catch (serviceCreationError) {
+                console.error('Failed to create OPD service:', serviceCreationError);
+                continue; // Skip this rate if service creation fails
+              }
             }
           } else {
             // For regular services, verify they exist
