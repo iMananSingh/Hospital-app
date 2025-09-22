@@ -413,6 +413,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Doctor Service Rate routes
+  app.get("/api/doctors/:doctorId/salary-rates", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const rates = await storage.getDoctorServiceRates(doctorId);
+      res.json(rates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get doctor service rates" });
+    }
+  });
+
+  app.put("/api/doctors/:doctorId/salary-rates", authenticateToken, async (req: any, res) => {
+    try {
+      const { doctorId } = req.params;
+      const { rates } = req.body;
+
+      if (!Array.isArray(rates)) {
+        return res.status(400).json({ message: "Rates must be an array" });
+      }
+
+      // First, delete existing rates for this doctor
+      const existingRates = await storage.getDoctorServiceRates(doctorId);
+      for (const existingRate of existingRates) {
+        await storage.deleteDoctorServiceRate(existingRate.id);
+      }
+
+      // Then create new rates
+      const createdRates = [];
+      for (const rate of rates) {
+        if (rate.isSelected && (rate.amount > 0 || rate.percentage > 0)) {
+          const rateData = {
+            doctorId,
+            serviceId: rate.serviceId,
+            serviceName: rate.serviceName,
+            serviceCategory: rate.serviceCategory,
+            rateType: rate.salaryBasis === 'percentage' ? 'percentage' : 'per_instance',
+            rateAmount: rate.salaryBasis === 'percentage' ? rate.percentage : rate.amount,
+            isActive: true,
+            notes: null,
+            createdBy: req.user?.id,
+          };
+          
+          const validatedData = insertDoctorServiceRateSchema.parse(rateData);
+          const created = await storage.createDoctorServiceRate(validatedData);
+          createdRates.push(created);
+        }
+      }
+
+      res.json({ message: "Doctor service rates updated successfully", rates: createdRates });
+    } catch (error) {
+      console.error("Update doctor service rates error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to update doctor service rates" });
+    }
+  });
+
   // Service routes
   app.get("/api/services", authenticateToken, async (req, res) => {
     try {

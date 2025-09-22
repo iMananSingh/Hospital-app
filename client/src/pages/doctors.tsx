@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet } from "lucide-react";
+import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet, Settings } from "lucide-react";
 import { insertDoctorSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,18 @@ export default function Doctors() {
   const [doctorToPermanentlyDelete, setDoctorToPermanentlyDelete] = useState<Doctor | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Salary Management States
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
+  const [serviceSelections, setServiceSelections] = useState<{
+    [key: string]: {
+      isSelected: boolean;
+      salaryBasis: 'amount' | 'percentage' | '';
+      amount: number;
+      percentage: number;
+    }
+  }>({});
+  
   const { toast } = useToast();
 
   const { data: doctors = [], isLoading } = useQuery({
@@ -37,6 +49,56 @@ export default function Doctors() {
 
   const { data: deletedDoctors = [], isLoading: isLoadingDeleted } = useQuery({
     queryKey: ["/api/doctors/deleted"],
+  });
+  
+  // Fetch services for salary management
+  const { data: services = [] } = useQuery({
+    queryKey: ["/api/services"],
+  });
+  
+  // Fetch pathology tests for salary management
+  const { data: pathologyData } = useQuery({
+    queryKey: ["/api/pathology-tests/combined"],
+  });
+  
+  // Fetch doctor salary rates when doctor is selected
+  const { data: doctorRates = [], refetch: refetchDoctorRates } = useQuery({
+    queryKey: ["/api/doctors", selectedDoctorId, "salary-rates"],
+    enabled: !!selectedDoctorId,
+  });
+  
+  // Save doctor salary rates mutation
+  const saveDoctorRatesMutation = useMutation({
+    mutationFn: async (rates: any[]) => {
+      const response = await fetch(`/api/doctors/${selectedDoctorId}/salary-rates`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ rates }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to save doctor salary rates");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Doctor salary rates saved successfully",
+      });
+      refetchDoctorRates();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save doctor salary rates",
+        variant: "destructive",
+      });
+    },
   });
 
   const createDoctorMutation = useMutation({
@@ -322,6 +384,182 @@ export default function Doctors() {
     "Ophthalmology"
   ];
 
+  // Utility function to categorize services
+  const categorizeServices = () => {
+    const categories = {
+      opd: [{ id: 'opd', name: 'OPD', category: 'opd', price: 0 }],
+      labTests: [],
+      diagnostic: [],
+      operations: [],
+      admissions: [],
+      services: []
+    };
+
+    // Add lab tests from pathology data
+    if (pathologyData?.categories) {
+      pathologyData.categories.forEach((category: any) => {
+        if (category.tests && category.tests.length > 0) {
+          category.tests.forEach((test: any) => {
+            categories.labTests.push({
+              id: `lab_${test.id || test.test_name?.replace(/\s+/g, '_').toLowerCase()}`,
+              name: test.test_name || test.testName || test.name,
+              category: 'lab_tests',
+              price: test.price || 0
+            });
+          });
+        }
+      });
+    }
+
+    // Categorize services based on their category field
+    if (services && services.length > 0) {
+      services.forEach((service: any) => {
+        const serviceItem = {
+          id: service.id,
+          name: service.name,
+          category: service.category,
+          price: service.price || 0
+        };
+
+        switch (service.category?.toLowerCase()) {
+          case 'diagnostic':
+          case 'diagnostics':
+          case 'radiology':
+            categories.diagnostic.push(serviceItem);
+            break;
+          case 'operation':
+          case 'operations':
+          case 'surgery':
+          case 'surgical':
+            categories.operations.push(serviceItem);
+            break;
+          case 'admission':
+          case 'admissions':
+          case 'inpatient':
+          case 'ward':
+          case 'icu':
+            categories.admissions.push(serviceItem);
+            break;
+          default:
+            categories.services.push(serviceItem);
+            break;
+        }
+      });
+    }
+
+    return categories;
+  };
+
+  // Handle service selection
+  const handleServiceSelection = (serviceId: string, isSelected: boolean) => {
+    setServiceSelections(prev => ({
+      ...prev,
+      [serviceId]: {
+        ...prev[serviceId],
+        isSelected,
+        salaryBasis: isSelected ? prev[serviceId]?.salaryBasis || '' : '',
+        amount: prev[serviceId]?.amount || 0,
+        percentage: prev[serviceId]?.percentage || 0
+      }
+    }));
+  };
+
+  // Handle salary basis change
+  const handleSalaryBasisChange = (serviceId: string, salaryBasis: 'amount' | 'percentage') => {
+    setServiceSelections(prev => ({
+      ...prev,
+      [serviceId]: {
+        ...prev[serviceId],
+        salaryBasis,
+        amount: prev[serviceId]?.amount || 0,
+        percentage: prev[serviceId]?.percentage || 0
+      }
+    }));
+  };
+
+  // Handle amount/percentage change
+  const handleValueChange = (serviceId: string, field: 'amount' | 'percentage', value: number) => {
+    setServiceSelections(prev => ({
+      ...prev,
+      [serviceId]: {
+        ...prev[serviceId],
+        [field]: value
+      }
+    }));
+  };
+
+  const categorizedServices = categorizeServices();
+  
+  // Effect to populate service selections from existing doctor rates
+  useEffect(() => {
+    if (selectedDoctorId && doctorRates.length > 0) {
+      const newSelections: typeof serviceSelections = {};
+      
+      doctorRates.forEach((rate: any) => {
+        const serviceId = rate.serviceId;
+        newSelections[serviceId] = {
+          isSelected: true,
+          salaryBasis: rate.rateType === 'percentage' ? 'percentage' : 'amount',
+          amount: rate.rateType === 'per_instance' ? rate.rateAmount : 0,
+          percentage: rate.rateType === 'percentage' ? rate.rateAmount : 0,
+        };
+      });
+      
+      setServiceSelections(newSelections);
+    } else if (selectedDoctorId) {
+      // Clear selections when doctor is selected but has no existing rates
+      setServiceSelections({});
+    }
+  }, [selectedDoctorId, doctorRates]);
+  
+  // Function to convert service selections to API format
+  const convertSelectionsToRates = () => {
+    const rates: any[] = [];
+    
+    // Helper function to add service to rates
+    const addServiceToRates = (services: any[], category: string) => {
+      services.forEach((service: any) => {
+        const selection = serviceSelections[service.id];
+        if (selection?.isSelected && selection.salaryBasis && (selection.amount > 0 || selection.percentage > 0)) {
+          rates.push({
+            serviceId: service.id,
+            serviceName: service.name,
+            serviceCategory: category,
+            isSelected: true,
+            salaryBasis: selection.salaryBasis,
+            amount: selection.amount,
+            percentage: selection.percentage,
+          });
+        }
+      });
+    };
+    
+    // Add rates from all categories
+    addServiceToRates(categorizedServices.opd, 'opd');
+    addServiceToRates(categorizedServices.labTests, 'lab_tests');
+    addServiceToRates(categorizedServices.diagnostic, 'diagnostic');
+    addServiceToRates(categorizedServices.operations, 'operations');
+    addServiceToRates(categorizedServices.admissions, 'admissions');
+    addServiceToRates(categorizedServices.services, 'services');
+    
+    return rates;
+  };
+  
+  // Handle save rates
+  const handleSaveRates = () => {
+    if (!selectedDoctorId) {
+      toast({
+        title: "Error",
+        description: "Please select a doctor first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const rates = convertSelectionsToRates();
+    saveDoctorRatesMutation.mutate(rates);
+  };
+
   const getSpecializationIcon = (specialization: string) => {
     // Return appropriate icon based on specialization
     return <Stethoscope className="w-4 h-4" />;
@@ -579,7 +817,7 @@ export default function Doctors() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <Label htmlFor="doctor-select">Select Doctor</Label>
-                      <Select>
+                      <Select value={selectedDoctorId} onValueChange={setSelectedDoctorId}>
                         <SelectTrigger id="doctor-select" data-testid="select-doctor-salary">
                           <SelectValue placeholder="Choose a doctor to configure salary rates" />
                         </SelectTrigger>
@@ -593,46 +831,480 @@ export default function Doctors() {
                       </Select>
                     </div>
                     <div className="flex items-end">
-                      <Button data-testid="button-add-rate">
+                      <Button 
+                        data-testid="button-save-rates" 
+                        disabled={!selectedDoctorId || saveDoctorRatesMutation.isPending}
+                        onClick={handleSaveRates}
+                      >
                         <Calculator className="w-4 h-4 mr-1" />
-                        Add Rate
+                        {saveDoctorRatesMutation.isPending ? "Saving..." : "Save Rates"}
                       </Button>
                     </div>
                   </div>
 
-                  {/* Service Categories */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[
-                      { name: 'OPD Consultations', icon: '🩺', services: ['General Consultation', 'Follow-up Consultation', 'Emergency Consultation'] },
-                      { name: 'Diagnostics', icon: '🔬', services: ['ECG', 'USG', 'X-Ray', 'CT Scan', 'MRI'] },
-                      { name: 'Lab Tests', icon: '🧪', services: ['Blood Test', 'Urine Test', 'Pathology', 'Microbiology'] },
-                      { name: 'Admission Services', icon: '🏥', services: ['IPD Care', 'ICU Care', 'Surgery Assistance', 'Round Visits'] }
-                    ].map((category) => (
-                      <Card key={category.name} className="p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-lg">{category.icon}</span>
-                          <h3 className="font-medium">{category.name}</h3>
-                        </div>
-                        <div className="space-y-2">
-                          {category.services.map((service) => (
-                            <div key={service} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <span className="text-sm">{service}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">₹0</span>
-                                <Button variant="ghost" size="sm" data-testid={`button-edit-${service.toLowerCase().replace(/\s+/g, '-')}`}>
-                                  <Edit className="w-3 h-3" />
-                                </Button>
+                  {selectedDoctorId ? (
+                    <div className="space-y-8">
+                      {/* OPD Services */}
+                      {categorizedServices.opd.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">OPD</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.opd.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
+                      )}
 
-                  <div className="text-center py-4 text-sm text-muted-foreground">
-                    Select a doctor above to configure their salary rates for different services
-                  </div>
+                      {/* Lab Tests */}
+                      {categorizedServices.labTests.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Lab Tests</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.labTests.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Diagnostic Services */}
+                      {categorizedServices.diagnostic.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Diagnostic</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.diagnostic.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Operations */}
+                      {categorizedServices.operations.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Operations</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.operations.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Admission Services */}
+                      {categorizedServices.admissions.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Admission Services</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.admissions.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Other Services */}
+                      {categorizedServices.services.length > 0 && (
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Services</h3>
+                          <div className="space-y-3">
+                            {categorizedServices.services.map((service: any) => (
+                              <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={serviceSelections[service.id]?.isSelected || false}
+                                  onChange={(e) => handleServiceSelection(service.id, e.target.checked)}
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                                  data-testid={`checkbox-${service.id}`}
+                                />
+                                <div className="flex-1">
+                                  <span className="font-medium">{service.name}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Select
+                                    value={serviceSelections[service.id]?.salaryBasis || ''}
+                                    onValueChange={(value) => handleSalaryBasisChange(service.id, value as 'amount' | 'percentage')}
+                                    disabled={!serviceSelections[service.id]?.isSelected}
+                                  >
+                                    <SelectTrigger className="w-32" data-testid={`select-basis-${service.id}`}>
+                                      <SelectValue placeholder="Basis" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="amount">Amount</SelectItem>
+                                      <SelectItem value="percentage">Percentage</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Label htmlFor={`amount-${service.id}`} className="text-sm">₹</Label>
+                                    <Input
+                                      id={`amount-${service.id}`}
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.amount || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'amount', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'amount' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-amount-${service.id}`}
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      placeholder="0"
+                                      value={serviceSelections[service.id]?.percentage || 0}
+                                      onChange={(e) => handleValueChange(service.id, 'percentage', parseFloat(e.target.value) || 0)}
+                                      disabled={!serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage'}
+                                      className={`w-20 text-center ${
+                                        !serviceSelections[service.id]?.isSelected || serviceSelections[service.id]?.salaryBasis !== 'percentage' 
+                                          ? 'bg-gray-100 text-gray-400' : ''
+                                      }`}
+                                      data-testid={`input-percentage-${service.id}`}
+                                    />
+                                    <Label className="text-sm">%</Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      Select a doctor above to configure their salary rates for different services
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

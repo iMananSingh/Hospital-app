@@ -4843,6 +4843,47 @@ export class SqliteStorage implements IStorage {
       throw error;
     }
   }
+
+  // Doctor Service Rate Management
+  async createDoctorServiceRate(rate: InsertDoctorServiceRate): Promise<DoctorServiceRate> {
+    const created = db.insert(schema.doctorServiceRates).values(rate).returning().get();
+    return created;
+  }
+
+  async getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]> {
+    const query = db.select().from(schema.doctorServiceRates);
+    if (doctorId) {
+      return query.where(eq(schema.doctorServiceRates.doctorId, doctorId)).all();
+    }
+    return query.all();
+  }
+
+  async getDoctorServiceRateById(id: string): Promise<DoctorServiceRate | undefined> {
+    return db
+      .select()
+      .from(schema.doctorServiceRates)
+      .where(eq(schema.doctorServiceRates.id, id))
+      .get();
+  }
+
+  async updateDoctorServiceRate(id: string, rate: Partial<InsertDoctorServiceRate>): Promise<DoctorServiceRate | undefined> {
+    const updated = db
+      .update(schema.doctorServiceRates)
+      .set({ ...rate, updatedAt: new Date().toISOString() })
+      .where(eq(schema.doctorServiceRates.id, id))
+      .returning()
+      .get();
+    return updated;
+  }
+
+  async deleteDoctorServiceRate(id: string): Promise<boolean> {
+    const deleted = db
+      .delete(schema.doctorServiceRates)
+      .where(eq(schema.doctorServiceRates.id, id))
+      .returning()
+      .get();
+    return !!deleted;
+  }
 }
 
 export const storage = new SqliteStorage();
