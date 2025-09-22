@@ -473,6 +473,59 @@ async function initializeDatabase() {
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS doctor_service_rates (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        doctor_id TEXT NOT NULL REFERENCES doctors(id),
+        service_id TEXT NOT NULL REFERENCES services(id),
+        service_name TEXT NOT NULL,
+        service_category TEXT NOT NULL,
+        rate_type TEXT NOT NULL DEFAULT 'per_instance',
+        rate_amount REAL NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        notes TEXT,
+        created_by TEXT NOT NULL REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS doctor_earnings (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        earning_id TEXT NOT NULL UNIQUE,
+        doctor_id TEXT NOT NULL REFERENCES doctors(id),
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        service_id TEXT NOT NULL REFERENCES services(id),
+        patient_service_id TEXT REFERENCES patient_services(id),
+        service_name TEXT NOT NULL,
+        service_category TEXT NOT NULL,
+        service_date TEXT NOT NULL,
+        rate_type TEXT NOT NULL,
+        rate_amount REAL NOT NULL,
+        service_price REAL NOT NULL,
+        earned_amount REAL NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS doctor_payments (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        payment_id TEXT NOT NULL UNIQUE,
+        doctor_id TEXT NOT NULL REFERENCES doctors(id),
+        payment_date TEXT NOT NULL,
+        total_amount REAL NOT NULL,
+        payment_method TEXT NOT NULL,
+        earnings_included TEXT NOT NULL,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        description TEXT,
+        processed_by TEXT NOT NULL REFERENCES users(id),
+        receipt_number TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
 
     // Migrate existing tables to add new columns if they don't exist
