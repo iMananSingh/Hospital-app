@@ -429,6 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { doctorId } = req.params;
       const { rates } = req.body;
 
+
       if (!Array.isArray(rates)) {
         return res.status(400).json({ message: "Rates must be an array" });
       }
@@ -521,6 +522,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdRates.push(created);
           } catch (createError) {
             console.error(`Failed to create rate for service ${rate.serviceId}:`, createError);
+            if (createError instanceof z.ZodError) {
+              console.error(`Validation errors:`, createError.errors);
+            }
             // Continue with other rates instead of failing completely
           }
         }

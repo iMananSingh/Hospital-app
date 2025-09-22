@@ -565,8 +565,24 @@ export default function Doctors() {
   const convertSelectionsToRates = () => {
     const rates: any[] = [];
 
+    // Service category mapping to ensure schema compliance
+    const categoryMapping: { [key: string]: string } = {
+      'opd': 'opd',
+      'lab_tests': 'lab_tests', 
+      'labTests': 'lab_tests',
+      'diagnostic': 'diagnostics',
+      'diagnostics': 'diagnostics',
+      'operations': 'opd',
+      'admissions': 'admission',
+      'admission': 'admission',
+      'services': 'opd',
+      'pathology': 'pathology',
+      'procedures': 'opd'
+    };
+
     // Helper function to add service to rates
-    const addServiceToRates = (services: any[], category: string) => {
+    const addServiceToRates = (services: any[], categoryKey: string) => {
+      const normalizedCategory = categoryMapping[categoryKey] || 'opd'; // Default to 'opd' if not found
       services.forEach((service: any) => {
         const selection = serviceSelections[service.id];
         if (selection?.isSelected && selection.salaryBasis && (selection.amount > 0 || selection.percentage > 0)) {
@@ -604,7 +620,7 @@ export default function Doctors() {
           rates.push({
             serviceId: actualServiceId,
             serviceName: actualServiceName,
-            serviceCategory: category,
+            serviceCategory: normalizedCategory,
             isSelected: true,
             salaryBasis: selection.salaryBasis,
             amount: selection.amount,
@@ -614,9 +630,9 @@ export default function Doctors() {
       });
     };
 
-    // Add rates from all categories
+    // Add rates from all categories - using normalized mapping
     addServiceToRates(categorizedServices.opd, 'opd');
-    addServiceToRates(categorizedServices.labTests, 'lab_tests');
+    addServiceToRates(categorizedServices.labTests, 'labTests');
     addServiceToRates(categorizedServices.diagnostic, 'diagnostic');
     addServiceToRates(categorizedServices.operations, 'operations');
     addServiceToRates(categorizedServices.admissions, 'admissions');
