@@ -11,6 +11,7 @@ import Patients from "@/pages/patients";
 import PatientDetail from "@/pages/patient-detail";
 import Pathology from "@/pages/pathology";
 import Doctors from "@/pages/doctors";
+import DoctorDetail from "@/pages/doctor-detail";
 import ServiceManagement from "@/pages/services";
 import OpdList from "@/pages/opd-list";
 import LabTests from "@/pages/lab-tests";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/patients/:id" component={() => <ProtectedRoute component={PatientDetail} />} />
       <Route path="/pathology" component={() => <ProtectedRoute component={Pathology} />} />
       <Route path="/doctors" component={() => <ProtectedRoute component={Doctors} />} />
+      <Route path="/doctors/:doctorId" component={() => <ProtectedRoute component={DoctorDetail} />} />
       <Route path="/services" component={() => <ProtectedRoute component={ServiceManagement} />} />
       <Route path="/admissions" component={() => <ProtectedRoute component={Admissions} />} />
       <Route path="/bed-occupancy" component={() => <ProtectedRoute component={BedOccupancy} />} />

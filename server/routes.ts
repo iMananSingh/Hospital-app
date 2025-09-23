@@ -1992,6 +1992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const earnings = await storage.getDoctorEarnings(doctorId, status as string);
       res.json(earnings);
     } catch (error) {
+      console.error("Error fetching doctor earnings:", error);
       res.status(500).json({ message: "Failed to get doctor earnings" });
     }
   });

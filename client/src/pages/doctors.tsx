@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function Doctors() {
   }>({});
 
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const { data: doctors = [], isLoading } = useQuery({
     queryKey: ["/api/doctors"],
@@ -1547,7 +1549,12 @@ export default function Doctors() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex space-x-1">
-                                  <Button variant="ghost" size="sm" data-testid={`button-view-earnings-${doctorData.doctorId}`}>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => navigate(`/doctors/${doctorData.doctorId}`)}
+                                    data-testid={`button-view-earnings-${doctorData.doctorId}`}
+                                  >
                                     <Eye className="w-4 h-4" />
                                   </Button>
                                   <Button variant="ghost" size="sm" data-testid={`button-pay-doctor-${doctorData.doctorId}`}>
