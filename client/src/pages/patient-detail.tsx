@@ -841,16 +841,19 @@ export default function PatientDetail() {
     }
 
     // For non-OPD services, validate service selection
-    if (!isOPD && selectedServices.length === 0) {
-      // Check if manual service entry is complete
-      if (!data.serviceName || data.serviceName.trim() === "" || !data.price || data.price <= 0) {
-        toast({
-          title: "Validation Error",
-          description: "Please either select services from the catalog or enter both service name and price.",
-          variant: "destructive",
-        });
-        return;
+    if (!isOPD) {
+      // If no services selected from catalog, check manual entry
+      if (selectedServices.length === 0) {
+        if (!data.serviceName || data.serviceName.trim() === "" || !data.price || data.price <= 0) {
+          toast({
+            title: "Validation Error",
+            description: "Please either select services from the catalog or enter both service name and price.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
+      // If services are selected from catalog, that's valid - no need to check manual fields
     }
 
     // Handle multiple selected services or single service
