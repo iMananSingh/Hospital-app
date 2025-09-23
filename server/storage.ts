@@ -1209,7 +1209,7 @@ export class SqliteStorage implements IStorage {
   private async calculateDoctorEarning(patientService: PatientService, service: Service): Promise<void> {
     try {
       console.log(`Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`);
-      
+
       // Check if earning already exists for this patient service to prevent duplicates
       const existingEarning = db
         .select()
@@ -1239,9 +1239,9 @@ export class SqliteStorage implements IStorage {
         console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
         return;
       }
-      
+
       console.log(`Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`);
-    
+
 
       // Calculate earning amount based on rate type
       let earnedAmount = 0;
@@ -2471,17 +2471,16 @@ export class SqliteStorage implements IStorage {
         receiptNumber: schema.patientServices.receiptNumber,
         createdAt: schema.patientServices.createdAt,
         updatedAt: schema.patientServices.updatedAt,
-        patient: {
-          id: schema.patients.id,
-          name: schema.patients.name,
-          age: schema.patients.age,
-          gender: schema.patients.gender,
-          phone: schema.patients.phone,
-          patientId: schema.patients.patientId
-        }
+        // Join patient information
+        patientName: schema.patients.name,
+        patientPhone: schema.patients.phone,
+        // Join doctor information
+        doctorName: schema.doctors.name,
+        doctorSpecialization: schema.doctors.specialization,
       })
       .from(schema.patientServices)
-      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id));
+      .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id));
 
     // Apply filters
     if (filters.patientId) {
@@ -4803,14 +4802,8 @@ export class SqliteStorage implements IStorage {
       admissions.forEach((admission) => {
         // Calculate bed charges for admitted/discharged patients
         if (admission.status === "admitted" || admission.status === "discharged") {
-          console.log(`Admission calculation for ${admission.admissionId}:`);
-          console.log(`Admission Date: ${admission.admissionDate}`);
-          console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
-
-          // Use the pre-calculated stay days from the admission card (same value as frontend)
+          // Calculate stay duration using admission card value (same as frontend)
           const stayDuration = admission.stayDays;
-
-          console.log(`Stay duration: ${stayDuration} days (using admission card value)`);
 
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
@@ -5221,7 +5214,7 @@ export class SqliteStorage implements IStorage {
   async createDoctorEarning(earning: InsertDoctorEarning): Promise<DoctorEarning> {
     try {
       const earningId = this.generateEarningId();
-      
+
       const created = db
         .insert(schema.doctorEarnings)
         .values({

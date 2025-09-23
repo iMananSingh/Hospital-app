@@ -75,9 +75,14 @@ export default function ServiceManagement() {
     queryKey: ["/api/services"],
   });
 
-  // Fetch doctors for service assignment
+  // Fetch doctors for service assignment and display
   const { data: doctors = [] } = useQuery<any[]>({
     queryKey: ["/api/doctors"],
+  });
+
+  // Fetch patient services to display in history
+  const { data: patientServices = [] } = useQuery<any[]>({
+    queryKey: ["/api/patient-services"],
   });
 
   // Fetch pathology categories
@@ -787,7 +792,13 @@ export default function ServiceManagement() {
     }))
   ];
 
+  // Helper function to get doctor name
+  const getDoctorName = (service: any) => {
+    return service.doctorName || "External";
+  };
+
   const filteredServices = services.filter(service => service.category === activeTab);
+  const filteredPatientServices = patientServices.filter(service => service.serviceType === activeTab);
 
   const occupiedRooms = rooms.filter(room => room.isOccupied).length;
   const availableRooms = rooms.filter(room => !room.isOccupied && room.isActive).length;
@@ -1143,6 +1154,62 @@ export default function ServiceManagement() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Service
                   </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : activeTab !== 'pathology' ? (
+          // Service History Section
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {getServiceCategoryIcon(activeTab)}
+                Service History - {serviceCategories.find(cat => cat.key === activeTab)?.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredPatientServices.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Service Name</TableHead>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Doctor</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Receipt No.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPatientServices.map((service) => (
+                      <TableRow key={service.id}>
+                        <TableCell className="font-medium">{service.serviceName}</TableCell>
+                        <TableCell>{service.patientName || "N/A"}</TableCell>
+                        <TableCell>{getDoctorName(service)}</TableCell>
+                        <TableCell>{service.scheduledDate}</TableCell>
+                        <TableCell>{service.scheduledTime}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={service.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                                     service.status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
+                                     'bg-yellow-100 text-yellow-800'}
+                            variant="secondary"
+                          >
+                            {service.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>₹{service.calculatedAmount || service.price}</TableCell>
+                        <TableCell>{service.receiptNumber || "N/A"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8">
+                  {getServiceCategoryIcon(activeTab)}
+                  <p className="text-gray-500 mt-4">No service history found for {activeTab}</p>
                 </div>
               )}
             </CardContent>

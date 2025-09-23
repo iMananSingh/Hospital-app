@@ -1191,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.status = status as string;
       }
 
-      // Use storage method with filters
+      // Use storage method with filters - this already includes patient and doctor names
       const services = await storage.getPatientServicesWithFilters(filters);
       res.json(services);
     } catch (error) {
