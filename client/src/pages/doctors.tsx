@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export default function Doctors() {
   }>({});
 
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   const { data: doctors = [], isLoading } = useQuery({
     queryKey: ["/api/doctors"],
@@ -1552,7 +1552,7 @@ export default function Doctors() {
                                   <Button 
                                     variant="ghost" 
                                     size="sm" 
-                                    onClick={() => navigate(`/doctors/${doctorData.doctorId}`)}
+                                    onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
                                     data-testid={`button-view-earnings-${doctorData.doctorId}`}
                                   >
                                     <Eye className="w-4 h-4" />
