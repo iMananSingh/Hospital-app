@@ -3626,6 +3626,35 @@ export default function PatientDetail() {
               />
             </div>
 
+            {/* Validation Helper Text */}
+            {selectedServiceType !== "opd" && selectedServices.length === 0 && 
+             (!serviceForm.watch("serviceName") || !serviceForm.watch("price")) && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm font-medium">
+                    To schedule services, please either:
+                  </span>
+                </div>
+                <ul className="mt-2 text-sm text-amber-700 list-disc list-inside ml-4">
+                  <li>Select services from the catalog above by checking the boxes, OR</li>
+                  <li>Enter both service name and price in the manual entry fields</li>
+                </ul>
+              </div>
+            )}
+
+            {selectedServiceType === "opd" && 
+             (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none") && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-amber-800">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm font-medium">
+                    Please select a doctor for the OPD consultation
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
@@ -3659,10 +3688,14 @@ export default function PatientDetail() {
                 type="submit"
                 disabled={
                   createServiceMutation.isPending ||
+                  (selectedServiceType === "opd" &&
+                    (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none")) ||
                   (selectedServiceType !== "opd" &&
                     selectedServices.length === 0 &&
                     (!serviceForm.watch("serviceName") ||
-                      !serviceForm.watch("price")))
+                      !serviceForm.watch("price"))) ||
+                  !serviceForm.watch("scheduledDate") ||
+                  !serviceForm.watch("scheduledTime")
                 }
                 data-testid="button-schedule-service"
               >
