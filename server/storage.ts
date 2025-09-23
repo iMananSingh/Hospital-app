@@ -5186,6 +5186,63 @@ export class SqliteStorage implements IStorage {
       throw error;
     }
   }
+
+  // Create a new doctor earning record
+  async createDoctorEarning(earning: InsertDoctorEarning): Promise<DoctorEarning> {
+    try {
+      const earningId = this.generateEarningId();
+      
+      const created = db
+        .insert(schema.doctorEarnings)
+        .values({
+          ...earning,
+          earningId,
+        })
+        .returning()
+        .get();
+
+      console.log(`Created doctor earning: ${earningId} for amount ${created.earnedAmount}`);
+      return created;
+    } catch (error) {
+      console.error('Error creating doctor earning:', error);
+      throw error;
+    }
+  }
+
+  // Get a specific doctor earning by ID
+  async getDoctorEarningById(id: string): Promise<DoctorEarning | undefined> {
+    try {
+      return db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(eq(schema.doctorEarnings.id, id))
+        .get();
+    } catch (error) {
+      console.error('Error fetching doctor earning by ID:', error);
+      throw error;
+    }
+  }
+
+  // Update the status of a doctor earning record
+  async updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined> {
+    try {
+      const updated = db
+        .update(schema.doctorEarnings)
+        .set({ 
+          status: status as any,
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(schema.doctorEarnings.id, id))
+        .returning()
+        .get();
+
+      console.log(`Updated doctor earning ${id} status to ${status}`);
+      return updated;
+    } catch (error) {
+      console.error('Error updating doctor earning status:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new SqliteStorage();
