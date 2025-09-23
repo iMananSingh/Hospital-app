@@ -2905,10 +2905,23 @@ export class SqliteStorage implements IStorage {
         console.log(`Admission Date: ${admission.admissionDate}`);
         console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
 
-        // Use the pre-calculated stay days from the admission card (same value as frontend)
-        const stayDuration = admission.stayDays;
+        // Calculate stay days using the same logic as frontend
+        let stayDuration = 1; // Default minimum stay
+        
+        if (admission.stayDays && admission.stayDays > 0) {
+          // Use pre-calculated stay days if available
+          stayDuration = admission.stayDays;
+        } else {
+          // Calculate stay days using the same robust logic as frontend
+          try {
+            stayDuration = calculateStayDays(admission.admissionDate, admission.dischargeDate);
+          } catch (error) {
+            console.error(`Error calculating stay days for admission ${admission.admissionId}:`, error);
+            stayDuration = 1; // Fallback to minimum 1 day
+          }
+        }
 
-        console.log(`Stay duration: ${stayDuration} days (using admission card value)`);
+        console.log(`Stay duration: ${stayDuration} days (calculated)`);
 
         totalCharges += (admission.dailyCost || 0) * stayDuration;
         // Initial deposit is NOT added to charges - it's a payment
