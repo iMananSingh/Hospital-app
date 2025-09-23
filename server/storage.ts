@@ -1208,6 +1208,20 @@ export class SqliteStorage implements IStorage {
   // Calculate and create doctor earning record for a patient service
   private async calculateDoctorEarning(patientService: PatientService, service: Service): Promise<void> {
     try {
+      console.log(`Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`);
+      
+      // Check if earning already exists for this patient service to prevent duplicates
+      const existingEarning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(eq(schema.doctorEarnings.patientServiceId, patientService.id))
+        .get();
+
+      if (existingEarning) {
+        console.log(`Earning already exists for patient service ${patientService.id}, skipping creation`);
+        return;
+      }
+
       // Find doctor service rate for this doctor and service
       const doctorRate = db
         .select()
@@ -1225,6 +1239,9 @@ export class SqliteStorage implements IStorage {
         console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
         return;
       }
+      
+      console.log(`Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`);
+    
 
       // Calculate earning amount based on rate type
       let earnedAmount = 0;
@@ -2276,11 +2293,21 @@ export class SqliteStorage implements IStorage {
           }
 
           // Calculate doctor earnings if doctor is assigned and service exists
-          if (serviceData.doctorId && service) {
-            // We need to calculate this outside the transaction to avoid issues
-            setImmediate(async () => {
-              await this.calculateDoctorEarning(created, service);
-            });
+          if (serviceData.doctorId) {
+            console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`);
+            if (service) {
+              console.log(`Triggering batch earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`);
+              // We need to calculate this outside the transaction to avoid issues
+              setImmediate(async () => {
+                try {
+                  await this.calculateDoctorEarning(created, service);
+                } catch (error) {
+                  console.error(`Error in batch async earnings calculation for doctor ${serviceData.doctorId}:`, error);
+                }
+              });
+            } else {
+              console.log(`No service found for serviceId: ${serviceData.serviceId} in batch, cannot calculate earnings`);
+            }
           }
         }
 
@@ -2377,11 +2404,21 @@ export class SqliteStorage implements IStorage {
       }
 
       // Calculate doctor earnings if doctor is assigned and service has rates
-      if (serviceData.doctorId && service) {
-        // Calculate earnings asynchronously to avoid blocking
-        setImmediate(async () => {
-          await this.calculateDoctorEarning(created, service);
-        });
+      if (serviceData.doctorId) {
+        console.log(`Patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`);
+        if (service) {
+          console.log(`Triggering earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`);
+          // Calculate earnings asynchronously to avoid blocking
+          setImmediate(async () => {
+            try {
+              await this.calculateDoctorEarning(created, service);
+            } catch (error) {
+              console.error(`Error in async earnings calculation for doctor ${serviceData.doctorId}:`, error);
+            }
+          });
+        } else {
+          console.log(`No service found for serviceId: ${serviceData.serviceId}, cannot calculate earnings`);
+        }
       }
 
       return created;
