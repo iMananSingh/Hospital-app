@@ -1096,12 +1096,8 @@ export interface IStorage {
   getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]>;
   getDoctorEarningById(id: string): Promise<DoctorEarning | undefined>;
   updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined>;
-
-  // Doctor Payments Management
-  createDoctorPayment(payment: InsertDoctorPayment): Promise<DoctorPayment>;
-  getDoctorPayments(doctorId?: string): Promise<DoctorPayment[]>;
-  getDoctorPaymentById(id: string): Promise<DoctorPayment | undefined>;
   getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]>;
+  recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2907,7 +2903,7 @@ export class SqliteStorage implements IStorage {
 
         // Calculate stay days using the same logic as frontend
         let stayDuration = 1; // Default minimum stay
-        
+
         if (admission.stayDays && admission.stayDays > 0) {
           // Use pre-calculated stay days if available
           stayDuration = admission.stayDays;
@@ -3716,7 +3712,7 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getBackupHistory(): Promise<any[]> {
+  async getBackupHistory(): Promise<any[]>{
     try {
       const history = db
         .select()
@@ -5024,6 +5020,74 @@ export class SqliteStorage implements IStorage {
       .returning()
       .get();
     return !!deleted;
+  }
+
+  async getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]> {
+    return db
+      .select()
+      .from(schema.doctorEarnings)
+      .where(
+        and(
+          eq(schema.doctorEarnings.doctorId, doctorId),
+          eq(schema.doctorEarnings.status, 'pending')
+        )
+      )
+      .orderBy(desc(schema.doctorEarnings.serviceDate))
+      .all();
+  }
+
+  // Recalculate doctor earnings for services that have doctors assigned but no earnings
+  async recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }> {
+    try {
+      let processed = 0;
+      let created = 0;
+
+      // Get all patient services with doctors assigned
+      const services = db
+        .select({
+          patientService: schema.patientServices,
+          service: schema.services
+        })
+        .from(schema.patientServices)
+        .leftJoin(schema.services, eq(schema.patientServices.serviceId, schema.services.id))
+        .where(
+          and(
+            isNotNull(schema.patientServices.doctorId),
+            doctorId ? eq(schema.patientServices.doctorId, doctorId) : sql`1=1`
+          )
+        )
+        .all();
+
+      console.log(`Found ${services.length} patient services with doctors assigned`);
+
+      for (const { patientService, service } of services) {
+        processed++;
+
+        if (!service) {
+          console.log(`No service found for patient service ${patientService.id}`);
+          continue;
+        }
+
+        // Check if earning already exists
+        const existingEarning = db
+          .select()
+          .from(schema.doctorEarnings)
+          .where(eq(schema.doctorEarnings.patientServiceId, patientService.id))
+          .get();
+
+        if (!existingEarning) {
+          // Calculate earning for this service
+          this.calculateDoctorEarning(patientService, service);
+          created++;
+        }
+      }
+
+      console.log(`Recalculated doctor earnings: processed ${processed}, created ${created}`);
+      return { processed, created };
+    } catch (error) {
+      console.error('Error recalculating doctor earnings:', error);
+      throw error;
+    }
   }
 }
 

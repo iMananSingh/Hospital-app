@@ -107,6 +107,37 @@ export default function Doctors() {
     enabled: filteredDoctors.length > 0,
   });
 
+  // Mutation to recalculate earnings for all doctors
+  const recalculateEarningsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/doctors/recalculate-earnings", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to recalculate doctor earnings");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      toast({
+        title: "Success",
+        description: "Doctor earnings recalculated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to recalculate doctor earnings",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Save doctor salary rates mutation
   const saveDoctorRatesMutation = useMutation({
     mutationFn: async (rates: any[]) => {
@@ -595,7 +626,7 @@ export default function Doctors() {
             let opdService = services?.find(s => 
               s.category?.toLowerCase() === 'consultation'
             );
-            
+
             // If not found by category, try by name patterns
             if (!opdService) {
               opdService = services?.find(s => 
@@ -604,7 +635,7 @@ export default function Doctors() {
                 s.name?.toLowerCase().includes('visit')
               );
             }
-            
+
             // If still not found, create a generic service entry
             if (opdService) {
               actualServiceId = opdService.id;
@@ -654,6 +685,11 @@ export default function Doctors() {
 
     const rates = convertSelectionsToRates();
     saveDoctorRatesMutation.mutate(rates);
+  };
+
+  // Handler for recalculating earnings
+  const handleRecalculateEarnings = () => {
+    recalculateEarningsMutation.mutate();
   };
 
   const getSpecializationIcon = (specialization: string) => {
@@ -1447,10 +1483,21 @@ export default function Doctors() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Doctor Earnings</h3>
-                      <Button data-testid="button-process-payments">
-                        <Wallet className="w-4 h-4 mr-1" />
-                        Process Payments
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          onClick={handleRecalculateEarnings}
+                          disabled={recalculateEarningsMutation.isPending}
+                          data-testid="button-recalculate-earnings"
+                        >
+                          <Calculator className="w-4 h-4 mr-1" />
+                          {recalculateEarningsMutation.isPending ? "Recalculating..." : "Recalculate Earnings"}
+                        </Button>
+                        <Button data-testid="button-process-payments">
+                          <Wallet className="w-4 h-4 mr-1" />
+                          Process Payments
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="border rounded-lg">

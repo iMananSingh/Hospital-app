@@ -462,13 +462,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (rate.serviceId === 'opd_placeholder' || rate.serviceId === 'opd_consultation_placeholder') {
             // Try to find an actual OPD/consultation service
             const services = await storage.getServices();
-            let opdService = services.find(s => 
+            let opdService = services.find(s =>
               s.category?.toLowerCase() === 'consultation'
             );
 
             if (!opdService) {
-              opdService = services.find(s => 
-                s.name?.toLowerCase().includes('opd') || 
+              opdService = services.find(s =>
+                s.name?.toLowerCase().includes('opd') ||
                 s.name?.toLowerCase().includes('consultation') ||
                 s.name?.toLowerCase().includes('visit')
               );
