@@ -1240,7 +1240,7 @@ export class SqliteStorage implements IStorage {
 
       // Create doctor earning record
       const earningId = this.generateEarningId();
-      
+
       db.insert(schema.doctorEarnings)
         .values({
           earningId,
@@ -2960,16 +2960,18 @@ export class SqliteStorage implements IStorage {
     const finalTotalPaid = totalPaid + admissionPayments;
     const finalTotalDiscounts = totalDiscounts + admissionDiscounts;
 
-    // Calculate balance: totalCharges - totalDiscounts - totalPaid
+    // Calculate balance: totalCharges - totalDiscounts - finalTotalPaid
     // Positive balance = amount patient owes
     // Negative balance = amount hospital owes patient (overpayment)
     const balance = totalCharges - finalTotalDiscounts - finalTotalPaid;
+
+    console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${finalTotalPaid}, Total discounts: ${finalTotalDiscounts}, Balance: ${balance}`);
 
     return {
       totalCharges,
       totalPaid: finalTotalPaid,
       totalDiscounts: finalTotalDiscounts,
-      balance, // Allow negative balances to show overpayments
+      balance,
     };
   }
 
@@ -4644,8 +4646,7 @@ export class SqliteStorage implements IStorage {
 
       const billItems: Array<{
         type: "service" | "pathology" | "admission" | "payment" | "discount";
-        id: string;
-        date: string;
+        id: string;        date: string;
         description: string;
         amount: number;
         category: string;
