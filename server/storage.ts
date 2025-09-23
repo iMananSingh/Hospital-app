@@ -5118,31 +5118,26 @@ export class SqliteStorage implements IStorage {
           earnedAmount = doctorRate.rateAmount;
         }
 
-        // Create doctor earning record
-        const earningId = this.generateEarningId();
-
+        // Create doctor earning record using storage interface method
         try {
-          db.insert(schema.doctorEarnings)
-            .values({
-              earningId,
-              doctorId: patientService.doctorId!,
-              patientId: patientService.patientId,
-              serviceId: service.id,
-              patientServiceId: patientService.id,
-              serviceName: service.name,
-              serviceCategory: doctorRate.serviceCategory,
-              serviceDate: patientService.scheduledDate,
-              rateType: doctorRate.rateType,
-              rateAmount: doctorRate.rateAmount,
-              servicePrice,
-              earnedAmount,
-              status: 'pending',
-              notes: `Recalculation for ${service.name}`,
-            })
-            .run();
+          await this.createDoctorEarning({
+            doctorId: patientService.doctorId!,
+            patientId: patientService.patientId,
+            serviceId: service.id,
+            patientServiceId: patientService.id,
+            serviceName: service.name,
+            serviceCategory: doctorRate.serviceCategory,
+            serviceDate: patientService.scheduledDate,
+            rateType: doctorRate.rateType,
+            rateAmount: doctorRate.rateAmount,
+            servicePrice,
+            earnedAmount,
+            status: 'pending',
+            notes: `Recalculation for ${service.name}`,
+          });
 
           created++;
-          console.log(`Created earning ${earningId} for doctor ${patientService.doctorId}: ₹${earnedAmount}`);
+          console.log(`Created earning for doctor ${patientService.doctorId}: ₹${earnedAmount}`);
         } catch (error) {
           console.error(`Error creating earning for patient service ${patientService.id}:`, error);
         }
