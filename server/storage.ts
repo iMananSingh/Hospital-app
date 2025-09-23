@@ -2474,7 +2474,7 @@ export class SqliteStorage implements IStorage {
         // Join patient information
         patientName: schema.patients.name,
         patientPhone: schema.patients.phone,
-        // Join doctor information
+        // Join doctor information - properly select the doctor name
         doctorName: schema.doctors.name,
         doctorSpecialization: schema.doctors.specialization,
       })
