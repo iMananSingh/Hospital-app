@@ -825,6 +825,7 @@ export default function PatientDetail() {
     console.log("Scheduled time:", data.scheduledTime);
     console.log("Selected services:", selectedServices);
     console.log("Form validation state:", serviceForm.formState);
+    console.log("Available doctors:", doctors?.length || 0);
 
     // Validate required fields
     if (!data.scheduledDate) {
@@ -908,6 +909,10 @@ export default function PatientDetail() {
         return; // Stop submission if doctor is not selected for OPD
       }
 
+      console.log('=== OPD SERVICE CREATION ===');
+      console.log('Selected Doctor ID:', selectedDoctorId);
+      console.log('Selected Doctor:', selectedDoctor);
+
       servicesToCreate.push({
         patientId: patientId,
         serviceType: "opd",
@@ -924,6 +929,10 @@ export default function PatientDetail() {
       // Handle selected catalog services
       if (selectedServices.length > 0) {
         selectedServices.forEach((service) => {
+          console.log('=== CATALOG SERVICE CREATION ===');
+          console.log('Service:', service.name);
+          console.log('Doctor ID from form:', data.doctorId);
+
           let serviceData: any = {
             patientId: patientId,
             serviceType: mapCategoryToServiceType(service.category),
@@ -942,6 +951,8 @@ export default function PatientDetail() {
             billingType: "per_instance",
             calculatedAmount: Number(data.price),
           };
+
+          console.log('Final service data doctor ID:', serviceData.doctorId);
 
           // Add smart billing parameters if service has special billing type
           if (service.billingType) {
@@ -998,6 +1009,9 @@ export default function PatientDetail() {
         });
       } else if (data.serviceName && data.price > 0) {
         // Custom service
+        console.log('=== CUSTOM SERVICE CREATION ===');
+        console.log('Doctor ID from form:', data.doctorId);
+
         servicesToCreate.push({
           patientId: patientId,
           serviceType: "service",
@@ -1013,6 +1027,8 @@ export default function PatientDetail() {
               ? data.doctorId
               : null,
         });
+
+        console.log('Custom service doctor ID:', servicesToCreate[servicesToCreate.length - 1].doctorId);
       }
     }
 
@@ -1951,15 +1967,26 @@ export default function PatientDetail() {
                     </TableHeader>
                     <TableBody>
                       {services.map((service: any) => {
-                        // Find doctor name from doctors array using doctorId
-                        const doctor = doctors.find(
-                          (d: Doctor) => d.id === service.doctorId,
-                        );
-                        const doctorName = doctor
-                          ? doctor.name
-                          : service.doctorId
-                            ? "Unknown Doctor"
-                            : "No Doctor Assigned";
+                        console.log('=== SERVICE DISPLAY DEBUG ===');
+                        console.log('Service:', service.serviceName);
+                        console.log('Doctor ID:', service.doctorId);
+                        console.log('Doctor Name from API:', service.doctorName);
+
+                        // Use doctorName from the joined query first, then fall back to lookup
+                        let doctorName = service.doctorName;
+                        
+                        if (!doctorName && service.doctorId) {
+                          const doctor = doctors.find(
+                            (d: Doctor) => d.id === service.doctorId,
+                          );
+                          doctorName = doctor ? doctor.name : "Unknown Doctor";
+                        }
+                        
+                        if (!doctorName) {
+                          doctorName = service.doctorId ? "Unknown Doctor" : "No Doctor Assigned";
+                        }
+
+                        console.log('Final doctor name:', doctorName);
 
                         // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
                         const totalCost =

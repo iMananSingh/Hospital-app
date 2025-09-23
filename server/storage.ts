@@ -2207,6 +2207,11 @@ export class SqliteStorage implements IStorage {
         const createdServices: PatientService[] = [];
 
         for (const serviceData of servicesData) {
+          console.log(`=== BATCH SERVICE CREATION DEBUG ===`);
+          console.log(`Service Name: ${serviceData.serviceName}`);
+          console.log(`Doctor ID from request: ${serviceData.doctorId}`);
+          console.log(`Service Type: ${serviceData.serviceType}`);
+
           // Get service details for billing calculation
           let service = null;
           let calculatedAmount = serviceData.price || 0;
@@ -2254,6 +2259,12 @@ export class SqliteStorage implements IStorage {
             }
           }
 
+          console.log(`Final service data before DB insert:`, {
+            doctorId: serviceData.doctorId,
+            serviceName: serviceData.serviceName,
+            serviceType: serviceData.serviceType
+          });
+
           const created = tx
             .insert(schema.patientServices)
             .values({
@@ -2267,6 +2278,13 @@ export class SqliteStorage implements IStorage {
             })
             .returning()
             .get();
+
+          console.log(`Created service in DB:`, {
+            id: created.id,
+            doctorId: created.doctorId,
+            serviceName: created.serviceName,
+            serviceType: created.serviceType
+          });
 
           createdServices.push(created);
 

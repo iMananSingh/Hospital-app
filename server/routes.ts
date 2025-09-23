@@ -1230,10 +1230,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log doctor IDs for each service
       req.body.forEach((service: any, index: number) => {
         console.log(`Service ${index + 1} Doctor ID:`, service.doctorId);
+        console.log(`Service ${index + 1} Service Name:`, service.serviceName);
+        console.log(`Service ${index + 1} Service Type:`, service.serviceType);
       });
 
       const services = await storage.createPatientServicesBatch(req.body, req.user.id);
       console.log("Created batch patient services:", JSON.stringify(services, null, 2));
+      
+      // Log the created services to verify doctor IDs were saved
+      services.forEach((service: any, index: number) => {
+        console.log(`Created Service ${index + 1} Doctor ID:`, service.doctorId);
+      });
+      
       res.json(services);
     } catch (error: any) {
       console.error("Batch service creation error:", error);
