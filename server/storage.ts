@@ -2482,6 +2482,8 @@ export class SqliteStorage implements IStorage {
       .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
       .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id));
 
+    console.log('Building patient services query with doctor join...');
+
     // Apply filters
     if (filters.patientId) {
       conditions.push(eq(schema.patientServices.patientId, filters.patientId));
@@ -2526,9 +2528,21 @@ export class SqliteStorage implements IStorage {
     }
 
     // Order by scheduled date and time
-    return query
+    const results = query
       .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.scheduledTime))
       .all();
+
+    // Debug: Log first few results to check doctor information
+    if (results.length > 0) {
+      console.log('Sample patient services with doctor info:', results.slice(0, 3).map(r => ({
+        serviceName: r.serviceName,
+        doctorId: r.doctorId,
+        doctorName: r.doctorName,
+        serviceType: r.serviceType
+      })));
+    }
+
+    return results;
   }
 
   async getPatientServiceById(id: string): Promise<PatientService | undefined> {

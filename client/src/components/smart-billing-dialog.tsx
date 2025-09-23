@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -104,7 +103,7 @@ export default function SmartBillingDialog({
         const fixedCharge = params.fixedCharge || selectedService.price;
         const perKmRate = params.perKmRate || 0;
         const distance = watchedValues.distance || 0;
-        
+
         const distanceCharge = perKmRate * distance;
         totalAmount = fixedCharge + distanceCharge;
         breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ''} = ₹${totalAmount}`;
@@ -141,7 +140,7 @@ export default function SmartBillingDialog({
     const service = services.find(s => s.id === serviceId);
     setSelectedService(service || null);
     form.setValue("serviceId", serviceId);
-    
+
     // Reset quantity fields
     form.setValue("quantity", service?.billingType === "variable" ? 0 : 1);
     form.setValue("hours", 1);

@@ -1206,9 +1206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const serviceData = req.body;
 
-      console.log('Creating patient service with data:', serviceData);
+      console.log('Creating patient service with data:', JSON.stringify(serviceData, null, 2));
+      console.log('Doctor ID in service data:', serviceData.doctorId);
       const service = await storage.createPatientService(serviceData, req.user.id);
-      console.log('Created patient service:', service);
+      console.log('Created patient service:', JSON.stringify(service, null, 2));
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
@@ -1219,15 +1220,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Batch service creation - multiple services with same order ID
   app.post("/api/patient-services/batch", authenticateToken, async (req: any, res) => {
     try {
-      console.log("Creating batch patient services with data:", req.body);
-
+      console.log("Creating batch patient services with data:", JSON.stringify(req.body, null, 2));
+      
       // Validate array of services
       if (!Array.isArray(req.body)) {
         return res.status(400).json({ message: "Request body must be an array of services" });
       }
 
+      // Log doctor IDs for each service
+      req.body.forEach((service: any, index: number) => {
+        console.log(`Service ${index + 1} Doctor ID:`, service.doctorId);
+      });
+
       const services = await storage.createPatientServicesBatch(req.body, req.user.id);
-      console.log("Created batch patient services:", services);
+      console.log("Created batch patient services:", JSON.stringify(services, null, 2));
       res.json(services);
     } catch (error: any) {
       console.error("Batch service creation error:", error);
