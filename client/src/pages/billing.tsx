@@ -315,9 +315,9 @@ export default function Billing() {
                                     <td className="p-3">
                                       {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                                     </td>
-                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
-                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
-                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
+                                    <td className="p-3">{item.patientName || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
+                                    <td className="p-3">{item.doctorName || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`opd-fee-${index}`}>
                                       {formatCurrency(item.calculatedAmount || item.price || 0)}
                                     </td>
@@ -453,8 +453,8 @@ export default function Billing() {
                                     <td className="p-3">
                                       {item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A'}
                                     </td>
-                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
-                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{item.patientName || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
                                     <td className="p-3">{item.serviceName || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`diagnostic-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
@@ -529,8 +529,8 @@ export default function Billing() {
                                       {item.type === 'admission' ? (item.admissionDate ? new Date(item.admissionDate).toLocaleDateString('en-GB') : 'N/A') :
                                        (item.scheduledDate ? new Date(item.scheduledDate).toLocaleDateString('en-GB') : 'N/A')}
                                     </td>
-                                    <td className="p-3">{item.patient?.name || "N/A"}</td>
-                                    <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{item.patient?.name || item.patientName || "N/A"}</td>
+                                    <td className="p-3">{formatGenderAge(item.patient || { name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
                                     <td className="p-3">
                                       {item.type === 'admission' ? 'Room Charges' : (item.serviceName || "N/A")}
                                     </td>
