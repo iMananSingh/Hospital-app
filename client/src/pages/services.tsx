@@ -794,13 +794,14 @@ export default function ServiceManagement() {
 
   // Helper function to get doctor name
   const getDoctorName = (service: any) => {
-    // If there's a doctorName, use it
+    // If there's a doctorName from the joined query, use it
     if (service.doctorName) {
       return service.doctorName;
     }
-    // If there's a doctorId but no doctorName, show "Unknown Doctor"
+    // If there's a doctorId, try to find the doctor in the doctors list
     if (service.doctorId) {
-      return "Unknown Doctor";
+      const doctor = doctors.find(d => d.id === service.doctorId);
+      return doctor ? doctor.name : "Unknown Doctor";
     }
     // If no doctorId at all, it's an external patient
     return "External";
