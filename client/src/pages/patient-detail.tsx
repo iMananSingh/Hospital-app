@@ -529,38 +529,6 @@ export default function PatientDetail() {
         doctorId: z.string().optional(),
         price: z.coerce.number().min(0, "Price must be positive"),
         selectedServicesCount: z.number().default(0),
-      }).superRefine((data, ctx) => {
-        // For OPD services, doctorId is required
-        if (data.serviceType === "opd" && (!data.doctorId || data.doctorId.trim() === "")) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Doctor selection is required for OPD services",
-            path: ["doctorId"],
-          });
-        }
-
-        // For non-OPD services, need either selected services or manual entry
-        if (data.serviceType !== "opd") {
-          const hasSelectedServices = data.selectedServicesCount > 0;
-          const hasManualEntry = data.serviceName && data.serviceName.trim().length > 0 && data.price > 0;
-
-          if (!hasSelectedServices && !hasManualEntry) {
-            if (!data.serviceName || data.serviceName.trim().length === 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Service name is required when not selecting from catalog",
-                path: ["serviceName"],
-              });
-            }
-            if (!data.price || data.price <= 0) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Price must be greater than 0 when not selecting from catalog",
-                path: ["price"],
-              });
-            }
-          }
-        }
       })
     ),
     defaultValues: {
@@ -835,6 +803,25 @@ export default function PatientDetail() {
     console.log("Doctor ID:", data.doctorId);
     console.log("Scheduled date:", data.scheduledDate);
     console.log("Scheduled time:", data.scheduledTime);
+
+    // Validate required fields
+    if (!data.scheduledDate) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a scheduled date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.scheduledTime) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a scheduled time.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const isOPD = selectedServiceType === "opd" || data.serviceType === "opd";
 
@@ -3684,19 +3671,7 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  createServiceMutation.isPending ||
-                  !serviceForm.watch("scheduledDate") ||
-                  !serviceForm.watch("scheduledTime") ||
-                  (selectedServiceType === "opd" &&
-                    (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none" || serviceForm.watch("doctorId") === "")) ||
-                  (selectedServiceType !== "opd" &&
-                    selectedServices.length === 0 &&
-                    (!serviceForm.watch("serviceName") ||
-                      serviceForm.watch("serviceName").trim() === "" ||
-                      !serviceForm.watch("price") ||
-                      serviceForm.watch("price") <= 0))
-                }
+                disabled={createServiceMutation.isPending}
                 data-testid="button-submit-service"
               >
                 {createServiceMutation.isPending
