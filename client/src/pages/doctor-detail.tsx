@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +48,7 @@ interface DoctorRate {
 
 export default function DoctorDetail() {
   const { doctorId } = useParams<{ doctorId: string }>();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   // Fetch doctor details
@@ -183,7 +184,7 @@ export default function DoctorDetail() {
         <TopBar title="Doctor Not Found" />
         <div className="p-6 text-center">
           <p className="text-muted-foreground">Doctor not found</p>
-          <Button onClick={() => navigate("/doctors")} className="mt-4">
+          <Button onClick={() => setLocation("/doctors")} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Doctors
           </Button>
@@ -201,7 +202,7 @@ export default function DoctorDetail() {
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate("/doctors")}>
+          <Button variant="ghost" onClick={() => setLocation("/doctors")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Doctors
           </Button>
