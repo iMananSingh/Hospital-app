@@ -5160,15 +5160,24 @@ export class SqliteStorage implements IStorage {
   }
 
   // Get doctor earnings by doctor ID and optional status filter
-  getDoctorEarnings(doctorId: string, status?: string): any[] {
+  async getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]> {
     try {
-      let query = db
-        .select()
-        .from(schema.doctorEarnings)
-        .where(eq(schema.doctorEarnings.doctorId, doctorId));
+      const conditions: any[] = [];
+
+      if (doctorId) {
+        conditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
+      }
 
       if (status) {
-        query = query.where(eq(schema.doctorEarnings.status, status));
+        conditions.push(eq(schema.doctorEarnings.status, status));
+      }
+
+      let query = db
+        .select()
+        .from(schema.doctorEarnings);
+
+      if (conditions.length > 0) {
+        query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
       }
 
       return query.all();
