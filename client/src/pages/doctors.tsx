@@ -599,19 +599,19 @@ export default function Doctors() {
     const rates: any[] = [];
 
     // Service category mapping to ensure schema compliance
-    const categoryMapping: { [key: string]: string } = {
-      'opd': 'opd',
-      'lab_tests': 'lab_tests', 
-      'labTests': 'lab_tests',
-      'diagnostic': 'diagnostics',
-      'diagnostics': 'diagnostics',
-      'operations': 'opd',
-      'admissions': 'admission',
-      'admission': 'admission',
-      'services': 'opd',
-      'pathology': 'pathology',
-      'procedures': 'opd'
-    };
+      const categoryMapping: { [key: string]: string } = {
+        'opd': 'opd',
+        'lab_tests': 'pathology', 
+        'labTests': 'pathology',
+        'diagnostic': 'diagnostics',
+        'diagnostics': 'diagnostics',
+        'operations': 'opd',
+        'admissions': 'admission',
+        'admission': 'admission',
+        'services': 'opd',
+        'pathology': 'pathology',
+        'procedures': 'opd'
+      };
 
     // Helper function to add service to rates
     const addServiceToRates = (services: any[], categoryKey: string) => {

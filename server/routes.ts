@@ -495,6 +495,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 continue; // Skip this rate if service creation fails
               }
             }
+          } else if (rate.serviceId === 'lab_tests_all') {
+            // Handle Lab Tests placeholder - create a generic lab service if none exists
+            const services = await storage.getServices();
+            let labService = services.find(s =>
+              s.category?.toLowerCase() === 'pathology' ||
+              s.category?.toLowerCase() === 'lab_tests' ||
+              s.name?.toLowerCase().includes('lab') ||
+              s.name?.toLowerCase().includes('pathology')
+            );
+
+            if (labService) {
+              actualServiceId = labService.id;
+              actualServiceName = labService.name;
+            } else {
+              // Create a generic lab service record if none exists
+              try {
+                const newLabService = await storage.createService({
+                  name: 'Lab Tests',
+                  category: 'pathology',
+                  price: 0, // Lab tests have variable pricing
+                  description: 'Pathology and laboratory testing services',
+                  isActive: true,
+                  createdBy: req.user.id
+                });
+                actualServiceId = newLabService.id;
+                actualServiceName = newLabService.name;
+              } catch (serviceCreationError) {
+                console.error('Failed to create Lab service:', serviceCreationError);
+                continue; // Skip this rate if service creation fails
+              }
+            }
           } else {
             // For regular services, verify they exist
             const service = await storage.getServiceById(rate.serviceId);
