@@ -121,7 +121,11 @@ export default function PatientDetail() {
   const [isLoadingBill, setIsLoadingBill] = useState(false);
 
   // Fetch hospital settings for receipts and other uses with proper error handling
-  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
+  const {
+    data: hospitalSettings,
+    isLoading: isHospitalSettingsLoading,
+    error: hospitalSettingsError,
+  } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
       console.log("Fetching hospital settings...");
@@ -131,7 +135,11 @@ export default function PatientDetail() {
         },
       });
       if (!response.ok) {
-        console.error("Failed to fetch hospital settings:", response.status, response.statusText);
+        console.error(
+          "Failed to fetch hospital settings:",
+          response.status,
+          response.statusText,
+        );
         throw new Error("Failed to fetch hospital settings");
       }
       const data = await response.json();
@@ -153,15 +161,22 @@ export default function PatientDetail() {
 
     // Always create hospital info object, preferring saved settings over defaults
     const info = {
-      name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
-      address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+      name:
+        hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+      address:
+        hospitalSettings?.address ||
+        "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
       phone: hospitalSettings?.phone || "8889762101, 9826325958",
       email: hospitalSettings?.email || "hospital@healthcare.in",
-      registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
+      registrationNumber:
+        hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
       logo: hospitalSettings?.logoPath || undefined,
     };
 
-    console.log("Final hospital info constructed for comprehensive bill:", info);
+    console.log(
+      "Final hospital info constructed for comprehensive bill:",
+      info,
+    );
     console.log("=== End Hospital Info Creation ===");
     return info;
   }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
@@ -532,8 +547,8 @@ export default function PatientDetail() {
         serviceId: z.string().optional(), // Add serviceId to the form schema
         serviceType: z.string().optional(), // Make serviceType optional for catalog services
         serviceName: z.string().optional(), // Make serviceName optional for catalog services
-      })
-    ),</old_str>
+      }),
+    ),
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
@@ -833,7 +848,10 @@ export default function PatientDetail() {
     const isOPD = selectedServiceType === "opd" || data.serviceType === "opd";
 
     // For OPD, validate doctor selection
-    if (isOPD && (!data.doctorId || data.doctorId === "none" || data.doctorId === "")) {
+    if (
+      isOPD &&
+      (!data.doctorId || data.doctorId === "none" || data.doctorId === "")
+    ) {
       toast({
         title: "Validation Error",
         description: "Please select a doctor for OPD consultation.",
@@ -846,17 +864,23 @@ export default function PatientDetail() {
     if (!isOPD) {
       // If no services selected from catalog, check manual entry
       if (selectedServices.length === 0) {
-        if (!data.serviceName || data.serviceName.trim() === "" || !data.price || data.price <= 0) {
+        if (
+          !data.serviceName ||
+          data.serviceName.trim() === "" ||
+          !data.price ||
+          data.price <= 0
+        ) {
           toast({
             title: "Validation Error",
-            description: "Please either select services from the catalog or enter both service name and price.",
+            description:
+              "Please either select services from the catalog or enter both service name and price.",
             variant: "destructive",
           });
           return;
         }
       }
       // If services are selected from catalog, that's valid - no need to check manual fields
-    }</old_str>
+    }
 
     // Handle multiple selected services or single service
     const servicesToCreate = [];
@@ -871,7 +895,11 @@ export default function PatientDetail() {
         : 0;
 
       // Validate doctor selection for OPD
-      if (!selectedDoctorId || selectedDoctorId === "none" || selectedDoctorId === "") {
+      if (
+        !selectedDoctorId ||
+        selectedDoctorId === "none" ||
+        selectedDoctorId === ""
+      ) {
         toast({
           title: "Validation Error",
           description: "Please select a doctor for OPD consultation.",
@@ -907,7 +935,10 @@ export default function PatientDetail() {
             scheduledDate: data.scheduledDate,
             scheduledTime: data.scheduledTime,
             status: "scheduled",
-            doctorId: data.doctorId !== "none" && data.doctorId !== "" ? data.doctorId : null,
+            doctorId:
+              data.doctorId !== "none" && data.doctorId !== ""
+                ? data.doctorId
+                : null,
             billingType: "per_instance",
             calculatedAmount: Number(data.price),
           };
@@ -977,7 +1008,10 @@ export default function PatientDetail() {
           scheduledDate: data.scheduledDate,
           scheduledTime: data.scheduledTime,
           status: "scheduled",
-          doctorId: data.doctorId !== "none" && data.doctorId !== "" ? data.doctorId : null,
+          doctorId:
+            data.doctorId !== "none" && data.doctorId !== ""
+              ? data.doctorId
+              : null,
         });
       }
     }
@@ -1368,7 +1402,8 @@ export default function PatientDetail() {
     if (!patient) {
       toast({
         title: "Error",
-        description: "Patient data not loaded yet. Please wait a moment and try again.",
+        description:
+          "Patient data not loaded yet. Please wait a moment and try again.",
         variant: "destructive",
       });
       return;
@@ -1384,10 +1419,14 @@ export default function PatientDetail() {
     }
 
     if (hospitalSettingsError) {
-      console.warn("Hospital settings error, proceeding with defaults:", hospitalSettingsError);
+      console.warn(
+        "Hospital settings error, proceeding with defaults:",
+        hospitalSettingsError,
+      );
       toast({
         title: "Warning",
-        description: "Hospital settings could not be loaded. Using default values.",
+        description:
+          "Hospital settings could not be loaded. Using default values.",
         variant: "destructive",
       });
     }
@@ -1410,8 +1449,14 @@ export default function PatientDetail() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Comprehensive bill API error:", response.status, errorText);
-        throw new Error(`Failed to fetch comprehensive bill: ${response.status}`);
+        console.error(
+          "Comprehensive bill API error:",
+          response.status,
+          errorText,
+        );
+        throw new Error(
+          `Failed to fetch comprehensive bill: ${response.status}`,
+        );
       }
 
       const billData = await response.json();
@@ -1452,7 +1497,11 @@ export default function PatientDetail() {
             data-testid="button-comprehensive-bill"
           >
             {isLoadingBill || isHospitalSettingsLoading ? (
-              isHospitalSettingsLoading ? "Loading Settings..." : "Generating..."
+              isHospitalSettingsLoading ? (
+                "Loading Settings..."
+              ) : (
+                "Generating..."
+              )
             ) : (
               <>
                 <FileText className="h-4 w-4" />
@@ -3080,7 +3129,7 @@ export default function PatientDetail() {
             onSubmit={(e) => {
               console.log("Form submit event triggered");
               e.preventDefault();
-              
+
               // Get form data manually to bypass schema validation issues
               const formData = serviceForm.getValues();
               console.log("Submit button clicked");
@@ -3090,12 +3139,12 @@ export default function PatientDetail() {
               console.log("Selected services count:", selectedServices.length);
               console.log("Service name:", formData.serviceName);
               console.log("Price:", formData.price);
-              
+
               // Call our custom validation
               onServiceSubmit(formData);
             }}
             className="space-y-6"
-          ></old_str>
+          >
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800 font-medium">
@@ -3662,33 +3711,51 @@ export default function PatientDetail() {
             </div>
 
             {/* Validation Helper Text */}
-            {selectedServiceType !== "opd" && selectedServices.length === 0 &&
-             (!serviceForm.watch("serviceName") || !serviceForm.watch("serviceName").trim() || !serviceForm.watch("price") || serviceForm.watch("price") <= 0) && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-service-submit-help">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  <span className="text-sm font-medium">
-                    To schedule services, please either:
-                  </span>
+            {selectedServiceType !== "opd" &&
+              selectedServices.length === 0 &&
+              (!serviceForm.watch("serviceName") ||
+                !serviceForm.watch("serviceName").trim() ||
+                !serviceForm.watch("price") ||
+                serviceForm.watch("price") <= 0) && (
+                <div
+                  className="bg-amber-50 border border-amber-200 rounded-lg p-3"
+                  data-testid="text-service-submit-help"
+                >
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm font-medium">
+                      To schedule services, please either:
+                    </span>
+                  </div>
+                  <ul className="mt-2 text-sm text-amber-700 list-disc list-inside ml-4">
+                    <li>
+                      Select services from the catalog above by checking the
+                      boxes, OR
+                    </li>
+                    <li>
+                      Enter both service name and price (greater than ₹0) in the
+                      manual entry fields
+                    </li>
+                  </ul>
                 </div>
-                <ul className="mt-2 text-sm text-amber-700 list-disc list-inside ml-4">
-                  <li>Select services from the catalog above by checking the boxes, OR</li>
-                  <li>Enter both service name and price (greater than ₹0) in the manual entry fields</li>
-                </ul>
-              </div>
-            )}
+              )}
 
             {selectedServiceType === "opd" &&
-             (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none" || serviceForm.watch("doctorId") === "") && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-opd-doctor-help">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  <span className="text-sm font-medium">
-                    Please select a doctor for the OPD consultation
-                  </span>
+              (!serviceForm.watch("doctorId") ||
+                serviceForm.watch("doctorId") === "none" ||
+                serviceForm.watch("doctorId") === "") && (
+                <div
+                  className="bg-amber-50 border border-amber-200 rounded-lg p-3"
+                  data-testid="text-opd-doctor-help"
+                >
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm font-medium">
+                      Please select a doctor for the OPD consultation
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button
@@ -3729,8 +3796,14 @@ export default function PatientDetail() {
                   console.log("Form is valid:", serviceForm.formState.isValid);
                   console.log("Form errors:", serviceForm.formState.errors);
                   console.log("Selected service type:", selectedServiceType);
-                  console.log("Selected services count:", selectedServices.length);
-                  console.log("Service name:", serviceForm.watch("serviceName"));
+                  console.log(
+                    "Selected services count:",
+                    selectedServices.length,
+                  );
+                  console.log(
+                    "Service name:",
+                    serviceForm.watch("serviceName"),
+                  );
                   console.log("Price:", serviceForm.watch("price"));
 
                   // Let the form handle submission naturally
