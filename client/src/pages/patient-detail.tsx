@@ -529,6 +529,7 @@ export default function PatientDetail() {
         doctorId: z.string().optional(),
         price: z.coerce.number().min(0, "Price must be positive"),
         selectedServicesCount: z.number().default(0),
+        serviceId: z.string().optional(), // Add serviceId to the form schema
       })
     ),
     defaultValues: {
@@ -543,6 +544,7 @@ export default function PatientDetail() {
       notes: "",
       scheduledDate: new Date().toISOString().split("T")[0],
       scheduledTime: new Date().toTimeString().slice(0, 5),
+      serviceId: "", // Initialize serviceId to empty string
     },
   });
 
@@ -593,7 +595,7 @@ export default function PatientDetail() {
       case "per_24_hours":
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalTotalAmount}`;
         break;
 
       case "per_hour":
@@ -733,6 +735,7 @@ export default function PatientDetail() {
         scheduledDate: "",
         scheduledTime: "",
         doctorId: "",
+        serviceId: "", // Reset serviceId
         notes: "",
         price: 0,
         quantity: 1,
@@ -2282,7 +2285,7 @@ export default function PatientDetail() {
                                         <span className="text-muted-foreground text-xs">
                                           {new Date(
                                             event.eventTime,
-                                          ).toLocaleString("en-IN", {
+                                          ).toLocaleString("en-US", {
                                             month: "short",
                                             day: "numeric",
                                             hour: "2-digit",
@@ -2384,7 +2387,8 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const result = parseTimestamp(                                    test.orderDate,
+                                  const result = parseTimestamp(
+                                    test.orderDate,
                                     "Asia/Kolkata",
                                   );
 
@@ -3687,6 +3691,7 @@ export default function PatientDetail() {
                     scheduledDate: "",
                     scheduledTime: "",
                     doctorId: "",
+                    serviceId: "", // Reset serviceId
                     notes: "",
                     price: 0,
                     quantity: 1,
@@ -3710,7 +3715,7 @@ export default function PatientDetail() {
                   console.log("Selected services count:", selectedServices.length);
                   console.log("Service name:", serviceForm.watch("serviceName"));
                   console.log("Price:", serviceForm.watch("price"));
-                  
+
                   // Let the form handle submission naturally
                 }}
               >
