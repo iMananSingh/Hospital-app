@@ -803,6 +803,8 @@ export default function PatientDetail() {
     console.log("Doctor ID:", data.doctorId);
     console.log("Scheduled date:", data.scheduledDate);
     console.log("Scheduled time:", data.scheduledTime);
+    console.log("Selected services:", selectedServices);
+    console.log("Form validation state:", serviceForm.formState);
 
     // Validate required fields
     if (!data.scheduledDate) {
@@ -824,6 +826,29 @@ export default function PatientDetail() {
     }
 
     const isOPD = selectedServiceType === "opd" || data.serviceType === "opd";
+
+    // For OPD, validate doctor selection
+    if (isOPD && (!data.doctorId || data.doctorId === "none" || data.doctorId === "")) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a doctor for OPD consultation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For non-OPD services, validate service selection
+    if (!isOPD && selectedServices.length === 0) {
+      // Check if manual service entry is complete
+      if (!data.serviceName || data.serviceName.trim() === "" || !data.price || data.price <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please either select services from the catalog or enter both service name and price.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     // Handle multiple selected services or single service
     const servicesToCreate = [];
@@ -3043,7 +3068,11 @@ export default function PatientDetail() {
           </DialogHeader>
 
           <form
-            onSubmit={serviceForm.handleSubmit(onServiceSubmit)}
+            onSubmit={(e) => {
+              console.log("Form submit event triggered");
+              e.preventDefault();
+              serviceForm.handleSubmit(onServiceSubmit)(e);
+            }}
             className="space-y-6"
           >
             {selectedServiceType === "opd" && (
@@ -3673,6 +3702,17 @@ export default function PatientDetail() {
                 type="submit"
                 disabled={createServiceMutation.isPending}
                 data-testid="button-submit-service"
+                onClick={(e) => {
+                  console.log("Submit button clicked");
+                  console.log("Form is valid:", serviceForm.formState.isValid);
+                  console.log("Form errors:", serviceForm.formState.errors);
+                  console.log("Selected service type:", selectedServiceType);
+                  console.log("Selected services count:", selectedServices.length);
+                  console.log("Service name:", serviceForm.watch("serviceName"));
+                  console.log("Price:", serviceForm.watch("price"));
+                  
+                  // Let the form handle submission naturally
+                }}
               >
                 {createServiceMutation.isPending
                   ? "Scheduling..."
