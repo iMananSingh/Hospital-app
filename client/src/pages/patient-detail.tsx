@@ -526,7 +526,41 @@ export default function PatientDetail() {
   const serviceForm = useForm({
     resolver: zodResolver(
       insertPatientServiceSchema.extend({
-        doctorId: z.string().min(1, "Doctor selection is required"),
+        doctorId: z.string().optional(),
+        price: z.coerce.number().min(0, "Price must be positive"),
+        selectedServicesCount: z.number().default(0),
+      }).superRefine((data, ctx) => {
+        // For OPD services, doctorId is required
+        if (data.serviceType === "opd" && (!data.doctorId || data.doctorId.trim() === "")) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Doctor selection is required for OPD services",
+            path: ["doctorId"],
+          });
+        }
+        
+        // For non-OPD services, need either selected services or manual entry
+        if (data.serviceType !== "opd") {
+          const hasSelectedServices = data.selectedServicesCount > 0;
+          const hasManualEntry = data.serviceName && data.serviceName.trim().length > 0 && data.price > 0;
+          
+          if (!hasSelectedServices && !hasManualEntry) {
+            if (!data.serviceName || data.serviceName.trim().length === 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Service name is required when not selecting from catalog",
+                path: ["serviceName"],
+              });
+            }
+            if (!data.price || data.price <= 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Price must be greater than 0 when not selecting from catalog",
+                path: ["price"],
+              });
+            }
+          }
+        }
       })
     ),
     defaultValues: {
@@ -545,6 +579,12 @@ export default function PatientDetail() {
   });
 
   const watchedServiceValues = serviceForm.watch();
+
+  // Sync form fields with component state
+  useEffect(() => {
+    serviceForm.setValue("serviceType", selectedServiceType);
+    serviceForm.setValue("selectedServicesCount", selectedServices.length);
+  }, [selectedServiceType, selectedServices.length]);
 
   // Calculate billing preview when service or parameters change
   useEffect(() => {
@@ -3215,6 +3255,7 @@ export default function PatientDetail() {
                                 <TableCell>
                                   <Checkbox
                                     checked={isSelected}
+                                    data-testid={`checkbox-service-${service.id}`}
                                     onCheckedChange={(checked) => {
                                       if (checked) {
                                         setSelectedServices([
@@ -3628,8 +3669,8 @@ export default function PatientDetail() {
 
             {/* Validation Helper Text */}
             {selectedServiceType !== "opd" && selectedServices.length === 0 && 
-             (!serviceForm.watch("serviceName") || !serviceForm.watch("price")) && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+             (!serviceForm.watch("serviceName") || !serviceForm.watch("serviceName").trim() || !serviceForm.watch("price") || serviceForm.watch("price") <= 0) && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-service-submit-help">
                 <div className="flex items-center gap-2 text-amber-800">
                   <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   <span className="text-sm font-medium">
@@ -3638,14 +3679,14 @@ export default function PatientDetail() {
                 </div>
                 <ul className="mt-2 text-sm text-amber-700 list-disc list-inside ml-4">
                   <li>Select services from the catalog above by checking the boxes, OR</li>
-                  <li>Enter both service name and price in the manual entry fields</li>
+                  <li>Enter both service name and price (greater than ₹0) in the manual entry fields</li>
                 </ul>
               </div>
             )}
 
             {selectedServiceType === "opd" && 
-             (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none") && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+             (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none" || serviceForm.watch("doctorId") === "") && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-opd-doctor-help">
                 <div className="flex items-center gap-2 text-amber-800">
                   <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   <span className="text-sm font-medium">
@@ -3686,18 +3727,28 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  createServiceMutation.isPending ||
-                  (selectedServiceType === "opd" &&
-                    (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none")) ||
-                  (selectedServiceType !== "opd" &&
-                    selectedServices.length === 0 &&
-                    (!serviceForm.watch("serviceName") ||
-                      !serviceForm.watch("price"))) ||
-                  !serviceForm.watch("scheduledDate") ||
-                  !serviceForm.watch("scheduledTime")
-                }
-                data-testid="button-schedule-service"
+                disabled={(() => {
+                  // Check if mutation is pending
+                  if (createServiceMutation.isPending) return true;
+                  
+                  // Check required fields for all service types
+                  if (!serviceForm.watch("scheduledDate") || !serviceForm.watch("scheduledTime")) return true;
+                  
+                  // For OPD services: doctor is required
+                  if (selectedServiceType === "opd") {
+                    const doctorId = serviceForm.watch("doctorId");
+                    return !doctorId || doctorId === "none" || doctorId === "";
+                  }
+                  
+                  // For non-OPD services: need either selected services OR manual entry
+                  const hasSelectedServices = selectedServices.length > 0;
+                  const serviceName = serviceForm.watch("serviceName");
+                  const price = serviceForm.watch("price");
+                  const hasValidManualEntry = serviceName && serviceName.trim().length > 0 && price && price > 0;
+                  
+                  return !(hasSelectedServices || hasValidManualEntry);
+                })()}
+                data-testid="button-submit-service"
               >
                 {createServiceMutation.isPending
                   ? "Scheduling..."
