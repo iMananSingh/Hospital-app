@@ -150,7 +150,7 @@ export default function PatientDetail() {
     console.log("Hospital settings in patient detail:", hospitalSettings);
     console.log("Hospital settings loading:", isHospitalSettingsLoading);
     console.log("Hospital settings error:", hospitalSettingsError);
-    
+
     // Always create hospital info object, preferring saved settings over defaults
     const info = {
       name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
@@ -826,7 +826,9 @@ export default function PatientDetail() {
             scheduledDate: data.scheduledDate,
             scheduledTime: data.scheduledTime,
             status: "scheduled",
-            doctorId: data.doctorId !== "none" ? data.doctorId : null,
+            doctorId: data.doctorId !== "none" && data.doctorId !== "" ? data.doctorId : null,
+            billingType: "per_instance",
+            calculatedAmount: Number(data.price),
           };
 
           // Add smart billing parameters if service has special billing type
@@ -894,7 +896,7 @@ export default function PatientDetail() {
           scheduledDate: data.scheduledDate,
           scheduledTime: data.scheduledTime,
           status: "scheduled",
-          doctorId: data.doctorId !== "none" ? data.doctorId : null,
+          doctorId: data.doctorId !== "none" && data.doctorId !== "" ? data.doctorId : null,
         });
       }
     }
@@ -1310,11 +1312,11 @@ export default function PatientDetail() {
 
     try {
       setIsLoadingBill(true);
-      
+
       console.log("=== Comprehensive Bill Generation ===");
       console.log("Patient ID:", patient.id);
       console.log("Hospital info being passed:", hospitalInfo);
-      
+
       const response = await fetch(
         `/api/patients/${patient.id}/comprehensive-bill`,
         {
@@ -1333,7 +1335,7 @@ export default function PatientDetail() {
       const billData = await response.json();
       console.log("Comprehensive bill data received:", billData);
       console.log("=== End Comprehensive Bill Generation ===");
-      
+
       setComprehensiveBillData(billData);
       setIsComprehensiveBillOpen(true);
     } catch (error) {
