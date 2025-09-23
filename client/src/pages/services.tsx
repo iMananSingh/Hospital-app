@@ -794,7 +794,8 @@ export default function ServiceManagement() {
 
   // Helper function to get doctor name
   const getDoctorName = (service: any) => {
-    return service.doctorName || "External";
+    // Use the doctorName from the joined query, or fall back to External if no doctor assigned
+    return service.doctorName || (service.doctorId ? "Unknown Doctor" : "External");
   };
 
   const filteredServices = services.filter(service => service.category === activeTab);
