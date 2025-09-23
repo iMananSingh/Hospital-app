@@ -1507,7 +1507,6 @@ export default function Doctors() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Doctor</TableHead>
-                            <TableHead>Services This Month</TableHead>
                             <TableHead>Pending Amount</TableHead>
                             <TableHead>Last Payment</TableHead>
                             <TableHead>Status</TableHead>
@@ -1532,7 +1531,6 @@ export default function Doctors() {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell data-testid={`salary-services-${doctorData.doctorId}`}>{doctorData.servicesCount}</TableCell>
                               <TableCell data-testid={`salary-pending-${doctorData.doctorId}`}>
                                 <span className="font-medium text-green-600">₹{doctorData.totalPending.toFixed(2)}</span>
                               </TableCell>
@@ -1565,7 +1563,7 @@ export default function Doctors() {
                             </TableRow>
                           )) : (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8">
+                              <TableCell colSpan={5} className="text-center py-8">
                                 <div className="flex flex-col items-center space-y-2">
                                   <Wallet className="w-8 h-8 text-muted-foreground" />
                                   <p className="text-muted-foreground">No doctors found</p>
