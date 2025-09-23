@@ -1,0 +1,46 @@
+Submit button clicked
+patient-detail.tsx:3707 Form is valid: false
+patient-detail.tsx:3708 Form errors: {serviceId: {…}}
+patient-detail.tsx:3709 Selected service type: opd
+patient-detail.tsx:3710 Selected services count: 0
+patient-detail.tsx:3711 Service name: OPD Consultation
+patient-detail.tsx:3712 Price: 0
+patient-detail.tsx:3072 Form submit event triggered
+patient-detail.tsx:2448 === TIMELINE DEBUG START ===
+patient-detail.tsx:2479 Normalizing date for registration unknown: "2025-09-23T08:44:24.087Z"
+patient-detail.tsx:2527 Final normalized registration date: "2025-09-23T08:44:24.087Z" -> timestamp: 1758617064087 (9/23/2025, 2:14:24 PM)
+patient-detail.tsx:2693 Processing admissions for timeline: 1
+patient-detail.tsx:2706 Processing admission 70934e49e6a01291c52d1931789aab75 with 1 events
+patient-detail.tsx:2479 Normalizing date for admission_event 56da5ce9d998e170a9a6a2558a73883b: "2025-09-23T03:24:13.967Z"
+patient-detail.tsx:2575 Final normalized date for admission_event 56da5ce9d998e170a9a6a2558a73883b: "2025-09-23T03:24:13.967Z" -> timestamp: 1758597853967 (9/23/2025, 8:54:13 AM)
+patient-detail.tsx:2807 Processing payment and discount entries for timeline
+patient-detail.tsx:2859 Processing pathology orders for timeline: 1
+patient-detail.tsx:2479 Normalizing date for pathology 61e964e916ba2d7003f1d916e8fa119a: "2025-09-23 03:23:52"
+patient-detail.tsx:2540 Converted SQLite format to: "2025-09-23T03:23:52Z"
+patient-detail.tsx:2575 Final normalized date for pathology 61e964e916ba2d7003f1d916e8fa119a: "2025-09-23T03:23:52Z" -> timestamp: 1758597832000 (9/23/2025, 8:53:52 AM)
+patient-detail.tsx:2927 Timeline events before sorting: (3) [{…}, {…}, {…}]
+patient-detail.tsx:2950 Timeline events after sorting: (3) [{…}, {…}, {…}]
+patient-detail.tsx:2961 === TIMELINE DEBUG END ===
+patient-detail.tsx:3706 Submit button clicked
+patient-detail.tsx:3707 Form is valid: false
+patient-detail.tsx:3708 Form errors: {serviceId: {…}}
+patient-detail.tsx:3709 Selected service type: opd
+patient-detail.tsx:3710 Selected services count: 0
+patient-detail.tsx:3711 Service name: OPD Consultation
+patient-detail.tsx:3712 Price: 0
+patient-detail.tsx:3072 Form submit event triggered
+patient-detail.tsx:2448 === TIMELINE DEBUG START ===
+patient-detail.tsx:2479 Normalizing date for registration unknown: "2025-09-23T08:44:24.087Z"
+patient-detail.tsx:2527 Final normalized registration date: "2025-09-23T08:44:24.087Z" -> timestamp: 1758617064087 (9/23/2025, 2:14:24 PM)
+patient-detail.tsx:2693 Processing admissions for timeline: 1
+patient-detail.tsx:2706 Processing admission 70934e49e6a01291c52d1931789aab75 with 1 events
+patient-detail.tsx:2479 Normalizing date for admission_event 56da5ce9d998e170a9a6a2558a73883b: "2025-09-23T03:24:13.967Z"
+patient-detail.tsx:2575 Final normalized date for admission_event 56da5ce9d998e170a9a6a2558a73883b: "2025-09-23T03:24:13.967Z" -> timestamp: 1758597853967 (9/23/2025, 8:54:13 AM)
+patient-detail.tsx:2807 Processing payment and discount entries for timeline
+patient-detail.tsx:2859 Processing pathology orders for timeline: 1
+patient-detail.tsx:2479 Normalizing date for pathology 61e964e916ba2d7003f1d916e8fa119a: "2025-09-23 03:23:52"
+patient-detail.tsx:2540 Converted SQLite format to: "2025-09-23T03:23:52Z"
+patient-detail.tsx:2575 Final normalized date for pathology 61e964e916ba2d7003f1d916e8fa119a: "2025-09-23T03:23:52Z" -> timestamp: 1758597832000 (9/23/2025, 8:53:52 AM)
+patient-detail.tsx:2927 Timeline events before sorting: (3) [{…}, {…}, {…}]
+patient-detail.tsx:2950 Timeline events after sorting: (3) [{…}, {…}, {…}]
+patient-detail.tsx:2961 === TIMELINE DEBUG END ===
