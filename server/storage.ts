@@ -5158,6 +5158,25 @@ export class SqliteStorage implements IStorage {
       throw error;
     }
   }
+
+  // Get doctor earnings by doctor ID and optional status filter
+  getDoctorEarnings(doctorId: string, status?: string): any[] {
+    try {
+      let query = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(eq(schema.doctorEarnings.doctorId, doctorId));
+
+      if (status) {
+        query = query.where(eq(schema.doctorEarnings.status, status));
+      }
+
+      return query.all();
+    } catch (error) {
+      console.error('Error fetching doctor earnings:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new SqliteStorage();
