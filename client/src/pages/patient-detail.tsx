@@ -98,6 +98,8 @@ export default function PatientDetail() {
   const [selectedServiceType, setSelectedServiceType] = useState("opd");
   const [selectedServiceCategory, setSelectedServiceCategory] =
     useState<string>("");
+  const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] =
+    useState(""); // Renamed from serviceSearchQuery to avoid conflict
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
@@ -111,7 +113,6 @@ export default function PatientDetail() {
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
-  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
@@ -1367,14 +1368,14 @@ export default function PatientDetail() {
     }
 
     // Filter by search query
-    if (serviceSearchQuery.trim()) {
+    if (selectedServiceSearchQuery.trim()) {
       filtered = filtered.filter(
         (s) =>
-          s.name.toLowerCase().includes(serviceSearchQuery.toLowerCase()) ||
+          s.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
           (s.description &&
             s.description
               .toLowerCase()
-              .includes(serviceSearchQuery.toLowerCase())),
+              .includes(selectedServiceSearchQuery.toLowerCase())),
       );
     }
 
@@ -1974,14 +1975,14 @@ export default function PatientDetail() {
 
                         // Use doctorName from the joined query first, then fall back to lookup
                         let doctorName = service.doctorName;
-                        
+
                         if (!doctorName && service.doctorId) {
                           const doctor = doctors.find(
                             (d: Doctor) => d.id === service.doctorId,
                           );
                           doctorName = doctor ? doctor.name : "Unknown Doctor";
                         }
-                        
+
                         if (!doctorName) {
                           doctorName = service.doctorId ? "Unknown Doctor" : "No Doctor Assigned";
                         }
@@ -2692,7 +2693,7 @@ export default function PatientDetail() {
                         services.length,
                       );
 
-                      // Group services by orderId (similar to how pathology tests are grouped)
+                      // Group services by orderId
                       const serviceGroups = services.reduce(
                         (groups: { [key: string]: any[] }, service: any) => {
                           const groupKey =
@@ -3211,13 +3212,13 @@ export default function PatientDetail() {
                     : "Assigned Doctor *"}
                 </Label>
                 <Select
-                  value={serviceForm.watch("doctorId")}
+                  value={serviceForm.watch("doctorId") || ""}
                   onValueChange={(value) => {
-                    serviceForm.setValue("doctorId", value);
-                    // Clear the error when a valid doctor is selected
-                    if (value && value !== "none") {
-                      serviceForm.clearErrors("doctorId");
-                    }
+                    console.log("=== DOCTOR SELECTION CHANGE ===");
+                    console.log("Selected value:", value);
+                    const finalValue = value === "none" ? "" : value;
+                    serviceForm.setValue("doctorId", finalValue);
+                    console.log("Form value set to:", finalValue);
                   }}
                   data-testid="select-service-doctor"
                 >
@@ -3324,9 +3325,9 @@ export default function PatientDetail() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         placeholder="Search services by name..."
-                        value={serviceSearchQuery}
+                        value={selectedServiceSearchQuery}
                         onChange={(e) => {
-                          setServiceSearchQuery(e.target.value);
+                          setSelectedServiceSearchQuery(e.target.value);
                           // Reset service selection when search changes
                           serviceForm.setValue("serviceType", "");
                           serviceForm.setValue("serviceName", "");
@@ -3792,7 +3793,7 @@ export default function PatientDetail() {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
-                  setServiceSearchQuery("");
+                  setSelectedServiceSearchQuery(""); // Clear search query on close
                   setSelectedCatalogService(null); // Reset selected service
                   setBillingPreview(null); // Reset billing preview
                   serviceForm.reset({

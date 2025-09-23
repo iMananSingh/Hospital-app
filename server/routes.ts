@@ -1220,26 +1220,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Batch service creation - multiple services with same order ID
   app.post("/api/patient-services/batch", authenticateToken, async (req: any, res) => {
     try {
-      console.log("Creating batch patient services with data:", JSON.stringify(req.body, null, 2));
+      console.log("=== BATCH SERVICE CREATION API ===");
+      console.log("Raw request body:", JSON.stringify(req.body, null, 2));
       
       // Validate array of services
       if (!Array.isArray(req.body)) {
         return res.status(400).json({ message: "Request body must be an array of services" });
       }
 
-      // Log doctor IDs for each service
+      // Log doctor IDs for each service with more detail
       req.body.forEach((service: any, index: number) => {
-        console.log(`Service ${index + 1} Doctor ID:`, service.doctorId);
-        console.log(`Service ${index + 1} Service Name:`, service.serviceName);
-        console.log(`Service ${index + 1} Service Type:`, service.serviceType);
+        console.log(`=== SERVICE ${index + 1} INPUT ANALYSIS ===`);
+        console.log(`Doctor ID:`, service.doctorId);
+        console.log(`Doctor ID type:`, typeof service.doctorId);
+        console.log(`Service Name:`, service.serviceName);
+        console.log(`Service Type:`, service.serviceType);
+        console.log(`Patient ID:`, service.patientId);
+        
+        // Check if doctorId is actually null vs undefined vs empty string
+        if (service.doctorId === null) {
+          console.log(`Service ${index + 1}: Doctor ID is explicitly null`);
+        } else if (service.doctorId === undefined) {
+          console.log(`Service ${index + 1}: Doctor ID is undefined`);
+        } else if (service.doctorId === "") {
+          console.log(`Service ${index + 1}: Doctor ID is empty string`);
+        } else {
+          console.log(`Service ${index + 1}: Doctor ID has value:`, service.doctorId);
+        }
       });
 
       const services = await storage.createPatientServicesBatch(req.body, req.user.id);
-      console.log("Created batch patient services:", JSON.stringify(services, null, 2));
+      console.log("=== BATCH SERVICE CREATION RESULT ===");
+      console.log("Created services count:", services.length);
       
       // Log the created services to verify doctor IDs were saved
       services.forEach((service: any, index: number) => {
-        console.log(`Created Service ${index + 1} Doctor ID:`, service.doctorId);
+        console.log(`=== CREATED SERVICE ${index + 1} RESULT ===`);
+        console.log(`ID:`, service.id);
+        console.log(`Doctor ID:`, service.doctorId);
+        console.log(`Doctor ID type:`, typeof service.doctorId);
+        console.log(`Service Name:`, service.serviceName);
+        console.log(`Service Type:`, service.serviceType);
       });
       
       res.json(services);

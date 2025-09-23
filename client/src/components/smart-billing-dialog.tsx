@@ -235,7 +235,14 @@ export default function SmartBillingDialog({
           {/* Doctor Selection Field */}
           <div className="space-y-2">
             <Label>Assign Doctor</Label>
-            <Select onValueChange={(value) => form.setValue("doctorId", value)} data-testid="select-doctor">
+            <Select 
+              value={form.watch("doctorId") || ""}
+              onValueChange={(value) => {
+                console.log("Doctor selection changed to:", value);
+                form.setValue("doctorId", value === "none" ? "" : value);
+              }} 
+              data-testid="select-doctor"
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose a doctor (optional)" />
               </SelectTrigger>
