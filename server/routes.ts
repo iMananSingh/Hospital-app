@@ -1984,6 +1984,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Doctor Earnings Routes
+  app.get("/api/doctors/:doctorId/earnings", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const { status } = req.query;
+      const earnings = await storage.getDoctorEarnings(doctorId, status as string);
+      res.json(earnings);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get doctor earnings" });
+    }
+  });
+
+  app.post("/api/doctors/recalculate-earnings", authenticateToken, async (req: any, res) => {
+    try {
+      const { doctorId } = req.body;
+      const result = await storage.recalculateDoctorEarnings(doctorId);
+      res.json({ 
+        message: `Recalculation complete: processed ${result.processed} services, created ${result.created} new earnings`,
+        ...result 
+      });
+    } catch (error) {
+      console.error("Error recalculating doctor earnings:", error);
+      res.status(500).json({ message: "Failed to recalculate doctor earnings" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -929,7 +929,7 @@ export interface IStorage {
     tests: InsertPathologyTest[],
     userId?: string,
   ): Promise<PathologyOrder>;
-  getPathologyOrders(): Promise<any[]>;
+  getPathologyOrders(fromDate?: string, toDate?: string): Promise<any[]>;
   getPathologyOrderById(id: string): Promise<any>;
   getPathologyOrdersByPatient(patientId: string): Promise<PathologyOrder[]>;
   updatePathologyOrderStatus(
@@ -948,6 +948,10 @@ export interface IStorage {
     service: InsertPatientService,
     userId?: string,
   ): Promise<PatientService>;
+  createPatientServicesBatch(
+    services: InsertPatientService[],
+    userId?: string,
+  ): Promise<PatientService[]>;
   getPatientServices(patientId?: string): Promise<PatientService[]>;
   getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]>;
   getPatientServiceById(id: string): Promise<PatientService | undefined>;
@@ -5038,52 +5042,117 @@ export class SqliteStorage implements IStorage {
 
   // Recalculate doctor earnings for services that have doctors assigned but no earnings
   async recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }> {
+    console.log(`Starting recalculation of doctor earnings${doctorId ? ` for doctor ${doctorId}` : ' for all doctors'}`);
+
+    let processed = 0;
+    let created = 0;
+
     try {
-      let processed = 0;
-      let created = 0;
-
-      // Get all patient services with doctors assigned
-      const services = db
-        .select({
-          patientService: schema.patientServices,
-          service: schema.services
-        })
+      // Get all patient services that have a doctor assigned
+      let patientServicesQuery = db
+        .select()
         .from(schema.patientServices)
-        .leftJoin(schema.services, eq(schema.patientServices.serviceId, schema.services.id))
-        .where(
-          and(
-            isNotNull(schema.patientServices.doctorId),
-            doctorId ? eq(schema.patientServices.doctorId, doctorId) : sql`1=1`
-          )
-        )
-        .all();
+        .where(isNotNull(schema.patientServices.doctorId));
 
-      console.log(`Found ${services.length} patient services with doctors assigned`);
+      if (doctorId) {
+        patientServicesQuery = patientServicesQuery.where(
+          eq(schema.patientServices.doctorId, doctorId)
+        );
+      }
 
-      for (const { patientService, service } of services) {
+      const patientServices = patientServicesQuery.all();
+      console.log(`Found ${patientServices.length} patient services to process`);
+
+      for (const patientService of patientServices) {
         processed++;
 
-        if (!service) {
-          console.log(`No service found for patient service ${patientService.id}`);
-          continue;
-        }
-
-        // Check if earning already exists
+        // Check if earning already exists for this patient service
         const existingEarning = db
           .select()
           .from(schema.doctorEarnings)
           .where(eq(schema.doctorEarnings.patientServiceId, patientService.id))
           .get();
 
-        if (!existingEarning) {
-          // Calculate earning for this service
-          this.calculateDoctorEarning(patientService, service);
+        if (existingEarning) {
+          console.log(`Earning already exists for patient service ${patientService.id}`);
+          continue;
+        }
+
+        // Get service details
+        const service = db
+          .select()
+          .from(schema.services)
+          .where(eq(schema.services.id, patientService.serviceId))
+          .get();
+
+        if (!service) {
+          console.log(`Service not found for patient service ${patientService.id}`);
+          continue;
+        }
+
+        // Find doctor service rate
+        const doctorRate = db
+          .select()
+          .from(schema.doctorServiceRates)
+          .where(
+            and(
+              eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+              eq(schema.doctorServiceRates.serviceId, service.id),
+              eq(schema.doctorServiceRates.isActive, true)
+            )
+          )
+          .get();
+
+        if (!doctorRate) {
+          console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
+          continue;
+        }
+
+        // Calculate earning amount based on rate type
+        let earnedAmount = 0;
+        const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+
+        if (doctorRate.rateType === 'percentage') {
+          earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
+        } else if (doctorRate.rateType === 'per_instance') {
+          earnedAmount = doctorRate.rateAmount;
+        } else if (doctorRate.rateType === 'fixed_daily') {
+          earnedAmount = doctorRate.rateAmount;
+        }
+
+        // Create doctor earning record
+        const earningId = this.generateEarningId();
+
+        try {
+          db.insert(schema.doctorEarnings)
+            .values({
+              earningId,
+              doctorId: patientService.doctorId!,
+              patientId: patientService.patientId,
+              serviceId: service.id,
+              patientServiceId: patientService.id,
+              serviceName: service.name,
+              serviceCategory: doctorRate.serviceCategory,
+              serviceDate: patientService.scheduledDate,
+              rateType: doctorRate.rateType,
+              rateAmount: doctorRate.rateAmount,
+              servicePrice,
+              earnedAmount,
+              status: 'pending',
+              notes: `Recalculation for ${service.name}`,
+            })
+            .run();
+
           created++;
+          console.log(`Created earning ${earningId} for doctor ${patientService.doctorId}: ₹${earnedAmount}`);
+        } catch (error) {
+          console.error(`Error creating earning for patient service ${patientService.id}:`, error);
         }
       }
 
-      console.log(`Recalculated doctor earnings: processed ${processed}, created ${created}`);
+      console.log(`Recalculation complete: processed ${processed} services, created ${created} new earnings`);
       return { processed, created };
+
     } catch (error) {
       console.error('Error recalculating doctor earnings:', error);
       throw error;
