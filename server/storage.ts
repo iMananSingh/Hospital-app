@@ -1206,7 +1206,7 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate and create doctor earning record for a patient service
-  private calculateDoctorEarning(patientService: PatientService, service: Service): void {
+  private async calculateDoctorEarning(patientService: PatientService, service: Service): Promise<void> {
     try {
       // Find doctor service rate for this doctor and service
       const doctorRate = db
@@ -1238,29 +1238,24 @@ export class SqliteStorage implements IStorage {
         earnedAmount = doctorRate.rateAmount;
       }
 
-      // Create doctor earning record
-      const earningId = this.generateEarningId();
+      // Create doctor earning record using the storage interface method
+      await this.createDoctorEarning({
+        doctorId: patientService.doctorId!,
+        patientId: patientService.patientId,
+        serviceId: service.id,
+        patientServiceId: patientService.id,
+        serviceName: service.name,
+        serviceCategory: doctorRate.serviceCategory,
+        serviceDate: patientService.scheduledDate,
+        rateType: doctorRate.rateType,
+        rateAmount: doctorRate.rateAmount,
+        servicePrice,
+        earnedAmount,
+        status: 'pending',
+        notes: `Automatic calculation for ${service.name}`,
+      });
 
-      db.insert(schema.doctorEarnings)
-        .values({
-          earningId,
-          doctorId: patientService.doctorId!,
-          patientId: patientService.patientId,
-          serviceId: service.id,
-          patientServiceId: patientService.id,
-          serviceName: service.name,
-          serviceCategory: doctorRate.serviceCategory,
-          serviceDate: patientService.scheduledDate,
-          rateType: doctorRate.rateType,
-          rateAmount: doctorRate.rateAmount,
-          servicePrice,
-          earnedAmount,
-          status: 'pending',
-          notes: `Automatic calculation for ${service.name}`,
-        })
-        .run();
-
-      console.log(`Created doctor earning: ${earningId} for amount ${earnedAmount}`);
+      console.log(`Created doctor earning for doctor ${patientService.doctorId} amount ${earnedAmount}`);
     } catch (error) {
       console.error('Error calculating doctor earning:', error);
     }
@@ -2283,8 +2278,8 @@ export class SqliteStorage implements IStorage {
           // Calculate doctor earnings if doctor is assigned and service exists
           if (serviceData.doctorId && service) {
             // We need to calculate this outside the transaction to avoid issues
-            setImmediate(() => {
-              this.calculateDoctorEarning(created, service);
+            setImmediate(async () => {
+              await this.calculateDoctorEarning(created, service);
             });
           }
         }
@@ -2383,7 +2378,10 @@ export class SqliteStorage implements IStorage {
 
       // Calculate doctor earnings if doctor is assigned and service has rates
       if (serviceData.doctorId && service) {
-        this.calculateDoctorEarning(created, service);
+        // Calculate earnings asynchronously to avoid blocking
+        setImmediate(async () => {
+          await this.calculateDoctorEarning(created, service);
+        });
       }
 
       return created;
