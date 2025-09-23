@@ -538,12 +538,12 @@ export default function PatientDetail() {
             path: ["doctorId"],
           });
         }
-        
+
         // For non-OPD services, need either selected services or manual entry
         if (data.serviceType !== "opd") {
           const hasSelectedServices = data.selectedServicesCount > 0;
           const hasManualEntry = data.serviceName && data.serviceName.trim().length > 0 && data.price > 0;
-          
+
           if (!hasSelectedServices && !hasManualEntry) {
             if (!data.serviceName || data.serviceName.trim().length === 0) {
               ctx.addIssue({
@@ -590,10 +590,14 @@ export default function PatientDetail() {
   useEffect(() => {
     if (
       selectedServiceType !== "opd" &&
+      selectedServiceType !== "" && // Only calculate if a service type is selected
       selectedCatalogService &&
       selectedCatalogService.billingType
     ) {
       calculateBillingPreview();
+    } else if (selectedServiceType === "opd" || selectedServiceType === "") {
+      // Reset billing preview if it's OPD or no service type selected
+      setBillingPreview(null);
     }
   }, [
     selectedServiceType,
@@ -838,13 +842,23 @@ export default function PatientDetail() {
     const servicesToCreate = [];
 
     if (isOPD) {
-      // OPD service
+      const selectedDoctorId = serviceForm.watch("doctorId");
       const selectedDoctor = doctors.find(
-        (d: Doctor) => d.id === data.doctorId,
+        (d: Doctor) => d.id === selectedDoctorId,
       );
       const consultationFee = selectedDoctor
         ? selectedDoctor.consultationFee
         : 0;
+
+      // Validate doctor selection for OPD
+      if (!selectedDoctorId || selectedDoctorId === "none" || selectedDoctorId === "") {
+        toast({
+          title: "Validation Error",
+          description: "Please select a doctor for OPD consultation.",
+          variant: "destructive",
+        });
+        return; // Stop submission if doctor is not selected for OPD
+      }
 
       servicesToCreate.push({
         patientId: patientId,
@@ -856,7 +870,7 @@ export default function PatientDetail() {
         scheduledDate: data.scheduledDate,
         scheduledTime: data.scheduledTime,
         status: "scheduled",
-        doctorId: data.doctorId,
+        doctorId: selectedDoctorId,
       });
     } else {
       // Handle selected catalog services
@@ -958,6 +972,7 @@ export default function PatientDetail() {
     const requiredFields = [
       "doctorId",
       "currentWardType",
+      "currentRoomNumber", // Added room number validation
       "admissionDate",
       "dailyCost",
     ];
@@ -3558,63 +3573,6 @@ export default function PatientDetail() {
                   )}
                 </div>
 
-                {/* Billing Preview */}
-                {billingPreview && (
-                  <Card className="mt-4">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Billing Preview</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Service:</span>
-                          <span>{selectedCatalogService.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Billing Type:</span>
-                          <Badge
-                            className={
-                              billingPreview.billingType === "per_24_hours"
-                                ? "bg-green-100 text-green-800"
-                                : billingPreview.billingType === "per_hour"
-                                  ? "bg-orange-100 text-orange-800"
-                                  : billingPreview.billingType === "composite"
-                                    ? "bg-purple-100 text-purple-800"
-                                    : billingPreview.billingType === "variable"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : billingPreview.billingType ===
-                                          "per_date"
-                                        ? "bg-indigo-100 text-indigo-800"
-                                        : "bg-blue-100 text-blue-800"
-                            }
-                            variant="secondary"
-                          >
-                            {billingPreview.billingType === "per_24_hours"
-                              ? "Per 24 Hours"
-                              : billingPreview.billingType === "per_hour"
-                                ? "Per Hour"
-                                : billingPreview.billingType === "composite"
-                                  ? "Composite"
-                                  : billingPreview.billingType === "variable"
-                                    ? "Variable"
-                                    : billingPreview.billingType === "per_date"
-                                      ? "Per Date"
-                                      : "Per Instance"}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between text-sm text-gray-600">
-                          <span>Calculation:</span>
-                          <span>{billingPreview.breakdown}</span>
-                        </div>
-                        <div className="flex justify-between font-semibold text-lg pt-2 border-t">
-                          <span>Total Amount:</span>
-                          <span>₹{billingPreview.totalAmount}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
                 {/* Services Summary */}
                 {selectedServices.length > 0 && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -3668,7 +3626,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Validation Helper Text */}
-            {selectedServiceType !== "opd" && selectedServices.length === 0 && 
+            {selectedServiceType !== "opd" && selectedServices.length === 0 &&
              (!serviceForm.watch("serviceName") || !serviceForm.watch("serviceName").trim() || !serviceForm.watch("price") || serviceForm.watch("price") <= 0) && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-service-submit-help">
                 <div className="flex items-center gap-2 text-amber-800">
@@ -3684,7 +3642,7 @@ export default function PatientDetail() {
               </div>
             )}
 
-            {selectedServiceType === "opd" && 
+            {selectedServiceType === "opd" &&
              (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none" || serviceForm.watch("doctorId") === "") && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3" data-testid="text-opd-doctor-help">
                 <div className="flex items-center gap-2 text-amber-800">
@@ -3727,27 +3685,7 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={(() => {
-                  // Check if mutation is pending
-                  if (createServiceMutation.isPending) return true;
-                  
-                  // Check required fields for all service types
-                  if (!serviceForm.watch("scheduledDate") || !serviceForm.watch("scheduledTime")) return true;
-                  
-                  // For OPD services: doctor is required
-                  if (selectedServiceType === "opd") {
-                    const doctorId = serviceForm.watch("doctorId");
-                    return !doctorId || doctorId === "none" || doctorId === "";
-                  }
-                  
-                  // For non-OPD services: need either selected services OR manual entry
-                  const hasSelectedServices = selectedServices.length > 0;
-                  const serviceName = serviceForm.watch("serviceName");
-                  const price = serviceForm.watch("price");
-                  const hasValidManualEntry = serviceName && serviceName.trim().length > 0 && price && price > 0;
-                  
-                  return !(hasSelectedServices || hasValidManualEntry);
-                })()}
+                disabled={createServiceMutation.isPending}
                 data-testid="button-submit-service"
               >
                 {createServiceMutation.isPending
