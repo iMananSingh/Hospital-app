@@ -1509,6 +1509,7 @@ export default function Doctors() {
                             <TableHead>Doctor</TableHead>
                             <TableHead>Pending Amount</TableHead>
                             <TableHead>Last Payment</TableHead>
+                            <TableHead>Last Payment Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
@@ -1537,6 +1538,9 @@ export default function Doctors() {
                               <TableCell data-testid={`salary-last-payment-${doctorData.doctorId}`}>
                                 <span className="text-sm text-muted-foreground">No payments yet</span>
                               </TableCell>
+                              <TableCell data-testid={`salary-last-payment-date-${doctorData.doctorId}`}>
+                                <span className="text-sm text-muted-foreground">-</span>
+                              </TableCell>
                               <TableCell>
                                 <Badge 
                                   variant={doctorData.totalPending > 0 ? "default" : "secondary"} 
@@ -1563,7 +1567,7 @@ export default function Doctors() {
                             </TableRow>
                           )) : (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8">
+                              <TableCell colSpan={6} className="text-center py-8">
                                 <div className="flex flex-col items-center space-y-2">
                                   <Wallet className="w-8 h-8 text-muted-foreground" />
                                   <p className="text-muted-foreground">No doctors found</p>
