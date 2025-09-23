@@ -2372,8 +2372,7 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const result = parseTimestamp(
-                                    test.orderDate,
+                                  const result = parseTimestamp(                                    test.orderDate,
                                     "Asia/Kolkata",
                                   );
 
@@ -3685,7 +3684,19 @@ export default function PatientDetail() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending}
+                disabled={
+                  createServiceMutation.isPending ||
+                  !serviceForm.watch("scheduledDate") ||
+                  !serviceForm.watch("scheduledTime") ||
+                  (selectedServiceType === "opd" &&
+                    (!serviceForm.watch("doctorId") || serviceForm.watch("doctorId") === "none" || serviceForm.watch("doctorId") === "")) ||
+                  (selectedServiceType !== "opd" &&
+                    selectedServices.length === 0 &&
+                    (!serviceForm.watch("serviceName") ||
+                      serviceForm.watch("serviceName").trim() === "" ||
+                      !serviceForm.watch("price") ||
+                      serviceForm.watch("price") <= 0))
+                }
                 data-testid="button-submit-service"
               >
                 {createServiceMutation.isPending
