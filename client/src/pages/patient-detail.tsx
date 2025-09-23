@@ -524,11 +524,7 @@ export default function PatientDetail() {
   });
 
   const serviceForm = useForm({
-    resolver: zodResolver(
-      insertPatientServiceSchema.extend({
-        doctorId: z.string().min(1, "Doctor selection is required"),
-      })
-    ),
+    resolver: zodResolver(insertPatientServiceSchema),
     defaultValues: {
       patientId: patientId || "",
       serviceType: "",
@@ -785,6 +781,34 @@ export default function PatientDetail() {
   });
 
   const onServiceSubmit = (data: any) => {
+    // Validate required fields
+    if (!data.doctorId) {
+      toast({
+        title: "Missing Required Field",
+        description: "Please select a doctor",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.scheduledDate) {
+      toast({
+        title: "Missing Required Field", 
+        description: "Please select a scheduled date",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.scheduledTime) {
+      toast({
+        title: "Missing Required Field",
+        description: "Please select a scheduled time", 
+        variant: "destructive",
+      });
+      return;
+    }
+
     const isOPD = data.serviceType === "opd";
 
     // Handle multiple selected services or single service
@@ -3067,9 +3091,9 @@ export default function PatientDetail() {
                     ))}
                   </SelectContent>
                 </Select>
-                {serviceForm.formState.errors.doctorId && (
+                {!serviceForm.watch("doctorId") && (
                   <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.doctorId.message}
+                    Doctor selection is required
                   </p>
                 )}
               </div>
@@ -3083,9 +3107,9 @@ export default function PatientDetail() {
                   })}
                   data-testid="input-service-date"
                 />
-                {serviceForm.formState.errors.scheduledDate && (
+                {!serviceForm.watch("scheduledDate") && (
                   <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.scheduledDate.message}
+                    Scheduled date is required
                   </p>
                 )}
               </div>
@@ -3099,9 +3123,9 @@ export default function PatientDetail() {
                   })}
                   data-testid="input-service-time"
                 />
-                {serviceForm.formState.errors.scheduledTime && (
+                {!serviceForm.watch("scheduledTime") && (
                   <p className="text-sm text-red-600">
-                    {serviceForm.formState.errors.scheduledTime.message}
+                    Scheduled time is required
                   </p>
                 )}
               </div>
@@ -3652,6 +3676,9 @@ export default function PatientDetail() {
                 type="submit"
                 disabled={
                   createServiceMutation.isPending ||
+                  !serviceForm.watch("doctorId") ||
+                  !serviceForm.watch("scheduledDate") ||
+                  !serviceForm.watch("scheduledTime") ||
                   (selectedServiceType !== "opd" &&
                     selectedServices.length === 0 &&
                     (!serviceForm.watch("serviceName") ||
