@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/layout/topbar";
@@ -100,7 +99,8 @@ export default function Billing() {
     patient: orderData.patient,
     orderId: orderData.order?.orderId || 'N/A',
     price: orderData.order?.totalPrice || 0,
-    orderedDate: orderData.order?.orderedDate
+    orderedDate: orderData.order?.orderedDate,
+    doctorId: orderData.order?.doctorId // Assuming doctorId is available in order data
   })).filter(item => {
     return labSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(labSearchQuery.toLowerCase()) ||
@@ -121,7 +121,8 @@ export default function Billing() {
     ...inpatientServicesApi.map((service: any) => ({
       ...service,
       type: 'service',
-      price: service.calculatedAmount || service.price || 0
+      price: service.calculatedAmount || service.price || 0,
+      doctorId: service.doctorId // Assuming doctorId is available in service data
     })),
     // Map admissions data
     ...admissionsDataApi.map((admission: any) => ({
@@ -130,7 +131,8 @@ export default function Billing() {
       patient: admission.patient,
       serviceName: `Admission - ${admission.currentWardType || 'General Ward'}`,
       scheduledDate: admission.admissionDate,
-      price: admission.totalCost || admission.dailyCost || 0
+      price: admission.totalCost || admission.dailyCost || 0,
+      doctorId: admission.doctorId // Assuming doctorId is available in admission data
     }))
   ];
 
@@ -188,11 +190,11 @@ export default function Billing() {
   };
 
   const calculateLabTotal = (data: any[]) => {
-    return data.reduce((sum, item) => sum + (item.calculatedAmount || item.price || 0), 0);
+    return data.reduce((sum, item) => sum + (item.price || 0), 0);
   };
 
   const calculateDiagnosticTotal = (data: any[]) => {
-    return data.reduce((sum, item) => sum + (item.calculatedAmount || item.price || 0), 0);
+    return data.reduce((sum, item) => sum + (item.price || 0), 0);
   };
 
   const calculateCreditTotal = (data: any[]) => {
@@ -379,6 +381,7 @@ export default function Billing() {
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
+                                <th className="text-left p-3 font-medium bg-background">Doctor</th>
                                 <th className="text-left p-3 font-medium bg-background">Order ID</th>
                                 <th className="text-right p-3 font-medium bg-background">Fees</th>
                               </tr>
@@ -386,7 +389,7 @@ export default function Billing() {
                             <tbody>
                               {filteredLabServices.length === 0 ? (
                                 <tr>
-                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                  <td colSpan={7} className="text-center py-4 text-muted-foreground">
                                     No Lab records found for the selected period
                                   </td>
                                 </tr>
@@ -399,6 +402,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patient?.name || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge(item.patient)}</td>
+                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">{item.orderId || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`lab-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
@@ -455,6 +459,7 @@ export default function Billing() {
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
+                                <th className="text-left p-3 font-medium bg-background">Doctor</th>
                                 <th className="text-left p-3 font-medium bg-background">Service</th>
                                 <th className="text-right p-3 font-medium bg-background">Fees</th>
                               </tr>
@@ -462,7 +467,7 @@ export default function Billing() {
                             <tbody>
                               {filteredDiagnosticServices.length === 0 ? (
                                 <tr>
-                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                  <td colSpan={7} className="text-center py-4 text-muted-foreground">
                                     No Diagnostic records found for the selected period
                                   </td>
                                 </tr>
@@ -475,6 +480,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
+                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">{item.serviceName || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`diagnostic-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
@@ -530,6 +536,7 @@ export default function Billing() {
                                 <th className="text-left p-3 font-medium bg-background">Date</th>
                                 <th className="text-left p-3 font-medium bg-background">Name</th>
                                 <th className="text-left p-3 font-medium bg-background">Sex/Age</th>
+                                <th className="text-left p-3 font-medium bg-background">Doctor</th>
                                 <th className="text-left p-3 font-medium bg-background">Service</th>
                                 <th className="text-right p-3 font-medium bg-background">Fees</th>
                               </tr>
@@ -537,7 +544,7 @@ export default function Billing() {
                             <tbody>
                               {filteredInpatientServices.length === 0 ? (
                                 <tr>
-                                  <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                  <td colSpan={7} className="text-center py-4 text-muted-foreground">
                                     No Inpatient records found for the selected period
                                   </td>
                                 </tr>
@@ -551,6 +558,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patient?.name || item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge(item.patient || { name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
+                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">
                                       {item.type === 'admission' ? 'Room Charges' : (item.serviceName || "N/A")}
                                     </td>
