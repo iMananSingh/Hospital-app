@@ -3019,21 +3019,73 @@ export class SqliteStorage implements IStorage {
     totalDiscounts: number;
     balance: number;
   }> {
-    // Calculate total charges from admissions, services, and pathology orders
-    let totalCharges = 0;
+    console.log(`Generating financial summary for patient: ${patientId}`);
 
-    // Admission charges (daily cost only, not initial deposit)
-    const admissions = await this.getAdmissions(patientId);
-    admissions.forEach((admission) => {
-      if (
-        admission.status === "admitted" ||
-        admission.status === "discharged"
-      ) {
-        console.log(`Financial summary calculation for ${admission.admissionId}:`);
-        console.log(`Admission Date: ${admission.admissionDate}`);
-        console.log(`Discharge Date: ${admission.dischargeDate || 'Not discharged'}`);
+    try {
+      // Get all patient services
+      const services = await db
+        .select()
+        .from(schema.patientServices)
+        .where(eq(schema.patientServices.patientId, patientId));
 
-        // Calculate stay days using the same logic as frontend
+      // Get all OPD visits with consultation fees
+      const opdVisits = await db
+        .select()
+        .from(schema.patientVisits)
+        .where(
+          and(
+            eq(schema.patientVisits.patientId, patientId),
+            eq(schema.patientVisits.visitType, 'opd')
+          )
+        );
+
+      // Get all pathology orders
+      const pathologyOrders = await db
+        .select()
+        .from(schema.pathologyOrders)
+        .where(eq(schema.pathologyOrders.patientId, patientId));
+
+      // Get all admission events (payments, discounts)
+      const admissionEvents = await db
+        .select()
+        .from(schema.admissionEvents)
+        .where(eq(schema.admissionEvents.patientId, patientId));
+
+      // Calculate totals
+      let totalCharges = 0;
+      let totalPayments = 0;
+      let totalDiscounts = 0;
+
+      // Add service charges
+      services.forEach(service => {
+        const amount = service.calculatedAmount || service.price || 0;
+        totalCharges += amount;
+      });
+
+      // Add OPD consultation fees
+      opdVisits.forEach(visit => {
+        const consultationFee = visit.consultationFee || 0;
+        totalCharges += consultationFee;
+      });
+
+      // Add pathology charges
+      pathologyOrders.forEach(order => {
+        totalCharges += order.totalPrice || 0;
+      });
+
+      // Add admission event charges, payments, and discounts
+      // Note: The original code structure for admissionEvents seemed to imply
+      // events themselves were charges/payments/discounts.
+      // Based on the schema, 'admission' table holds financial info.
+      // Re-evaluating to use admission data directly for financial summary.
+
+      const admissions = await this.getAdmissions(patientId);
+      let admissionTotalCharges = 0;
+      let admissionTotalPayments = 0;
+      let admissionTotalDiscounts = 0;
+
+      admissions.forEach((admission) => {
+        // Calculate stay duration using the same logic as frontend
         let stayDuration = 1; // Default minimum stay
 
         if (admission.stayDays && admission.stayDays > 0) {
@@ -3049,71 +3101,38 @@ export class SqliteStorage implements IStorage {
           }
         }
 
-        console.log(`Stay duration: ${stayDuration} days (calculated)`);
+        // Daily bed charges
+        admissionTotalCharges += (admission.dailyCost || 0) * stayDuration;
+        // Initial deposit and additional payments are payments
+        admissionTotalPayments += (admission.initialDeposit || 0) + (admission.additionalPayments || 0);
+        // Total discount
+        admissionTotalDiscounts += (admission.totalDiscount || 0);
+      });
 
-        totalCharges += (admission.dailyCost || 0) * stayDuration;
-        // Initial deposit is NOT added to charges - it's a payment
-      }
-    });
+      totalCharges += admissionTotalCharges;
+      totalPayments += admissionTotalPayments;
+      totalDiscounts += admissionTotalDiscounts;
 
-    // Service charges - use calculated amount if available, otherwise use price
-    const services = await this.getPatientServices(patientId);
-    totalCharges += services.reduce((sum, service) => {
-      const amount = (service as any).calculatedAmount || service.price || 0;
-      return sum + amount;
-    }, 0);
+      // Calculate balance: totalCharges - totalDiscounts - totalPayments
+      const balance = totalCharges - totalDiscounts - totalPayments;
 
-    // Pathology order charges
-    const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
-    totalCharges += pathologyOrders.reduce(
-      (sum, orderData) => sum + (orderData.order.totalPrice || 0),
-      0,
-    );
+      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPayments}, Total discounts: ${totalDiscounts}, Balance: ${balance}`);
 
-    // Calculate total payments
-    const payments = await this.getPatientPayments(patientId);
-    const totalPaid = payments.reduce(
-      (sum, payment) => sum + payment.amount,
-      0,
-    );
-
-    // Add admission payments (initial deposits and additional payments)
-    const admissionPayments = admissions.reduce((sum, admission) => {
-      return (
-        sum +
-        (admission.initialDeposit || 0) +
-        (admission.additionalPayments || 0)
-      );
-    }, 0);
-
-    // Calculate total discounts
-    const discounts = await this.getPatientDiscounts(patientId);
-    const totalDiscounts = discounts.reduce(
-      (sum, discount) => sum + discount.amount,
-      0,
-    );
-
-    // Add admission discounts for backwards compatibility
-    const admissionDiscounts = admissions.reduce((sum, admission) => {
-      return sum + (admission.totalDiscount || 0);
-    }, 0);
-
-    const finalTotalPaid = totalPaid + admissionPayments;
-    const finalTotalDiscounts = totalDiscounts + admissionDiscounts;
-
-    // Calculate balance: totalCharges - totalDiscounts - finalTotalPaid
-    // Positive balance = amount patient owes
-    // Negative balance = amount hospital owes patient (overpayment)
-    const balance = totalCharges - finalTotalDiscounts - finalTotalPaid;
-
-    console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${finalTotalPaid}, Total discounts: ${finalTotalDiscounts}, Balance: ${balance}`);
-
-    return {
-      totalCharges,
-      totalPaid: finalTotalPaid,
-      totalDiscounts: finalTotalDiscounts,
-      balance,
-    };
+      return {
+        totalCharges,
+        totalPaid: totalPayments,
+        totalDiscounts,
+        balance
+      };
+    } catch (error) {
+      console.error('Error generating financial summary:', error);
+      return {
+        totalCharges: 0,
+        totalPaid: 0,
+        totalDiscounts: 0,
+        balance: 0
+      };
+    }
   }
 
   async logAction(log: InsertAuditLog): Promise<void> {
@@ -4898,7 +4917,7 @@ export class SqliteStorage implements IStorage {
       admissions.forEach((admission) => {
         // Calculate bed charges for admitted/discharged patients
         if (admission.status === "admitted" || admission.status === "discharged") {
-          // Calculate stay duration using admission card value (same as frontend)
+          // Calculate stay duration using the same logic as frontend
           const stayDuration = admission.stayDays;
 
           const dailyCost = admission.dailyCost || 0;
