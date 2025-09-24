@@ -3019,110 +3019,131 @@ export class SqliteStorage implements IStorage {
     totalDiscounts: number;
     balance: number;
   }> {
-    console.log(`Generating financial summary for patient: ${patientId}`);
-
     try {
-      // Get all patient services
-      const services = await db
-        .select()
-        .from(schema.patientServices)
-        .where(eq(schema.patientServices.patientId, patientId));
+      console.log(`Generating financial summary for patient: ${patientId}`);
 
-      // Get all OPD visits with consultation fees
-      const opdVisits = await db
-        .select()
-        .from(schema.patientVisits)
-        .where(
-          and(
-            eq(schema.patientVisits.patientId, patientId),
-            eq(schema.patientVisits.visitType, 'opd')
-          )
-        );
-
-      // Get all pathology orders
-      const pathologyOrders = await db
-        .select()
-        .from(schema.pathologyOrders)
-        .where(eq(schema.pathologyOrders.patientId, patientId));
-
-      // Get all admission events (payments, discounts)
-      const admissionEvents = await db
-        .select()
-        .from(schema.admissionEvents)
-        .where(eq(schema.admissionEvents.patientId, patientId));
-
-      // Calculate totals
+      // Calculate total charges from different sources
       let totalCharges = 0;
-      let totalPayments = 0;
+      let totalPaid = 0;
       let totalDiscounts = 0;
 
-      // Add service charges
-      services.forEach(service => {
-        const amount = service.calculatedAmount || service.price || 0;
-        totalCharges += amount;
+      // 1. OPD Services charges
+      const opdServices = db
+        .select({
+          amount: schema.patientServices.calculatedAmount,
+          price: schema.patientServices.price,
+        })
+        .from(schema.patientServices)
+        .where(
+          and(
+            eq(schema.patientServices.patientId, patientId),
+            eq(schema.patientServices.serviceType, "opd")
+          )
+        )
+        .all();
+
+      opdServices.forEach(service => {
+        const charge = service.amount || service.price || 0;
+        totalCharges += charge;
       });
 
-      // Add OPD consultation fees
-      opdVisits.forEach(visit => {
-        const consultationFee = visit.consultationFee || 0;
-        totalCharges += consultationFee;
-      });
+      // 2. Pathology orders charges
+      const pathologyOrders = db
+        .select({
+          totalPrice: schema.pathologyOrders.totalPrice,
+        })
+        .from(schema.pathologyOrders)
+        .where(eq(schema.pathologyOrders.patientId, patientId))
+        .all();
 
-      // Add pathology charges
       pathologyOrders.forEach(order => {
         totalCharges += order.totalPrice || 0;
       });
 
-      // Add admission event charges, payments, and discounts
-      // Note: The original code structure for admissionEvents seemed to imply
-      // events themselves were charges/payments/discounts.
-      // Based on the schema, 'admission' table holds financial info.
-      // Re-evaluating to use admission data directly for financial summary.
+      // 3. Other patient services charges
+      const otherServices = db
+        .select({
+          amount: schema.patientServices.calculatedAmount,
+          price: schema.patientServices.price,
+        })
+        .from(schema.patientServices)
+        .where(
+          and(
+            eq(schema.patientServices.patientId, patientId),
+            ne(schema.patientServices.serviceType, "opd")
+          )
+        )
+        .all();
 
-      const admissions = await this.getAdmissions(patientId);
-      let admissionTotalCharges = 0;
-      let admissionTotalPayments = 0;
-      let admissionTotalDiscounts = 0;
-
-      admissions.forEach((admission) => {
-        // Calculate stay duration using the same logic as frontend
-        let stayDuration = 1; // Default minimum stay
-
-        if (admission.stayDays && admission.stayDays > 0) {
-          // Use pre-calculated stay days if available
-          stayDuration = admission.stayDays;
-        } else {
-          // Calculate stay days using the same robust logic as frontend
-          try {
-            stayDuration = calculateStayDays(admission.admissionDate, admission.dischargeDate);
-          } catch (error) {
-            console.error(`Error calculating stay days for admission ${admission.admissionId}:`, error);
-            stayDuration = 1; // Fallback to minimum 1 day
-          }
-        }
-
-        // Daily bed charges
-        admissionTotalCharges += (admission.dailyCost || 0) * stayDuration;
-        // Initial deposit and additional payments are payments
-        admissionTotalPayments += (admission.initialDeposit || 0) + (admission.additionalPayments || 0);
-        // Total discount
-        admissionTotalDiscounts += (admission.totalDiscount || 0);
+      otherServices.forEach(service => {
+        const charge = service.amount || service.price || 0;
+        totalCharges += charge;
       });
 
-      totalCharges += admissionTotalCharges;
-      totalPayments += admissionTotalPayments;
-      totalDiscounts += admissionTotalDiscounts;
+      // 4. Admission events charges
+      const admissionEvents = db
+        .select({
+          id: schema.admissionEvents.id,
+          eventType: schema.admissionEvents.eventType,
+          admissionId: schema.admissionEvents.admissionId,
+        })
+        .from(schema.admissionEvents)
+        .innerJoin(
+          schema.admissions,
+          eq(schema.admissionEvents.admissionId, schema.admissions.id)
+        )
+        .where(eq(schema.admissions.patientId, patientId))
+        .all();
 
-      // Calculate balance: totalCharges - totalDiscounts - totalPayments
-      const balance = totalCharges - totalDiscounts - totalPayments;
+      for (const event of admissionEvents) {
+        if (event.eventType === 'admit') {
+          const admission = db
+            .select()
+            .from(schema.admissions)
+            .where(eq(schema.admissions.id, event.admissionId))
+            .get();
 
-      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPayments}, Total discounts: ${totalDiscounts}, Balance: ${balance}`);
+          if (admission) {
+            totalCharges += admission.totalCost || 0;
+          }
+        }
+      }
+
+      // Calculate total payments
+      const payments = db
+        .select({
+          amount: schema.patientPayments.amount,
+        })
+        .from(schema.patientPayments)
+        .where(eq(schema.patientPayments.patientId, patientId))
+        .all();
+
+      payments.forEach(payment => {
+        totalPaid += payment.amount || 0;
+      });
+
+      // Calculate total discounts
+      const discounts = db
+        .select({
+          amount: schema.patientDiscounts.amount,
+        })
+        .from(schema.patientDiscounts)
+        .where(eq(schema.patientDiscounts.patientId, patientId))
+        .all();
+
+      discounts.forEach(discount => {
+        totalDiscounts += discount.amount || 0;
+      });
+
+      const balance = totalCharges - totalPaid - totalDiscounts;
+
+      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}`);
 
       return {
         totalCharges,
-        totalPaid: totalPayments,
+        totalPaid,
         totalDiscounts,
-        balance
+        balance,
       };
     } catch (error) {
       console.error('Error generating financial summary:', error);
@@ -3130,7 +3151,7 @@ export class SqliteStorage implements IStorage {
         totalCharges: 0,
         totalPaid: 0,
         totalDiscounts: 0,
-        balance: 0
+        balance: 0,
       };
     }
   }
@@ -5242,8 +5263,7 @@ export class SqliteStorage implements IStorage {
               eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
               eq(schema.doctorServiceRates.serviceId, service.id),
               eq(schema.doctorServiceRates.isActive, true)
-            )
-          )
+            )          )
           .get();
 
         if (!doctorRate) {
