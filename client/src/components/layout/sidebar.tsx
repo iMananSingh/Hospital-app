@@ -11,15 +11,13 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  Building2,
-  Calendar
+  Building2
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   { name: "Patient Registration", href: "/patients", icon: Users },
   { name: "Pathology Tests", href: "/pathology", icon: TestTube },
-  { name: "Scheduler", href: "/scheduler", icon: Calendar },
   { name: "Doctor Management", href: "/doctors", icon: UserPlus },
   { name: "Service Management", href: "/services", icon: Building2 },
   { name: "Revenue & Payments", href: "/revenue", icon: FileText },

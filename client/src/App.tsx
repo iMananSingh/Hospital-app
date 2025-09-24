@@ -24,7 +24,6 @@ import Settings from "@/pages/settings";
 import Diagnostics from "@/pages/diagnostics";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
-import Scheduler from "@/pages/scheduler";
 import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -74,7 +73,6 @@ function Router() {
       <Route path="/discharged-today" component={() => <ProtectedRoute component={DischargedToday} />} />
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
-      <Route path="/scheduler" component={() => <ProtectedRoute component={Scheduler} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route component={NotFound} />

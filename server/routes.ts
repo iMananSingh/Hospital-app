@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertScheduleEventSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema, insertDoctorServiceRateSchema, insertDoctorEarningSchema, insertDoctorPaymentSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema, insertDoctorServiceRateSchema, insertDoctorEarningSchema, insertDoctorPaymentSchema } from "@shared/schema";
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
@@ -1834,68 +1834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Schedule Event Management Routes
-  app.get("/api/schedule", authenticateToken, async (req, res) => {
-    try {
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      const { startDate, endDate, doctorId } = req.query;
-
-      let events;
-      if (startDate && endDate) {
-        events = await storage.getScheduleEventsByDateRange(startDate as string, endDate as string);
-      } else if (doctorId) {
-        events = await storage.getScheduleEventsByDoctor(doctorId as string);
-      } else {
-        events = await storage.getAllScheduleEvents();
-      }
-
-      res.json(events);
-    } catch (error) {
-      console.error("Error fetching schedule events:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.post("/api/schedule", authenticateToken, async (req, res) => {
-    try {
-      const eventData = insertScheduleEventSchema.parse({
-        ...req.body,
-        createdBy: req.user.id
-      });
-      const event = await storage.createScheduleEvent(eventData);
-      res.json(event);
-    } catch (error) {
-      console.error("Error creating schedule event:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation error", details: error.errors });
-      }
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.put("/api/schedule/:id", authenticateToken, async (req, res) => {
-    try {
-      const updateData = req.body;
-      const event = await storage.updateScheduleEvent(req.params.id, updateData);
-      if (!event) {
-        return res.status(404).json({ error: "Schedule event not found" });
-      }
-      res.json(event);
-    } catch (error) {
-      console.error("Error updating schedule event:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.delete("/api/schedule/:id", authenticateToken, async (req, res) => {
-    try {
-      await storage.deleteScheduleEvent(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting schedule event:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+  
 
   // Patient Payment Routes
   app.post("/api/patients/:patientId/payments", authenticateToken, async (req: any, res) => {

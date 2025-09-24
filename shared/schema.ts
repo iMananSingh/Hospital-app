@@ -63,22 +63,6 @@ export const patientVisits = sqliteTable("patient_visits", {
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Schedule events for calendar-based scheduling
-export const scheduleEvents = sqliteTable("schedule_events", {
-  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
-  title: text("title").notNull(),
-  eventType: text("event_type").notNull(), // opd, inpatient, surgery, doctor_shift
-  patientId: text("patient_id").references(() => patients.id), // Optional for doctor shifts
-  doctorId: text("doctor_id").notNull().references(() => doctors.id),
-  startTime: text("start_time").notNull(), // ISO datetime string
-  endTime: text("end_time").notNull(), // ISO datetime string
-  notes: text("notes"),
-  status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
-  createdBy: text("created_by").notNull().references(() => users.id),
-  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
-});
-
 // Services/procedures that can be billed
 export const services = sqliteTable("services", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
@@ -270,7 +254,7 @@ export const backupLogs = sqliteTable("backup_logs", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Audit log for tracking all user actions
+// Audit log for tracking user actions
 export const auditLog = sqliteTable("audit_log", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   userId: text("user_id").notNull().references(() => users.id),
@@ -476,23 +460,6 @@ export const insertPatientVisitSchema = createInsertSchema(patientVisits).omit({
   visitId: true,
   createdAt: true,
   updatedAt: true,
-});
-
-export const insertScheduleEventSchema = createInsertSchema(scheduleEvents).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  title: z.string().min(1, "Title is required"),
-  eventType: z.enum(["opd", "inpatient", "surgery", "doctor_shift"], {
-    errorMap: () => ({ message: "Event type must be opd, inpatient, surgery, or doctor_shift" })
-  }),
-  doctorId: z.string().min(1, "Doctor is required"),
-  startTime: z.string().min(1, "Start time is required"),
-  endTime: z.string().min(1, "End time is required"),
-  patientId: z.string().optional(),
-  notes: z.string().optional(),
-  createdBy: z.string().min(1, "Created by is required"),
 });
 
 export const insertServiceSchema = createInsertSchema(services).omit({
@@ -717,8 +684,6 @@ export type Patient = typeof patients.$inferSelect;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type PatientVisit = typeof patientVisits.$inferSelect;
 export type InsertPatientVisit = z.infer<typeof insertPatientVisitSchema>;
-export type ScheduleEvent = typeof scheduleEvents.$inferSelect;
-export type InsertScheduleEvent = z.infer<typeof insertScheduleEventSchema>;
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Bill = typeof bills.$inferSelect;
