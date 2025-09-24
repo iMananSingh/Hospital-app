@@ -122,6 +122,7 @@ export default function PatientDetail() {
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
   const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
   const [isLoadingBill, setIsLoadingBill] = useState(false);
+  const [isOpdVisitDialogOpen, setIsOpdVisitDialogOpen] = useState(false);
 
   // Fetch hospital settings for receipts and other uses with proper error handling
   const {
@@ -565,6 +566,24 @@ export default function PatientDetail() {
     },
   });
 
+  // OPD Visit Form (separate from services)
+  const opdVisitForm = useForm({
+    resolver: zodResolver(z.object({
+      patientId: z.string().min(1),
+      doctorId: z.string().min(1, "Doctor is required"),
+      scheduledDate: z.string().min(1, "Date is required"),
+      scheduledTime: z.string().min(1, "Time is required"),
+      symptoms: z.string().optional(),
+    })),
+    defaultValues: {
+      patientId: patientId || "",
+      doctorId: "",
+      scheduledDate: "",
+      scheduledTime: "",
+      symptoms: "",
+    },
+  });
+
   const watchedServiceValues = serviceForm.watch();
 
   // Sync form fields with component state
@@ -766,6 +785,36 @@ export default function PatientDetail() {
       toast({
         title: "Error scheduling service",
         description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // OPD Visit Creation Mutation
+  const createOpdVisitMutation = useMutation({
+    mutationFn: async (data: any) => {
+      console.log("Creating OPD visit with data:", data);
+      return apiRequest("/api/opd-visits", {
+        method: "POST",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "OPD appointment scheduled successfully!",
+        className: "bg-green-50 border-green-200 text-green-800",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/opd-visits"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      setIsOpdVisitDialogOpen(false);
+      opdVisitForm.reset();
+    },
+    onError: (error: any) => {
+      console.error("Error creating OPD visit:", error);
+      toast({
+        title: "Error",
+        description: "Failed to schedule OPD appointment. Please try again.",
         variant: "destructive",
       });
     },
@@ -1710,30 +1759,18 @@ export default function PatientDetail() {
                     .split(" ")[0]
                     .slice(0, 5);
 
-                  setSelectedServiceType("opd");
-                  setSelectedServiceCategory("");
-                  setSelectedCatalogService(null);
-                  setBillingPreview(null);
-                  setSelectedServices([]);
-
-                  serviceForm.reset({
+                  setIsOpdVisitDialogOpen(true);
+                  opdVisitForm.reset({
                     patientId: patientId || "",
-                    serviceType: "opd",
-                    serviceName: "OPD Consultation",
+                    doctorId: "",
                     scheduledDate: currentDate,
                     scheduledTime: currentTime,
-                    doctorId: "",
-                    notes: "",
-                    price: 0,
-                    quantity: 1,
-                    hours: 1,
-                    distance: 0,
+                    symptoms: "",
                   });
 
                   console.log(
                     `Set current date/time: ${currentDate} ${currentTime}`,
                   );
-                  setIsServiceDialogOpen(true);
                 }}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                 data-testid="button-schedule-opd"
@@ -4555,6 +4592,124 @@ export default function PatientDetail() {
           }}
         />
       )}
+
+      {/* OPD Visit Dialog */}
+      <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule OPD Appointment</DialogTitle>
+          </DialogHeader>
+          
+          <Form {...opdVisitForm}>
+            <form 
+              onSubmit={opdVisitForm.handleSubmit((data) => {
+                createOpdVisitMutation.mutate(data);
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={opdVisitForm.control}
+                name="doctorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Doctor *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-opd-doctor">
+                          <SelectValue placeholder="Select a doctor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {doctors?.map((doctor: Doctor) => (
+                          <SelectItem key={doctor.id} value={doctor.id}>
+                            Dr. {doctor.name} - {doctor.specialization}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={opdVisitForm.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          data-testid="input-opd-date"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={opdVisitForm.control}
+                  name="scheduledTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                          data-testid="input-opd-time"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={opdVisitForm.control}
+                name="symptoms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Symptoms (Optional)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        className="w-full min-h-[80px] p-2 border border-input rounded-md"
+                        placeholder="Enter symptoms or reason for visit..."
+                        data-testid="textarea-opd-symptoms"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpdVisitDialogOpen(false)}
+                  data-testid="button-cancel-opd"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createOpdVisitMutation.isPending}
+                  data-testid="button-schedule-opd-visit"
+                >
+                  {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

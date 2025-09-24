@@ -146,10 +146,12 @@ async function initializeDatabase() {
         symptoms TEXT,
         diagnosis TEXT,
         prescription TEXT,
-        status TEXT NOT NULL DEFAULT 'active',
+        status TEXT NOT NULL DEFAULT 'scheduled',
         admission_date TEXT,
         discharge_date TEXT,
         room_number TEXT,
+        scheduled_date TEXT,
+        scheduled_time TEXT DEFAULT '09:00',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
