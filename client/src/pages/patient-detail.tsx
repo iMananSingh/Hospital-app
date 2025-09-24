@@ -1793,14 +1793,14 @@ export default function PatientDetail() {
                 onClick={() => {
                   console.log("OPD button clicked");
                   const now = new Date();
-                  // Add 17.5 hours to current time for OPD appointment scheduling
-                  const adjustedTime = new Date(
-                    now.getTime() + 17.5 * 60 * 60 * 1000,
+                  // Use Indian timezone (UTC+5:30) for consistent date calculation
+                  const indianTime = new Date(
+                    now.getTime() + 5.5 * 60 * 60 * 1000,
                   );
-                  const currentDate = adjustedTime
+                  const currentDate = indianTime
                     .toISOString()
                     .split("T")[0];
-                  const currentTime = adjustedTime
+                  const currentTime = indianTime
                     .toTimeString()
                     .split(" ")[0]
                     .slice(0, 5);
@@ -2087,14 +2087,14 @@ export default function PatientDetail() {
                   onClick={() => {
                     console.log("OPD button clicked");
                     const now = new Date();
-                    // Add 17.5 hours to current time for OPD appointment scheduling
-                    const adjustedTime = new Date(
-                      now.getTime() + 17.5 * 60 * 60 * 1000,
+                    // Use Indian timezone (UTC+5:30) for consistent date calculation
+                    const indianTime = new Date(
+                      now.getTime() + 5.5 * 60 * 60 * 1000,
                     );
-                    const currentDate = adjustedTime
+                    const currentDate = indianTime
                       .toISOString()
                       .split("T")[0];
-                    const currentTime = adjustedTime
+                    const currentTime = indianTime
                       .toTimeString()
                       .split(" ")[0]
                       .slice(0, 5);
@@ -2156,14 +2156,14 @@ export default function PatientDetail() {
                               {(() => {
                                 // Format date and time for IST display
                                 if (!visit.scheduledDate) return "N/A";
-
+                                
                                 // Create a proper date object for the scheduled date and time
                                 let displayDateTime;
                                 if (visit.scheduledTime) {
                                   // Combine date and time to create a complete datetime
                                   const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
                                   displayDateTime = new Date(datetimeString);
-
+                                  
                                   // Add 18.5 hours to convert to IST (correcting the 13-hour difference)
                                   displayDateTime = new Date(displayDateTime.getTime() + (18.5 * 60 * 60 * 1000));
                                 } else {
