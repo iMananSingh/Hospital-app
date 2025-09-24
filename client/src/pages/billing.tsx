@@ -480,7 +480,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
-                                    <td className="p-3">{item.doctorName || getDoctorName(item.doctorId)}</td>
+                                    <td className="p-3">{item.doctorName && item.doctorName.trim() !== '' ? item.doctorName : getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">{item.serviceName || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`diagnostic-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
@@ -558,7 +558,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patient?.name || item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge(item.patient || { name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
-                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
+                                    <td className="p-3">{item.doctorName && item.doctorName.trim() !== '' ? item.doctorName : getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">
                                       {item.type === 'admission' ? 'Room Charges' : (item.serviceName || "N/A")}
                                     </td>

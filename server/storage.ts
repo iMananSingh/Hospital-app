@@ -2464,12 +2464,12 @@ export class SqliteStorage implements IStorage {
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Join doctor information directly - use CASE to handle NULL doctor IDs
+          // Doctor information - use conditional selection to handle null doctorId
           doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
           doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
         })
         .from(schema.patientServices)
-        .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
+        .innerJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
         .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
         .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt));
