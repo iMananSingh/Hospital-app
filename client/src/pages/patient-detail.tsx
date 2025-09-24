@@ -589,6 +589,7 @@ export default function PatientDetail() {
         serviceId: z.string().optional(), // Add serviceId to the form schema
         serviceType: z.string().optional(), // Make serviceType optional for catalog services
         serviceName: z.string().optional(), // Make serviceName optional for catalog services
+        consultationFee: z.number().optional(), // Added for OPD consultation fee
       }),
     ),
     defaultValues: {
@@ -605,6 +606,7 @@ export default function PatientDetail() {
       scheduledTime: new Date().toTimeString().slice(0, 5),
       serviceId: "", // Initialize serviceId to empty string
       selectedServicesCount: 0, // Add selectedServicesCount to default values
+      consultationFee: 0, // Initialize consultationFee
     },
   });
 
@@ -615,6 +617,7 @@ export default function PatientDetail() {
       doctorId: z.string().min(1, "Doctor is required"),
       scheduledDate: z.string().min(1, "Date is required"),
       scheduledTime: z.string().min(1, "Time is required"),
+      consultationFee: z.number().optional(), // Added for OPD consultation fee
       symptoms: z.string().optional(),
     })),
     defaultValues: {
@@ -622,6 +625,7 @@ export default function PatientDetail() {
       doctorId: "",
       scheduledDate: "",
       scheduledTime: "",
+      consultationFee: 0, // Initialize consultationFee
       symptoms: "",
     },
   });
@@ -1807,6 +1811,7 @@ export default function PatientDetail() {
                     doctorId: "",
                     scheduledDate: currentDate,
                     scheduledTime: currentTime,
+                    consultationFee: 0, // Added for OPD consultation fee
                     symptoms: "",
                   });
 
@@ -2100,6 +2105,7 @@ export default function PatientDetail() {
                       doctorId: "",
                       scheduledDate: currentDate,
                       scheduledTime: currentTime,
+                      consultationFee: 0, // Added for OPD consultation fee
                       symptoms: "",
                     });
 
@@ -2208,6 +2214,7 @@ export default function PatientDetail() {
                           doctorId: "",
                           scheduledDate: currentDate,
                           scheduledTime: currentTime,
+                          consultationFee: 0, // Added for OPD consultation fee
                           symptoms: "",
                         });
                       }}
@@ -2221,7 +2228,7 @@ export default function PatientDetail() {
             </Card>
           </TabsContent>
 
-          
+
 
           <TabsContent value="services">
             <Card>
@@ -4663,182 +4670,219 @@ export default function PatientDetail() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsPaymentDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                const amount = parseFloat(paymentAmount);
-                if (amount > 0) {
-                  addPaymentMutation.mutate({
-                    amount: amount,
-                    paymentMethod: "cash", // Default to cash, can be extended with a dropdown
-                    reason: "Payment",
-                  });
+            <Button                type="button"
+                variant="outline"
+                onClick={() => setIsPaymentDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const amount = parseFloat(paymentAmount);
+                  if (amount > 0) {
+                    addPaymentMutation.mutate({
+                      amount: amount,
+                      paymentMethod: "cash", // Default to cash, can be extended with a dropdown
+                      reason: "Payment",
+                    });
+                  }
+                }}
+                disabled={
+                  addPaymentMutation.isPending ||
+                  !paymentAmount ||
+                  parseFloat(paymentAmount) <= 0
                 }
-              }}
-              disabled={
-                addPaymentMutation.isPending ||
-                !paymentAmount ||
-                parseFloat(paymentAmount) <= 0
-              }
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {addPaymentMutation.isPending
-                ? "Adding Payment..."
-                : "Add Payment"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {addPaymentMutation.isPending
+                  ? "Adding Payment..."
+                  : "Add Payment"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Discount Dialog */}
-      <Dialog
-        open={isDiscountDialogOpen}
-        onOpenChange={setIsDiscountDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Discount</DialogTitle>
-          </DialogHeader>
+        {/* Discount Dialog */}
+        <Dialog
+          open={isDiscountDialogOpen}
+          onOpenChange={setIsDiscountDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Discount</DialogTitle>
+            </DialogHeader>
 
-          <div className="py-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Discount Amount *</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(e.target.value)}
-                  placeholder="Enter discount amount"
-                  data-testid="input-discount-amount"
-                />
-              </div>
+            <div className="py-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Discount Amount *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={discountAmount}
+                    onChange={(e) => setDiscountAmount(e.target.value)}
+                    placeholder="Enter discount amount"
+                    data-testid="input-discount-amount"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Reason for Discount</Label>
-                <Input
-                  type="text"
-                  value={discountReason}
-                  onChange={(e) => setDiscountReason(e.target.value)}
-                  placeholder="Enter reason for discount (optional)"
-                  data-testid="input-discount-reason"
-                />
+                <div className="space-y-2">
+                  <Label>Reason for Discount</Label>
+                  <Input
+                    type="text"
+                    value={discountReason}
+                    onChange={(e) => setDiscountReason(e.target.value)}
+                    placeholder="Enter reason for discount (optional)"
+                    data-testid="input-discount-reason"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDiscountDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                const amount = parseFloat(discountAmount);
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDiscountDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const amount = parseFloat(discountAmount);
 
-                if (amount > 0) {
-                  addDiscountMutation.mutate({
-                    amount: amount,
-                    reason: discountReason.trim() || "Manual discount",
-                    discountType: "manual",
-                  });
-                } else {
-                  toast({
-                    title: "Error",
-                    description: "Please enter a valid discount amount.",
-                    variant: "destructive",
-                  });
+                  if (amount > 0) {
+                    addDiscountMutation.mutate({
+                      amount: amount,
+                      reason: discountReason.trim() || "Manual discount",
+                      discountType: "manual",
+                    });
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "Please enter a valid discount amount.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                disabled={
+                  addDiscountMutation.isPending ||
+                  !discountAmount ||
+                  parseFloat(discountAmount) <= 0
                 }
-              }}
-              disabled={
-                addDiscountMutation.isPending ||
-                !discountAmount ||
-                parseFloat(discountAmount) <= 0
-              }
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              {addDiscountMutation.isPending
-                ? "Adding Discount..."
-                : "Add Discount"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {addDiscountMutation.isPending
+                  ? "Adding Discount..."
+                  : "Add Discount"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Comprehensive Bill Dialog */}
-      {isComprehensiveBillOpen && comprehensiveBillData && (
-        <ComprehensiveBillTemplate
-          billData={comprehensiveBillData}
-          hospitalInfo={hospitalInfo}
-          isOpen={isComprehensiveBillOpen}
-          onClose={() => {
-            console.log("Closing comprehensive bill dialog");
-            setIsComprehensiveBillOpen(false);
-          }}
-        />
-      )}
+        {/* Comprehensive Bill Dialog */}
+        {isComprehensiveBillOpen && comprehensiveBillData && (
+          <ComprehensiveBillTemplate
+            billData={comprehensiveBillData}
+            hospitalInfo={hospitalInfo}
+            isOpen={isComprehensiveBillOpen}
+            onClose={() => {
+              console.log("Closing comprehensive bill dialog");
+              setIsComprehensiveBillOpen(false);
+            }}
+          />
+        )}
 
-      {/* OPD Visit Dialog */}
-      <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Schedule OPD Appointment</DialogTitle>
-          </DialogHeader>
+        {/* OPD Visit Dialog */}
+        <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Schedule OPD Appointment</DialogTitle>
+            </DialogHeader>
 
-          <Form {...opdVisitForm}>
-            <form 
-              onSubmit={opdVisitForm.handleSubmit((data) => {
-                createOpdVisitMutation.mutate(data);
-              })}
-              className="space-y-4"
-            >
-              <FormField
-                control={opdVisitForm.control}
-                name="doctorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Doctor *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-opd-doctor">
-                          <SelectValue placeholder="Select a doctor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {doctors?.map((doctor: Doctor) => (
-                          <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.name} - {doctor.specialization}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
+            <Form {...opdVisitForm}>
+              <form 
+                onSubmit={opdVisitForm.handleSubmit((data) => {
+                  createOpdVisitMutation.mutate(data);
+                })}
+                className="space-y-4"
+              >
                 <FormField
                   control={opdVisitForm.control}
-                  name="scheduledDate"
+                  name="doctorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Date *</FormLabel>
+                      <FormLabel>Doctor *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-opd-doctor">
+                            <SelectValue placeholder="Select a doctor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {doctors?.map((doctor: Doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="scheduledDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            {...field}
+                            data-testid="input-opd-date"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="scheduledTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Time *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            {...field}
+                            data-testid="input-opd-time"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={opdVisitForm.control}
+                  name="symptoms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Symptoms (Optional)</FormLabel>
                       <FormControl>
-                        <Input
-                          type="date"
+                        <textarea
                           {...field}
-                          data-testid="input-opd-date"
+                          className="w-full min-h-[80px] p-2 border border-input rounded-md"
+                          placeholder="Enter symptoms or reason for visit..."
+                          data-testid="textarea-opd-symptoms"
                         />
                       </FormControl>
                       <FormMessage />
@@ -4846,65 +4890,28 @@ export default function PatientDetail() {
                   )}
                 />
 
-                <FormField
-                  control={opdVisitForm.control}
-                  name="scheduledTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Time *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="time"
-                          {...field}
-                          data-testid="input-opd-time"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={opdVisitForm.control}
-                name="symptoms"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Symptoms (Optional)</FormLabel>
-                    <FormControl>
-                      <textarea
-                        {...field}
-                        className="w-full min-h-[80px] p-2 border border-input rounded-md"
-                        placeholder="Enter symptoms or reason for visit..."
-                        data-testid="textarea-opd-symptoms"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsOpdVisitDialogOpen(false)}
-                  data-testid="button-cancel-opd"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createOpdVisitMutation.isPending}
-                  data-testid="button-schedule-opd-visit"
-                >
-                  {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsOpdVisitDialogOpen(false)}
+                    data-testid="button-cancel-opd"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createOpdVisitMutation.isPending}
+                    data-testid="button-schedule-opd-visit"
+                  >
+                    {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
