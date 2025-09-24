@@ -53,7 +53,7 @@ export default function SmartBillingDialog({
   const form = useForm({
     defaultValues: {
       serviceId: "",
-      doctorId: "",
+      doctorId: null as string | null,
       quantity: 1,
       hours: 1,
       distance: 0,
@@ -168,7 +168,7 @@ export default function SmartBillingDialog({
       calculatedAmount: billingPreview.totalAmount,
       scheduledDate: data.scheduledDate,
       scheduledTime: data.scheduledTime,
-      doctorId: data.doctorId !== "none" ? data.doctorId : null,
+      doctorId: data.doctorId || null,
       notes: data.notes,
       status: "scheduled",
     };
@@ -236,10 +236,10 @@ export default function SmartBillingDialog({
           <div className="space-y-2">
             <Label>Assign Doctor</Label>
             <Select 
-              value={form.watch("doctorId") || ""}
+              value={form.watch("doctorId") ?? "none"}
               onValueChange={(value) => {
                 console.log("Doctor selection changed to:", value);
-                form.setValue("doctorId", value === "none" ? "" : value);
+                form.setValue("doctorId", value === "none" ? null : value);
               }} 
               data-testid="select-doctor"
             >
