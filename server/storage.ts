@@ -48,6 +48,8 @@ import type {
   InsertDoctorEarning,
   DoctorPayment,
   InsertDoctorPayment,
+  ScheduleEvent,
+  InsertScheduleEvent,
 } from "@shared/schema";
 import {
   eq,
@@ -152,6 +154,7 @@ async function initializeDatabase() {
         room_number TEXT,
         scheduled_date TEXT,
         scheduled_time TEXT DEFAULT '09:00',
+        consultation_fee REAL NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -716,6 +719,17 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
+    // Add consultation_fee column to patient_visits table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_visits ADD COLUMN consultation_fee REAL DEFAULT 0;
+      `);
+      console.log("Added consultation_fee column to patient_visits table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+
     // Always ensure demo users and data exist on every restart
     await createDemoData();
 
@@ -873,7 +887,7 @@ export interface IStorage {
   createPatientVisit(visit: InsertPatientVisit): Promise<PatientVisit>;
   getPatientVisits(patientId?: string): Promise<PatientVisit[]>;
   getPatientVisitById(id: string): Promise<PatientVisit | undefined>;
-  
+
   // OPD visits - specific methods for OPD management
   createOpdVisit(visit: InsertPatientVisit): Promise<PatientVisit>;
   getOpdVisits(filters?: {
@@ -1701,20 +1715,23 @@ export class SqliteStorage implements IStorage {
   }
 
   // OPD-specific methods
-  async createOpdVisit(visit: InsertPatientVisit): Promise<PatientVisit> {
-    const visitId = this.generateVisitId();
-    const created = db
-      .insert(schema.patientVisits)
-      .values({
-        ...visit,
+  async createOpdVisit(visitData: InsertPatientVisit): Promise<PatientVisit> {
+    try {
+      const visitId = `VIS-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+      const visit = db.insert(schema.patientVisits).values({
+        ...visitData,
         visitId,
         visitType: 'opd',
-        visitDate: visit.scheduledDate || visit.visitDate,
-        status: 'scheduled'
-      })
-      .returning()
-      .get();
-    return created;
+        visitDate: visitData.scheduledDate || visitData.visitDate,
+        status: 'scheduled',
+        consultationFee: visitData.consultationFee || 0, // Store consultation fee
+      }).returning().get();
+      return visit;
+    } catch (error) {
+      console.error('Error creating OPD visit:', error);
+      throw error;
+    }
   }
 
   async getOpdVisits(filters?: {
@@ -1766,6 +1783,7 @@ export class SqliteStorage implements IStorage {
         diagnosis: schema.patientVisits.diagnosis,
         prescription: schema.patientVisits.prescription,
         status: schema.patientVisits.status,
+        consultationFee: schema.patientVisits.consultationFee, // Include consultation fee
         createdAt: schema.patientVisits.createdAt,
         updatedAt: schema.patientVisits.updatedAt,
         // Patient details
@@ -1777,7 +1795,7 @@ export class SqliteStorage implements IStorage {
         // Doctor details
         doctorName: schema.doctors.name,
         doctorSpecialization: schema.doctors.specialization,
-        consultationFee: schema.doctors.consultationFee,
+        doctorConsultationFee: schema.doctors.consultationFee, // Doctor's default fee
       })
       .from(schema.patientVisits)
       .leftJoin(schema.patients, eq(schema.patientVisits.patientId, schema.patients.id))
@@ -1790,7 +1808,7 @@ export class SqliteStorage implements IStorage {
   async updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined> {
     const updated = db
       .update(schema.patientVisits)
-      .set({ 
+      .set({
         status,
         updatedAt: sql`(datetime('now'))`
       })
@@ -2967,7 +2985,7 @@ export class SqliteStorage implements IStorage {
       {
         amount: discountData.amount,
         discountType: discountData.discountType,
-        reason: discountData.reason,
+        reason: discountData,
         patientName: patient?.name,
       },
     );

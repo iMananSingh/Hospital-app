@@ -2147,7 +2147,7 @@ export default function PatientDetail() {
                                   // Combine date and time to create a complete datetime
                                   const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
                                   displayDateTime = new Date(datetimeString);
-                                  
+
                                   // Use local time without adjustment to match the dialog
                                 } else {
                                   displayDateTime = new Date(visit.scheduledDate);
@@ -2515,7 +2515,7 @@ export default function PatientDetail() {
                                       parseInt(timeParts[0]), // hour
                                       parseInt(timeParts[1]), // minute
                                     );
-                                    
+
                                     // Subtract 5.5 hours (19800000 ms) to correct IST display
                                     const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
 
@@ -2546,7 +2546,7 @@ export default function PatientDetail() {
                                       parseInt(timeParts[1]), // minute
                                       parseInt(timeParts[2]), // second
                                     );
-                                    
+
                                     // Subtract 5.5 hours (19800000 ms) to correct IST display
                                     const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
 
@@ -2583,7 +2583,7 @@ export default function PatientDetail() {
                                   if (!isNaN(date.getTime())) {
                                     // For ISO strings, also subtract 5.5 hours to correct IST display
                                     const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
-                                    
+
                                     return correctedDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
@@ -4811,7 +4811,51 @@ export default function PatientDetail() {
             <Form {...opdVisitForm}>
               <form
                 onSubmit={opdVisitForm.handleSubmit((data) => {
-                  createOpdVisitMutation.mutate(data);
+                  console.log("OPD form submitted with data:", data);
+
+                  // Validate required fields
+                  if (!data.doctorId) {
+                    toast({
+                      title: "Error",
+                      description: "Please select a doctor",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  if (!data.scheduledDate) {
+                    toast({
+                      title: "Error",
+                      description: "Please select a date",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  if (!data.scheduledTime) {
+                    toast({
+                      title: "Error",
+                      description: "Please select a time",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  // Ensure consultation fee is included
+                  const consultationFee = data.consultationFee || 0;
+                  if (consultationFee <= 0) {
+                    toast({
+                      title: "Error",
+                      description: "Please enter a valid consultation fee",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  createOpdVisitMutation.mutate({
+                    ...data,
+                    consultationFee: consultationFee
+                  });
                 })}
                 className="space-y-4"
               >
@@ -4829,6 +4873,9 @@ export default function PatientDetail() {
                             const selectedDoctor = doctors?.find((d: Doctor) => d.id === value);
                             if (selectedDoctor) {
                               opdVisitForm.setValue("consultationFee", selectedDoctor.consultationFee);
+                            } else {
+                              // If no doctor is selected or it's an invalid ID, reset fee
+                              opdVisitForm.setValue("consultationFee", 0);
                             }
                           }} 
                           defaultValue={field.value}
@@ -4856,18 +4903,40 @@ export default function PatientDetail() {
                     name="consultationFee"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Consultation Fee (₹)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            data-testid="input-consultation-fee"
-                            placeholder="Enter consultation fee"
-                          />
-                        </FormControl>
+                        <Label>Consultation Fee (₹)</Label>
+                        {(() => {
+                          const selectedDoctorId = opdVisitForm.watch("doctorId");
+                          const selectedDoctor = doctors.find(
+                            (d: Doctor) => d.id === selectedDoctorId,
+                          );
+                          const defaultFee = selectedDoctor ? selectedDoctor.consultationFee : 0;
+                          const currentFee = opdVisitForm.watch("consultationFee");
+
+                          // Set default fee when doctor changes, but only if fee is 0 or undefined
+                          React.useEffect(() => {
+                            if (selectedDoctor && (!currentFee || currentFee === 0)) {
+                              opdVisitForm.setValue("consultationFee", defaultFee);
+                            }
+                          }, [selectedDoctorId, defaultFee, currentFee]); // Include currentFee to re-run effect if it's manually changed
+
+                          return (
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={currentFee || 0}
+                                onChange={(e) => {
+                                  const fee = parseFloat(e.target.value) || 0;
+                                  field.onChange(fee); // Update React Hook Form state
+                                  opdVisitForm.setValue("consultationFee", fee); // Also update form directly for immediate access
+                                }}
+                                placeholder="Enter consultation fee"
+                                data-testid="input-consultation-fee"
+                              />
+                            </FormControl>
+                          );
+                        })()}
                         <FormMessage />
                       </FormItem>
                     )}

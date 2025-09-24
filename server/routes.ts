@@ -1550,6 +1550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         symptoms: visitData.symptoms || null,
         diagnosis: visitData.diagnosis || null,
         prescription: visitData.prescription || null,
+        consultationFee: visitData.consultationFee || 0,
         status: "scheduled"
       });
       

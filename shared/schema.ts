@@ -57,6 +57,7 @@ export const patientVisits = sqliteTable("patient_visits", {
   symptoms: text("symptoms"),
   diagnosis: text("diagnosis"),
   prescription: text("prescription"),
+  consultationFee: real("consultation_fee").default(0), // fee for this visit
   status: text("status").notNull().default("scheduled"), // scheduled, active, completed, cancelled
   admissionDate: text("admission_date"), // for inpatients
   dischargeDate: text("discharge_date"), // for inpatients
