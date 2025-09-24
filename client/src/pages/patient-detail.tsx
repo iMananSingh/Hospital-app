@@ -285,13 +285,11 @@ export default function PatientDetail() {
       }
 
       // For admission fallback, try to get from admission data
-      if (eventType === "admission") {
-        if (event.rawData?.admission?.receiptNumber) {
-          return event.rawData.admission.receiptNumber;
-        }
-        if (event.receiptNumber) {
-          return event.receiptNumber;
-        }
+      if (eventType === "admission" && event.rawData?.admission?.receiptNumber) {
+        return event.rawData.admission.receiptNumber;
+      }
+      if (eventType === "admission" && event.receiptNumber) {
+        return event.receiptNumber;
       }
 
       // For other event types, try direct access
@@ -932,6 +930,10 @@ export default function PatientDetail() {
           console.log('Service:', service.name);
           console.log('Doctor ID from form:', data.doctorId);
 
+          // Get the actual doctor ID from the form - check all possible sources
+          const actualDoctorId = data.doctorId || serviceForm.getValues("doctorId");
+          console.log('Actual doctor ID to use:', actualDoctorId);
+
           let serviceData: any = {
             patientId: patientId,
             serviceType: mapCategoryToServiceType(service.category),
@@ -944,8 +946,8 @@ export default function PatientDetail() {
             scheduledTime: data.scheduledTime,
             status: "scheduled",
             doctorId:
-              data.doctorId && data.doctorId !== "none" && data.doctorId !== ""
-                ? data.doctorId
+              actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
+                ? actualDoctorId
                 : null,
             billingType: "per_instance",
             calculatedAmount: Number(data.price),

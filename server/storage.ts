@@ -2182,83 +2182,39 @@ export class SqliteStorage implements IStorage {
         const createdServices: PatientService[] = [];
 
         for (const serviceData of servicesData) {
-          console.log(`=== BATCH SERVICE CREATION DEBUG ===`);
-          console.log(`Service Name: ${serviceData.serviceName}`);
-          console.log(`Doctor ID from request: ${serviceData.doctorId}`);
-          console.log(`Service Type: ${serviceData.serviceType}`);
+          console.log("=== BATCH SERVICE CREATION DEBUG ===");
+          console.log("Service Name:", serviceData.serviceName);
+          console.log("Doctor ID from request:", serviceData.doctorId);
+          console.log("Doctor ID type:", typeof serviceData.doctorId);
+          console.log("Service Type:", serviceData.serviceType);
 
-          // Get service details for billing calculation
-          let service = null;
-          let calculatedAmount = serviceData.price || 0;
-          let billingType = serviceData.billingType || "per_instance";
-          let billingQuantity = serviceData.billingQuantity || 1;
+          // Ensure doctor ID is properly preserved (don't convert to null unless explicitly null)
+          const finalServiceData = {
+            ...serviceData,
+            orderId: orderId,
+            // Preserve the exact doctor ID value from the request
+            doctorId: serviceData.doctorId === undefined ? null : serviceData.doctorId,
+          };
 
-          if (
-            serviceData.serviceId &&
-            serviceData.serviceId !== `SRV-${Date.now()}`
-          ) {
-            service = tx
-              .select()
-              .from(schema.services)
-              .where(eq(schema.services.id, serviceData.serviceId))
-              .get();
-
-            if (service) {
-              billingType = service.billingType || "per_instance";
-
-              // For variable billing, use the client-provided amount directly
-              if (service.billingType === "variable") {
-                calculatedAmount = serviceData.calculatedAmount || serviceData.price || 0;
-                billingQuantity = 1; // Variable billing always has quantity 1
-              } else {
-                // Calculate billing using smart costing for other billing types
-                const customParams = serviceData.billingParameters
-                  ? JSON.parse(serviceData.billingParameters)
-                  : {};
-
-                const billingResult = SmartCostingEngine.calculateBilling({
-                  service: {
-                    id: service.id,
-                    name: service.name,
-                    price: service.price,
-                    billingType: service.billingType as any,
-                    billingParameters: service.billingParameters || undefined,
-                  },
-                  quantity: serviceData.billingQuantity || 1,
-                  customParameters: customParams,
-                });
-
-                calculatedAmount = billingResult.totalAmount;
-                billingQuantity = billingResult.billingQuantity;
-              }
-            }
-          }
-
-          console.log(`Final service data before DB insert:`, {
-            doctorId: serviceData.doctorId,
-            serviceName: serviceData.serviceName,
-            serviceType: serviceData.serviceType
+          console.log("Final service data before DB insert:", {
+            doctorId: finalServiceData.doctorId,
+            doctorIdType: typeof finalServiceData.doctorId,
+            serviceName: finalServiceData.serviceName,
+            serviceType: finalServiceData.serviceType,
           });
 
           const created = tx
             .insert(schema.patientServices)
-            .values({
-              ...serviceData,
-              serviceId: serviceData.serviceId || `SRV-${Date.now()}`,
-              receiptNumber: serviceData.receiptNumber || null,
-              orderId: orderId, // Same order ID for all services in batch
-              billingType,
-              billingQuantity,
-              calculatedAmount,
-            })
+            .values(finalServiceData)
             .returning()
             .get();
 
-          console.log(`Created service in DB:`, {
+          console.log("Created service in DB:", {
             id: created.id,
             doctorId: created.doctorId,
+            doctorIdType: typeof created.doctorId,
             serviceName: created.serviceName,
-            serviceType: created.serviceType
+            serviceType: created.serviceType,
           });
 
           createdServices.push(created);
