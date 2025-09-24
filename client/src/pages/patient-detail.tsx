@@ -4783,109 +4783,71 @@ export default function PatientDetail() {
         </Dialog>
 
         {/* All Dialogs wrapped in Fragment */}
-        <>
-          {/* Comprehensive Bill Dialog */}
-          {isComprehensiveBillOpen && comprehensiveBillData && (
-            <ComprehensiveBillTemplate
-              billData={comprehensiveBillData}
-              hospitalInfo={hospitalInfo}
-              isOpen={isComprehensiveBillOpen}
-              onClose={() => {
-                console.log("Closing comprehensive bill dialog");
-                setIsComprehensiveBillOpen(false);
-              }}
-            />
-          )}
+      <>
+        {/* Comprehensive Bill Dialog */}
+        {isComprehensiveBillOpen && comprehensiveBillData && (
+          <ComprehensiveBillTemplate
+            billData={comprehensiveBillData}
+            hospitalInfo={hospitalInfo}
+            isOpen={isComprehensiveBillOpen}
+            onClose={() => {
+              console.log("Closing comprehensive bill dialog");
+              setIsComprehensiveBillOpen(false);
+            }}
+          />
+        )}
 
-          {/* OPD Visit Dialog */}
-          <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Schedule OPD Appointment</DialogTitle>
-              </DialogHeader>
+        {/* OPD Visit Dialog */}
+        <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Schedule OPD Appointment</DialogTitle>
+            </DialogHeader>
 
-              <Form {...opdVisitForm}>
-                <form
-                  onSubmit={opdVisitForm.handleSubmit((data) => {
-                    createOpdVisitMutation.mutate(data);
-                  })}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="doctorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Doctor *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-opd-doctor">
-                              <SelectValue placeholder="Select a doctor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {doctors?.map((doctor: Doctor) => (
-                              <SelectItem key={doctor.id} value={doctor.id}>
-                                {doctor.name} - {doctor.specialization}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={opdVisitForm.control}
-                      name="scheduledDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              {...field}
-                              data-testid="input-opd-date"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={opdVisitForm.control}
-                      name="scheduledTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              {...field}
-                              data-testid="input-opd-time"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="symptoms"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Symptoms (Optional)</FormLabel>
+            <Form {...opdVisitForm}>
+              <form
+                onSubmit={opdVisitForm.handleSubmit((data) => {
+                  createOpdVisitMutation.mutate(data);
+                })}
+                className="space-y-4"
+              >
+                <FormField
+                  control={opdVisitForm.control}
+                  name="doctorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Doctor *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <textarea
+                          <SelectTrigger data-testid="select-opd-doctor">
+                            <SelectValue placeholder="Select a doctor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {doctors?.map((doctor: Doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="scheduledDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
                             {...field}
-                            className="w-full min-h-[80px] p-2 border border-input rounded-md"
-                            placeholder="Enter symptoms or reason for visit..."
-                            data-testid="textarea-opd-symptoms"
+                            data-testid="input-opd-date"
                           />
                         </FormControl>
                         <FormMessage />
@@ -4893,29 +4855,66 @@ export default function PatientDetail() {
                     )}
                   />
 
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsOpdVisitDialogOpen(false)}
-                      data-testid="button-cancel-opd"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createOpdVisitMutation.isPending}
-                      data-testid="button-schedule-opd-visit"
-                    >
-                      {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </>
-      </div>
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="scheduledTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Time *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="time"
+                            {...field}
+                            data-testid="input-opd-time"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={opdVisitForm.control}
+                  name="symptoms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Symptoms (Optional)</FormLabel>
+                      <FormControl>
+                        <textarea
+                          {...field}
+                          className="w-full min-h-[80px] p-2 border border-input rounded-md"
+                          placeholder="Enter symptoms or reason for visit..."
+                          data-testid="textarea-opd-symptoms"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsOpdVisitDialogOpen(false)}
+                    data-testid="button-cancel-opd"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createOpdVisitMutation.isPending}
+                    data-testid="button-schedule-opd-visit"
+                  >
+                    {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </>
     </div>
   );
 }
