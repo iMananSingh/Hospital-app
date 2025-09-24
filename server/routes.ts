@@ -1238,13 +1238,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceData = req.body;
 
       console.log('Creating patient service with data:', JSON.stringify(serviceData, null, 2));
+      
+      // Validate required fields
+      if (!serviceData.patientId) {
+        return res.status(400).json({ error: "Patient ID is required" });
+      }
+      
+      if (!serviceData.serviceType) {
+        return res.status(400).json({ error: "Service type is required" });
+      }
+      
+      if (!serviceData.serviceName) {
+        return res.status(400).json({ error: "Service name is required" });
+      }
+      
+      if (!serviceData.scheduledDate) {
+        return res.status(400).json({ error: "Scheduled date is required" });
+      }
+      
+      if (!serviceData.scheduledTime) {
+        return res.status(400).json({ error: "Scheduled time is required" });
+      }
+
+      // Special validation for OPD services
+      if (serviceData.serviceType === "opd") {
+        if (!serviceData.doctorId || serviceData.doctorId === "" || serviceData.doctorId === "none" || serviceData.doctorId === "external") {
+          return res.status(400).json({ error: "Doctor is required for OPD consultation" });
+        }
+        
+        if (!serviceData.price || serviceData.price <= 0) {
+          return res.status(400).json({ error: "Valid consultation fee is required for OPD" });
+        }
+      }
+
       console.log('Doctor ID in service data:', serviceData.doctorId);
       const service = await storage.createPatientService(serviceData, req.user.id);
       console.log('Created patient service:', JSON.stringify(service, null, 2));
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
-      res.status(500).json({ error: "Failed to create patient service" });
+      res.status(500).json({ 
+        error: "Failed to create patient service", 
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 

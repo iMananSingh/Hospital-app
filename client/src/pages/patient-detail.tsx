@@ -814,77 +814,40 @@ export default function PatientDetail() {
     },
   });
 
-  const onServiceSubmit = (data: any) => {
-    console.log("=== FORM SUBMISSION DEBUG ===");
-    console.log("Form data received:", data);
-    console.log("Selected service type:", selectedServiceType);
-    console.log("Doctor ID:", data.doctorId);
-    console.log("Scheduled date:", data.scheduledDate);
-    console.log("Scheduled time:", data.scheduledTime);
-    console.log("Selected services:", selectedServices);
-    console.log("Form validation state:", serviceForm.formState);
-    console.log("Available doctors:", doctors?.length || 0);
+  const onServiceSubmit = async (data: any) => {
+    try {
+      console.log("Submit button clicked");
+      console.log("Form data:", data);
 
-    // Validate required fields
-    if (!data.scheduledDate) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a scheduled date.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!data.scheduledTime) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a scheduled time.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const isOPD = selectedServiceType === "opd" || data.serviceType === "opd";
-
-    // For OPD, validate doctor selection
-    if (
-      isOPD &&
-      (!data.doctorId || data.doctorId === "none" || data.doctorId === "")
-    ) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a doctor for OPD consultation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // For non-OPD services, validate service selection
-    if (!isOPD) {
-      // If no services selected from catalog, check manual entry
-      if (selectedServices.length === 0) {
-        if (
-          !data.serviceName ||
-          data.serviceName.trim() === "" ||
-          !data.price ||
-          data.price <= 0
-        ) {
-          toast({
-            title: "Validation Error",
-            description:
-              "Please either select services from the catalog or enter both service name and price.",
-            variant: "destructive",
-          });
-          return;
-        }
+      // Manual validation for required fields
+      if (!data.patientId) {
+        toast({
+          title: "Error",
+          description: "Patient ID is required",
+          variant: "destructive",
+        });
+        return;
       }
-      // If services are selected from catalog, that's valid - no need to check manual fields
-    }
 
-    // Handle multiple selected services or single service
-    const servicesToCreate = [];
+      if (!data.scheduledDate) {
+        toast({
+          title: "Error",
+          description: "Scheduled date is required",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (isOPD) {
+      if (!data.scheduledTime) {
+        toast({
+          title: "Error",
+          description: "Scheduled time is required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const servicesToCreate = [];
       const selectedDoctorId = serviceForm.watch("doctorId");
       const selectedDoctor = doctors.find(
         (d: Doctor) => d.id === selectedDoctorId,
@@ -893,55 +856,152 @@ export default function PatientDetail() {
         ? selectedDoctor.consultationFee
         : 0;
 
-      // Validate doctor selection for OPD
-      if (
-        !selectedDoctorId ||
-        selectedDoctorId === "none" ||
-        selectedDoctorId === ""
-      ) {
-        toast({
-          title: "Validation Error",
-          description: "Please select a doctor for OPD consultation.",
-          variant: "destructive",
+      if (selectedServiceType === "opd") {
+        // Get selected doctor and consultation fee
+        console.log('Selected Doctor ID from form:', selectedDoctorId);
+
+        if (!selectedDoctorId || selectedDoctorId === "none" || selectedDoctorId === "" || selectedDoctorId === "external") {
+          console.log('No doctor selected for OPD consultation');
+          toast({
+            title: "Doctor Required",
+            description: "Please select a doctor for OPD consultation",
+            variant: "destructive",
+          });
+          return; // Stop execution if no doctor selected for OPD
+        }
+
+        // Validate consultation fee is positive
+        if (!consultationFee || consultationFee <= 0) {
+          console.log('Invalid consultation fee:', consultationFee);
+          toast({
+            title: "Invalid Fee",
+            description: "Consultation fee must be greater than 0. Please select a valid doctor.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('=== OPD SERVICE CREATION ===');
+        console.log('Selected Doctor ID:', selectedDoctorId);
+        console.log('Consultation Fee:', consultationFee);
+
+        servicesToCreate.push({
+          patientId: patientId,
+          serviceType: "opd",
+          serviceName: "OPD Consultation",
+          serviceId: "opd_consultation_service", // Add a consistent service ID
+          price: consultationFee,
+          quantity: 1,
+          notes: data.notes || "",
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
+          status: "scheduled",
+          doctorId: selectedDoctorId,
+          billingType: "per_instance",
+          calculatedAmount: consultationFee,
+          billingQuantity: 1,
         });
-        return; // Stop submission if doctor is not selected for OPD
-      }
+      } else {
+        // Handle selected catalog services
+        if (selectedServices.length > 0) {
+          selectedServices.forEach((service) => {
+            console.log('=== CATALOG SERVICE CREATION ===');
+            console.log('Service:', service.name);
+            console.log('Doctor ID from form:', data.doctorId);
 
-      console.log('=== OPD SERVICE CREATION ===');
-      console.log('Selected Doctor ID:', selectedDoctorId);
-      console.log('Selected Doctor:', selectedDoctor);
+            // Get the actual doctor ID from the form - use same method as OPD
+            const actualDoctorId = serviceForm.watch("doctorId");
+            console.log('Actual doctor ID to use:', actualDoctorId);
 
-      servicesToCreate.push({
-        patientId: patientId,
-        serviceType: "opd",
-        serviceName: "OPD Consultation",
-        price: consultationFee,
-        quantity: 1,
-        notes: data.notes,
-        scheduledDate: data.scheduledDate,
-        scheduledTime: data.scheduledTime,
-        status: "scheduled",
-        doctorId: selectedDoctorId,
-      });
-    } else {
-      // Handle selected catalog services
-      if (selectedServices.length > 0) {
-        selectedServices.forEach((service) => {
-          console.log('=== CATALOG SERVICE CREATION ===');
-          console.log('Service:', service.name);
+            let serviceData: any = {
+              patientId: patientId,
+              serviceType: mapCategoryToServiceType(service.category),
+              serviceName: service.name,
+              serviceId: service.id,
+              price: service.price * (service.quantity || 1),
+              quantity: service.quantity || 1,
+              notes: data.notes,
+              scheduledDate: data.scheduledDate,
+              scheduledTime: data.scheduledTime,
+              status: "scheduled",
+              doctorId:
+                actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
+                  ? actualDoctorId
+                  : null,
+              billingType: "per_instance",
+              calculatedAmount: Number(data.price),
+            };
+
+            console.log('Final service data doctor ID:', serviceData.doctorId);
+
+            // Add smart billing parameters if service has special billing type
+            if (service.billingType) {
+              serviceData.billingType = service.billingType;
+              serviceData.billingQuantity = service.quantity || 1;
+
+              if (service.billingType === "composite") {
+                // For composite billing (ambulance), use quantity as distance
+                serviceData.billingParameters = JSON.stringify({
+                  distance: service.quantity || 0,
+                });
+              } else if (service.billingType === "per_hour") {
+                serviceData.billingParameters = JSON.stringify({
+                  hours: service.quantity || 1,
+                });
+              } else if (service.billingType === "variable") {
+                // For variable billing, use the entered price from form data
+                const variablePrice = data.price || service.price || 0;
+                serviceData.billingParameters = JSON.stringify({
+                  price: variablePrice,
+                });
+              }
+
+              // Calculate billing amount based on service type and quantity
+              if (service.billingType === "composite") {
+                const params = service.billingParameters
+                  ? JSON.parse(service.billingParameters)
+                  : {};
+                const fixedCharge = params.fixedCharge || service.price;
+                const perKmRate = params.perKmRate || 0;
+                const distance = service.quantity || 0;
+                const calculatedAmount = fixedCharge + perKmRate * distance;
+
+                serviceData.calculatedAmount = calculatedAmount;
+                serviceData.price = calculatedAmount;
+              } else if (service.billingType === "per_hour") {
+                const calculatedAmount = service.price * (service.quantity || 1);
+                serviceData.calculatedAmount = calculatedAmount;
+                serviceData.price = calculatedAmount;
+              } else if (service.billingType === "variable") {
+                // For variable billing, use the exact price entered from form (quantity is always 1)
+                const variablePrice = data.price || service.price || 0;
+                serviceData.calculatedAmount = variablePrice;
+                serviceData.price = variablePrice;
+                serviceData.billingQuantity = 1;
+              } else if (service.billingType === "per_date") {
+                const calculatedAmount = service.price * (service.quantity || 1);
+                serviceData.calculatedAmount = calculatedAmount;
+                serviceData.price = calculatedAmount;
+              }
+            }
+
+            servicesToCreate.push(serviceData);
+          });
+        } else if (data.serviceName && data.price > 0) {
+          // Custom service
+          console.log('=== CUSTOM SERVICE CREATION ===');
           console.log('Doctor ID from form:', data.doctorId);
 
           // Get the actual doctor ID from the form - use same method as OPD
           const actualDoctorId = serviceForm.watch("doctorId");
-          console.log('Actual doctor ID to use:', actualDoctorId);
+          console.log('Actual doctor ID to use for custom service:', actualDoctorId);
 
-          let serviceData: any = {
+          servicesToCreate.push({
             patientId: patientId,
-            serviceType: mapCategoryToServiceType(service.category),
-            serviceName: service.name,
-            serviceId: service.id,
-            price: service.price * (service.quantity || 1),
-            quantity: service.quantity || 1,
+            serviceType: "service",
+            serviceName: data.serviceName,
+            price: data.price,
+            quantity: 1,
             notes: data.notes,
             scheduledDate: data.scheduledDate,
             scheduledTime: data.scheduledTime,
@@ -950,96 +1010,100 @@ export default function PatientDetail() {
               actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
                 ? actualDoctorId
                 : null,
-            billingType: "per_instance",
-            calculatedAmount: Number(data.price),
-          };
+          });
 
-          console.log('Final service data doctor ID:', serviceData.doctorId);
+          console.log('Custom service doctor ID:', servicesToCreate[servicesToCreate.length - 1].doctorId);
+        }
+      }
 
-          // Add smart billing parameters if service has special billing type
-          if (service.billingType) {
-            serviceData.billingType = service.billingType;
-            serviceData.billingQuantity = service.quantity || 1;
+      // Call the mutation function with the services to create
+      // The createServiceMutation handles the batch or single API call logic internally
+      if (servicesToCreate.length === 0) {
+        toast({
+          title: "Error",
+          description: "No services to create",
+          variant: "destructive",
+        });
+        return;
+      }
 
-            if (service.billingType === "composite") {
-              // For composite billing (ambulance), use quantity as distance
-              serviceData.billingParameters = JSON.stringify({
-                distance: service.quantity || 0,
-              });
-            } else if (service.billingType === "per_hour") {
-              serviceData.billingParameters = JSON.stringify({
-                hours: service.quantity || 1,
-              });
-            } else if (service.billingType === "variable") {
-              // For variable billing, use the entered price from form data
-              const variablePrice = data.price || service.price || 0;
-              serviceData.billingParameters = JSON.stringify({
-                price: variablePrice,
-              });
-            }
+      try {
+        console.log("Creating services:", servicesToCreate);
 
-            // Calculate billing amount based on service type and quantity
-            if (service.billingType === "composite") {
-              const params = service.billingParameters
-                ? JSON.parse(service.billingParameters)
-                : {};
-              const fixedCharge = params.fixedCharge || service.price;
-              const perKmRate = params.perKmRate || 0;
-              const distance = service.quantity || 0;
-              const calculatedAmount = fixedCharge + perKmRate * distance;
+        if (servicesToCreate.length === 1) {
+          // Single service - use the regular API
+          console.log("Creating single service:", servicesToCreate[0]);
+          const response = await fetch("/api/patient-services", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+            },
+            body: JSON.stringify(servicesToCreate[0]),
+          });
 
-              serviceData.calculatedAmount = calculatedAmount;
-              serviceData.price = calculatedAmount;
-            } else if (service.billingType === "per_hour") {
-              const calculatedAmount = service.price * (service.quantity || 1);
-              serviceData.calculatedAmount = calculatedAmount;
-              serviceData.price = calculatedAmount;
-            } else if (service.billingType === "variable") {
-              // For variable billing, use the exact price entered from form (quantity is always 1)
-              const variablePrice = data.price || service.price || 0;
-              serviceData.calculatedAmount = variablePrice;
-              serviceData.price = variablePrice;
-              serviceData.billingQuantity = 1;
-            } else if (service.billingType === "per_date") {
-              const calculatedAmount = service.price * (service.quantity || 1);
-              serviceData.calculatedAmount = calculatedAmount;
-              serviceData.price = calculatedAmount;
-            }
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Single service creation failed:", errorText);
+            throw new Error(`Server error: ${response.status} ${errorText}`);
           }
 
-          servicesToCreate.push(serviceData);
+          const result = await response.json();
+          console.log("Service created:", result);
+        } else if (servicesToCreate.length > 1) {
+          // Multiple services - use the batch API
+          console.log("Creating batch services:", servicesToCreate);
+          const response = await fetch("/api/patient-services/batch", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+            },
+            body: JSON.stringify(servicesToCreate),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Batch service creation failed:", errorText);
+            throw new Error(`Batch service creation failed: ${response.status} ${errorText}`);
+          }
+
+          const result = await response.json();
+          console.log("Batch services created:", result);
+        }
+
+        // Success
+        queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+
+        toast({
+          title: "Success",
+          description: `${selectedServiceType === "opd" ? "OPD appointment" : "Service"} scheduled successfully`,
         });
-      } else if (data.serviceName && data.price > 0) {
-        // Custom service
-        console.log('=== CUSTOM SERVICE CREATION ===');
-        console.log('Doctor ID from form:', data.doctorId);
 
-        // Get the actual doctor ID from the form - use same method as OPD
-        const actualDoctorId = serviceForm.watch("doctorId");
-        console.log('Actual doctor ID to use for custom service:', actualDoctorId);
-
-        servicesToCreate.push({
-          patientId: patientId,
-          serviceType: "service",
-          serviceName: data.serviceName,
-          price: data.price,
-          quantity: 1,
-          notes: data.notes,
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: "scheduled",
-          doctorId:
-            actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
-              ? actualDoctorId
-              : null,
+        setIsServiceDialogOpen(false);
+        serviceForm.reset();
+        setSelectedServices([]);
+        setSelectedServiceType("");
+        setBillingPreview(null);
+        setSelectedServiceCategory("");
+        setSelectedCatalogService(null);
+      } catch (error) {
+        console.error("Error creating service:", error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to schedule service",
+          variant: "destructive",
         });
-
-        console.log('Custom service doctor ID:', servicesToCreate[servicesToCreate.length - 1].doctorId);
       }
-    }
-
-    if (servicesToCreate.length > 0) {
-      createServiceMutation.mutate(servicesToCreate);
+    } catch (error) {
+      console.error("Error in onServiceSubmit:", error);
+      toast({
+        title: "Form Submission Error",
+        description: "An unexpected error occurred during form submission. Please check your inputs.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1632,25 +1696,26 @@ export default function PatientDetail() {
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => {
-                  console.log("=== SCHEDULE OPD CLICKED ===");
-
-                  // Set current LOCAL date and time when opening the dialog
+                  console.log("OPD button clicked");
                   const now = new Date();
-                  const currentDate =
-                    now.getFullYear() +
-                    "-" +
-                    String(now.getMonth() + 1).padStart(2, "0") +
-                    "-" +
-                    String(now.getDate()).padStart(2, "0");
-                  const currentTime =
-                    String(now.getHours()).padStart(2, "0") +
-                    ":" +
-                    String(now.getMinutes()).padStart(2, "0");
+                  // Use Indian timezone (UTC+5:30) for consistent date calculation
+                  const indianTime = new Date(
+                    now.getTime() + 5.5 * 60 * 60 * 1000,
+                  );
+                  const currentDate = indianTime
+                    .toISOString()
+                    .split("T")[0];
+                  const currentTime = indianTime
+                    .toTimeString()
+                    .split(" ")[0]
+                    .slice(0, 5);
 
                   setSelectedServiceType("opd");
                   setSelectedServiceCategory("");
-                  setSelectedCatalogService(null); // Reset selected service
-                  setBillingPreview(null); // Reset billing preview
+                  setSelectedCatalogService(null);
+                  setBillingPreview(null);
+                  setSelectedServices([]);
+
                   serviceForm.reset({
                     patientId: patientId || "",
                     serviceType: "opd",
