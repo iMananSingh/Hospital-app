@@ -2164,8 +2164,8 @@ export default function PatientDetail() {
                                   const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
                                   displayDateTime = new Date(datetimeString);
                                   
-                                  // Add 5.5 hours to convert to IST (India Standard Time)
-                                  displayDateTime = new Date(displayDateTime.getTime() + (5.5 * 60 * 60 * 1000));
+                                  // Add 18.5 hours to convert to IST (correcting the 13-hour difference)
+                                  displayDateTime = new Date(displayDateTime.getTime() + (18.5 * 60 * 60 * 1000));
                                 } else {
                                   displayDateTime = new Date(visit.scheduledDate);
                                 }
