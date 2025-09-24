@@ -2501,7 +2501,7 @@ export class SqliteStorage implements IStorage {
         whereConditions.push(eq(schema.patientServices.status, filters.status));
       }
 
-      // Build the query with doctor and patient joins
+      // Build the query with doctor and patient joins - use conditional selection for doctor fields
       const query = db
         .select({
           // Patient service fields
@@ -2531,13 +2531,25 @@ export class SqliteStorage implements IStorage {
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Join doctor information - handle NULL values properly
-          doctorName: schema.doctors.name,
-          doctorSpecialization: schema.doctors.specialization,
+          // Join doctor information - use CASE WHEN to handle NULL doctorId properly
+          doctorName: sql<string | null>`CASE 
+            WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL 
+            ELSE ${schema.doctors.name} 
+          END`.as('doctorName'),
+          doctorSpecialization: sql<string | null>`CASE 
+            WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL 
+            ELSE ${schema.doctors.specialization} 
+          END`.as('doctorSpecialization'),
         })
         .from(schema.patientServices)
         .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
-        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .leftJoin(
+          schema.doctors, 
+          and(
+            eq(schema.patientServices.doctorId, schema.doctors.id),
+            isNotNull(schema.patientServices.doctorId)
+          )
+        )
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
         .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt));
 

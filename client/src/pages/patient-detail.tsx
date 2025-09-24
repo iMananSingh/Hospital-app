@@ -1971,18 +1971,20 @@ export default function PatientDetail() {
                         console.log('Doctor ID:', service.doctorId);
                         console.log('Doctor Name from API:', service.doctorName);
 
-                        // Use doctorName from the joined query first, then fall back to lookup
-                        let doctorName = service.doctorName;
+                        // Determine doctor name with improved logic
+                        let doctorName = "No Doctor Assigned";
 
-                        if (!doctorName && service.doctorId) {
-                          const doctor = doctors.find(
-                            (d: Doctor) => d.id === service.doctorId,
-                          );
-                          doctorName = doctor ? doctor.name : "Unknown Doctor";
-                        }
-
-                        if (!doctorName) {
-                          doctorName = service.doctorId ? "Unknown Doctor" : "No Doctor Assigned";
+                        if (service.doctorId) {
+                          // First try doctorName from the joined query
+                          if (service.doctorName) {
+                            doctorName = service.doctorName;
+                          } else {
+                            // Fall back to lookup from doctors array
+                            const doctor = doctors.find(
+                              (d: Doctor) => d.id === service.doctorId,
+                            );
+                            doctorName = doctor ? doctor.name : "Unknown Doctor";
+                          }
                         }
 
                         console.log('Final doctor name:', doctorName);
