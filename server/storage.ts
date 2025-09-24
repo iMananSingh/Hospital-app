@@ -564,31 +564,6 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
-    // Add missing columns to service_categories table if they don't exist
-    try {
-      db.$client.exec(`
-        ALTER TABLE service_categories ADD COLUMN label TEXT;
-      `);
-    } catch (error) {
-      // Column already exists, ignore error
-    }
-
-    try {
-      db.$client.exec(`
-        ALTER TABLE service_categories ADD COLUMN icon TEXT DEFAULT 'Settings';
-      `);
-    } catch (error) {
-      // Column already exists, ignore error
-    }
-
-    try {
-      db.$client.exec(`
-        ALTER TABLE service_categories ADD COLUMN is_system INTEGER DEFAULT 0;
-      `);
-    } catch (error) {
-      // Column already exists, ignore error
-    }
-
     // Add new columns to admissions table for current room tracking
     try {
       db.$client.exec(`
@@ -1892,7 +1867,7 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async getBillsWithPatients(): Promise<any[]> {
+  async getBillsWithPatients(): Promise<any[]>{
     return db
       .select({
         bill: schema.bills,
@@ -5281,7 +5256,7 @@ export class SqliteStorage implements IStorage {
     try {
       const updated = db
         .update(schema.doctorEarnings)
-        .set({ 
+        .set({
           status: status as any,
           updatedAt: new Date().toISOString()
         })
