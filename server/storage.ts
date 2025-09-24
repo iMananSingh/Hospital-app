@@ -2188,12 +2188,12 @@ export class SqliteStorage implements IStorage {
           console.log("Doctor ID type:", typeof serviceData.doctorId);
           console.log("Service Type:", serviceData.serviceType);
 
-          // Ensure doctor ID is properly preserved (don't convert to null unless explicitly null)
+          // Ensure doctor ID is properly preserved for all service types
           const finalServiceData = {
             ...serviceData,
             orderId: orderId,
-            // Preserve the exact doctor ID value from the request
-            doctorId: serviceData.doctorId === undefined ? null : serviceData.doctorId,
+            // Always preserve the doctor ID exactly as sent from frontend
+            doctorId: serviceData.doctorId,
           };
 
           console.log("Final service data before DB insert:", {
@@ -2326,6 +2326,8 @@ export class SqliteStorage implements IStorage {
           billingType,
           billingQuantity,
           calculatedAmount,
+          // Preserve doctorId exactly as received
+          doctorId: serviceData.doctorId,
         })
         .returning()
         .get();
