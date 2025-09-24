@@ -3027,7 +3027,26 @@ export class SqliteStorage implements IStorage {
       let totalPaid = 0;
       let totalDiscounts = 0;
 
-      // 1. OPD Services charges
+      // 1. OPD Consultation charges from patient_visits table
+      const opdVisits = db
+        .select({
+          consultationFee: schema.patientVisits.consultationFee,
+        })
+        .from(schema.patientVisits)
+        .where(
+          and(
+            eq(schema.patientVisits.patientId, patientId),
+            eq(schema.patientVisits.visitType, "opd")
+          )
+        )
+        .all();
+
+      opdVisits.forEach(visit => {
+        const fee = visit.consultationFee || 0;
+        totalCharges += fee;
+      });
+
+      // 2. OPD Services charges from patient_services table
       const opdServices = db
         .select({
           amount: schema.patientServices.calculatedAmount,
@@ -3047,7 +3066,7 @@ export class SqliteStorage implements IStorage {
         totalCharges += charge;
       });
 
-      // 2. Pathology orders charges
+      // 3. Pathology orders charges
       const pathologyOrders = db
         .select({
           totalPrice: schema.pathologyOrders.totalPrice,
@@ -3060,7 +3079,7 @@ export class SqliteStorage implements IStorage {
         totalCharges += order.totalPrice || 0;
       });
 
-      // 3. Other patient services charges
+      // 4. Other patient services charges
       const otherServices = db
         .select({
           amount: schema.patientServices.calculatedAmount,
@@ -3080,7 +3099,7 @@ export class SqliteStorage implements IStorage {
         totalCharges += charge;
       });
 
-      // 4. Admission events charges
+      // 5. Admission events charges
       const admissionEvents = db
         .select({
           id: schema.admissionEvents.id,
