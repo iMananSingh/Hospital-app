@@ -74,6 +74,14 @@ import type {
 } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template"; // Import ComprehensiveBillTemplate
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 // Define Service interface with quantity
 interface Service {
@@ -222,6 +230,25 @@ export default function PatientDetail() {
       default:
         return eventType;
     }
+  };
+
+  // Helper function for API requests
+  const apiRequest = async (url: string, options: any) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    
+    return response.json();
   };
 
   // Helper function to get daily count for receipt numbering from API
