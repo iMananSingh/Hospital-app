@@ -40,8 +40,6 @@ import type {
   InsertPatientPayment,
   PatientDiscount,
   InsertPatientDiscount,
-  ScheduleEvent,
-  InsertScheduleEvent,
   ServiceCategory,
   InsertServiceCategory,
   DoctorServiceRate,
@@ -873,6 +871,18 @@ export interface IStorage {
   createPatientVisit(visit: InsertPatientVisit): Promise<PatientVisit>;
   getPatientVisits(patientId?: string): Promise<PatientVisit[]>;
   getPatientVisitById(id: string): Promise<PatientVisit | undefined>;
+  
+  // OPD visits - specific methods for OPD management
+  createOpdVisit(visit: InsertPatientVisit): Promise<PatientVisit>;
+  getOpdVisits(filters?: {
+    doctorId?: string;
+    patientId?: string;
+    scheduledDate?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+  }): Promise<any[]>;
+  updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined>;
 
   // Services
   createService(service: InsertService, userId?: string): Promise<Service>;
@@ -1686,6 +1696,109 @@ export class SqliteStorage implements IStorage {
       .from(schema.patientVisits)
       .where(eq(schema.patientVisits.id, id))
       .get();
+  }
+
+  // OPD-specific methods
+  async createOpdVisit(visit: InsertPatientVisit): Promise<PatientVisit> {
+    const visitId = this.generateVisitId();
+    const created = db
+      .insert(schema.patientVisits)
+      .values({
+        ...visit,
+        visitId,
+        visitType: 'opd',
+        visitDate: visit.scheduledDate || visit.visitDate,
+        status: 'scheduled'
+      })
+      .returning()
+      .get();
+    return created;
+  }
+
+  async getOpdVisits(filters?: {
+    doctorId?: string;
+    patientId?: string;
+    scheduledDate?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+  }): Promise<any[]> {
+    const whereConditions: any[] = [eq(schema.patientVisits.visitType, 'opd')];
+
+    if (filters?.doctorId && filters.doctorId !== 'all') {
+      whereConditions.push(eq(schema.patientVisits.doctorId, filters.doctorId));
+    }
+
+    if (filters?.patientId) {
+      whereConditions.push(eq(schema.patientVisits.patientId, filters.patientId));
+    }
+
+    if (filters?.scheduledDate) {
+      whereConditions.push(eq(schema.patientVisits.scheduledDate, filters.scheduledDate));
+    }
+
+    if (filters?.status && filters.status !== 'all') {
+      whereConditions.push(eq(schema.patientVisits.status, filters.status));
+    }
+
+    if (filters?.fromDate) {
+      whereConditions.push(gte(schema.patientVisits.scheduledDate, filters.fromDate));
+    }
+
+    if (filters?.toDate) {
+      whereConditions.push(lte(schema.patientVisits.scheduledDate, filters.toDate));
+    }
+
+    // Join with patients and doctors to get their details
+    return db
+      .select({
+        id: schema.patientVisits.id,
+        visitId: schema.patientVisits.visitId,
+        patientId: schema.patientVisits.patientId,
+        doctorId: schema.patientVisits.doctorId,
+        visitType: schema.patientVisits.visitType,
+        visitDate: schema.patientVisits.visitDate,
+        scheduledDate: schema.patientVisits.scheduledDate,
+        scheduledTime: schema.patientVisits.scheduledTime,
+        symptoms: schema.patientVisits.symptoms,
+        diagnosis: schema.patientVisits.diagnosis,
+        prescription: schema.patientVisits.prescription,
+        status: schema.patientVisits.status,
+        createdAt: schema.patientVisits.createdAt,
+        updatedAt: schema.patientVisits.updatedAt,
+        // Patient details
+        patientName: schema.patients.name,
+        patientAge: schema.patients.age,
+        patientGender: schema.patients.gender,
+        patientPhone: schema.patients.phone,
+        patientPatientId: schema.patients.patientId,
+        // Doctor details
+        doctorName: schema.doctors.name,
+        doctorSpecialization: schema.doctors.specialization,
+        consultationFee: schema.doctors.consultationFee,
+      })
+      .from(schema.patientVisits)
+      .leftJoin(schema.patients, eq(schema.patientVisits.patientId, schema.patients.id))
+      .leftJoin(schema.doctors, eq(schema.patientVisits.doctorId, schema.doctors.id))
+      .where(and(...whereConditions))
+      .orderBy(desc(schema.patientVisits.scheduledDate), desc(schema.patientVisits.scheduledTime))
+      .all();
+  }
+
+  async updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined> {
+    const updated = db
+      .update(schema.patientVisits)
+      .set({ 
+        status,
+        updatedAt: sql`(datetime('now'))`
+      })
+      .where(and(
+        eq(schema.patientVisits.id, id),
+        eq(schema.patientVisits.visitType, 'opd')
+      ))
+      .returning()
+      .get();
+    return updated;
   }
 
   async createService(

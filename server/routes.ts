@@ -1481,6 +1481,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== OPD Visits ====================
+  
+  // Get OPD visits with filters  
+  app.get("/api/opd-visits", requireAuth, async (req, res) => {
+    try {
+      const { doctorId, patientId, scheduledDate, status, fromDate, toDate } = req.query;
+      
+      const filters: any = {};
+      
+      if (doctorId && doctorId !== "all") {
+        filters.doctorId = doctorId as string;
+      }
+      
+      if (patientId) {
+        filters.patientId = patientId as string;
+      }
+      
+      if (scheduledDate) {
+        filters.scheduledDate = scheduledDate as string;
+      }
+      
+      if (status && status !== "all") {
+        filters.status = status as string;
+      }
+      
+      if (fromDate) {
+        filters.fromDate = fromDate as string;
+      }
+      
+      if (toDate) {
+        filters.toDate = toDate as string;
+      }
+      
+      const opdVisits = await storage.getOpdVisits(filters);
+      res.json(opdVisits);
+    } catch (error) {
+      console.error("Error fetching OPD visits:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create new OPD visit
+  app.post("/api/opd-visits", requireAuth, async (req, res) => {
+    try {
+      const visitData = req.body;
+      
+      // Validate required fields
+      if (!visitData.patientId) {
+        return res.status(400).json({ error: "Patient ID is required" });
+      }
+      
+      if (!visitData.doctorId) {
+        return res.status(400).json({ error: "Doctor is required for OPD consultation" });
+      }
+      
+      if (!visitData.scheduledDate) {
+        return res.status(400).json({ error: "Scheduled date is required" });
+      }
+      
+      // Create the OPD visit
+      const opdVisit = await storage.createOpdVisit({
+        patientId: visitData.patientId,
+        doctorId: visitData.doctorId,
+        visitDate: visitData.scheduledDate,
+        scheduledDate: visitData.scheduledDate,
+        scheduledTime: visitData.scheduledTime || "09:00",
+        symptoms: visitData.symptoms || null,
+        diagnosis: visitData.diagnosis || null,
+        prescription: visitData.prescription || null,
+        status: "scheduled"
+      });
+      
+      res.status(201).json(opdVisit);
+    } catch (error) {
+      console.error("Error creating OPD visit:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update OPD visit status
+  app.patch("/api/opd-visits/:id/status", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ error: "Status is required" });
+      }
+      
+      const updated = await storage.updateOpdVisitStatus(id, status);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "OPD visit not found" });
+      }
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating OPD visit status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Room Type Management Routes
   app.get("/api/room-types", authenticateToken, async (req, res) => {
     try {

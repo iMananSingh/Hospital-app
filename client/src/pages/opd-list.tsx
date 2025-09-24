@@ -25,23 +25,18 @@ export default function OpdList() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>("");
 
-  // Fetch all OPD services
-  const { data: opdServices = [], isLoading } = useQuery<PatientService[]>({
-    queryKey: ["/api/patient-services", "opd"],
+  // Fetch all OPD visits
+  const { data: opdServices = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/opd-visits"],
     queryFn: async () => {
-      const response = await fetch("/api/patient-services?serviceType=opd", {
+      const response = await fetch("/api/opd-visits", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
-      if (!response.ok) throw new Error("Failed to fetch OPD services");
+      if (!response.ok) throw new Error("Failed to fetch OPD visits");
       return response.json();
     },
-  });
-
-  // Fetch patients for service details
-  const { data: patients = [] } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
   });
 
   // Fetch doctors for filtering
@@ -49,34 +44,34 @@ export default function OpdList() {
     queryKey: ["/api/doctors"],
   });
 
-  // Group OPD services by doctor
+  // Group OPD visits by doctor
   const opdServicesByDoctor = useMemo(() => {
-    const filtered = opdServices.filter(service => {
-      const patient = patients.find(p => p.id === service.patientId);
+    const filtered = opdServices.filter(visit => {
+      // Data already includes patient and doctor info from the join
       const matchesSearch = searchQuery === "" || 
-        patient?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient?.phone.includes(searchQuery);
+        visit.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        visit.patientPatientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        visit.patientPhone?.includes(searchQuery);
       
-      const matchesDoctor = selectedDoctor === "all" || service.doctorId === selectedDoctor;
-      const matchesStatus = selectedStatus === "all" || service.status === selectedStatus;
-      const matchesDate = selectedDate === "" || service.scheduledDate === selectedDate;
+      const matchesDoctor = selectedDoctor === "all" || visit.doctorId === selectedDoctor;
+      const matchesStatus = selectedStatus === "all" || visit.status === selectedStatus;
+      const matchesDate = selectedDate === "" || visit.scheduledDate === selectedDate;
 
       return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
     });
 
-    const grouped = filtered.reduce((groups, service) => {
-      const doctorId = service.doctorId || "unassigned";
+    const grouped = filtered.reduce((groups, visit) => {
+      const doctorId = visit.doctorId || "unassigned";
       if (!groups[doctorId]) {
         groups[doctorId] = [];
       }
-      groups[doctorId].push(service);
+      groups[doctorId].push(visit);
       return groups;
-    }, {} as Record<string, PatientService[]>);
+    }, {} as Record<string, any[]>);
 
-    // Sort services within each doctor group by scheduled date and time
-    Object.values(grouped).forEach(services => {
-      services.sort((a, b) => {
+    // Sort visits within each doctor group by scheduled date and time
+    Object.values(grouped).forEach((visits: any[]) => {
+      visits.sort((a: any, b: any) => {
         const dateCompare = new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime() - 
                            new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime();
         return dateCompare;
@@ -84,22 +79,22 @@ export default function OpdList() {
     });
 
     return grouped;
-  }, [opdServices, patients, searchQuery, selectedDoctor, selectedStatus, selectedDate]);
+  }, [opdServices, searchQuery, selectedDoctor, selectedStatus, selectedDate]);
 
-  const getDoctorName = (doctorId: string) => {
+  const getDoctorName = (doctorId: string, visit?: any) => {
     if (doctorId === "unassigned") return "Unassigned";
+    // Use joined data if available, fallback to doctors array
+    if (visit?.doctorName) return visit.doctorName;
     const doctor = doctors.find(d => d.id === doctorId);
     return doctor ? doctor.name : "Unknown Doctor";
   };
 
-  const getDoctorSpecialization = (doctorId: string) => {
+  const getDoctorSpecialization = (doctorId: string, visit?: any) => {
     if (doctorId === "unassigned") return "No specialization";
+    // Use joined data if available, fallback to doctors array
+    if (visit?.doctorSpecialization) return visit.doctorSpecialization;
     const doctor = doctors.find(d => d.id === doctorId);
     return doctor?.specialization || "Unknown";
-  };
-
-  const getPatientDetails = (patientId: string) => {
-    return patients.find(p => p.id === patientId);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -119,8 +114,8 @@ export default function OpdList() {
   const today = indianTime.getFullYear() + '-' + 
     String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
     String(indianTime.getDate()).padStart(2, '0');
-  const todayOpdCount = opdServices.filter(service => 
-    service.scheduledDate === today && service.serviceType === 'opd'
+  const todayOpdCount = opdServices.filter(visit => 
+    visit.scheduledDate === today
   ).length;
 
   if (isLoading) {
@@ -248,13 +243,12 @@ export default function OpdList() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {services.map(service => {
-                    const patient = getPatientDetails(service.patientId);
-                    const scheduledDateTime = new Date(`${service.scheduledDate}T${service.scheduledTime || '00:00'}`);
+                  {services.map((visit: any) => {
+                    const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime || '00:00'}`);
                     
                     return (
                       <div
-                        key={service.id}
+                        key={visit.id}
                         className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-4">
@@ -262,10 +256,10 @@ export default function OpdList() {
                             <div className="flex items-center gap-2 mb-1">
                               <User className="w-4 h-4 text-muted-foreground" />
                               <span className="font-medium">
-                                {patient?.name || "Unknown Patient"}
+                                {visit.patientName || "Unknown Patient"}
                               </span>
                               <Badge variant="outline" className="text-xs">
-                                {patient?.patientId || "N/A"}
+                                {visit.patientPatientId || "N/A"}
                               </Badge>
                             </div>
                             
@@ -285,10 +279,10 @@ export default function OpdList() {
                                   minute: '2-digit'
                                 })}
                               </div>
-                              {patient?.phone && (
+                              {visit.patientPhone && (
                                 <div className="flex items-center gap-1">
                                   <Phone className="w-3 h-3" />
-                                  {patient.phone}
+                                  {visit.patientPhone}
                                 </div>
                               )}
                             </div>

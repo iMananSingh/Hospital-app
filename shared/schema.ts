@@ -52,10 +52,12 @@ export const patientVisits = sqliteTable("patient_visits", {
   doctorId: text("doctor_id").notNull().references(() => doctors.id),
   visitType: text("visit_type").notNull(), // opd, inpatient
   visitDate: text("visit_date").notNull(),
+  scheduledDate: text("scheduled_date"), // for scheduled OPD appointments
+  scheduledTime: text("scheduled_time").default("09:00"), // scheduled appointment time
   symptoms: text("symptoms"),
   diagnosis: text("diagnosis"),
   prescription: text("prescription"),
-  status: text("status").notNull().default("active"), // active, completed, cancelled
+  status: text("status").notNull().default("scheduled"), // scheduled, active, completed, cancelled
   admissionDate: text("admission_date"), // for inpatients
   dischargeDate: text("discharge_date"), // for inpatients
   roomNumber: text("room_number"), // for inpatients
