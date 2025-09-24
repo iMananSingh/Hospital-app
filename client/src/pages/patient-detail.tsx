@@ -4811,30 +4811,64 @@ export default function PatientDetail() {
                 })}
                 className="space-y-4"
               >
-                <FormField
-                  control={opdVisitForm.control}
-                  name="doctorId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Doctor *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="doctorId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Doctor *</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Auto-fill consultation fee when doctor is selected
+                            const selectedDoctor = doctors?.find((d: Doctor) => d.id === value);
+                            if (selectedDoctor) {
+                              opdVisitForm.setValue("consultationFee", selectedDoctor.consultationFee);
+                            }
+                          }} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-opd-doctor">
+                              <SelectValue placeholder="Select a doctor" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {doctors?.map((doctor: Doctor) => (
+                              <SelectItem key={doctor.id} value={doctor.id}>
+                                {doctor.name} - {doctor.specialization}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={opdVisitForm.control}
+                    name="consultationFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Consultation Fee (₹)</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-opd-doctor">
-                            <SelectValue placeholder="Select a doctor" />
-                          </SelectTrigger>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            data-testid="input-consultation-fee"
+                            placeholder="Enter consultation fee"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          {doctors?.map((doctor: Doctor) => (
-                            <SelectItem key={doctor.id} value={doctor.id}>
-                              {doctor.name} - {doctor.specialization}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
