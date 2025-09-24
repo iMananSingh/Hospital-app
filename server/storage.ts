@@ -2464,9 +2464,9 @@ export class SqliteStorage implements IStorage {
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Join doctor information directly - LEFT JOIN will handle NULL properly
-          doctorName: schema.doctors.name,
-          doctorSpecialization: schema.doctors.specialization,
+          // Join doctor information directly - use CASE to handle NULL doctor IDs
+          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
+          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
         })
         .from(schema.patientServices)
         .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))

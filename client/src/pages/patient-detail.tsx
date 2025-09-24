@@ -1987,28 +1987,22 @@ export default function PatientDetail() {
                     </TableHeader>
                     <TableBody>
                       {services.map((service: any) => {
-                        console.log('=== SERVICE DISPLAY DEBUG ===');
-                        console.log('Service:', service.serviceName);
-                        console.log('Doctor ID:', service.doctorId);
-                        console.log('Doctor Name from API:', service.doctorName);
-
-                        // Determine doctor name with improved logic
+                        // Determine doctor name with robust logic
                         let doctorName = "No Doctor Assigned";
 
-                        if (service.doctorId) {
-                          // First try doctorName from the joined query
-                          if (service.doctorName) {
+                        // Check if service has a valid doctor ID (not null, undefined, or empty)
+                        if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                          // First try doctorName from the joined query (fastest)
+                          if (service.doctorName && service.doctorName.trim() !== "") {
                             doctorName = service.doctorName;
                           } else {
                             // Fall back to lookup from doctors array
-                            const doctor = doctors.find(
+                            const doctor = doctors?.find(
                               (d: Doctor) => d.id === service.doctorId,
                             );
                             doctorName = doctor ? doctor.name : "Unknown Doctor";
                           }
                         }
-
-                        console.log('Final doctor name:', doctorName);
 
                         // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
                         const totalCost =
