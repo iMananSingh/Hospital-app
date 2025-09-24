@@ -4915,5 +4915,4 @@ export default function PatientDetail() {
       </div>
     </div>
   );
-  );
 }
