@@ -42,6 +42,7 @@ export default function Doctors() {
       percentage: number;
     }
   }>({});
+  const [isJustSaved, setIsJustSaved] = useState(false);
 
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -159,6 +160,7 @@ export default function Doctors() {
       return response.json();
     },
     onSuccess: () => {
+      setIsJustSaved(true);
       toast({
         title: "Success",
         description: "Doctor salary rates saved successfully",
@@ -575,6 +577,12 @@ export default function Doctors() {
   // Effect to populate service selections from existing doctor rates
   useEffect(() => {
     if (selectedDoctorId && doctorRates.length > 0) {
+      // Don't reset selections immediately after saving
+      if (isJustSaved) {
+        setIsJustSaved(false);
+        return;
+      }
+
       const newSelections: typeof serviceSelections = {};
 
       doctorRates.forEach((rate: any) => {
@@ -588,11 +596,16 @@ export default function Doctors() {
       });
 
       setServiceSelections(newSelections);
-    } else if (selectedDoctorId && doctorRates.length === 0) {
+    } else if (selectedDoctorId && doctorRates.length === 0 && !isJustSaved) {
       // Clear selections when doctor is selected but has no existing rates
       setServiceSelections({});
     }
-  }, [selectedDoctorId, doctorRates]); // Include doctorRates in dependency array
+  }, [selectedDoctorId, doctorRates, isJustSaved]); // Include isJustSaved in dependency array
+
+  // Clear isJustSaved flag when doctor selection changes
+  useEffect(() => {
+    setIsJustSaved(false);
+  }, [selectedDoctorId]);
 
   // Function to convert service selections to API format
   const convertSelectionsToRates = () => {
