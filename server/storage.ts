@@ -1867,7 +1867,7 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async searchServices(query: string): Promise<Service[]> {
+  async searchServices(query: string): Promise<Service[]>{
     return db
       .select()
       .from(schema.services)
@@ -4853,50 +4853,121 @@ export class SqliteStorage implements IStorage {
         details: any;
       }> = [];
 
-      // 1. Get all patient services (OPD visits, consultations, etc.)
-      const patientServices = db
+      // 1. OPD Visits (consultation fees from patient_visits table)
+      const opdVisits = db
         .select({
-          service: schema.patientServices,
-          doctor: schema.doctors,
+          id: schema.patientVisits.id,
+          visitId: schema.patientVisits.visitId,
+          patientId: schema.patientVisits.patientId,
+          doctorId: schema.patientVisits.doctorId,
+          visitType: schema.patientVisits.visitType,
+          scheduledDate: schema.patientVisits.scheduledDate,
+          scheduledTime: schema.patientVisits.scheduledTime,
+          consultationFee: schema.patientVisits.consultationFee,
+          symptoms: schema.patientVisits.symptoms,
+          diagnosis: schema.patientVisits.diagnosis,
+          createdAt: schema.patientVisits.createdAt,
+          // Doctor info
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+          doctorConsultationFee: schema.doctors.consultationFee,
         })
-        .from(schema.patientServices)
-        .leftJoin(
-          schema.doctors,
-          eq(schema.patientServices.doctorId, schema.doctors.id),
+        .from(schema.patientVisits)
+        .leftJoin(schema.doctors, eq(schema.patientVisits.doctorId, schema.doctors.id))
+        .where(
+          and(
+            eq(schema.patientVisits.patientId, patientId),
+            eq(schema.patientVisits.visitType, "opd")
+          )
         )
-        .where(eq(schema.patientServices.patientId, patientId))
+        .orderBy(desc(schema.patientVisits.scheduledDate))
         .all();
 
+      // 2. Patient Services (all types except pathology which is handled separately)
+      const patientServices = db
+        .select({
+          id: schema.patientServices.id,
+          serviceId: schema.patientServices.serviceId,
+          patientId: schema.patientServices.patientId,
+          doctorId: schema.patientServices.doctorId,
+          serviceType: schema.patientServices.serviceType,
+          serviceName: schema.patientServices.serviceName,
+          scheduledDate: schema.patientServices.scheduledDate,
+          scheduledTime: schema.patientServices.scheduledTime,
+          price: schema.patientServices.price,
+          calculatedAmount: schema.patientServices.calculatedAmount,
+          billingQuantity: schema.patientServices.billingQuantity,
+          billingType: schema.patientServices.billingType,
+          notes: schema.patientServices.notes,
+          createdAt: schema.patientServices.createdAt,
+          // Doctor info
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+        })
+        .from(schema.patientServices)
+        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .where(eq(schema.patientServices.patientId, patientId))
+        .orderBy(desc(schema.patientServices.scheduledDate))
+        .all();
+
+      // Transform all data into bill items
+      const billItems: any[] = [];
+
+      // Add OPD visits as bill items
+      opdVisits.forEach(visit => {
+        const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
+        if (amount > 0) {
+          billItems.push({
+            type: 'service',
+            id: visit.id,
+            date: visit.scheduledDate || visit.createdAt,
+            description: `OPD Consultation - Dr. ${visit.doctorName || 'Unknown Doctor'}${visit.symptoms ? ` (${visit.symptoms})` : ''}`,
+            amount: amount,
+            category: 'OPD Consultation',
+            details: {
+              visitId: visit.visitId,
+              doctorName: visit.doctorName,
+              doctorSpecialization: visit.doctorSpecialization,
+              scheduledTime: visit.scheduledTime,
+              symptoms: visit.symptoms,
+              diagnosis: visit.diagnosis,
+              consultationFee: visit.consultationFee,
+              quantity: 1,
+              billingQuantity: 1,
+            }
+          });
+        }
+      });
+
+      // Add patient services
       patientServices.forEach((ps) => {
         const serviceAmount =
-          (ps.service as any).calculatedAmount || ps.service.price || 0;
-        const serviceQuantity = ps.service.billingQuantity || 1;
+          (ps.calculatedAmount as number) || (ps.price as number) || 0;
+        const serviceQuantity = ps.billingQuantity || 1;
         if (serviceAmount > 0) {
           billItems.push({
             type: "service",
-            id: ps.service.id,
-            date: ps.service.scheduledDate || ps.service.createdAt,
-            description: ps.service.serviceName,
+            id: ps.id,
+            date: ps.scheduledDate || ps.createdAt,
+            description: ps.serviceName,
             amount: serviceAmount,
             category: "service",
             details: {
-              serviceId: ps.service.serviceId,
-              serviceName: ps.service.serviceName,
-              serviceType: ps.service.serviceType,
-              billingType: ps.service.billingType,
-              billingQuantity: ps.service.billingQuantity,
-              unitPrice: ps.service.price,
-              calculatedAmount: (ps.service as any).calculatedAmount,
-              receiptNumber: ps.service.receiptNumber,
-              orderId: ps.service.orderId,
-              status: ps.service.status,
+              serviceId: ps.serviceId,
+              serviceName: ps.serviceName,
+              serviceType: ps.serviceType,
+              billingType: ps.billingType,
+              billingQuantity: ps.billingQuantity,
+              unitPrice: ps.price,
+              calculatedAmount: ps.calculatedAmount,
+              notes: ps.notes,
               quantity: serviceQuantity,
             },
           });
         }
       });
 
-      // 2. Get all pathology orders and tests
+      // 3. Pathology Orders
       const pathologyOrders = db
         .select({
           order: schema.pathologyOrders,
@@ -4944,7 +5015,7 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 3. Get all admissions and calculate bed charges
+      // 4. Admission Events
       const admissions = await this.getAdmissions(patientId);
       const admissionDoctors = new Map();
 
@@ -5017,7 +5088,7 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 4. Get all payments (including admission deposits)
+      // 5. Patient Payments
       const payments = db
         .select()
         .from(schema.patientPayments)
@@ -5079,7 +5150,7 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 5. Get all discounts
+      // 6. Patient Discounts
       const discounts = db
         .select()
         .from(schema.patientDiscounts)
