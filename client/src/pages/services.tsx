@@ -922,20 +922,25 @@ export default function ServiceManagement() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {roomTypes.map((roomType) => (
-                          <TableRow key={roomType.id}>
-                            <TableCell className="font-medium">{roomType.name}</TableCell>
-                            <TableCell>
-                              <Badge className={getCategoryColor(roomType.category)} variant="secondary">
-                                <div className="flex items-center gap-1">
-                                  {getCategoryIcon(roomType.category)}
-                                  {roomType.category}
-                                </div>
-                              </Badge>
-                            </TableCell>
-                            <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
-                            <TableCell>{roomType.totalBeds || 0}</TableCell>
-                            <TableCell>
+                        {roomTypes.map((roomType) => {
+                          // Calculate dynamic total beds based on actual rooms for this room type
+                          const roomsForThisType = rooms.filter(room => room.roomTypeId === roomType.id);
+                          const dynamicTotalBeds = roomsForThisType.reduce((sum, room) => sum + (room.capacity || 1), 0);
+                          
+                          return (
+                            <TableRow key={roomType.id}>
+                              <TableCell className="font-medium">{roomType.name}</TableCell>
+                              <TableCell>
+                                <Badge className={getCategoryColor(roomType.category)} variant="secondary">
+                                  <div className="flex items-center gap-1">
+                                    {getCategoryIcon(roomType.category)}
+                                    {roomType.category}
+                                  </div>
+                                </Badge>
+                              </TableCell>
+                              <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
+                              <TableCell>{dynamicTotalBeds}</TableCell>
+                              <TableCell>
                               <div className="flex gap-2">
                                 <Button
                                   onClick={() => openRoomTypeDialog(roomType)}
@@ -960,7 +965,8 @@ export default function ServiceManagement() {
                               </div>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   ) : (
