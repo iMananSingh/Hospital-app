@@ -918,7 +918,6 @@ export default function ServiceManagement() {
                           <TableHead>Category</TableHead>
                           <TableHead>Daily Cost</TableHead>
                           <TableHead>Total Beds</TableHead>
-                          <TableHead>Occupied Beds</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -936,7 +935,6 @@ export default function ServiceManagement() {
                             </TableCell>
                             <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
                             <TableCell>{roomType.totalBeds || 0}</TableCell>
-                            <TableCell>{roomType.occupiedBeds || 0}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
                                 <Button
@@ -1164,62 +1162,6 @@ export default function ServiceManagement() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Service
                   </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ) : activeTab !== 'pathology' ? (
-          // Service History Section
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {getServiceCategoryIcon(activeTab)}
-                Service History - {serviceCategories.find(cat => cat.key === activeTab)?.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredPatientServices.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Receipt No.</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPatientServices.map((service) => (
-                      <TableRow key={service.id}>
-                        <TableCell className="font-medium">{service.serviceName}</TableCell>
-                        <TableCell>{service.patientName || "N/A"}</TableCell>
-                        <TableCell>{getDoctorName(service)}</TableCell>
-                        <TableCell>{service.scheduledDate}</TableCell>
-                        <TableCell>{service.scheduledTime}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={service.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                     service.status === 'scheduled' ? 'bg-blue-100 text-blue-800' : 
-                                     'bg-yellow-100 text-yellow-800'}
-                            variant="secondary"
-                          >
-                            {service.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>₹{service.calculatedAmount || service.price}</TableCell>
-                        <TableCell>{service.receiptNumber || "N/A"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8">
-                  {getServiceCategoryIcon(activeTab)}
-                  <p className="text-gray-500 mt-4">No service history found for {activeTab}</p>
                 </div>
               )}
             </CardContent>
@@ -1693,7 +1635,7 @@ export default function ServiceManagement() {
                   <Label>Price (₹) {activeTab !== 'rooms' ? '(Optional - Variable Pricing)' : '*'}</Label>
                   <Input
                     type="number"
-                    {...serviceForm.register("price", { 
+                    {...serviceForm.register("price", {
                       setValueAs: (value: string) => {
                         // For variable pricing services, allow null when blank
                         if (value === "" && serviceForm.watch("billingType") === "variable") {
