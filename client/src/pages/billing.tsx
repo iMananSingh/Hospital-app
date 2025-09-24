@@ -339,7 +339,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
-                                    <td className="p-3">{item.doctorName || "N/A"}</td>
+                                    <td className="p-3">{item.doctorName || getDoctorName(item.doctorId)}</td>
                                     <td className="p-3 text-right" data-testid={`opd-fee-${index}`}>
                                       {formatCurrency(item.calculatedAmount || item.price || 0)}
                                     </td>
@@ -480,7 +480,7 @@ export default function Billing() {
                                     </td>
                                     <td className="p-3">{item.patientName || "N/A"}</td>
                                     <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
-                                    <td className="p-3">{getDoctorName(item.doctorId)}</td>
+                                    <td className="p-3">{item.doctorName || getDoctorName(item.doctorId)}</td>
                                     <td className="p-3">{item.serviceName || "N/A"}</td>
                                     <td className="p-3 text-right" data-testid={`diagnostic-fee-${index}`}>
                                       {formatCurrency(item.price || 0)}
