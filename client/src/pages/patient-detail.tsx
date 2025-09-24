@@ -2138,7 +2138,7 @@ export default function PatientDetail() {
                             </TableCell>
                             <TableCell>
                               {(() => {
-                                // Format date and time for IST display
+                                // Format date and time to match the dialog display (local time)
                                 if (!visit.scheduledDate) return "N/A";
 
                                 // Create a proper date object for the scheduled date and time
@@ -2147,9 +2147,8 @@ export default function PatientDetail() {
                                   // Combine date and time to create a complete datetime
                                   const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
                                   displayDateTime = new Date(datetimeString);
-
-                                  // Add 18.5 hours to convert to IST (correcting the 13-hour difference)
-                                  displayDateTime = new Date(displayDateTime.getTime() + (18.5 * 60 * 60 * 1000));
+                                  
+                                  // Use local time without adjustment to match the dialog
                                 } else {
                                   displayDateTime = new Date(visit.scheduledDate);
                                 }
@@ -2176,7 +2175,7 @@ export default function PatientDetail() {
                                   <>
                                     {dateDisplay}
                                     <span className="text-muted-foreground ml-2">
-                                      at {timeDisplay} IST
+                                      at {timeDisplay}
                                     </span>
                                   </>
                                 );
