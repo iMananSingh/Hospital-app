@@ -1793,14 +1793,14 @@ export default function PatientDetail() {
                 onClick={() => {
                   console.log("OPD button clicked");
                   const now = new Date();
-                  // Use Indian timezone (UTC+5:30) for consistent date calculation
-                  const indianTime = new Date(
-                    now.getTime() + 5.5 * 60 * 60 * 1000,
+                  // Add 18.5 hours to match the display correction used in OPD consultation history
+                  const correctedTime = new Date(
+                    now.getTime() + 18.5 * 60 * 60 * 1000,
                   );
-                  const currentDate = indianTime
+                  const currentDate = correctedTime
                     .toISOString()
                     .split("T")[0];
-                  const currentTime = indianTime
+                  const currentTime = correctedTime
                     .toTimeString()
                     .split(" ")[0]
                     .slice(0, 5);
@@ -2087,14 +2087,14 @@ export default function PatientDetail() {
                   onClick={() => {
                     console.log("OPD button clicked");
                     const now = new Date();
-                    // Use Indian timezone (UTC+5:30) for consistent date calculation
-                    const indianTime = new Date(
-                      now.getTime() + 5.5 * 60 * 60 * 1000,
+                    // Add 18.5 hours to match the display correction used in OPD consultation history
+                    const correctedTime = new Date(
+                      now.getTime() + 18.5 * 60 * 60 * 1000,
                     );
-                    const currentDate = indianTime
+                    const currentDate = correctedTime
                       .toISOString()
                       .split("T")[0];
-                    const currentTime = indianTime
+                    const currentTime = correctedTime
                       .toTimeString()
                       .split(" ")[0]
                       .slice(0, 5);
@@ -2221,13 +2221,14 @@ export default function PatientDetail() {
                     <Button
                       onClick={() => {
                         const now = new Date();
-                        const indianTime = new Date(
-                          now.getTime() + 5.5 * 60 * 60 * 1000,
+                        // Add 18.5 hours to match the display correction used in OPD consultation history
+                        const correctedTime = new Date(
+                          now.getTime() + 18.5 * 60 * 60 * 1000,
                         );
-                        const currentDate = indianTime
+                        const currentDate = correctedTime
                           .toISOString()
                           .split("T")[0];
-                        const currentTime = indianTime
+                        const currentTime = correctedTime
                           .toTimeString()
                           .split(" ")[0]
                           .slice(0, 5);
