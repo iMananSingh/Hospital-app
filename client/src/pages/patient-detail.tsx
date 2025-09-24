@@ -4670,7 +4670,8 @@ export default function PatientDetail() {
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button                type="button"
+            <Button
+                type="button"
                 variant="outline"
                 onClick={() => setIsPaymentDialogOpen(false)}
               >
@@ -4802,7 +4803,7 @@ export default function PatientDetail() {
             </DialogHeader>
 
             <Form {...opdVisitForm}>
-              <form 
+              <form
                 onSubmit={opdVisitForm.handleSubmit((data) => {
                   createOpdVisitMutation.mutate(data);
                 })}
