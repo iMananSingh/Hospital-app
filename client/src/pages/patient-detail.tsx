@@ -445,6 +445,21 @@ export default function PatientDetail() {
     },
   });
 
+  // Fetch OPD visits for this patient
+  const { data: opdVisits = [] } = useQuery({
+    queryKey: ["/api/opd-visits", patientId],
+    queryFn: async () => {
+      const response = await fetch(`/api/opd-visits?patientId=${patientId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch OPD visits");
+      return response.json();
+    },
+    refetchInterval: 5000, // Refetch every 5 seconds to get latest visits
+  });
+
   // Fetch all services for service selection
   const { data: allServices } = useQuery<Service[]>({
     // Use Service interface
@@ -2047,16 +2062,166 @@ export default function PatientDetail() {
         {/* Patient History Tabs */}
         <Tabs
           defaultValue={
-            window.location.hash === "#pathology" ? "pathology" : "services"
+            window.location.hash === "#pathology" ? "pathology" : "opd"
           }
           className="space-y-4"
         >
           <TabsList>
-            <TabsTrigger value="services">Services</TabsTrigger>
-            <TabsTrigger value="admissions">Admissions</TabsTrigger>
+            <TabsTrigger value="opd">OPD</TabsTrigger>
             <TabsTrigger value="pathology">Pathology</TabsTrigger>
+            <TabsTrigger value="admissions">Admissions</TabsTrigger>
+            <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="opd">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>OPD Consultation History</CardTitle>
+                <Button
+                  onClick={() => {
+                    console.log("OPD button clicked");
+                    const now = new Date();
+                    // Use Indian timezone (UTC+5:30) for consistent date calculation
+                    const indianTime = new Date(
+                      now.getTime() + 5.5 * 60 * 60 * 1000,
+                    );
+                    const currentDate = indianTime
+                      .toISOString()
+                      .split("T")[0];
+                    const currentTime = indianTime
+                      .toTimeString()
+                      .split(" ")[0]
+                      .slice(0, 5);
+
+                    setIsOpdVisitDialogOpen(true);
+                    opdVisitForm.reset({
+                      patientId: patientId || "",
+                      doctorId: "",
+                      scheduledDate: currentDate,
+                      scheduledTime: currentTime,
+                      symptoms: "",
+                    });
+
+                    console.log(
+                      `Set current date/time: ${currentDate} ${currentTime}`,
+                    );
+                  }}
+                  size="sm"
+                  className="flex items-center gap-2"
+                  data-testid="button-schedule-opd"
+                >
+                  <Plus className="h-4 w-4" />
+                  Schedule OPD
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {opdVisits && opdVisits.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Scheduled Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Symptoms</TableHead>
+                        <TableHead>Fee</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {opdVisits.map((visit: any) => {
+                        // Find doctor details
+                        const doctor = doctors?.find(
+                          (d: Doctor) => d.id === visit.doctorId,
+                        );
+                        const doctorName = doctor ? doctor.name : "Unknown Doctor";
+                        const consultationFee = doctor ? doctor.consultationFee : 0;
+
+                        return (
+                          <TableRow key={visit.id}>
+                            <TableCell className="font-medium">
+                              {doctorName}
+                              {doctor && (
+                                <div className="text-sm text-muted-foreground">
+                                  {doctor.specialization}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(visit.scheduledDate)}
+                              {visit.scheduledTime && (
+                                <span className="text-muted-foreground ml-2">
+                                  at{" "}
+                                  {(() => {
+                                    // Convert 24-hour format to 12-hour format
+                                    const [hours, minutes] =
+                                      visit.scheduledTime.split(":");
+                                    const hour = parseInt(hours, 10);
+                                    const ampm = hour >= 12 ? "PM" : "AM";
+                                    const displayHour =
+                                      hour === 0
+                                        ? 12
+                                        : hour > 12
+                                          ? hour - 12
+                                          : hour;
+                                    return `${displayHour}:${minutes} ${ampm}`;
+                                  })()}
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(visit.status)}>
+                                {visit.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {visit.symptoms || "No symptoms noted"}
+                            </TableCell>
+                            <TableCell>₹{consultationFee}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      No OPD consultations scheduled
+                    </p>
+                    <Button
+                      onClick={() => {
+                        const now = new Date();
+                        const indianTime = new Date(
+                          now.getTime() + 5.5 * 60 * 60 * 1000,
+                        );
+                        const currentDate = indianTime
+                          .toISOString()
+                          .split("T")[0];
+                        const currentTime = indianTime
+                          .toTimeString()
+                          .split(" ")[0]
+                          .slice(0, 5);
+
+                        setIsOpdVisitDialogOpen(true);
+                        opdVisitForm.reset({
+                          patientId: patientId || "",
+                          doctorId: "",
+                          scheduledDate: currentDate,
+                          scheduledTime: currentTime,
+                          symptoms: "",
+                        });
+                      }}
+                      className="mt-4"
+                    >
+                      Schedule First OPD Consultation
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          
 
           <TabsContent value="services">
             <Card>
