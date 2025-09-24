@@ -111,7 +111,6 @@ export default function ServiceManagement() {
       name: "",
       category: "",
       dailyCost: 0,
-      totalBeds: 0,
       isActive: true,
     },
   });
@@ -567,7 +566,6 @@ export default function ServiceManagement() {
         name: roomType.name,
         category: roomType.category,
         dailyCost: roomType.dailyCost,
-        totalBeds: roomType.totalBeds || 0,
         isActive: roomType.isActive,
       });
     } else {
@@ -1511,16 +1509,6 @@ export default function ServiceManagement() {
                   {...roomTypeForm.register("dailyCost", { valueAsNumber: true })}
                   placeholder="Enter daily cost"
                   data-testid="input-daily-cost"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Total Beds *</Label>
-                <Input
-                  type="number"
-                  {...roomTypeForm.register("totalBeds", { valueAsNumber: true })}
-                  placeholder="Enter total number of beds"
-                  data-testid="input-total-beds"
                 />
               </div>
 
