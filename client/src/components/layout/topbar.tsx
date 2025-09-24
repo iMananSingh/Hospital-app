@@ -18,6 +18,7 @@ interface TopBarProps {
   onFromDateChange?: (date: string) => void;
   onToDateChange?: (date: string) => void;
   onTodayClick?: () => void;
+  actions?: React.ReactNode;
 }
 
 export default function TopBar({
@@ -34,6 +35,7 @@ export default function TopBar({
   onFromDateChange,
   onToDateChange,
   onTodayClick,
+  actions,
 }: TopBarProps) {
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
@@ -57,6 +59,9 @@ export default function TopBar({
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Custom Actions */}
+          {actions}
+          
           {/* Date Range Filter */}
           {showDateFilter && (
             <div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg border">

@@ -561,6 +561,7 @@ export default function PatientDetail() {
       scheduledDate: new Date().toISOString().split("T")[0],
       scheduledTime: new Date().toTimeString().slice(0, 5),
       serviceId: "", // Initialize serviceId to empty string
+      selectedServicesCount: 0, // Add selectedServicesCount to default values
     },
   });
 
@@ -930,8 +931,8 @@ export default function PatientDetail() {
           console.log('Service:', service.name);
           console.log('Doctor ID from form:', data.doctorId);
 
-          // Get the actual doctor ID from the form - check all possible sources
-          const actualDoctorId = data.doctorId || serviceForm.getValues("doctorId");
+          // Get the actual doctor ID from the form - use same method as OPD
+          const actualDoctorId = serviceForm.watch("doctorId");
           console.log('Actual doctor ID to use:', actualDoctorId);
 
           let serviceData: any = {
@@ -1013,6 +1014,10 @@ export default function PatientDetail() {
         console.log('=== CUSTOM SERVICE CREATION ===');
         console.log('Doctor ID from form:', data.doctorId);
 
+        // Get the actual doctor ID from the form - use same method as OPD
+        const actualDoctorId = serviceForm.watch("doctorId");
+        console.log('Actual doctor ID to use for custom service:', actualDoctorId);
+
         servicesToCreate.push({
           patientId: patientId,
           serviceType: "service",
@@ -1024,8 +1029,8 @@ export default function PatientDetail() {
           scheduledTime: data.scheduledTime,
           status: "scheduled",
           doctorId:
-            data.doctorId && data.doctorId !== "none" && data.doctorId !== ""
-              ? data.doctorId
+            actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
+              ? actualDoctorId
               : null,
         });
 
