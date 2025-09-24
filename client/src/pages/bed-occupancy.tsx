@@ -125,7 +125,20 @@ export default function BedOccupancyPage() {
                 <CardContent>
                   {roomType.rooms.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                      {roomType.rooms.map((room) => (
+                      {roomType.rooms
+                        .sort((a, b) => {
+                          // Extract numeric part from room numbers for proper sorting
+                          const getNumericPart = (roomNumber: string) => {
+                            const match = roomNumber.match(/(\d+)$/);
+                            return match ? parseInt(match[1], 10) : 0;
+                          };
+                          
+                          const numA = getNumericPart(a.roomNumber);
+                          const numB = getNumericPart(b.roomNumber);
+                          
+                          return numA - numB;
+                        })
+                        .map((room) => (
                         <Tooltip key={room.id}>
                           <TooltipTrigger asChild>
                             <Card 
