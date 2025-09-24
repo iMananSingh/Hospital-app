@@ -42,7 +42,6 @@ export default function Doctors() {
       percentage: number;
     }
   }>({});
-  const [isJustSaved, setIsJustSaved] = useState(false);
 
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -160,7 +159,6 @@ export default function Doctors() {
       return response.json();
     },
     onSuccess: () => {
-      setIsJustSaved(true);
       toast({
         title: "Success",
         description: "Doctor salary rates saved successfully",
@@ -464,7 +462,7 @@ export default function Doctors() {
       services: []
     };
 
-    // Add OPD consultation services from actual services
+    // Add OPD consultation services from actual services - always use real IDs
     if (services && services.length > 0) {
       const opdServices = services.filter(service => 
         service.category?.toLowerCase() === 'consultation' || 
@@ -472,27 +470,31 @@ export default function Doctors() {
         service.name?.toLowerCase().includes('consultation')
       );
 
-      if (opdServices.length > 0) {
-        categories.opd.push(...opdServices.map(service => ({
-          id: service.id,
-          name: service.name,
-          category: 'opd',
-          price: service.price || 0
-        })));
-      } else {
-        // If no OPD services found, create a placeholder that will be handled properly
-        categories.opd.push({ id: 'opd_placeholder', name: 'OPD Consultation', category: 'opd', price: 0 });
-      }
+      // Always use real service IDs - no more placeholders
+      categories.opd.push(...opdServices.map(service => ({
+        id: service.id,
+        name: service.name,
+        category: 'opd',
+        price: service.price || 0
+      })));
     }
 
-    // Add a single "Lab Tests" entry to represent all pathology tests
-    if (pathologyData?.categories && pathologyData.categories.length > 0) {
-      categories.labTests.push({
-        id: 'lab_tests_all',
-        name: 'Lab Tests',
-        category: 'lab_tests',
-        price: 0 // Price will be set based on individual test selection
-      });
+    // Add pathology services as individual entries using real service IDs
+    if (services && services.length > 0) {
+      const pathologyServices = services.filter(service => 
+        service.category?.toLowerCase() === 'pathology' ||
+        service.name?.toLowerCase().includes('pathology') ||
+        service.name?.toLowerCase().includes('lab') ||
+        service.name?.toLowerCase().includes('test')
+      );
+
+      // Use real service IDs for pathology/lab services
+      categories.labTests.push(...pathologyServices.map(service => ({
+        id: service.id,
+        name: service.name,
+        category: 'pathology',
+        price: service.price || 0
+      })));
     }
 
     // Categorize services based on their category field
@@ -577,12 +579,6 @@ export default function Doctors() {
   // Effect to populate service selections from existing doctor rates
   useEffect(() => {
     if (selectedDoctorId && doctorRates.length > 0) {
-      // Don't reset selections immediately after saving
-      if (isJustSaved) {
-        setIsJustSaved(false);
-        return;
-      }
-
       const newSelections: typeof serviceSelections = {};
 
       doctorRates.forEach((rate: any) => {
@@ -596,76 +592,37 @@ export default function Doctors() {
       });
 
       setServiceSelections(newSelections);
-    } else if (selectedDoctorId && doctorRates.length === 0 && !isJustSaved) {
+    } else if (selectedDoctorId && doctorRates.length === 0) {
       // Clear selections when doctor is selected but has no existing rates
       setServiceSelections({});
     }
-  }, [selectedDoctorId, doctorRates, isJustSaved]); // Include isJustSaved in dependency array
-
-  // Clear isJustSaved flag when doctor selection changes
-  useEffect(() => {
-    setIsJustSaved(false);
-  }, [selectedDoctorId]);
+  }, [selectedDoctorId, doctorRates]);
 
   // Function to convert service selections to API format
   const convertSelectionsToRates = () => {
     const rates: any[] = [];
 
     // Service category mapping to ensure schema compliance
-      const categoryMapping: { [key: string]: string } = {
-        'opd': 'opd',
-        'lab_tests': 'pathology', 
-        'labTests': 'pathology',
-        'diagnostic': 'diagnostics',
-        'diagnostics': 'diagnostics',
-        'operations': 'opd',
-        'admissions': 'admission',
-        'admission': 'admission',
-        'services': 'opd',
-        'pathology': 'pathology',
-        'procedures': 'opd'
-      };
+    const categoryMapping: { [key: string]: string } = {
+      'opd': 'opd',
+      'pathology': 'pathology',
+      'diagnostic': 'diagnostics',
+      'diagnostics': 'diagnostics',
+      'operations': 'opd',
+      'admissions': 'admission',
+      'admission': 'admission',
+      'services': 'opd'
+    };
 
     // Helper function to add service to rates
     const addServiceToRates = (services: any[], categoryKey: string) => {
-      const normalizedCategory = categoryMapping[categoryKey] || 'opd'; // Default to 'opd' if not found
+      const normalizedCategory = categoryMapping[categoryKey] || 'opd';
       services.forEach((service: any) => {
         const selection = serviceSelections[service.id];
         if (selection?.isSelected && selection.salaryBasis && (selection.amount > 0 || selection.percentage > 0)) {
-          let actualServiceId = service.id;
-          let actualServiceName = service.name;
-
-          // Handle OPD placeholder - find actual OPD service
-          if (service.id === 'opd_placeholder') {
-            // First try to find by category
-            let opdService = services?.find(s => 
-              s.category?.toLowerCase() === 'consultation'
-            );
-
-            // If not found by category, try by name patterns
-            if (!opdService) {
-              opdService = services?.find(s => 
-                s.name?.toLowerCase().includes('opd') || 
-                s.name?.toLowerCase().includes('consultation') ||
-                s.name?.toLowerCase().includes('visit')
-              );
-            }
-
-            // If still not found, create a generic service entry
-            if (opdService) {
-              actualServiceId = opdService.id;
-              actualServiceName = opdService.name;
-            } else {
-              console.warn('No OPD service found in database, using placeholder');
-              // Use a consistent placeholder ID that we can handle on the backend
-              actualServiceId = 'opd_consultation_placeholder';
-              actualServiceName = 'OPD Consultation';
-            }
-          }
-
           rates.push({
-            serviceId: actualServiceId,
-            serviceName: actualServiceName,
+            serviceId: service.id,
+            serviceName: service.name,
             serviceCategory: normalizedCategory,
             isSelected: true,
             salaryBasis: selection.salaryBasis,
@@ -676,9 +633,9 @@ export default function Doctors() {
       });
     };
 
-    // Add rates from all categories - using normalized mapping
+    // Add rates from all categories
     addServiceToRates(categorizedServices.opd, 'opd');
-    addServiceToRates(categorizedServices.labTests, 'labTests');
+    addServiceToRates(categorizedServices.labTests, 'pathology');
     addServiceToRates(categorizedServices.diagnostic, 'diagnostic');
     addServiceToRates(categorizedServices.operations, 'operations');
     addServiceToRates(categorizedServices.admissions, 'admissions');
