@@ -2494,10 +2494,9 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {(() => {
-                                  let admissionDateStr =
-                                    admission.admissionDate;
+                                  let admissionDateStr = admission.admissionDate;
 
-                                  // Handle different date formats
+                                  // Handle different date formats and correct IST display
                                   if (
                                     admissionDateStr.match(
                                       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
@@ -2508,7 +2507,7 @@ export default function PatientDetail() {
                                     const dateParts = parts[0].split("-");
                                     const timeParts = parts[1].split(":");
 
-                                    // Create date object in local timezone
+                                    // Create date object and subtract 5.5 hours to correct IST display
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
@@ -2516,8 +2515,11 @@ export default function PatientDetail() {
                                       parseInt(timeParts[0]), // hour
                                       parseInt(timeParts[1]), // minute
                                     );
+                                    
+                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
+                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
 
-                                    return localDate.toLocaleString("en-US", {
+                                    return correctedDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
@@ -2535,7 +2537,7 @@ export default function PatientDetail() {
                                     const dateParts = parts[0].split("-");
                                     const timeParts = parts[1].split(":");
 
-                                    // Create date object in local timezone
+                                    // Create date object and subtract 5.5 hours to correct IST display
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
@@ -2544,8 +2546,11 @@ export default function PatientDetail() {
                                       parseInt(timeParts[1]), // minute
                                       parseInt(timeParts[2]), // second
                                     );
+                                    
+                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
+                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
 
-                                    return localDate.toLocaleString("en-US", {
+                                    return correctedDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
@@ -2559,28 +2564,27 @@ export default function PatientDetail() {
                                     )
                                   ) {
                                     // Date only format: "YYYY-MM-DD"
-                                    const dateParts =
-                                      admissionDateStr.split("-");
+                                    const dateParts = admissionDateStr.split("-");
                                     const localDate = new Date(
                                       parseInt(dateParts[0]), // year
                                       parseInt(dateParts[1]) - 1, // month (0-indexed)
                                       parseInt(dateParts[2]), // day
                                     );
 
-                                    return localDate.toLocaleDateString(
-                                      "en-US",
-                                      {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                      },
-                                    );
+                                    return localDate.toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    });
                                   }
 
                                   // Fallback for other formats (including ISO strings)
                                   const date = new Date(admissionDateStr);
                                   if (!isNaN(date.getTime())) {
-                                    return date.toLocaleString("en-US", {
+                                    // For ISO strings, also subtract 5.5 hours to correct IST display
+                                    const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
+                                    
+                                    return correctedDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
