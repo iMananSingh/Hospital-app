@@ -2157,14 +2157,21 @@ export default function PatientDetail() {
                                 // Format date and time for IST display
                                 if (!visit.scheduledDate) return "N/A";
                                 
-                                // Parse date as local date without timezone conversion
-                                const dateParts = visit.scheduledDate.split('-');
-                                const year = parseInt(dateParts[0]);
-                                const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
-                                const day = parseInt(dateParts[2]);
-                                
-                                const localDate = new Date(year, month, day);
-                                const dateDisplay = localDate.toLocaleDateString("en-US", {
+                                // Create a proper date object for the scheduled date and time
+                                let displayDateTime;
+                                if (visit.scheduledTime) {
+                                  // Combine date and time to create a complete datetime
+                                  const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
+                                  displayDateTime = new Date(datetimeString);
+                                  
+                                  // Add 5.5 hours to convert to IST (India Standard Time)
+                                  displayDateTime = new Date(displayDateTime.getTime() + (5.5 * 60 * 60 * 1000));
+                                } else {
+                                  displayDateTime = new Date(visit.scheduledDate);
+                                }
+
+                                // Format the date part
+                                const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
                                   year: "numeric",
                                   month: "short",
                                   day: "numeric"
@@ -2174,15 +2181,12 @@ export default function PatientDetail() {
                                   return dateDisplay;
                                 }
 
-                                // Parse the time and convert to 12-hour format manually
-                                const [hours, minutes] = visit.scheduledTime.split(":");
-                                const hour24 = parseInt(hours);
-                                const minute = parseInt(minutes);
-                                
-                                // Convert to 12-hour format
-                                const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-                                const ampm = hour24 >= 12 ? "PM" : "AM";
-                                const timeDisplay = `${hour12}:${minutes} ${ampm}`;
+                                // Format the time part
+                                const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true
+                                });
 
                                 return (
                                   <>
