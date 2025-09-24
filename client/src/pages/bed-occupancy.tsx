@@ -127,16 +127,30 @@ export default function BedOccupancyPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                       {roomType.rooms
                         .sort((a, b) => {
-                          // Extract numeric part from room numbers for proper sorting
-                          const getNumericPart = (roomNumber: string) => {
-                            const match = roomNumber.match(/(\d+)$/);
-                            return match ? parseInt(match[1], 10) : 0;
+                          // Split room numbers into parts for proper sorting
+                          const parseRoomNumber = (roomNumber: string) => {
+                            // Match pattern like "NR-B-1" or "GW-01"
+                            const match = roomNumber.match(/^(.+?)(\d+)$/);
+                            if (match) {
+                              return {
+                                prefix: match[1], // "NR-B-" or "GW-"
+                                number: parseInt(match[2], 10) // 1 or 1
+                              };
+                            }
+                            return { prefix: roomNumber, number: 0 };
                           };
                           
-                          const numA = getNumericPart(a.roomNumber);
-                          const numB = getNumericPart(b.roomNumber);
+                          const roomA = parseRoomNumber(a.roomNumber);
+                          const roomB = parseRoomNumber(b.roomNumber);
                           
-                          return numA - numB;
+                          // First sort by prefix alphabetically
+                          const prefixComparison = roomA.prefix.localeCompare(roomB.prefix);
+                          if (prefixComparison !== 0) {
+                            return prefixComparison;
+                          }
+                          
+                          // Then sort by number numerically
+                          return roomA.number - roomB.number;
                         })
                         .map((room) => (
                         <Tooltip key={room.id}>
