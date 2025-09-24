@@ -2153,26 +2153,44 @@ export default function PatientDetail() {
                               )}
                             </TableCell>
                             <TableCell>
-                              {formatDate(visit.scheduledDate)}
-                              {visit.scheduledTime && (
-                                <span className="text-muted-foreground ml-2">
-                                  at{" "}
-                                  {(() => {
-                                    // Convert 24-hour format to 12-hour format
-                                    const [hours, minutes] =
-                                      visit.scheduledTime.split(":");
-                                    const hour = parseInt(hours, 10);
-                                    const ampm = hour >= 12 ? "PM" : "AM";
-                                    const displayHour =
-                                      hour === 0
-                                        ? 12
-                                        : hour > 12
-                                          ? hour - 12
-                                          : hour;
-                                    return `${displayHour}:${minutes} ${ampm}`;
-                                  })()}
-                                </span>
-                              )}
+                              {(() => {
+                                // Format date and time for IST display
+                                if (!visit.scheduledDate) return "N/A";
+                                
+                                // Create date object for the scheduled date
+                                const dateOnly = new Date(visit.scheduledDate + "T00:00:00Z");
+                                const dateDisplay = dateOnly.toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  timeZone: "Asia/Kolkata"
+                                });
+
+                                if (!visit.scheduledTime) {
+                                  return dateDisplay;
+                                }
+
+                                // Parse the time and create a full datetime for IST conversion
+                                const [hours, minutes] = visit.scheduledTime.split(":");
+                                const scheduledDateTime = new Date(visit.scheduledDate + "T" + visit.scheduledTime + ":00Z");
+                                
+                                // Format time in IST
+                                const timeDisplay = scheduledDateTime.toLocaleTimeString("en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                  timeZone: "Asia/Kolkata"
+                                });
+
+                                return (
+                                  <>
+                                    {dateDisplay}
+                                    <span className="text-muted-foreground ml-2">
+                                      at {timeDisplay} IST
+                                    </span>
+                                  </>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(visit.status)}>
