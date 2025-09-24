@@ -2526,30 +2526,18 @@ export class SqliteStorage implements IStorage {
           receiptNumber: schema.patientServices.receiptNumber,
           createdAt: schema.patientServices.createdAt,
           updatedAt: schema.patientServices.updatedAt,
-          // Join patient information
+          // Patient information
           patientName: schema.patients.name,
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Join doctor information - use CASE WHEN to handle NULL doctorId properly
-          doctorName: sql<string | null>`CASE 
-            WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL 
-            ELSE ${schema.doctors.name} 
-          END`.as('doctorName'),
-          doctorSpecialization: sql<string | null>`CASE 
-            WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL 
-            ELSE ${schema.doctors.specialization} 
-          END`.as('doctorSpecialization'),
+          // Join doctor information directly - LEFT JOIN will handle NULL properly
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
         .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
-        .leftJoin(
-          schema.doctors, 
-          and(
-            eq(schema.patientServices.doctorId, schema.doctors.id),
-            isNotNull(schema.patientServices.doctorId)
-          )
-        )
+        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
         .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt));
 
