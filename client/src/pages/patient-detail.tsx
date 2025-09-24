@@ -100,6 +100,8 @@ export default function PatientDetail() {
     useState<string>("");
   const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] =
     useState(""); // Renamed from serviceSearchQuery to avoid conflict
+  const [selectedServiceCategorySearchQuery, setSelectedServiceCategorySearchQuery] =
+    useState(""); // Added for filtering services by category name
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
@@ -575,8 +577,6 @@ export default function PatientDetail() {
   // Calculate billing preview when service or parameters change
   useEffect(() => {
     if (
-      selectedServiceType !== "opd" &&
-      selectedServiceType !== "" && // Only calculate if a service type is selected
       selectedCatalogService &&
       selectedCatalogService.billingType
     ) {
@@ -611,7 +611,7 @@ export default function PatientDetail() {
       case "per_24_hours":
         quantity = watchedServiceValues.quantity || 1;
         totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalTotalAmount}`;
+        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "per_hour":
@@ -1351,6 +1351,7 @@ export default function PatientDetail() {
     { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
     { key: "procedures", label: "Medical Procedures", icon: Stethoscope },
     { key: "operations", label: "Surgical Operations", icon: X },
+    { key: "consultation", label: "Consultation", icon: Calendar }, // Added Consultation category
     { key: "misc", label: "Miscellaneous Services", icon: Settings },
   ];
 
@@ -1417,7 +1418,7 @@ export default function PatientDetail() {
     serviceForm.reset({
       patientId: patientId || "",
       serviceType: serviceType,
-      serviceName: "",
+      serviceName: serviceType === "opd" ? "OPD Consultation" : "", // Default to OPD Consultation for OPD
       scheduledDate: currentDate,
       scheduledTime: timeString,
       doctorId: currentDoctorId || "", // Preserve existing doctor selection
@@ -3232,13 +3233,27 @@ export default function PatientDetail() {
                 <Select
                   value={serviceForm.watch("doctorId") || ""}
                   onValueChange={(value) => {
-                    console.log("=== DOCTOR SELECTION CHANGE ===");
-                    console.log("Selected value:", value);
-                    const finalValue = value === "none" ? "" : value;
-                    serviceForm.setValue("doctorId", finalValue);
-                    console.log("Form value set to:", finalValue);
+                    console.log("=== DOCTOR SELECTION DEBUG ===");
+                    console.log("Doctor selection changed to:", value);
+                    console.log("Doctor selection value type:", typeof value);
+                    console.log("Is value 'none':", value === "none");
+                    console.log("Is value empty string:", value === "");
+
+                    // Find doctor info
+                    if (value && value !== "none" && value !== "") {
+                      const selectedDoctor = doctors?.find((d: Doctor) => d.id === value);
+                      console.log("Selected doctor:", selectedDoctor);
+                    }
+
+                    serviceForm.setValue("doctorId", value);
+
+                    // Verify the form actually updated
+                    setTimeout(() => {
+                      const currentValue = serviceForm.getValues("doctorId");
+                      console.log("Form doctorId after setValue:", currentValue);
+                    }, 100);
                   }}
-                  data-testid="select-service-doctor"
+                  data-testid="select-doctor"
                 >
                   <SelectTrigger>
                     <SelectValue
