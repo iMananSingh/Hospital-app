@@ -4910,9 +4910,6 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.patientServices.scheduledDate))
         .all();
 
-      // Transform all data into bill items
-      const billItems: any[] = [];
-
       // Add OPD visits as bill items
       opdVisits.forEach(visit => {
         const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
