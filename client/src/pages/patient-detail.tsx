@@ -243,11 +243,11 @@ export default function PatientDetail() {
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
-    
+
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status}`);
     }
-    
+
     return response.json();
   };
 
@@ -2232,6 +2232,7 @@ export default function PatientDetail() {
                         </>
                       );
                     } else {
+                      // Patient is not admitted - show admit button
                       return (
                         <Button
                           onClick={() => {
@@ -4023,227 +4024,229 @@ export default function PatientDetail() {
             <DialogTitle>Admit Patient</DialogTitle>
           </DialogHeader>
 
-          <form
-            onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)}
-            className="space-y-4"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Doctor *</Label>
-                <Select
-                  value={admissionForm.watch("doctorId")}
-                  onValueChange={(value) =>
-                    admissionForm.setValue("doctorId", value)
-                  }
-                  data-testid="select-admission-doctor"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select attending doctor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {doctors.map((doctor: Doctor) => (
-                      <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name} - {doctor.specialization}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Ward/Room Type *</Label>
-                <Select
-                  value={admissionForm.watch("currentWardType")}
-                  onValueChange={(value) => {
-                    admissionForm.setValue("currentWardType", value);
-                    admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
-                    // Auto-set daily cost based on selected room type
-                    const selectedRoomType = roomTypes.find(
-                      (rt: any) => rt.name === value,
-                    );
-                    if (selectedRoomType) {
-                      admissionForm.setValue(
-                        "dailyCost",
-                        selectedRoomType.dailyCost,
-                      );
+          <Form {...admissionForm}>
+            <form
+              onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Doctor *</Label>
+                  <Select
+                    value={admissionForm.watch("doctorId")}
+                    onValueChange={(value) =>
+                      admissionForm.setValue("doctorId", value)
                     }
-                  }}
-                  data-testid="select-ward-type"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ward/room type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roomTypes.map((roomType: any) => (
-                      <SelectItem key={roomType.id} value={roomType.name}>
-                        {roomType.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                    data-testid="select-admission-doctor"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select attending doctor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors.map((doctor: Doctor) => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          {doctor.name} - {doctor.specialization}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Room Number *</Label>
-                <Select
-                  value={admissionForm.watch("currentRoomNumber")}
-                  onValueChange={(value) =>
-                    admissionForm.setValue("currentRoomNumber", value)
-                  }
-                  disabled={!admissionForm.watch("currentWardType")}
-                  data-testid="select-room-number"
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        admissionForm.watch("currentWardType")
-                          ? "Select available room"
-                          : "Select ward type first"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const selectedWardType =
-                        admissionForm.watch("currentWardType");
+                <div className="space-y-2">
+                  <Label>Ward/Room Type *</Label>
+                  <Select
+                    value={admissionForm.watch("currentWardType")}
+                    onValueChange={(value) => {
+                      admissionForm.setValue("currentWardType", value);
+                      admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
+                      // Auto-set daily cost based on selected room type
                       const selectedRoomType = roomTypes.find(
-                        (rt: any) => rt.name === selectedWardType,
+                        (rt: any) => rt.name === value,
                       );
-
-                      if (!selectedRoomType) return null;
-
-                      // Get all rooms for this room type
-                      const allRoomsForType = rooms.filter(
-                        (room: any) =>
-                          room.roomTypeId === selectedRoomType.id &&
-                          room.isActive,
-                      );
-
-                      if (allRoomsForType.length === 0) {
-                        return (
-                          <SelectItem value="" disabled>
-                            No rooms available in {selectedWardType}
-                          </SelectItem>
+                      if (selectedRoomType) {
+                        admissionForm.setValue(
+                          "dailyCost",
+                          selectedRoomType.dailyCost,
                         );
                       }
+                    }}
+                    data-testid="select-ward-type"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select ward/room type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomTypes.map((roomType: any) => (
+                        <SelectItem key={roomType.id} value={roomType.name}>
+                          {roomType.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                      // Check which rooms are actually occupied based on current admissions
-                      const occupiedRoomNumbers = new Set(
-                        allCurrentAdmissions
-                          .filter(
-                            (admission: any) =>
-                              admission.currentWardType === selectedWardType &&
-                              admission.status === "admitted",
-                          )
-                          .map((admission: any) => admission.currentRoomNumber),
-                      );
-
-                      return allRoomsForType.map((room: any) => {
-                        const isOccupied = occupiedRoomNumbers.has(
-                          room.roomNumber,
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Room Number *</Label>
+                  <Select
+                    value={admissionForm.watch("currentRoomNumber")}
+                    onValueChange={(value) =>
+                      admissionForm.setValue("currentRoomNumber", value)
+                    }
+                    disabled={!admissionForm.watch("currentWardType")}
+                    data-testid="select-room-number"
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          admissionForm.watch("currentWardType")
+                            ? "Select available room"
+                            : "Select ward type first"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(() => {
+                        const selectedWardType =
+                          admissionForm.watch("currentWardType");
+                        const selectedRoomType = roomTypes.find(
+                          (rt: any) => rt.name === selectedWardType,
                         );
 
-                        return (
-                          <SelectItem
-                            key={room.id}
-                            value={room.roomNumber}
-                            disabled={isOccupied}
-                            className={
-                              isOccupied
-                                ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800"
-                                : ""
-                            }
-                          >
-                            {room.roomNumber}
-                            {isOccupied ? " (Occupied)" : ""}
-                          </SelectItem>
+                        if (!selectedRoomType) return null;
+
+                        // Get all rooms for this room type
+                        const allRoomsForType = rooms.filter(
+                          (room: any) =>
+                            room.roomTypeId === selectedRoomType.id &&
+                            room.isActive,
                         );
-                      });
-                    })()}
-                  </SelectContent>
-                </Select>
+
+                        if (allRoomsForType.length === 0) {
+                          return (
+                            <SelectItem value="" disabled>
+                              No rooms available in {selectedWardType}
+                            </SelectItem>
+                          );
+                        }
+
+                        // Check which rooms are actually occupied based on current admissions
+                        const occupiedRoomNumbers = new Set(
+                          allCurrentAdmissions
+                            .filter(
+                              (admission: any) =>
+                                admission.currentWardType === selectedWardType &&
+                                admission.status === "admitted",
+                            )
+                            .map((admission: any) => admission.currentRoomNumber),
+                        );
+
+                        return allRoomsForType.map((room: any) => {
+                          const isOccupied = occupiedRoomNumbers.has(
+                            room.roomNumber,
+                          );
+
+                          return (
+                            <SelectItem
+                              key={room.id}
+                              value={room.roomNumber}
+                              disabled={isOccupied}
+                              className={
+                                isOccupied
+                                  ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                  : ""
+                              }
+                            >
+                              {room.roomNumber}
+                              {isOccupied ? " (Occupied)" : ""}
+                            </SelectItem>
+                          );
+                        });
+                      })()}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Admission Date & Time *</Label>
+                  <Input
+                    type="datetime-local"
+                    {...admissionForm.register("admissionDate")}
+                    data-testid="input-admission-date"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Admission Date & Time *</Label>
+                <Label>Reason for Admission</Label>
                 <Input
-                  type="datetime-local"
-                  {...admissionForm.register("admissionDate")}
-                  data-testid="input-admission-date"
+                  {...admissionForm.register("reason")}
+                  placeholder="Brief reason for admission (optional)"
+                  data-testid="input-admission-reason"
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Reason for Admission</Label>
-              <Input
-                {...admissionForm.register("reason")}
-                placeholder="Brief reason for admission (optional)"
-                data-testid="input-admission-reason"
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Daily Cost (₹) *</Label>
+                  <Input
+                    type="number"
+                    {...admissionForm.register("dailyCost", {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Daily ward cost"
+                    data-testid="input-daily-cost"
+                    readOnly={!!admissionForm.watch("currentWardType")}
+                    className={
+                      admissionForm.watch("currentWardType") ? "bg-gray-50" : ""
+                    }
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Initial Deposit (₹)</Label>
+                  <Input
+                    type="number"
+                    {...admissionForm.register("initialDeposit", {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="Initial deposit amount"
+                    data-testid="input-initial-deposit"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label>Daily Cost (₹) *</Label>
-                <Input
-                  type="number"
-                  {...admissionForm.register("dailyCost", {
-                    valueAsNumber: true,
-                  })}
-                  placeholder="Daily ward cost"
-                  data-testid="input-daily-cost"
-                  readOnly={!!admissionForm.watch("currentWardType")}
-                  className={
-                    admissionForm.watch("currentWardType") ? "bg-gray-50" : ""
-                  }
+                <Label>Notes</Label>
+                <Textarea
+                  {...admissionForm.register("notes")}
+                  placeholder="Additional notes..."
+                  data-testid="textarea-admission-notes"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Initial Deposit (₹)</Label>
-                <Input
-                  type="number"
-                  {...admissionForm.register("initialDeposit", {
-                    valueAsNumber: true,
-                  })}
-                  placeholder="Initial deposit amount"
-                  data-testid="input-initial-deposit"
-                />
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAdmissionDialogOpen(false)}
+                  data-testid="button-cancel-admission"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createAdmissionMutation.isPending}
+                  data-testid="button-admit"
+                >
+                  {createAdmissionMutation.isPending
+                    ? "Admitting..."
+                    : "Admit Patient"}
+                </Button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea
-                {...admissionForm.register("notes")}
-                placeholder="Additional notes..."
-                data-testid="textarea-admission-notes"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAdmissionDialogOpen(false)}
-                data-testid="button-cancel-admission"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createAdmissionMutation.isPending}
-                data-testid="button-admit"
-              >
-                {createAdmissionMutation.isPending
-                  ? "Admitting..."
-                  : "Admit Patient"}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -4626,7 +4629,7 @@ export default function PatientDetail() {
           <DialogHeader>
             <DialogTitle>Schedule OPD Appointment</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...opdVisitForm}>
             <form 
               onSubmit={opdVisitForm.handleSubmit((data) => {
@@ -4649,7 +4652,7 @@ export default function PatientDetail() {
                       <SelectContent>
                         {doctors?.map((doctor: Doctor) => (
                           <SelectItem key={doctor.id} value={doctor.id}>
-                            Dr. {doctor.name} - {doctor.specialization}
+                            {doctor.name} - {doctor.specialization}
                           </SelectItem>
                         ))}
                       </SelectContent>
