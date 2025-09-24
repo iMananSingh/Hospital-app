@@ -1793,17 +1793,9 @@ export default function PatientDetail() {
                 onClick={() => {
                   console.log("OPD button clicked");
                   const now = new Date();
-                  // Add 17.5 hours to current time for OPD appointment scheduling
-                  const adjustedTime = new Date(
-                    now.getTime() + 17.5 * 60 * 60 * 1000,
-                  );
-                  const currentDate = adjustedTime
-                    .toISOString()
-                    .split("T")[0];
-                  const currentTime = adjustedTime
-                    .toTimeString()
-                    .split(" ")[0]
-                    .slice(0, 5);
+                  // Use current local time for OPD appointment scheduling
+                  const currentDate = now.toISOString().split("T")[0];
+                  const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
                   setIsOpdVisitDialogOpen(true);
                   opdVisitForm.reset({
@@ -2087,17 +2079,9 @@ export default function PatientDetail() {
                   onClick={() => {
                     console.log("OPD button clicked");
                     const now = new Date();
-                    // Add 17.5 hours to current time for OPD appointment scheduling
-                    const adjustedTime = new Date(
-                      now.getTime() + 17.5 * 60 * 60 * 1000,
-                    );
-                    const currentDate = adjustedTime
-                      .toISOString()
-                      .split("T")[0];
-                    const currentTime = adjustedTime
-                      .toTimeString()
-                      .split(" ")[0]
-                      .slice(0, 5);
+                    // Use current local time for OPD appointment scheduling
+                    const currentDate = now.toISOString().split("T")[0];
+                    const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
                     setIsOpdVisitDialogOpen(true);
                     opdVisitForm.reset({
@@ -2221,16 +2205,9 @@ export default function PatientDetail() {
                     <Button
                       onClick={() => {
                         const now = new Date();
-                        const indianTime = new Date(
-                          now.getTime() + 5.5 * 60 * 60 * 1000,
-                        );
-                        const currentDate = indianTime
-                          .toISOString()
-                          .split("T")[0];
-                        const currentTime = indianTime
-                          .toTimeString()
-                          .split(" ")[0]
-                          .slice(0, 5);
+                        // Use current local time for OPD appointment scheduling
+                        const currentDate = now.toISOString().split("T")[0];
+                        const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
                         setIsOpdVisitDialogOpen(true);
                         opdVisitForm.reset({
