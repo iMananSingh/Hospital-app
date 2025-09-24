@@ -2189,7 +2189,7 @@ export default function PatientDetail() {
                             <TableCell>
                               {visit.symptoms || "No symptoms noted"}
                             </TableCell>
-                            <TableCell>₹{consultationFee}</TableCell>
+                            <TableCell>₹{visit.consultationFee || consultationFee}</TableCell>
                           </TableRow>
                         );
                       })}
