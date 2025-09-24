@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/layout/topbar";
@@ -25,8 +26,8 @@ const ReceiptTemplate = ({ receiptData, hospitalInfo, onPrint }) => (
 );
 
 export default function Billing() {
+  const [mainActiveTab, setMainActiveTab] = useState("revenue");
   const [leftActiveTab, setLeftActiveTab] = useState("opd");
-  const [rightActiveTab, setRightActiveTab] = useState("credit");
 
   // Date filters - default to today
   const today = new Date().toISOString().split('T')[0];
@@ -79,10 +80,10 @@ export default function Billing() {
   });
 
   const { data: billsDataApi = [] } = useQuery<any[]>({
-    queryKey: [rightActiveTab === "credit"
-      ? `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
-      : `/api/bills?fromDate=${fromDate}&toDate=${toDate}`],
-    enabled: rightActiveTab === "credit" || rightActiveTab === "debit",
+    queryKey: [
+      `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
+    ],
+    enabled: mainActiveTab === "payments",
   });
 
   // Filtered Data for display
@@ -221,12 +222,31 @@ export default function Billing() {
       />
 
       <div className="flex-1 p-6 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
-          {/* Left Section - Service Revenue (60%) */}
-          <div className="flex flex-col h-full lg:col-span-3">
-            <Card className="flex-1 flex flex-col">
+        {/* Main Navigation */}
+        <div className="mb-6">
+          <div className="grid w-full max-w-md grid-cols-2 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+            <button
+              onClick={() => setMainActiveTab("revenue")}
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${mainActiveTab === "revenue" ? "bg-background text-foreground shadow-sm" : ""}`}
+              data-testid="tab-revenue"
+            >
+              Revenue
+            </button>
+            <button
+              onClick={() => setMainActiveTab("payments")}
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${mainActiveTab === "payments" ? "bg-background text-foreground shadow-sm" : ""}`}
+              data-testid="tab-payments"
+            >
+              Payments
+            </button>
+          </div>
+        </div>
+
+        {mainActiveTab === "revenue" && (
+          <div className="h-full">
+            <Card className="flex-1 flex flex-col h-full">
               <CardHeader className="flex-shrink-0">
-                <CardTitle>Service Revenue</CardTitle>
+                <CardTitle>Revenue</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col overflow-hidden">
                 <div className="w-full h-full flex flex-col">
@@ -556,77 +576,61 @@ export default function Billing() {
               </CardContent>
             </Card>
           </div>
+        )}
 
-          {/* Right Section - Payment Transactions (40%) */}
-          <div className="flex flex-col h-full lg:col-span-2">
-            <Card className="flex-1 flex flex-col">
+        {mainActiveTab === "payments" && (
+          <div className="h-full">
+            <Card className="flex-1 flex flex-col h-full">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Payment Transactions</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col overflow-hidden">
-                <Tabs value={rightActiveTab} onValueChange={setRightActiveTab} className="w-full h-full flex flex-col">
-                  <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
-                    <TabsTrigger value="credit" data-testid="tab-credit">Credit</TabsTrigger>
-                    <TabsTrigger value="debit" data-testid="tab-debit">Debit</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="credit" className="flex-1 flex flex-col mt-2">
-                    <div className="border rounded-lg flex-1 flex flex-col min-h-0">
-                      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                        <table className="w-full">
-                          <thead className="border-b bg-background sticky top-0 z-10">
-                              <tr>
-                                <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
-                                <th className="text-left p-3 font-medium bg-background">Bill No.</th>
-                                <th className="text-left p-3 font-medium bg-background">Patient</th>
-                                <th className="text-left p-3 font-medium bg-background">Payment Method</th>
-                                <th className="text-right p-3 font-medium bg-background">Amount</th>
-                              </tr>
-                            </thead>
-                          <tbody>
-                            {billsDataApi.length === 0 ? (
-                              <tr>
-                                <td colSpan={5} className="text-center py-4 text-muted-foreground">
-                                  No Credit transactions found for the selected period
-                                </td>
-                              </tr>
-                            ) : (
-                              billsDataApi.map((bill: any, index: number) => (
-                                <tr key={bill.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
-                                  <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
-                                  <td className="p-3" data-testid={`text-credit-bill-${index}`}>{bill.billNumber}</td>
-                                  <td className="p-3" data-testid={`text-credit-patient-${index}`}>{bill.patient?.name || 'N/A'}</td>
-                                  <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{bill.paymentMethod}</td>
-                                  <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
-                                    {formatCurrency(bill.totalAmount)}
-                                  </td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                      <div className="border-t p-2 bg-muted/30 flex-shrink-0">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total:</span>
-                          <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsDataApi))}</span>
-                        </div>
-                      </div>
+                <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                  <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                    <table className="w-full">
+                      <thead className="border-b bg-background sticky top-0 z-10">
+                          <tr>
+                            <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
+                            <th className="text-left p-3 font-medium bg-background">Bill No.</th>
+                            <th className="text-left p-3 font-medium bg-background">Patient</th>
+                            <th className="text-left p-3 font-medium bg-background">Payment Method</th>
+                            <th className="text-right p-3 font-medium bg-background">Amount</th>
+                          </tr>
+                        </thead>
+                      <tbody>
+                        {billsDataApi.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="text-center py-4 text-muted-foreground">
+                              No payment transactions found for the selected period
+                            </td>
+                          </tr>
+                        ) : (
+                          billsDataApi.map((bill: any, index: number) => (
+                            <tr key={bill.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
+                              <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
+                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{bill.billNumber}</td>
+                              <td className="p-3" data-testid={`text-credit-patient-${index}`}>{bill.patient?.name || 'N/A'}</td>
+                              <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{bill.paymentMethod}</td>
+                              <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
+                                {formatCurrency(bill.totalAmount)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsDataApi))}</span>
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="debit" className="flex-1 flex flex-col mt-2">
-                    <div className="border rounded-lg flex-1 flex items-center justify-center">
-                      <p className="text-center py-8 text-muted-foreground">
-                        Debit transactions will be displayed here
-                      </p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
