@@ -2531,9 +2531,9 @@ export class SqliteStorage implements IStorage {
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Join doctor information - use COALESCE to handle NULL values
-          doctorName: sql<string | null>`COALESCE(${schema.doctors.name}, NULL)`.as('doctorName'),
-          doctorSpecialization: sql<string | null>`COALESCE(${schema.doctors.specialization}, NULL)`.as('doctorSpecialization'),
+          // Join doctor information - handle NULL values properly
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
         .leftJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))

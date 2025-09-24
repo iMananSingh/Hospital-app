@@ -182,8 +182,6 @@ export default function PatientDetail() {
     return info;
   }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
 
-  // Helper function to determine service type for receipt numbering</old_str>
-
   // Helper function to determine service type for receipt numbering
   const getServiceType = (eventType: string, event: any) => {
     switch (eventType) {
@@ -946,7 +944,7 @@ export default function PatientDetail() {
             scheduledTime: data.scheduledTime,
             status: "scheduled",
             doctorId:
-              data.doctorId !== "none" && data.doctorId !== ""
+              data.doctorId && data.doctorId !== "none" && data.doctorId !== ""
                 ? data.doctorId
                 : null,
             billingType: "per_instance",
@@ -1024,7 +1022,7 @@ export default function PatientDetail() {
           scheduledTime: data.scheduledTime,
           status: "scheduled",
           doctorId:
-            data.doctorId !== "none" && data.doctorId !== ""
+            data.doctorId && data.doctorId !== "none" && data.doctorId !== ""
               ? data.doctorId
               : null,
         });
@@ -3587,7 +3585,7 @@ export default function PatientDetail() {
                           {(() => {
                             const params =
                               selectedCatalogService.billingParameters
-                                ? JSON.parse(
+                                                                 ? JSON.parse(
                                     selectedCatalogService.billingParameters,
                                   )
                                 : {};
