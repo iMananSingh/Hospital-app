@@ -1253,7 +1253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("=== BATCH SERVICE CREATION API ===");
       console.log("Raw request body:", JSON.stringify(req.body, null, 2));
-      
+
       // Validate array of services
       if (!Array.isArray(req.body)) {
         return res.status(400).json({ message: "Request body must be an array of services" });
@@ -1267,7 +1267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Service Name:`, service.serviceName);
         console.log(`Service Type:`, service.serviceType);
         console.log(`Patient ID:`, service.patientId);
-        
+
         // Check if doctorId is actually null vs undefined vs empty string
         if (service.doctorId === null) {
           console.log(`Service ${index + 1}: Doctor ID is explicitly null`);
@@ -1283,7 +1283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const services = await storage.createPatientServicesBatch(req.body, req.user.id);
       console.log("=== BATCH SERVICE CREATION RESULT ===");
       console.log("Created services count:", services.length);
-      
+
       // Log the created services to verify doctor IDs were saved
       services.forEach((service: any, index: number) => {
         console.log(`=== CREATED SERVICE ${index + 1} RESULT ===`);
@@ -1293,7 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Service Name:`, service.serviceName);
         console.log(`Service Type:`, service.serviceType);
       });
-      
+
       res.json(services);
     } catch (error: any) {
       console.error("Batch service creation error:", error);
