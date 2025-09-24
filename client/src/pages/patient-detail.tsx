@@ -1409,7 +1409,25 @@ export default function PatientDetail() {
     // Set the current time as default
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5); // HH:MM format
-    serviceForm.setValue("scheduledTime", timeString);
+    const currentDate = now.toISOString().split('T')[0];
+
+    // Reset form but preserve doctor selection if it exists
+    const currentDoctorId = serviceForm.getValues("doctorId");
+
+    serviceForm.reset({
+      patientId: patientId || "",
+      serviceType: serviceType,
+      serviceName: "",
+      scheduledDate: currentDate,
+      scheduledTime: timeString,
+      doctorId: currentDoctorId || "", // Preserve existing doctor selection
+      serviceId: "",
+      notes: "",
+      price: 0,
+      quantity: 1,
+      hours: 1,
+      distance: 0,
+    });
   };
 
   // Function to open the comprehensive bill dialog
