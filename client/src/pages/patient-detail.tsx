@@ -4912,12 +4912,12 @@ export default function PatientDetail() {
                           const defaultFee = selectedDoctor ? selectedDoctor.consultationFee : 0;
                           const currentFee = opdVisitForm.watch("consultationFee");
 
-                          // Set default fee when doctor changes, but only if fee is 0 or undefined
+                          // Set default fee when doctor changes, but only if the field hasn't been manually edited
                           React.useEffect(() => {
-                            if (selectedDoctor && (!currentFee || currentFee === 0)) {
+                            if (selectedDoctor && (currentFee === undefined || currentFee === 0)) {
                               opdVisitForm.setValue("consultationFee", defaultFee);
                             }
-                          }, [selectedDoctorId, defaultFee, currentFee]); // Include currentFee to re-run effect if it's manually changed
+                          }, [selectedDoctorId, defaultFee]); // Remove currentFee dependency to prevent interference
 
                           return (
                             <FormControl>
@@ -4925,11 +4925,18 @@ export default function PatientDetail() {
                                 type="number"
                                 min="0"
                                 step="1"
-                                value={currentFee || 0}
+                                value={currentFee === undefined ? "" : currentFee}
                                 onChange={(e) => {
-                                  const fee = parseFloat(e.target.value) || 0;
-                                  field.onChange(fee); // Update React Hook Form state
-                                  opdVisitForm.setValue("consultationFee", fee); // Also update form directly for immediate access
+                                  const value = e.target.value;
+                                  // Allow empty string (complete erasure)
+                                  if (value === "") {
+                                    field.onChange(undefined);
+                                    opdVisitForm.setValue("consultationFee", undefined);
+                                  } else {
+                                    const fee = parseFloat(value) || 0;
+                                    field.onChange(fee);
+                                    opdVisitForm.setValue("consultationFee", fee);
+                                  }
                                 }}
                                 placeholder="Enter consultation fee"
                                 data-testid="input-consultation-fee"
