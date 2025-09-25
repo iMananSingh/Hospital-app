@@ -71,19 +71,19 @@ function detectNumeric(str: string): boolean {
 }
 
 function parseSQLDateTime(sqlStr: string): Date {
-  // Parse "YYYY-MM-DD HH:MM:SS" as local time to avoid timezone conversion
+  // Parse "YYYY-MM-DD HH:MM:SS" as UTC time since SQLite datetime('now') stores UTC
   const match = sqlStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
   if (!match) return new Date(sqlStr); // Fallback
   
   const [, year, month, day, hour, minute, second = '0'] = match;
-  return new Date(
+  return new Date(Date.UTC(
     parseInt(year),
     parseInt(month) - 1, // Month is 0-indexed
     parseInt(day),
     parseInt(hour),
     parseInt(minute),
     parseInt(second)
-  );
+  ));
 }
 
 /**
@@ -119,17 +119,11 @@ export function calcStayDays(admissionDate: string | Date, endDate?: string | Da
 }
 
 function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string {
-  // Convert to IST if timeZone is specified as Asia/Kolkata
-  let displayDate = date;
-  if (timeZone === 'Asia/Kolkata' && hasTime) {
-    // Add 5 hours and 30 minutes to convert UTC to IST
-    displayDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
-  }
-
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
+    timeZone: timeZone || undefined  // Use proper timezone handling instead of manual adjustment
   };
 
   if (hasTime) {
@@ -139,7 +133,7 @@ function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string
   }
 
   const formatter = new Intl.DateTimeFormat('en-US', options);
-  const formatted = formatter.format(displayDate);
+  const formatted = formatter.format(date);
 
   if (hasTime) {
     // Split date and time parts for better styling

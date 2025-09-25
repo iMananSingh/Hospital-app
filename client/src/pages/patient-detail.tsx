@@ -3104,31 +3104,21 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
-                                    // Display stored timestamp directly (already in IST)
-                                    let displayDate;
+                                    // Use proper parseTimestamp with IST timezone for consistent display
+                                    let timestampToFormat = event.originalTimestamp;
 
                                     // Special handling for OPD visits to show actual scheduled time
                                     if (event.type === "opd_visit" && event.rawData?.visit) {
                                       const visit = event.rawData.visit;
                                       if (visit.scheduledDate && visit.scheduledTime) {
                                         // Create proper datetime from scheduled date and time
-                                        displayDate = new Date(`${visit.scheduledDate}T${visit.scheduledTime}`);
-                                      } else {
-                                        displayDate = new Date(event.originalTimestamp);
+                                        timestampToFormat = `${visit.scheduledDate}T${visit.scheduledTime}`;
                                       }
-                                    } else {
-                                      displayDate = new Date(event.originalTimestamp);
                                     }
 
-                                    // No timezone correction needed since we're storing IST directly
-                                    return displayDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
+                                    // Use the corrected parseTimestamp function with IST timezone
+                                    const parsed = parseTimestamp(timestampToFormat, 'Asia/Kolkata');
+                                    return parsed.display;
                                   })()}
                                 </span>
                               </div>
