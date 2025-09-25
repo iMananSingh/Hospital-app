@@ -3824,7 +3824,7 @@ export default function PatientDetail() {
                     </li>
                     <li>
                       Enter both service name and price (greater than ₹0) in the
-                      manual entry fields
+                    manual entry fields
                     </li>
                   </ul>
                 </div>
@@ -4508,8 +4508,6 @@ export default function PatientDetail() {
           </DialogContent>
         </Dialog>
 
-        {/* All Dialogs wrapped in Fragment */}
-      <>
         {/* Comprehensive Bill Dialog */}
         {isComprehensiveBillOpen && comprehensiveBillData && (
           <ComprehensiveBillTemplate

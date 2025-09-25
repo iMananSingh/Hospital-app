@@ -1,5 +1,5 @@
 /**
- * Utility for parsing and formatting timestamps with proper timezone handling
+ * Utility for parsing and formatting timestamps using local system time
  */
 
 interface ParsedTimestamp {
@@ -9,7 +9,7 @@ interface ParsedTimestamp {
 }
 
 /**
- * Parse various timestamp formats and return display string with proper timezone handling
+ * Parse various timestamp formats and return display string using local system time
  */
 export function parseTimestamp(raw: any, hospitalTimeZone?: string): ParsedTimestamp {
   if (!raw) return { hasTime: false, date: null, display: "N/A" };
@@ -20,7 +20,7 @@ export function parseTimestamp(raw: any, hospitalTimeZone?: string): ParsedTimes
 
   // Detect format and parse appropriately
   if (detectISO(rawStr)) {
-    // ISO format with timezone info - parse as UTC and convert
+    // ISO format - parse normally and let browser handle timezone
     date = new Date(rawStr);
     hasTime = true;
   } else if (detectSQLDateTime(rawStr)) {
@@ -48,8 +48,8 @@ export function parseTimestamp(raw: any, hospitalTimeZone?: string): ParsedTimes
     return { hasTime: false, date: null, display: "N/A" };
   }
 
-  // Format the date appropriately
-  const display = formatDateTime(date, hasTime, hospitalTimeZone);
+  // Format the date appropriately using local system time
+  const display = formatDateTime(date, hasTime);
   
   return { hasTime, date, display };
 }
@@ -71,19 +71,19 @@ function detectNumeric(str: string): boolean {
 }
 
 function parseSQLDateTime(sqlStr: string): Date {
-  // Parse "YYYY-MM-DD HH:MM:SS" as UTC time since SQLite datetime('now') stores UTC
+  // Parse "YYYY-MM-DD HH:MM:SS" as local time
   const match = sqlStr.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
   if (!match) return new Date(sqlStr); // Fallback
   
   const [, year, month, day, hour, minute, second = '0'] = match;
-  return new Date(Date.UTC(
+  return new Date(
     parseInt(year),
     parseInt(month) - 1, // Month is 0-indexed
     parseInt(day),
     parseInt(hour),
     parseInt(minute),
     parseInt(second)
-  ));
+  );
 }
 
 /**
@@ -118,12 +118,12 @@ export function calcStayDays(admissionDate: string | Date, endDate?: string | Da
   return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
 }
 
-function formatDateTime(date: Date, hasTime: boolean, timeZone?: string): string {
+function formatDateTime(date: Date, hasTime: boolean): string {
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'short',
-    day: 'numeric',
-    timeZone: timeZone || undefined  // Use proper timezone handling instead of manual adjustment
+    day: 'numeric'
+    // No timeZone specified - uses local system timezone automatically
   };
 
   if (hasTime) {
