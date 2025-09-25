@@ -3139,18 +3139,19 @@ export default function PatientDetail() {
                                           hour12: true,
                                         });
                                       }
+                                    }
 
-                                      // Treat stored time as local IST and display in 12-hour format
-                                      const displayDate = new Date(timestampToFormat);
-                                      return displayDate.toLocaleString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      });
-                                    })()}
+                                    // Treat stored time as local IST and display in 12-hour format
+                                    const displayDate = new Date(timestampToFormat);
+                                    return displayDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    });
+                                  })()}
                                 </span>
                               </div>
                               <p className="text-sm text-muted-foreground">
