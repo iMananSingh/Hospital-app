@@ -320,6 +320,13 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
             
             @media print {
+              @page {
+                margin: 0;
+                size: A4;
+              }
+            }
+            
+            @media print {
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -330,6 +337,16 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 padding: 0 !important;
                 height: auto !important;
                 background: white !important;
+              }
+              
+              /* Hide browser default headers and footers */
+              @page {
+                margin: 0;
+                size: A4;
+              }
+              
+              html {
+                -webkit-print-color-adjust: exact;
               }
               
               .receipt {

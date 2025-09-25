@@ -463,6 +463,13 @@ export function ComprehensiveBillTemplate({
               margin: 1.5in 1in 1in 1in;
               size: A4;
             }
+            
+            @media print {
+              @page {
+                margin: 0;
+                size: A4;
+              }
+            }
 
             @media print {
               * {
@@ -475,6 +482,16 @@ export function ComprehensiveBillTemplate({
                 padding: 0 !important;
                 height: auto !important;
                 background: white !important;
+              }
+              
+              /* Hide browser default headers and footers */
+              @page {
+                margin: 0;
+                size: A4;
+              }
+              
+              html {
+                -webkit-print-color-adjust: exact;
               }
 
               .bill {
