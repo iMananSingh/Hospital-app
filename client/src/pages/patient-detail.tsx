@@ -3342,6 +3342,9 @@ export default function PatientDetail() {
                       });
                     }
 
+                    // Sort events chronologically (latest first) using consistent timestamp BEFORE adding OPD visits
+                    console.log("Pre-sort timeline events count:", timelineEvents.length);
+
                     // Add OPD visits to timeline with proper date normalization
                     if (opdVisits && opdVisits.length > 0) {
                       console.log("Processing OPD visits for timeline:", opdVisits.length);
@@ -3380,6 +3383,8 @@ export default function PatientDetail() {
                         }
                       });
                     }
+
+                    console.log("Post-OPD timeline events count:", timelineEvents.length);
 
                     // Sort events chronologically (latest first) using consistent timestamp
                     console.log(
