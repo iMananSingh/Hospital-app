@@ -1717,13 +1717,12 @@ export class SqliteStorage implements IStorage {
   // OPD-specific methods
   async createOpdVisit(data: InsertPatientVisit): Promise<PatientVisit> {
     try {
-      // Generate unique visit ID
-      const visitCount = await db.select({ count: sql`COUNT(*)` })
-        .from(schema.patientVisits)
-        .where(sql`date(created_at) = date('now')`);
+      // Generate unique visit ID using total count instead of daily count to avoid duplicates
+      const totalVisitCount = await db.select({ count: sql`COUNT(*)` })
+        .from(schema.patientVisits);
 
-      const dailyCount = visitCount[0]?.count || 0;
-      const orderNumber = String(dailyCount + 1).padStart(3, '0');
+      const visitCount = totalVisitCount[0]?.count || 0;
+      const orderNumber = String(visitCount + 1).padStart(4, '0');
       const today = new Date().toISOString().slice(2, 10).replace(/-/g, '');
       const visitId = `VIS-${today}-${orderNumber}`;
 
