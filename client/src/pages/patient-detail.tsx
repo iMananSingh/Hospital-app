@@ -3430,6 +3430,24 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
+                                    // Special handling for OPD visits to show actual scheduled time
+                                    if (event.type === "opd_visit" && event.rawData?.visit) {
+                                      const visit = event.rawData.visit;
+                                      if (visit.scheduledDate && visit.scheduledTime) {
+                                        // Create proper datetime from scheduled date and time
+                                        const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime}`);
+                                        
+                                        return scheduledDateTime.toLocaleString("en-US", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          hour12: true,
+                                        });
+                                      }
+                                    }
+
                                     // For registration events, use the IST-corrected timestamp
                                     // For discharge events, subtract 5:30 hours from display time
                                     // For other events, use the original timestamp as they're already in local time
