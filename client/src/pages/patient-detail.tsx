@@ -2859,276 +2859,84 @@ export default function PatientDetail() {
               <CardContent>
                 <div className="space-y-4">
                   {(() => {
-                    console.log("=== TIMELINE DEBUG START ===");
-
-                    // Helper function to normalize dates consistently
-                    const normalizeDate = (
-                      dateInput: any,
-                      source: string,
-                      id?: string,
-                    ): { date: string; timestamp: number } => {
-                      let dateStr: string;
-
-                      // Handle null/undefined
-                      if (!dateInput) {
-                        console.warn(
-                          `No date provided for ${source} ${id || "unknown"}, using current time`,
-                        );
-                        const now = new Date();
-                        return {
-                          date: now.toISOString(),
-                          timestamp: now.getTime(),
-                        };
-                      }
-
-                      // Convert to string if it's not already
-                      if (typeof dateInput === "string") {
-                        dateStr = dateInput;
-                      } else if (dateInput instanceof Date) {
-                        dateStr = dateInput.toISOString();
-                      } else {
-                        dateStr = String(dateInput);
-                      }
-
-                      console.log(
-                        `Normalizing date for ${source} ${id || "unknown"}: "${dateStr}"`,
-                      );
-
-                      // For registration dates, use the same UTC handling as other events
-                      if (source === "registration") {
-                        // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS" - convert to UTC
-                        if (
-                          dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
-                        ) {
-                          dateStr = dateStr.replace(" ", "T") + "Z";
-                          console.log(
-                            `Converted SQLite format (UTC) to: "${dateStr}"`,
-                          );
+                    // Simple function to get timestamp for any date input
+                    const getEventTimestamp = (dateInput: any, fallbackDate?: any) => {
+                      if (!dateInput && fallbackDate) dateInput = fallbackDate;
+                      if (!dateInput) return new Date().getTime();
+                      
+                      // Handle string dates
+                      if (typeof dateInput === 'string') {
+                        // SQLite format: "YYYY-MM-DD HH:MM:SS"
+                        if (dateInput.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                          const timestamp = new Date(dateInput.replace(' ', 'T')).getTime();
+                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
                         }
-                        // Handle date only format: "YYYY-MM-DD" - convert to UTC
-                        else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                          dateStr = dateStr + "T00:00:00Z";
-                          console.log(
-                            `Converted date-only format (UTC) to: "${dateStr}"`,
-                          );
+                        // Date with time: "YYYY-MM-DDTHH:MM:SS"
+                        if (dateInput.includes('T')) {
+                          const timestamp = new Date(dateInput).getTime();
+                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
                         }
-                        // Handle datetime without timezone - add Z for UTC
-                        else if (
-                          dateStr.match(
-                            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-                          ) &&
-                          !dateStr.includes("Z") &&
-                          !dateStr.includes("+")
-                        ) {
-                          dateStr = dateStr + "Z";
-                          console.log(`Added timezone to: "${dateStr}"`);
+                        // Date only: "YYYY-MM-DD"
+                        if (dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                          const timestamp = new Date(dateInput + 'T00:00:00').getTime();
+                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
                         }
-
-                        // Parse the date
-                        const parsed = new Date(dateStr);
-                        if (isNaN(parsed.getTime())) {
-                          console.error(
-                            `Failed to parse registration date "${dateStr}", using current time`,
-                          );
-                          const now = new Date();
-                          return {
-                            date: now.toISOString(),
-                            timestamp: now.getTime(),
-                          };
-                        }
-
-                        const timestamp = parsed.getTime();
-                        console.log(
-                          `Final normalized registration date: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`,
-                        );
-
-                        return { date: dateStr, timestamp };
+                        const timestamp = new Date(dateInput).getTime();
+                        return isNaN(timestamp) ? new Date().getTime() : timestamp;
                       }
-
-                      // For other sources (services, admissions, etc), use existing logic
-                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                      if (
-                        dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
-                      ) {
-                        dateStr = dateStr.replace(" ", "T") + "Z";
-                        console.log(`Converted SQLite format to: "${dateStr}"`);
-                      }
-                      // Handle date only format: "YYYY-MM-DD"
-                      else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        dateStr = dateStr + "T00:00:00Z";
-                        console.log(
-                          `Converted date-only format to: "${dateStr}"`,
-                        );
-                      }
-                      // Handle datetime without timezone
-                      else if (
-                        dateStr.match(
-                          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/,
-                        ) &&
-                        !dateStr.includes("Z") &&
-                        !dateStr.includes("+")
-                      ) {
-                        dateStr = dateStr + "Z";
-                        console.log(`Added timezone to: "${dateStr}"`);
-                      }
-
-                      // Parse the date
-                      const parsed = new Date(dateStr);
-                      if (isNaN(parsed.getTime())) {
-                        console.error(
-                          `Failed to parse date "${dateStr}" for ${source} ${id || "unknown"}, using current time`,
-                        );
-                        const now = new Date();
-                        return {
-                          date: now.toISOString(),
-                          timestamp: now.getTime(),
-                        };
-                      }
-
-                      const timestamp = parsed.getTime();
-                      console.log(
-                        `Final normalized date for ${source} ${id || "unknown"}: "${dateStr}" -> timestamp: ${timestamp} (${new Date(timestamp).toLocaleString()})`,
-                      );
-
-                      return { date: dateStr, timestamp };
+                      
+                      const timestamp = new Date(dateInput).getTime();
+                      return isNaN(timestamp) ? new Date().getTime() : timestamp;
                     };
 
                     // Create timeline events array
                     const timelineEvents = [];
 
-                    // Add registration event with consistent timestamp normalization
-                    const regNormalized = normalizeDate(
-                      patient.createdAt,
-                      "registration",
-                    );
-                    timelineEvents.push({
-                      id: "registration",
-                      type: "registration",
-                      title: "Patient Registered",
-                      date: regNormalized.date,
-                      description: `Patient ID: ${patient.patientId}`,
-                      color: "bg-blue-500",
-                      sortTimestamp: regNormalized.timestamp,
-                    });
+                    // Add patient registration
+                    if (patient?.createdAt) {
+                      timelineEvents.push({
+                        id: "registration",
+                        type: "registration",
+                        title: "Patient Registered",
+                        description: `Patient ID: ${patient.patientId}`,
+                        color: "bg-blue-500",
+                        sortTimestamp: getEventTimestamp(patient.createdAt),
+                      });
+                    }
 
-                    // Add services with proper date normalization - group by orderId (like pathology tests)
+                    // Add services  
                     if (services && services.length > 0) {
-                      console.log(
-                        "Processing services for timeline:",
-                        services.length,
-                      );
-
-                      // Group services by orderId
-                      const serviceGroups = services.reduce(
-                        (groups: { [key: string]: any[] }, service: any) => {
-                          const groupKey =
-                            service.orderId || `single-${service.id}`;
-                          if (!groups[groupKey]) {
-                            groups[groupKey] = [];
-                          }
-                          groups[groupKey].push(service);
-                          return groups;
-                        },
-                        {},
-                      );
-
-                      // Create timeline entries for each group
-                      Object.entries(serviceGroups).forEach(
-                        ([orderId, groupServices]) => {
-                          // Use the earliest service in the group for primary date
-                          const primaryService = groupServices[0];
-
-                          // Priority: createdAt > constructed date from scheduled fields
-                          let primaryDate = primaryService.createdAt;
-                          if (!primaryDate && primaryService.scheduledDate) {
-                            if (primaryService.scheduledTime) {
-                              primaryDate = `${primaryService.scheduledDate}T${primaryService.scheduledTime}:00`;
-                            } else {
-                              primaryDate = `${primaryService.scheduledDate}T00:00:00`;
-                            }
-                          }
-
-                          const serviceNormalized = normalizeDate(
-                            primaryDate,
-                            "service",
-                            orderId,
-                          );
-
-                          // Calculate total cost for all services in the group
-                          const totalCost = groupServices.reduce(
-                            (sum, service) =>
-                              sum +
-                              (service.calculatedAmount ||
-                                service.price * (service.quantity || 1)),
-                            0,
-                          );
-
-                          // Create title and description based on group size
-                          let title, description;
-                          if (groupServices.length === 1) {
-                            // Single service - show service name
-                            title = groupServices[0].serviceName;
-                            description = `Status: ${groupServices[0].status} • Cost: ₹${totalCost}`;
-                          } else {
-                            // Multiple services - show as service order (like "Service Order: SRV-2025-001")
-                            const orderIdLabel = orderId.startsWith("single-")
-                              ? "Service Order"
-                              : orderId;
-                            title = `Service Order: ${orderIdLabel}`;
-                            description = `${groupServices.length} services • Cost: ₹${totalCost}`;
-                          }
-
-                          timelineEvents.push({
-                            id: orderId,
-                            type: "service",
-                            title: title,
-                            date: serviceNormalized.date,
-                            description: description,
-                            color: "bg-green-500",
-                            sortTimestamp: serviceNormalized.timestamp,
-                            rawData: { services: groupServices, primaryDate }, // Debug info
-                            // Include order info for service grouping
-                            orderId: orderId.startsWith("single-")
-                              ? null
-                              : orderId,
-                            serviceCount: groupServices.length,
-                            totalCost: totalCost,
-                            services: groupServices, // Store all services for detailed view if needed
-                          });
-                        },
-                      );
+                      services.forEach((service: any) => {
+                        let serviceDate = service.createdAt;
+                        if (!serviceDate && service.scheduledDate) {
+                          serviceDate = service.scheduledTime 
+                            ? `${service.scheduledDate}T${service.scheduledTime}:00`
+                            : `${service.scheduledDate}T00:00:00`;
+                        }
+                        
+                        const cost = service.calculatedAmount || (service.price * (service.quantity || 1));
+                        
+                        timelineEvents.push({
+                          id: `service-${service.id}`,
+                          type: "service",
+                          title: service.serviceName,
+                          description: `Status: ${service.status} • Cost: ₹${cost}`,
+                          color: "bg-green-500",
+                          sortTimestamp: getEventTimestamp(serviceDate),
+                          rawData: { service },
+                        });
+                      });
                     }
 
                     // Add admission events
                     if (admissions && admissions.length > 0) {
-                      console.log(
-                        "Processing admissions for timeline:",
-                        admissions.length,
-                      );
                       admissions.forEach((admission: any) => {
                         const events = admissionEventsMap[admission.id] || [];
-                        const doctor = doctors.find(
-                          (d: Doctor) => d.id === admission.doctorId,
-                        );
-                        const doctorName = doctor
-                          ? doctor.name
-                          : "No Doctor Assigned";
+                        const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
+                        const doctorName = doctor ? doctor.name : "No Doctor Assigned";
 
-                        console.log(
-                          `Processing admission ${admission.id} with ${events.length} events`,
-                        );
-
-                        // Add events from admission events table
+                        // Add admission events 
                         events.forEach((event: AdmissionEvent) => {
-                          // Priority: eventTime > createdAt
-                          const primaryDate =
-                            event.eventTime || event.createdAt;
-                          const eventNormalized = normalizeDate(
-                            primaryDate,
-                            "admission_event",
-                            event.id,
-                          );
-
                           let title = "";
                           let color = "bg-orange-500";
                           let description = "";
@@ -3137,129 +2945,68 @@ export default function PatientDetail() {
                             case "admit":
                               title = "Patient Admitted";
                               color = "bg-green-500";
-                              if (event.roomNumber && event.wardType) {
-                                description = `Room: ${event.roomNumber} (${event.wardType})`;
-                              }
                               break;
                             case "room_change":
                               title = "Room Transfer";
                               color = "bg-blue-500";
-                              if (event.roomNumber && event.wardType) {
-                                description = `Moved to: ${event.roomNumber} (${event.wardType})`;
-                              }
                               break;
                             case "discharge":
                               title = "Patient Discharged";
                               color = "bg-gray-500";
-                              if (event.roomNumber && event.wardType) {
-                                description = `From: ${event.roomNumber} (${event.wardType})`;
-                              }
                               break;
                             default:
-                              title = `Admission ${event.eventType.replace("_", " ")}`;
-                              if (event.roomNumber && event.wardType) {
-                                description = `Room: ${event.roomNumber} (${event.wardType})`;
-                              }
+                              title = `Admission ${event.eventType}`;
+                          }
+
+                          if (event.roomNumber && event.wardType) {
+                            description = `Room: ${event.roomNumber} (${event.wardType})`;
                           }
 
                           timelineEvents.push({
-                            id: `${admission.id}-${event.id}`,
+                            id: `admission-${event.id}`,
                             type: "admission_event",
-                            title: title,
-                            date: eventNormalized.date,
-                            description: description,
-                            color: color,
-                            sortTimestamp: eventNormalized.timestamp,
-                            rawData: { event, primaryDate }, // Debug info
-                            doctorName: doctorName, // Add doctorName directly to the event
-                            receiptNumber: event.receiptNumber, // Include receipt number from event
+                            title,
+                            description,
+                            color,
+                            sortTimestamp: getEventTimestamp(event.eventTime || event.createdAt),
+                            rawData: { event },
                           });
                         });
 
-                        // If no events exist, create a basic admission entry as fallback
+                        // Add basic admission if no events
                         if (events.length === 0) {
-                          const primaryDate =
-                            admission.createdAt || admission.admissionDate;
-                          const admissionNormalized = normalizeDate(
-                            primaryDate,
-                            "admission_fallback",
-                            admission.id,
-                          );
-
                           timelineEvents.push({
-                            id: `${admission.id}-fallback`,
+                            id: `admission-${admission.id}`,
                             type: "admission",
                             title: "Patient Admission",
-                            date: admissionNormalized.date,
-                            description: (() => {
-                              const wardDisplay =
-                                admission.currentWardType || admission.wardType;
-                              const parts = [];
-                              if (admission.reason)
-                                parts.push(`Reason: ${admission.reason}`);
-                              parts.push(`Doctor: ${doctorName}`);
-                              parts.push(`Ward: ${wardDisplay}`);
-                              parts.push(
-                                `Room: ${admission.currentRoomNumber || admission.roomNumber || "N/A"}`,
-                              );
-                              return parts.join(" • ");
-                            })(),
+                            description: `Doctor: ${doctorName} • Ward: ${admission.wardType || 'N/A'}`,
                             color: "bg-orange-500",
-                            sortTimestamp: admissionNormalized.timestamp,
-                            rawData: { admission, primaryDate, doctorName }, // Include doctor info for receipt
-                            doctorName: doctorName, // Add doctorName directly to the event
+                            sortTimestamp: getEventTimestamp(admission.createdAt || admission.admissionDate),
+                            rawData: { admission },
                           });
                         }
-                      });
-                    }
 
-                    // Process payments and discounts from admissions
-                    if (admissions && admissions.length > 0) {
-                      console.log(
-                        "Processing payment and discount entries for timeline",
-                      );
-                      admissions.forEach((admission: any) => {
-                        // Add payment entries
-                        if (
-                          admission.lastPaymentDate &&
-                          admission.lastPaymentAmount
-                        ) {
-                          const paymentNormalized = normalizeDate(
-                            admission.lastPaymentDate,
-                            "payment",
-                            admission.id,
-                          );
-
+                        // Add payments
+                        if (admission.lastPaymentDate && admission.lastPaymentAmount) {
                           timelineEvents.push({
                             id: `payment-${admission.id}`,
                             type: "payment",
                             title: "Payment Received",
-                            date: paymentNormalized.date,
                             description: `Amount: ₹${admission.lastPaymentAmount}`,
                             color: "bg-green-600",
-                            sortTimestamp: paymentNormalized.timestamp,
+                            sortTimestamp: getEventTimestamp(admission.lastPaymentDate),
                           });
                         }
 
-                        // Add discount entries
-                        if (
-                          admission.lastDiscountDate &&
-                          admission.lastDiscountAmount
-                        ) {
-                          const discountNormalized = normalizeDate(
-                            admission.lastDiscountDate,
-                            "discount",
-                            admission.id,
-                          );
-
+                        // Add discounts
+                        if (admission.lastDiscountDate && admission.lastDiscountAmount) {
                           timelineEvents.push({
                             id: `discount-${admission.id}`,
                             type: "discount",
                             title: "Discount Applied",
-                            date: discountNormalized.date,
-                            description: `Amount: ₹${admission.lastDiscountAmount}${admission.lastDiscountReason ? ` • Reason: ${admission.lastDiscountReason}` : ""}`,
+                            description: `Amount: ₹${admission.lastDiscountAmount}`,
                             color: "bg-red-500",
-                            sortTimestamp: discountNormalized.timestamp,
+                            sortTimestamp: getEventTimestamp(admission.lastDiscountDate),
                           });
                         }
                       });
@@ -3267,151 +3014,52 @@ export default function PatientDetail() {
 
                     // Add pathology orders
                     if (pathologyOrders && pathologyOrders.length > 0) {
-                      console.log(
-                        "Processing pathology orders for timeline:",
-                        pathologyOrders.length,
-                      );
                       pathologyOrders.forEach((orderData: any) => {
-                        // Handle both the nested structure from the API and direct order objects
                         const order = orderData.order || orderData;
-                        if (!order) {
-                          console.warn(
-                            "No order found in pathology data:",
-                            orderData,
-                          );
-                          return;
-                        }
+                        if (!order) return;
 
-                        // Priority: createdAt > orderedDate
-                        const primaryDate =
-                          order.createdAt || order.orderedDate;
-                        const pathologyNormalized = normalizeDate(
-                          primaryDate,
-                          "pathology",
-                          order.id,
-                        );
-
-                        // Count tests - handle both nested tests array and direct tests
-                        let testCount = 0;
-                        if (orderData.tests && Array.isArray(orderData.tests)) {
-                          testCount = orderData.tests.length;
-                        } else if (order.tests && Array.isArray(order.tests)) {
-                          testCount = order.tests.length;
-                        }
-
-                        const pathologyEvent = {
-                          id: order.id || `pathology-${Date.now()}`,
+                        timelineEvents.push({
+                          id: `pathology-${order.id || Date.now()}`,
                           type: "pathology",
-                          title: `Pathology Order: ${order.orderId || "Unknown Order"}`,
-                          date: pathologyNormalized.date,
+                          title: `Pathology Order: ${order.orderId || "Unknown"}`,
                           description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
                           color: "bg-purple-500",
-                          sortTimestamp: pathologyNormalized.timestamp,
-                          extraInfo: order.completedDate
-                            ? `Completed: ${new Date(
-                                order.completedDate,
-                              ).toLocaleString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                                timeZone:
-                                  Intl.DateTimeFormat().resolvedOptions()
-                                    .timeZone,
-                              })}`
-                            : null,
-                          rawData: { order, primaryDate }, // Debug info
-                          // Include order fields directly for receipt access
-                          receiptNumber: order.receiptNumber,
-                          orderId: order.orderId,
-                          totalPrice: order.totalPrice,
-                          orderedDate: order.orderedDate,
-                        };
-
-                        timelineEvents.push(pathologyEvent);
+                          sortTimestamp: getEventTimestamp(order.createdAt || order.orderedDate),
+                          rawData: { order },
+                        });
                       });
                     }
 
-                    // Add OPD visits to timeline with proper date normalization
+                    // Add OPD visits 
                     if (opdVisits && opdVisits.length > 0) {
-                      console.log("Processing OPD visits for timeline:", opdVisits.length);
-
                       opdVisits.forEach((visit: any) => {
-
-                        // Use scheduledDate + scheduledTime as the primary date source for OPD visits
-                        let primaryDate = visit.scheduledDate;
+                        let visitDate = visit.scheduledDate;
                         if (visit.scheduledTime) {
-                          // Combine date and time for accurate sorting
-                          primaryDate = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
-                        } else if (!primaryDate && visit.createdAt) {
-                          primaryDate = visit.createdAt;
+                          visitDate = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
                         }
 
-                        if (primaryDate) {
-                          const normalized = normalizeDate(primaryDate, "opd_visit", visit.id);
+                        const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
+                        const doctorName = doctor ? doctor.name : "Unknown Doctor";
 
-                          // Find doctor details
-                          const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
-                          const doctorName = doctor ? doctor.name : "Unknown Doctor";
-                          const consultationFee = visit.consultationFee || (doctor ? doctor.consultationFee : 0);
-
-                          console.log(`Adding OPD visit to timeline: ${visit.id} at ${normalized.timestamp}`);
-
-                          timelineEvents.push({
-                            id: visit.id,
-                            type: "opd_visit",
-                            title: "OPD Consultation",
-                            date: normalized.date,
-                            description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
-                            color: "bg-indigo-500",
-                            sortTimestamp: normalized.timestamp,
-                            amount: consultationFee,
-                            rawData: { visit, doctor, consultationFee },
-                          });
-                        }
+                        timelineEvents.push({
+                          id: `opd-${visit.id}`,
+                          type: "opd_visit",
+                          title: "OPD Consultation",
+                          description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
+                          color: "bg-indigo-500",
+                          sortTimestamp: getEventTimestamp(visitDate || visit.createdAt),
+                          rawData: { visit, doctor },
+                        });
                       });
                     }
 
-                    // Sort ALL events chronologically (latest first) using consistent timestamp
-                    console.log(
-                      "Timeline events before sorting:",
-                      timelineEvents.map((e) => ({
-                        id: e.id,
-                        title: e.title,
-                        type: e.type,
-                        timestamp: e.sortTimestamp,
-                        date: e.date,
-                        localTime: new Date(e.sortTimestamp).toLocaleString(),
-                      })),
-                    );
-
+                    // Sort all events chronologically (latest first) with stable secondary sort
                     timelineEvents.sort((a, b) => {
-                      // Primary sort by timestamp (descending - latest first)
                       const timestampDiff = b.sortTimestamp - a.sortTimestamp;
-
-                      if (timestampDiff !== 0) {
-                        return timestampDiff;
-                      }
-
-                      // Secondary sort by ID for stable sorting when timestamps are identical
-                      return b.id.localeCompare(a.id);
+                      if (timestampDiff !== 0) return timestampDiff;
+                      // Stable secondary sort by id
+                      return a.id.localeCompare(b.id);
                     });
-
-                    console.log(
-                      "Timeline events after sorting:",
-                      timelineEvents.map((e) => ({
-                        id: e.id,
-                        title: e.title,
-                        type: e.type,
-                        timestamp: e.sortTimestamp,
-                        date: e.date,
-                        localTime: new Date(e.sortTimestamp).toLocaleString(),
-                      })),
-                    );
-
-                    console.log("=== TIMELINE DEBUG END ===");
 
                     return timelineEvents.length > 0 ? (
                       timelineEvents.map((event) => (
