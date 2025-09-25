@@ -617,8 +617,8 @@ export function ComprehensiveBillTemplate({
                 <thead>
                   <tr>
                     <th style="width: 5%;">#</th>
-                    <th style="width: 12%;">Date</th>
-                    <th style="width: 43%;">Description</th>
+                    <th style="width: 16%;">Date</th>
+                    <th style="width: 39%;">Description</th>
                     <th style="width: 8%;">Qty</th>
                     <th style="width: 12%; text-align: right;">Rate (₹)</th>
                     <th style="width: 15%; text-align: right;">Amount (₹)</th>
@@ -738,11 +738,11 @@ export function ComprehensiveBillTemplate({
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="text-left p-3 border-b">Date</th>
+                      <th className="text-left p-3 border-b w-32">Date</th>
                       <th className="text-left p-3 border-b">Description</th>
-                      <th className="text-center p-3 border-b">Qty</th>
-                      <th className="text-right p-3 border-b">Rate</th>
-                      <th className="text-right p-3 border-b">Amount</th>
+                      <th className="text-center p-3 border-b w-16">Qty</th>
+                      <th className="text-right p-3 border-b w-24">Rate</th>
+                      <th className="text-right p-3 border-b w-28">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
