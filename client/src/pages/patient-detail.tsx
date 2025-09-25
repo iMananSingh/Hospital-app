@@ -3033,9 +3033,20 @@ export default function PatientDetail() {
                     // Add OPD visits 
                     if (opdVisits && opdVisits.length > 0) {
                       opdVisits.forEach((visit: any) => {
-                        let visitDate = visit.scheduledDate;
-                        if (visit.scheduledTime) {
-                          visitDate = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
+                        // Construct visit date consistently - prioritize scheduled date over createdAt for chronological ordering
+                        let visitDate = visit.createdAt; // Default fallback
+                        
+                        // If we have scheduled date, use that for proper chronological sorting
+                        if (visit.scheduledDate) {
+                          if (visit.scheduledTime) {
+                            // Ensure time has seconds component
+                            const timeSegments = visit.scheduledTime.split(':');
+                            const time = timeSegments.length === 2 ? `${visit.scheduledTime}:00` : visit.scheduledTime;
+                            visitDate = `${visit.scheduledDate}T${time}`;
+                          } else {
+                            // If no time specified, default to noon to ensure chronological order
+                            visitDate = `${visit.scheduledDate}T12:00:00`;
+                          }
                         }
 
                         const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
@@ -3047,7 +3058,7 @@ export default function PatientDetail() {
                           title: "OPD Consultation",
                           description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
                           color: "bg-indigo-500",
-                          sortTimestamp: getEventTimestamp(visitDate || visit.createdAt),
+                          sortTimestamp: getEventTimestamp(visitDate),
                           rawData: { visit, doctor },
                         });
                       });
