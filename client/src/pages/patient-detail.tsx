@@ -3100,18 +3100,12 @@ export default function PatientDetail() {
                                       }
                                     }
 
-                                    // For registration events, use the IST-corrected timestamp
-                                    // For discharge events, subtract 5:30 hours from display time
-                                    // For other events, use the original timestamp as they're already in local time
-                                    let displayTimestamp =
-                                      event.type === "registration"
-                                        ? event.sortTimestamp // Already IST-corrected above
-                                        : event.sortTimestamp;
+                                    let displayTimestamp = event.sortTimestamp;
 
-                                    // Special handling for discharge events - subtract 5:30 hours (19,800,000 ms)
-                                    if (event.title === "Patient Discharged") {
-                                      displayTimestamp =
-                                        displayTimestamp - 5.5 * 60 * 60 * 1000;
+                                    // Apply timezone correction for events that need it
+                                    // Registration events and discharge events need IST correction
+                                    if (event.type === "registration" || event.title === "Patient Discharged") {
+                                      displayTimestamp = displayTimestamp - 5.5 * 60 * 60 * 1000;
                                     }
 
                                     return new Date(
