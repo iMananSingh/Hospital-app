@@ -3381,7 +3381,6 @@ export default function PatientDetail() {
                       });
                     }
 
-
                     // Sort events chronologically (latest first) using consistent timestamp
                     console.log(
                       "Timeline events before sorting:",
