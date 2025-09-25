@@ -2077,7 +2077,6 @@ export default function PatientDetail() {
                 <CardTitle>OPD Consultation History</CardTitle>
                 <Button
                   onClick={() => {
-                    console.log("OPD button clicked");
                     const now = new Date();
                     // Use current local time for OPD appointment scheduling
                     const currentDate = now.toISOString().split("T")[0];
@@ -2092,10 +2091,6 @@ export default function PatientDetail() {
                       consultationFee: 0, // Added for OPD consultation fee
                       symptoms: "",
                     });
-
-                    console.log(
-                      `Set current date/time: ${currentDate} ${currentTime}`,
-                    );
                   }}
                   size="sm"
                   className="flex items-center gap-2"
@@ -3221,7 +3216,7 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Add payment and discount entries from admissions
+                    // Process payments and discounts from admissions
                     if (admissions && admissions.length > 0) {
                       console.log(
                         "Processing payment and discount entries for timeline",
@@ -3448,7 +3443,7 @@ export default function PatientDetail() {
                                       if (visit.scheduledDate && visit.scheduledTime) {
                                         // Create proper datetime from scheduled date and time
                                         const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime}`);
-                                        
+
                                         return scheduledDateTime.toLocaleString("en-US", {
                                           year: "numeric",
                                           month: "short",
@@ -4942,7 +4937,7 @@ export default function PatientDetail() {
                               opdVisitForm.setValue("consultationFee", selectedDoctor.consultationFee);
                             } else {
                               // If no doctor is selected or it's an invalid ID, reset fee
-                              opdVisitForm.setValue("consultationFee", 0);
+                              opdVisitForm.setValue("consultationFee", undefined);
                             }
                           }} 
                           defaultValue={field.value}
