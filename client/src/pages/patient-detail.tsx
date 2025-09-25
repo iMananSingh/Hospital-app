@@ -4750,7 +4750,6 @@ export default function PatientDetail() {
             </Form>
           </DialogContent>
         </Dialog>
-      </>
     </div>
   );
 }
