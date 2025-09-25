@@ -3372,7 +3372,7 @@ export default function PatientDetail() {
                     }
 
 
-                    // Sort events chronologically (earliest first) using consistent timestamp
+                    // Sort events chronologically (latest first) using consistent timestamp
                     console.log(
                       "Timeline events before sorting:",
                       timelineEvents.map((e) => ({
@@ -3385,15 +3385,15 @@ export default function PatientDetail() {
                     );
 
                     timelineEvents.sort((a, b) => {
-                      // Primary sort by timestamp (ascending - earliest first)
-                      const timestampDiff = a.sortTimestamp - b.sortTimestamp;
+                      // Primary sort by timestamp (descending - latest first)
+                      const timestampDiff = b.sortTimestamp - a.sortTimestamp;
 
                       if (timestampDiff !== 0) {
                         return timestampDiff;
                       }
 
                       // Secondary sort by ID for stable sorting when timestamps are identical
-                      return a.id.localeCompare(b.id);
+                      return b.id.localeCompare(a.id);
                     });
 
                     console.log(
