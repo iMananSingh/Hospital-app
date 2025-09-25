@@ -3113,16 +3113,10 @@ export default function PatientDetail() {
 
                                     let displayTimestamp = event.sortTimestamp;
 
-                                    // Apply timezone correction for events that need it
-                                    // Registration, discharge, service, and pathology events need IST correction
-                                    if (event.type === "registration" || event.title === "Patient Discharged") {
-                                      // Registration and discharge events need to subtract 5.5 hours
-                                      displayTimestamp = displayTimestamp - 5.5 * 60 * 60 * 1000;
-                                    } else if (event.type === "service" || event.type === "pathology") {
-                                      // Service and pathology events need to add 5.5 hours to correct display
-                                      displayTimestamp = displayTimestamp + 5.5 * 60 * 60 * 1000;
-                                    }
-
+                                    // Apply consistent timezone handling for all events
+                                    // All events should display in local time without arbitrary timezone adjustments
+                                    // that would cause chronological separation
+                                    
                                     return new Date(
                                       displayTimestamp,
                                     ).toLocaleString("en-US", {
