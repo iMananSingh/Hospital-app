@@ -395,13 +395,12 @@ export default function PatientDetail() {
 
     // Base receipt data structure
     const baseReceiptData = {
-      type: eventType as
+      type: (eventType === "opd_visit" ? "service" : eventType) as
         | "service"
         | "pathology"
         | "admission"
         | "payment"
-        | "discount"
-        | "opd_visit",
+        | "discount",
       id: event.id,
       title:
         event.title ||
@@ -2889,6 +2888,23 @@ export default function PatientDetail() {
                       return isNaN(timestamp) ? new Date().getTime() : timestamp;
                     };
 
+                    // Function to get display timestamp that matches what's shown to user
+                    const getDisplayTimestamp = (originalTimestamp: any, eventType: string) => {
+                      const baseTimestamp = getEventTimestamp(originalTimestamp);
+                      let displayDate = new Date(baseTimestamp);
+                      
+                      // Apply same timezone adjustments as display logic
+                      if (eventType === "pathology") {
+                        // Pathology orders are 5.5 hours behind - add 5.5 hours
+                        displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                      } else if (eventType === "service") {
+                        // Services are 11 hours ahead - subtract 11 hours
+                        displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
+                      }
+                      
+                      return displayDate.getTime();
+                    };
+
                     // Create timeline events array
                     const timelineEvents = [];
 
@@ -2900,7 +2916,7 @@ export default function PatientDetail() {
                         title: "Patient Registered",
                         description: `Patient ID: ${patient.patientId}`,
                         color: "bg-blue-500",
-                        sortTimestamp: getEventTimestamp(patient.createdAt),
+                        sortTimestamp: getDisplayTimestamp(patient.createdAt, "registration"),
                         originalTimestamp: patient.createdAt,
                       });
                     }
@@ -2923,7 +2939,7 @@ export default function PatientDetail() {
                           title: service.serviceName,
                           description: `Status: ${service.status} • Cost: ₹${cost}`,
                           color: "bg-green-500",
-                          sortTimestamp: getEventTimestamp(serviceDate),
+                          sortTimestamp: getDisplayTimestamp(serviceDate, "service"),
                           originalTimestamp: serviceDate,
                           rawData: { service },
                         });
@@ -2971,7 +2987,7 @@ export default function PatientDetail() {
                             title,
                             description,
                             color,
-                            sortTimestamp: getEventTimestamp(eventTime),
+                            sortTimestamp: getDisplayTimestamp(eventTime, "admission_event"),
                             originalTimestamp: eventTime,
                             rawData: { event },
                           });
@@ -2986,7 +3002,7 @@ export default function PatientDetail() {
                             title: "Patient Admission",
                             description: `Doctor: ${doctorName} • Ward: ${admission.wardType || 'N/A'}`,
                             color: "bg-orange-500",
-                            sortTimestamp: getEventTimestamp(admissionTime),
+                            sortTimestamp: getDisplayTimestamp(admissionTime, "admission"),
                             originalTimestamp: admissionTime,
                             rawData: { admission },
                           });
@@ -3000,7 +3016,7 @@ export default function PatientDetail() {
                             title: "Payment Received",
                             description: `Amount: ₹${admission.lastPaymentAmount}`,
                             color: "bg-green-600",
-                            sortTimestamp: getEventTimestamp(admission.lastPaymentDate),
+                            sortTimestamp: getDisplayTimestamp(admission.lastPaymentDate, "payment"),
                             originalTimestamp: admission.lastPaymentDate,
                           });
                         }
@@ -3013,7 +3029,7 @@ export default function PatientDetail() {
                             title: "Discount Applied",
                             description: `Amount: ₹${admission.lastDiscountAmount}`,
                             color: "bg-red-500",
-                            sortTimestamp: getEventTimestamp(admission.lastDiscountDate),
+                            sortTimestamp: getDisplayTimestamp(admission.lastDiscountDate, "discount"),
                             originalTimestamp: admission.lastDiscountDate,
                           });
                         }
@@ -3033,7 +3049,7 @@ export default function PatientDetail() {
                           title: `Pathology Order: ${order.orderId || "Unknown"}`,
                           description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
                           color: "bg-purple-500",
-                          sortTimestamp: getEventTimestamp(orderTime),
+                          sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
                           originalTimestamp: orderTime,
                           rawData: { order },
                         });
@@ -3068,7 +3084,7 @@ export default function PatientDetail() {
                           title: "OPD Consultation",
                           description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
                           color: "bg-indigo-500",
-                          sortTimestamp: getEventTimestamp(visitDate),
+                          sortTimestamp: getDisplayTimestamp(visitDate, "opd_visit"),
                           originalTimestamp: visitDate,
                           rawData: { visit, doctor },
                         });
@@ -3112,8 +3128,8 @@ export default function PatientDetail() {
                                     let timestampToFormat = event.originalTimestamp;
 
                                     // Special handling for OPD visits to show actual scheduled time
-                                    if (event.type === "opd_visit" && event.rawData?.visit) {
-                                      const visit = event.rawData.visit;
+                                    if (event.type === "opd_visit" && (event as any).rawData?.visit) {
+                                      const visit = (event as any).rawData.visit;
                                       if (visit.scheduledDate && visit.scheduledTime) {
                                         // Create proper datetime from scheduled date and time
                                         timestampToFormat = `${visit.scheduledDate}T${visit.scheduledTime}`;
