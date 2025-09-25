@@ -3026,8 +3026,7 @@ export default function PatientDetail() {
                         const order = orderData.order || orderData;
                         if (!order) return;
 
-                        // Use orderedDate preferentially for chronological order
-                        const orderTime = order.orderedDate || order.createdAt;
+                        const orderTime = order.createdAt || order.orderedDate;
                         timelineEvents.push({
                           id: `pathology-${order.id || Date.now()}`,
                           type: "pathology",
@@ -3174,21 +3173,12 @@ export default function PatientDetail() {
                                       return "Registration Date";
                                     }
 
-                                    // Parse the timestamp correctly for display
+                                    // Fix timezone issues for pathology and services
                                     let displayDate = new Date(timestampToFormat);
                                     
-                                    // For pathology orders, use the stored time directly without timezone adjustment
-                                    // since orderedDate is already in the correct display format
+                                    // Pathology orders are 5.5 hours behind - add 5.5 hours
                                     if (event.type === "pathology") {
-                                      // Use the orderedDate directly as it's already in display format
-                                      if (event.rawData?.order?.orderedDate) {
-                                        // If orderedDate is in YYYY-MM-DD format, create a proper date
-                                        if (event.rawData.order.orderedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                          displayDate = new Date(event.rawData.order.orderedDate + 'T12:00:00');
-                                        } else {
-                                          displayDate = new Date(event.rawData.order.orderedDate);
-                                        }
-                                      }
+                                      displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
                                     }
                                     
                                     // Services are 11 hours ahead - subtract 11 hours  
