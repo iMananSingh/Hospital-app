@@ -3103,8 +3103,11 @@ export default function PatientDetail() {
                                     let displayTimestamp = event.sortTimestamp;
 
                                     // Apply timezone correction for events that need it
-                                    // Registration events and discharge events need IST correction
-                                    if (event.type === "registration" || event.title === "Patient Discharged") {
+                                    // Registration, discharge, service, and pathology events need IST correction
+                                    if (event.type === "registration" || 
+                                        event.title === "Patient Discharged" ||
+                                        event.type === "service" ||
+                                        event.type === "pathology") {
                                       displayTimestamp = displayTimestamp - 5.5 * 60 * 60 * 1000;
                                     }
 
