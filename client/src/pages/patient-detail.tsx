@@ -3118,8 +3118,18 @@ export default function PatientDetail() {
 
                                     // For patient registration, show the exact stored time without any timezone adjustment
                                     if (event.type === "registration") {
-                                      const displayDate = new Date(timestampToFormat);
-                                      return displayDate.toLocaleString("en-US", {
+                                      // Parse the timestamp and treat it as local time to avoid timezone conversion
+                                      const date = new Date(timestampToFormat);
+                                      // Create a new date using the individual components to avoid timezone shifts
+                                      const localDate = new Date(
+                                        date.getFullYear(),
+                                        date.getMonth(),
+                                        date.getDate(),
+                                        date.getHours(),
+                                        date.getMinutes(),
+                                        date.getSeconds()
+                                      );
+                                      return localDate.toLocaleString("en-US", {
                                         year: "numeric",
                                         month: "short",
                                         day: "numeric",
