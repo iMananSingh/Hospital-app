@@ -32,6 +32,13 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       case 'pathology':
         return 'Pathology Receipt';
       case 'service':
+        // Check if it's an OPD consultation first
+        if (details?.category === 'OPD Consultation' || 
+            details?.serviceType === 'opd' ||
+            details?.serviceName === 'OPD Consultation') {
+          return 'OPD Receipt';
+        }
+        
         // Get the service category from details
         const category = details?.category;
         if (category) {
