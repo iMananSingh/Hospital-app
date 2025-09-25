@@ -227,6 +227,8 @@ export default function PatientDetail() {
         return "payment";
       case "discount":
         return "discount";
+      case "opd_visit": // Handle OPD visits
+        return "opd";
       default:
         return eventType;
     }
@@ -320,6 +322,11 @@ export default function PatientDetail() {
         return event.receiptNumber;
       }
 
+      // For OPD visits, use the ID as a temporary receipt reference if available
+      if (eventType === "opd_visit" && event.id) {
+        return `OPD-${event.id}`;
+      }
+
       // For other event types, try direct access
       if (event.receiptNumber) {
         return event.receiptNumber;
@@ -378,6 +385,11 @@ export default function PatientDetail() {
         }
       }
 
+      // For OPD visits, use the doctor name from rawData if available
+      if (eventType === "opd_visit" && event.rawData?.doctor?.name) {
+        return event.rawData.doctor.name;
+      }
+
       return "No Doctor Assigned";
     };
 
@@ -388,7 +400,8 @@ export default function PatientDetail() {
         | "pathology"
         | "admission"
         | "payment"
-        | "discount",
+        | "discount"
+        | "opd_visit",
       id: event.id,
       title:
         event.title ||
@@ -3321,6 +3334,43 @@ export default function PatientDetail() {
                         timelineEvents.push(pathologyEvent);
                       });
                     }
+
+                    // Add OPD visits to timeline with proper date normalization
+                    if (opdVisits && opdVisits.length > 0) {
+                      console.log("Processing OPD visits for timeline:", opdVisits.length);
+
+                      opdVisits.forEach((visit: any) => {
+                        // Use scheduledDate as the primary date source for OPD visits
+                        let primaryDate = visit.scheduledDate;
+                        if (!primaryDate && visit.createdAt) {
+                          primaryDate = visit.createdAt;
+                        }
+
+                        if (primaryDate) {
+                          const normalized = normalizeDate(primaryDate, "opd_visit", visit.id);
+
+                          // Find doctor details
+                          const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
+                          const doctorName = doctor ? doctor.name : "Unknown Doctor";
+                          const consultationFee = visit.consultationFee || (doctor ? doctor.consultationFee : 0);
+
+                          console.log(`Adding OPD visit to timeline: ${visit.id} at ${normalized.timestamp}`);
+
+                          timelineEvents.push({
+                            id: visit.id,
+                            type: "opd_visit",
+                            title: "OPD Consultation",
+                            date: normalized.date,
+                            description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
+                            color: "bg-indigo-500",
+                            sortTimestamp: normalized.timestamp,
+                            amount: consultationFee,
+                            rawData: { visit, doctor, consultationFee },
+                          });
+                        }
+                      });
+                    }
+
 
                     // Sort events chronologically (earliest first) using consistent timestamp
                     console.log(
