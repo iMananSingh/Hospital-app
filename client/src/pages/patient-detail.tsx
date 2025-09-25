@@ -1006,7 +1006,7 @@ export default function PatientDetail() {
           status: "scheduled",
           doctorId: selectedDoctorId,
           billingType: "per_instance",
-          calculatedAmount: consultationFee,
+          calculatedAmount: Number(data.price),
           billingQuantity: 1,
         });
       } else {
@@ -3045,7 +3045,7 @@ export default function PatientDetail() {
                       opdVisits.forEach((visit: any) => {
                         // Construct visit date consistently - prioritize scheduled date over createdAt for chronological ordering
                         let visitDate = visit.createdAt; // Default fallback
-                        
+
                         // If we have scheduled date, use that for proper chronological sorting
                         if (visit.scheduledDate) {
                           if (visit.scheduledTime) {
