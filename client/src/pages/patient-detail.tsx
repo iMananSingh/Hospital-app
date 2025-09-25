@@ -2118,7 +2118,14 @@ export default function PatientDetail() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {opdVisits.map((visit: any) => {
+                      {opdVisits
+                        .sort((a: any, b: any) => {
+                          // Sort by scheduled date descending (latest first)
+                          const dateA = new Date(a.scheduledDate || a.createdAt);
+                          const dateB = new Date(b.scheduledDate || b.createdAt);
+                          return dateB.getTime() - dateA.getTime();
+                        })
+                        .map((visit: any) => {
                         // Find doctor details
                         const doctor = doctors?.find(
                           (d: Doctor) => d.id === visit.doctorId,
