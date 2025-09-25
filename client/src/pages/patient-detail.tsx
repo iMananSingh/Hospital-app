@@ -3118,21 +3118,22 @@ export default function PatientDetail() {
 
                                     // For patient registration, show the exact stored time without any timezone adjustment
                                     if (event.type === "registration") {
-                                      // Parse the timestamp and treat it as local time to avoid timezone conversion
-                                      const date = new Date(timestampToFormat);
-                                      // Create a new date using the individual components to avoid timezone shifts
-                                      const localDate = new Date(
-                                        date.getFullYear(),
-                                        date.getMonth(),
-                                        date.getDate(),
-                                        date.getHours(),
-                                        date.getMinutes(),
-                                        date.getSeconds()
-                                      );
-                                      return localDate.toLocaleString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
+                                      // Parse the stored timestamp as a local datetime string to avoid timezone conversion
+                                      const storedTime = timestampToFormat;
+                                      
+                                      // Handle ISO format timestamps by extracting components manually
+                                      if (storedTime.includes('T')) {
+                                        const [datePart, timePart] = storedTime.split('T');
+                                        const [year, month, day] = datePart.split('-').map(Number);
+                                        const [hours, minutes, seconds] = timePart.split(':').map(Number);
+                                        
+                                        // Create date using local timezone components (no UTC conversion)
+                                        const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
+                                        
+                                        return localDate.toLocaleString("en-US", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
                                         hour: "numeric",
                                         minute: "2-digit",
                                         hour12: true,
