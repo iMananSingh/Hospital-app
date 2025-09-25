@@ -2996,14 +2996,11 @@ export default function PatientDetail() {
                     // Create timeline events array
                     const timelineEvents = [];
 
-                    // Add registration event with IST correction
+                    // Add registration event with consistent timestamp normalization
                     const regNormalized = normalizeDate(
                       patient.createdAt,
                       "registration",
                     );
-                    // Subtract 5.5 hours (19800000 ms) to correct the timezone display
-                    const istTimestamp =
-                      regNormalized.timestamp - 5.5 * 60 * 60 * 1000;
                     timelineEvents.push({
                       id: "registration",
                       type: "registration",
@@ -3011,7 +3008,7 @@ export default function PatientDetail() {
                       date: regNormalized.date,
                       description: `Patient ID: ${patient.patientId}`,
                       color: "bg-blue-500",
-                      sortTimestamp: istTimestamp,
+                      sortTimestamp: regNormalized.timestamp,
                     });
 
                     // Add services with proper date normalization - group by orderId (like pathology tests)
