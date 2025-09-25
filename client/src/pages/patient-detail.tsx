@@ -3122,15 +3122,40 @@ export default function PatientDetail() {
                                       const storedTime = timestampToFormat;
                                       
                                       // Handle ISO format timestamps by extracting components manually
-                                      if (storedTime.includes('T')) {
+                                      if (storedTime && storedTime.includes('T')) {
                                         const [datePart, timePart] = storedTime.split('T');
-                                        const [year, month, day] = datePart.split('-').map(Number);
-                                        const [hours, minutes, seconds] = timePart.split(':').map(Number);
-                                        
-                                        // Create date using local timezone components (no UTC conversion)
-                                        const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
-                                        
-                                        return localDate.toLocaleString("en-US", {
+                                        if (datePart && timePart) {
+                                          const [year, month, day] = datePart.split('-').map(Number);
+                                          const timeSegments = timePart.split(':');
+                                          const hours = parseInt(timeSegments[0]) || 0;
+                                          const minutes = parseInt(timeSegments[1]) || 0;
+                                          const seconds = parseInt(timeSegments[2]) || 0;
+                                          
+                                          // Validate parsed values
+                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+                                              !isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
+                                            // Create date using local timezone components (no UTC conversion)
+                                            const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
+                                            
+                                            // Check if the created date is valid
+                                            if (!isNaN(localDate.getTime())) {
+                                              return localDate.toLocaleString("en-US", {
+                                                year: "numeric",
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "numeric",
+                                                minute: "2-digit",
+                                                hour12: true,
+                                              });
+                                            }
+                                          }
+                                        }
+                                      }
+                                      
+                                      // Fallback: try standard date parsing
+                                      const fallbackDate = new Date(storedTime);
+                                      if (!isNaN(fallbackDate.getTime())) {
+                                        return fallbackDate.toLocaleString("en-US", {
                                           year: "numeric",
                                           month: "short",
                                           day: "numeric",
@@ -3139,6 +3164,9 @@ export default function PatientDetail() {
                                           hour12: true,
                                         });
                                       }
+                                      
+                                      // Final fallback
+                                      return "Registration Date";
                                     }
 
                                     // Treat stored time as local IST and display in 12-hour format
