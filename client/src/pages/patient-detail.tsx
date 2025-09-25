@@ -2901,6 +2901,7 @@ export default function PatientDetail() {
                         description: `Patient ID: ${patient.patientId}`,
                         color: "bg-blue-500",
                         sortTimestamp: getEventTimestamp(patient.createdAt),
+                        originalTimestamp: patient.createdAt,
                       });
                     }
 
@@ -2923,6 +2924,7 @@ export default function PatientDetail() {
                           description: `Status: ${service.status} • Cost: ₹${cost}`,
                           color: "bg-green-500",
                           sortTimestamp: getEventTimestamp(serviceDate),
+                          originalTimestamp: serviceDate,
                           rawData: { service },
                         });
                       });
@@ -2962,26 +2964,30 @@ export default function PatientDetail() {
                             description = `Room: ${event.roomNumber} (${event.wardType})`;
                           }
 
+                          const eventTime = event.eventTime || event.createdAt;
                           timelineEvents.push({
                             id: `admission-${event.id}`,
                             type: "admission_event",
                             title,
                             description,
                             color,
-                            sortTimestamp: getEventTimestamp(event.eventTime || event.createdAt),
+                            sortTimestamp: getEventTimestamp(eventTime),
+                            originalTimestamp: eventTime,
                             rawData: { event },
                           });
                         });
 
                         // Add basic admission if no events
                         if (events.length === 0) {
+                          const admissionTime = admission.createdAt || admission.admissionDate;
                           timelineEvents.push({
                             id: `admission-${admission.id}`,
                             type: "admission",
                             title: "Patient Admission",
                             description: `Doctor: ${doctorName} • Ward: ${admission.wardType || 'N/A'}`,
                             color: "bg-orange-500",
-                            sortTimestamp: getEventTimestamp(admission.createdAt || admission.admissionDate),
+                            sortTimestamp: getEventTimestamp(admissionTime),
+                            originalTimestamp: admissionTime,
                             rawData: { admission },
                           });
                         }
@@ -2995,6 +3001,7 @@ export default function PatientDetail() {
                             description: `Amount: ₹${admission.lastPaymentAmount}`,
                             color: "bg-green-600",
                             sortTimestamp: getEventTimestamp(admission.lastPaymentDate),
+                            originalTimestamp: admission.lastPaymentDate,
                           });
                         }
 
@@ -3007,6 +3014,7 @@ export default function PatientDetail() {
                             description: `Amount: ₹${admission.lastDiscountAmount}`,
                             color: "bg-red-500",
                             sortTimestamp: getEventTimestamp(admission.lastDiscountDate),
+                            originalTimestamp: admission.lastDiscountDate,
                           });
                         }
                       });
@@ -3018,13 +3026,15 @@ export default function PatientDetail() {
                         const order = orderData.order || orderData;
                         if (!order) return;
 
+                        const orderTime = order.createdAt || order.orderedDate;
                         timelineEvents.push({
                           id: `pathology-${order.id || Date.now()}`,
                           type: "pathology",
                           title: `Pathology Order: ${order.orderId || "Unknown"}`,
                           description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
                           color: "bg-purple-500",
-                          sortTimestamp: getEventTimestamp(order.createdAt || order.orderedDate),
+                          sortTimestamp: getEventTimestamp(orderTime),
+                          originalTimestamp: orderTime,
                           rawData: { order },
                         });
                       });
@@ -3059,6 +3069,7 @@ export default function PatientDetail() {
                           description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
                           color: "bg-indigo-500",
                           sortTimestamp: getEventTimestamp(visitDate),
+                          originalTimestamp: visitDate,
                           rawData: { visit, doctor },
                         });
                       });
@@ -3093,33 +3104,26 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
+                                    // Use original timestamp for display and apply timezone corrections as needed
+                                    let displayDate;
+
                                     // Special handling for OPD visits to show actual scheduled time
                                     if (event.type === "opd_visit" && event.rawData?.visit) {
                                       const visit = event.rawData.visit;
                                       if (visit.scheduledDate && visit.scheduledTime) {
                                         // Create proper datetime from scheduled date and time
-                                        const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime}`);
-
-                                        return scheduledDateTime.toLocaleString("en-US", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        });
+                                        displayDate = new Date(`${visit.scheduledDate}T${visit.scheduledTime}`);
+                                      } else {
+                                        displayDate = new Date(event.originalTimestamp);
                                       }
+                                    } else {
+                                      displayDate = new Date(event.originalTimestamp);
                                     }
 
-                                    let displayTimestamp = event.sortTimestamp;
+                                    // Apply timezone correction: subtract 5.5 hours for IST display
+                                    const correctedDate = new Date(displayDate.getTime() - (5.5 * 60 * 60 * 1000));
 
-                                    // Apply consistent timezone handling for all events
-                                    // All events should display in local time without arbitrary timezone adjustments
-                                    // that would cause chronological separation
-                                    
-                                    return new Date(
-                                      displayTimestamp,
-                                    ).toLocaleString("en-US", {
+                                    return correctedDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
