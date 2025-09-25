@@ -3347,9 +3347,12 @@ export default function PatientDetail() {
                       console.log("Processing OPD visits for timeline:", opdVisits.length);
 
                       opdVisits.forEach((visit: any) => {
-                        // Use scheduledDate as the primary date source for OPD visits
+                        // Use scheduledDate + scheduledTime as the primary date source for OPD visits
                         let primaryDate = visit.scheduledDate;
-                        if (!primaryDate && visit.createdAt) {
+                        if (visit.scheduledTime) {
+                          // Combine date and time for accurate sorting
+                          primaryDate = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
+                        } else if (!primaryDate && visit.createdAt) {
                           primaryDate = visit.createdAt;
                         }
 
