@@ -3342,14 +3342,12 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Sort events chronologically (latest first) using consistent timestamp BEFORE adding OPD visits
-                    console.log("Pre-sort timeline events count:", timelineEvents.length);
-
                     // Add OPD visits to timeline with proper date normalization
                     if (opdVisits && opdVisits.length > 0) {
                       console.log("Processing OPD visits for timeline:", opdVisits.length);
 
                       opdVisits.forEach((visit: any) => {
+
                         // Use scheduledDate + scheduledTime as the primary date source for OPD visits
                         let primaryDate = visit.scheduledDate;
                         if (visit.scheduledTime) {
@@ -3384,14 +3382,13 @@ export default function PatientDetail() {
                       });
                     }
 
-                    console.log("Post-OPD timeline events count:", timelineEvents.length);
-
-                    // Sort events chronologically (latest first) using consistent timestamp
+                    // Sort ALL events chronologically (latest first) using consistent timestamp
                     console.log(
                       "Timeline events before sorting:",
                       timelineEvents.map((e) => ({
                         id: e.id,
                         title: e.title,
+                        type: e.type,
                         timestamp: e.sortTimestamp,
                         date: e.date,
                         localTime: new Date(e.sortTimestamp).toLocaleString(),
@@ -3415,6 +3412,7 @@ export default function PatientDetail() {
                       timelineEvents.map((e) => ({
                         id: e.id,
                         title: e.title,
+                        type: e.type,
                         timestamp: e.sortTimestamp,
                         date: e.date,
                         localTime: new Date(e.sortTimestamp).toLocaleString(),
