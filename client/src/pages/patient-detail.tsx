@@ -3046,7 +3046,7 @@ export default function PatientDetail() {
                         // Construct visit date consistently - prioritize scheduled date over createdAt for chronological ordering
                         let visitDate = visit.createdAt; // Default fallback
 
-                        // If we have scheduled date, use that for proper chronological sorting
+                        // If we have scheduled date, use that for proper chronological order
                         if (visit.scheduledDate) {
                           if (visit.scheduledTime) {
                             // Ensure time has seconds component
@@ -3116,13 +3116,26 @@ export default function PatientDetail() {
                                       }
                                     }
 
+                                    // For patient registration, show the exact stored time without any timezone adjustment
+                                    if (event.type === "registration") {
+                                      const displayDate = new Date(timestampToFormat);
+                                      return displayDate.toLocaleString("en-US", {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      });
+                                    }
+
                                     // Treat stored time as local IST and display in 12-hour format
                                     const displayDate = new Date(timestampToFormat);
                                     return displayDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
-                                      hour: "numeric",
+                                      hour: "2-digit",
                                       minute: "2-digit",
                                       hour12: true,
                                     });
