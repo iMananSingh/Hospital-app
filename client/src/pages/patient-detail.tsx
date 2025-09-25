@@ -4615,8 +4615,7 @@ export default function PatientDetail() {
                     name="consultationFee"
                     render={({ field }) => (
                       <FormItem>
-                        <Label>Consultation Fee (₹)</Label>
-                        {(() => {
+                        <Label>Consultation Fee (₹)</Label                        {(() => {
                           const selectedDoctorId = opdVisitForm.watch("doctorId");
                           const selectedDoctor = doctors.find(
                             (d: Doctor) => d.id === selectedDoctorId,
@@ -4733,7 +4732,9 @@ export default function PatientDetail() {
                     disabled={createOpdVisitMutation.isPending}
                     data-testid="button-schedule-opd-visit"
                   >
-                    {createOpdVisitMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
+                    {createOpdVisitMutation.isPending
+                      ? "Scheduling..."
+                      : "Schedule Appointment"}
                   </Button>
                 </div>
               </form>
