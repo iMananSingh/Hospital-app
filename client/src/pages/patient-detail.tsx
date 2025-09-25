@@ -2796,27 +2796,35 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  const result = parseTimestamp(
-                                    test.orderDate,
-                                    "Asia/Kolkata",
-                                  );
+                                  // Parse the timestamp and apply the same 5.5 hour adjustment as timeline
+                                  let displayDate = new Date(test.orderDate);
+                                  
+                                  // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
+                                  displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                                  
+                                  const formattedDate = displayDate.toLocaleString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  });
 
-                                  if (result.hasTime) {
-                                    // Split the display to add styling
-                                    const parts = result.display.split(" at ");
-                                    if (parts.length === 2) {
-                                      return (
-                                        <>
-                                          {parts[0]}
-                                          <span className="text-muted-foreground ml-2">
-                                            at {parts[1]}
-                                          </span>
-                                        </>
-                                      );
-                                    }
+                                  // Split the display to add styling
+                                  const parts = formattedDate.split(" at ");
+                                  if (parts.length === 2) {
+                                    return (
+                                      <>
+                                        {parts[0]}
+                                        <span className="text-muted-foreground ml-2">
+                                          at {parts[1]}
+                                        </span>
+                                      </>
+                                    );
                                   }
 
-                                  return result.display;
+                                  return formattedDate;
                                 }
                                 return "N/A";
                               })()}
