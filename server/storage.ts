@@ -4914,11 +4914,15 @@ export class SqliteStorage implements IStorage {
       opdVisits.forEach(visit => {
         const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
         if (amount > 0) {
+          // Handle doctor name to avoid duplicate "Dr." prefix
+          const doctorName = visit.doctorName || 'Unknown Doctor';
+          const formattedDoctorName = doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
+          
           billItems.push({
             type: 'service',
             id: visit.id,
             date: visit.scheduledDate || visit.createdAt,
-            description: `OPD Consultation - Dr. ${visit.doctorName || 'Unknown Doctor'}${visit.symptoms ? ` (${visit.symptoms})` : ''}`,
+            description: `OPD Consultation - ${formattedDoctorName}${visit.symptoms ? ` (${visit.symptoms})` : ''}`,
             amount: amount,
             category: 'OPD Consultation',
             details: {
