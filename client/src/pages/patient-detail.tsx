@@ -3075,8 +3075,12 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Sort all events chronologically (latest first) with stable secondary sort
+                    // Sort all events chronologically (latest first, except registration goes last)
                     timelineEvents.sort((a, b) => {
+                      // Always put registration at the bottom (earliest)
+                      if (a.type === "registration" && b.type !== "registration") return 1;
+                      if (b.type === "registration" && a.type !== "registration") return -1;
+                      
                       const timestampDiff = b.sortTimestamp - a.sortTimestamp;
                       if (timestampDiff !== 0) return timestampDiff;
                       // Stable secondary sort by id
@@ -3104,7 +3108,7 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
-                                    // Display stored time as local IST in 12-hour format without timezone conversion
+                                    // Display stored time as local IST in 12-hour format with proper timezone corrections
                                     let timestampToFormat = event.originalTimestamp;
 
                                     // Special handling for OPD visits to show actual scheduled time
@@ -3169,8 +3173,19 @@ export default function PatientDetail() {
                                       return "Registration Date";
                                     }
 
-                                    // Treat stored time as local IST and display in 12-hour format
-                                    const displayDate = new Date(timestampToFormat);
+                                    // Fix timezone issues for pathology and services
+                                    let displayDate = new Date(timestampToFormat);
+                                    
+                                    // Pathology orders are 5.5 hours behind - add 5.5 hours
+                                    if (event.type === "pathology") {
+                                      displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                                    }
+                                    
+                                    // Services are 11 hours ahead - subtract 11 hours  
+                                    if (event.type === "service") {
+                                      displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
+                                    }
+
                                     return displayDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
