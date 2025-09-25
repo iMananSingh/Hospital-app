@@ -245,12 +245,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const patientData = insertPatientSchema.parse(req.body);
       // Set createdAt to current time in Indian timezone (UTC+5:30)
-      if (!patientData.createdAt) {
-        const now = new Date();
-        // Add 5.5 hours (5 hours 30 minutes) to UTC to get Indian time
-        const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-        patientData.createdAt = indianTime.toISOString();
-      }
+      const now = new Date();
+      // Add 5.5 hours (5 hours 30 minutes) to UTC to get Indian time
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      patientData.createdAt = indianTime.toISOString();
+      
       const patient = await storage.createPatient(patientData, req.user.id);
       res.json(patient);
     } catch (error) {
@@ -1260,6 +1259,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Scheduled time is required" });
       }
 
+      // Convert scheduled date/time to IST and store as ISO string
+      if (serviceData.scheduledDate && serviceData.scheduledTime) {
+        const scheduledDateTime = new Date(`${serviceData.scheduledDate}T${serviceData.scheduledTime}:00`);
+        // Add 5.5 hours to convert to IST and store
+        const istDateTime = new Date(scheduledDateTime.getTime() + (5.5 * 60 * 60 * 1000));
+        serviceData.createdAt = istDateTime.toISOString();
+        serviceData.updatedAt = istDateTime.toISOString();
+      }
+
       // Special validation for OPD services
       if (serviceData.serviceType === "opd") {
         if (!serviceData.doctorId || serviceData.doctorId === "" || serviceData.doctorId === "none" || serviceData.doctorId === "external") {
@@ -1540,7 +1548,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Scheduled date is required" });
       }
       
-      // Create the OPD visit
+      // Convert scheduled date/time to IST
+      const visitDateTime = new Date(`${visitData.scheduledDate}T${visitData.scheduledTime || "09:00"}:00`);
+      const istDateTime = new Date(visitDateTime.getTime() + (5.5 * 60 * 60 * 1000));
+      
+      // Create the OPD visit with IST timestamps
       const opdVisit = await storage.createOpdVisit({
         patientId: visitData.patientId,
         doctorId: visitData.doctorId,
@@ -1551,7 +1563,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         diagnosis: visitData.diagnosis || null,
         prescription: visitData.prescription || null,
         consultationFee: visitData.consultationFee || 0,
-        status: "scheduled"
+        status: "scheduled",
+        createdAt: istDateTime.toISOString(),
+        updatedAt: istDateTime.toISOString()
       });
       
       res.status(201).json(opdVisit);

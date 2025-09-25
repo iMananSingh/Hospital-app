@@ -3104,7 +3104,7 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
-                                    // Use original timestamp for display and apply timezone corrections as needed
+                                    // Display stored timestamp directly (already in IST)
                                     let displayDate;
 
                                     // Special handling for OPD visits to show actual scheduled time
@@ -3120,10 +3120,8 @@ export default function PatientDetail() {
                                       displayDate = new Date(event.originalTimestamp);
                                     }
 
-                                    // Apply timezone correction: subtract 5.5 hours for IST display
-                                    const correctedDate = new Date(displayDate.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
+                                    // No timezone correction needed since we're storing IST directly
+                                    return displayDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",

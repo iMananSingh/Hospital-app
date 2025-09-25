@@ -1715,19 +1715,36 @@ export class SqliteStorage implements IStorage {
   }
 
   // OPD-specific methods
-  async createOpdVisit(visitData: InsertPatientVisit): Promise<PatientVisit> {
+  async createOpdVisit(data: InsertPatientVisit): Promise<PatientVisit> {
     try {
-      const visitId = `VIS-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+      // Generate unique visit ID
+      const visitCount = await db.select({ count: sql`COUNT(*)` })
+        .from(schema.patientVisits)
+        .where(sql`date(created_at) = date('now')`);
 
-      const visit = db.insert(schema.patientVisits).values({
-        ...visitData,
-        visitId,
-        visitType: 'opd',
-        visitDate: visitData.scheduledDate || visitData.visitDate,
+      const dailyCount = visitCount[0]?.count || 0;
+      const orderNumber = String(dailyCount + 1).padStart(3, '0');
+      const today = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+      const visitId = `VIS-${today}-${orderNumber}`;
+
+      // Set IST timestamps if not provided
+      if (!data.createdAt || !data.updatedAt) {
+        const now = new Date();
+        const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+        data.createdAt = istTime.toISOString().replace('T', ' ').slice(0, 19);
+        data.updatedAt = istTime.toISOString().replace('T', ' ').slice(0, 19);
+      }
+
+      const result = await db.insert(schema.patientVisits).values({
+        ...data,
+        id: this.generateId(),
+        visitId: visitId,
+        visitType: "opd",
+        visitDate: data.scheduledDate || data.visitDate,
         status: 'scheduled',
-        consultationFee: visitData.consultationFee || 0, // Store consultation fee
+        consultationFee: data.consultationFee || 0, // Store consultation fee
       }).returning().get();
-      return visit;
+      return result;
     } catch (error) {
       console.error('Error creating OPD visit:', error);
       throw error;
@@ -4917,7 +4934,7 @@ export class SqliteStorage implements IStorage {
           // Handle doctor name to avoid duplicate "Dr." prefix
           const doctorName = visit.doctorName || 'Unknown Doctor';
           const formattedDoctorName = doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
-          
+
           billItems.push({
             type: 'service',
             id: visit.id,
