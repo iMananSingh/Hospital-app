@@ -3104,7 +3104,7 @@ export default function PatientDetail() {
                                 <p className="font-medium">{event.title}</p>
                                 <span className="text-sm text-muted-foreground">
                                   {(() => {
-                                    // Use proper parseTimestamp with IST timezone for consistent display
+                                    // Display stored time as local IST in 12-hour format without timezone conversion
                                     let timestampToFormat = event.originalTimestamp;
 
                                     // Special handling for OPD visits to show actual scheduled time
@@ -3116,9 +3116,16 @@ export default function PatientDetail() {
                                       }
                                     }
 
-                                    // Use the corrected parseTimestamp function with IST timezone
-                                    const parsed = parseTimestamp(timestampToFormat, 'Asia/Kolkata');
-                                    return parsed.display;
+                                    // Treat stored time as local IST and display in 12-hour format
+                                    const displayDate = new Date(timestampToFormat);
+                                    return displayDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    });
                                   })()}
                                 </span>
                               </div>
