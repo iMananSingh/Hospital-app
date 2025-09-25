@@ -1806,7 +1806,9 @@ export default function PatientDetail() {
                   console.log("OPD button clicked");
                   const now = new Date();
                   // Use current local time for OPD appointment scheduling
-                  const currentDate = now.toISOString().split("T")[0];
+                  const currentDate = now.getFullYear() + "-" + 
+                    String(now.getMonth() + 1).padStart(2, "0") + "-" + 
+                    String(now.getDate()).padStart(2, "0");
                   const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
                   setIsOpdVisitDialogOpen(true);
@@ -2798,10 +2800,10 @@ export default function PatientDetail() {
                                 if (test.orderDate) {
                                   // Parse the timestamp and apply the same 5.5 hour adjustment as timeline
                                   let displayDate = new Date(test.orderDate);
-                                  
+
                                   // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
                                   displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
-                                  
+
                                   const formattedDate = displayDate.toLocaleString("en-US", {
                                     year: "numeric",
                                     month: "short",
@@ -2900,7 +2902,7 @@ export default function PatientDetail() {
                     const getDisplayTimestamp = (originalTimestamp: any, eventType: string) => {
                       const baseTimestamp = getEventTimestamp(originalTimestamp);
                       let displayDate = new Date(baseTimestamp);
-                      
+
                       // Apply same timezone adjustments as display logic
                       if (eventType === "pathology") {
                         // Pathology orders are 5.5 hours behind - add 5.5 hours
@@ -2909,7 +2911,7 @@ export default function PatientDetail() {
                         // Services are 11 hours ahead - subtract 11 hours
                         displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
                       }
-                      
+
                       return displayDate.getTime();
                     };
 
@@ -3104,7 +3106,7 @@ export default function PatientDetail() {
                       // Always put registration at the bottom (earliest)
                       if (a.type === "registration" && b.type !== "registration") return 1;
                       if (b.type === "registration" && a.type !== "registration") return -1;
-                      
+
                       const timestampDiff = b.sortTimestamp - a.sortTimestamp;
                       if (timestampDiff !== 0) return timestampDiff;
                       // Stable secondary sort by id
@@ -3148,7 +3150,7 @@ export default function PatientDetail() {
                                     if (event.type === "registration") {
                                       // Parse the stored timestamp as a local datetime string to avoid timezone conversion
                                       const storedTime = timestampToFormat;
-                                      
+
                                       // Handle ISO format timestamps by extracting components manually
                                       if (storedTime && storedTime.includes('T')) {
                                         const [datePart, timePart] = storedTime.split('T');
@@ -3158,13 +3160,13 @@ export default function PatientDetail() {
                                           const hours = parseInt(timeSegments[0]) || 0;
                                           const minutes = parseInt(timeSegments[1]) || 0;
                                           const seconds = parseInt(timeSegments[2]) || 0;
-                                          
+
                                           // Validate parsed values
                                           if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
                                               !isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
                                             // Create date using local timezone components (no UTC conversion)
                                             const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
-                                            
+
                                             // Check if the created date is valid
                                             if (!isNaN(localDate.getTime())) {
                                               return localDate.toLocaleString("en-US", {
@@ -3179,7 +3181,7 @@ export default function PatientDetail() {
                                           }
                                         }
                                       }
-                                      
+
                                       // Fallback: try standard date parsing
                                       const fallbackDate = new Date(storedTime);
                                       if (!isNaN(fallbackDate.getTime())) {
@@ -3192,19 +3194,19 @@ export default function PatientDetail() {
                                           hour12: true,
                                         });
                                       }
-                                      
+
                                       // Final fallback
                                       return "Registration Date";
                                     }
 
                                     // Fix timezone issues for pathology and services
                                     let displayDate = new Date(timestampToFormat);
-                                    
+
                                     // Pathology orders are 5.5 hours behind - add 5.5 hours
                                     if (event.type === "pathology") {
                                       displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
                                     }
-                                    
+
                                     // Services are 11 hours ahead - subtract 11 hours  
                                     if (event.type === "service") {
                                       displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
