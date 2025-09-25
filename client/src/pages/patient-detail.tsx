@@ -322,13 +322,9 @@ export default function PatientDetail() {
         return event.receiptNumber;
       }
 
-      // For OPD visits, create a proper receipt number format
+      // For OPD visits, use the ID as a temporary receipt reference if available
       if (eventType === "opd_visit" && event.id) {
-        // Try to get a proper receipt number, otherwise format with OPD prefix
-        if (event.rawData?.visit?.receiptNumber) {
-          return event.rawData.visit.receiptNumber;
-        }
-        return `OPD-${event.id.slice(0, 8)}`;
+        return `OPD-${event.id}`;
       }
 
       // For other event types, try direct access
@@ -390,14 +386,8 @@ export default function PatientDetail() {
       }
 
       // For OPD visits, use the doctor name from rawData if available
-      if (eventType === "opd_visit") {
-        if (event.rawData?.doctor?.name) {
-          return event.rawData.doctor.name;
-        }
-        // Try to get doctor name from the raw visit data
-        if (event.rawData?.visit?.doctorName) {
-          return event.rawData.visit.doctorName;
-        }
+      if (eventType === "opd_visit" && event.rawData?.doctor?.name) {
+        return event.rawData.doctor.name;
       }
 
       return "No Doctor Assigned";
@@ -420,17 +410,7 @@ export default function PatientDetail() {
         event.description ||
         "Service",
       date: event.sortTimestamp,
-      amount: (() => {
-        // Special handling for OPD visits to get the consultation fee
-        if (eventType === "opd_visit") {
-          return event.amount || 
-                 event.rawData?.consultationFee || 
-                 event.rawData?.visit?.consultationFee ||
-                 event.rawData?.doctor?.consultationFee || 
-                 0;
-        }
-        return event.amount || event.price || event.totalPrice || 0;
-      })(),
+      amount: event.amount || event.price || event.totalPrice || 0,
       description:
         event.description || event.serviceName || event.testName || "",
       patientName: patient?.name || "Unknown Patient",
@@ -441,13 +421,6 @@ export default function PatientDetail() {
         patientGender: patient?.gender,
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
-        // For OPD visits, include additional details
-        ...(eventType === "opd_visit" && {
-          scheduledDate: event.rawData?.visit?.scheduledDate,
-          scheduledTime: event.rawData?.visit?.scheduledTime,
-          symptoms: event.rawData?.visit?.symptoms,
-          consultationFee: event.rawData?.consultationFee || event.rawData?.visit?.consultationFee || 0,
-        }),
       },
     };
 
@@ -3447,9 +3420,15 @@ export default function PatientDetail() {
                       timelineEvents.map((event) => (
                         <div
                           key={event.id}
-                          className="flex items-stretch gap-3"
+                          className={
+                            event.type === "registration"
+                              ? "w-full"
+                              : "flex items-stretch gap-3"
+                          }
                         >
-                          <div className="flex-1 flex items-start gap-3 p-3 border rounded-lg">
+                          <div
+                            className={`${event.type === "registration" ? "w-full" : "flex-1"} flex items-start gap-3 p-3 border rounded-lg`}
+                          >
                             <div
                               className={`w-3 h-3 ${event.color} rounded-full mt-1`}
                             />
