@@ -3053,9 +3053,9 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Sort all events chronologically (latest first) with stable secondary sort
+                    // Sort all events chronologically (earliest first) with stable secondary sort
                     timelineEvents.sort((a, b) => {
-                      const timestampDiff = b.sortTimestamp - a.sortTimestamp;
+                      const timestampDiff = a.sortTimestamp - b.sortTimestamp;
                       if (timestampDiff !== 0) return timestampDiff;
                       // Stable secondary sort by id
                       return a.id.localeCompare(b.id);
