@@ -2315,7 +2315,7 @@ export default function PatientDetail() {
                         // Calculate total cost: use calculatedAmount if available, otherwise price * billingQuantity
                         const totalCost =
                           service.calculatedAmount ||
-                          service.price * (service.billingQuantity || 1);
+                          service.price * (service.quantity || 1);
 
                         return (
                           <TableRow key={service.id}>
@@ -2863,7 +2863,7 @@ export default function PatientDetail() {
                     const getEventTimestamp = (dateInput: any, fallbackDate?: any) => {
                       if (!dateInput && fallbackDate) dateInput = fallbackDate;
                       if (!dateInput) return new Date().getTime();
-                      
+
                       // Handle string dates
                       if (typeof dateInput === 'string') {
                         // SQLite format: "YYYY-MM-DD HH:MM:SS"
@@ -2884,7 +2884,7 @@ export default function PatientDetail() {
                         const timestamp = new Date(dateInput).getTime();
                         return isNaN(timestamp) ? new Date().getTime() : timestamp;
                       }
-                      
+
                       const timestamp = new Date(dateInput).getTime();
                       return isNaN(timestamp) ? new Date().getTime() : timestamp;
                     };
@@ -2913,9 +2913,9 @@ export default function PatientDetail() {
                             ? `${service.scheduledDate}T${service.scheduledTime}:00`
                             : `${service.scheduledDate}T00:00:00`;
                         }
-                        
+
                         const cost = service.calculatedAmount || (service.price * (service.quantity || 1));
-                        
+
                         timelineEvents.push({
                           id: `service-${service.id}`,
                           type: "service",
@@ -3104,11 +3104,12 @@ export default function PatientDetail() {
 
                                     // Apply timezone correction for events that need it
                                     // Registration, discharge, service, and pathology events need IST correction
-                                    if (event.type === "registration" || 
-                                        event.title === "Patient Discharged" ||
-                                        event.type === "service" ||
-                                        event.type === "pathology") {
+                                    if (event.type === "registration" || event.title === "Patient Discharged") {
+                                      // Registration and discharge events need to subtract 5.5 hours
                                       displayTimestamp = displayTimestamp - 5.5 * 60 * 60 * 1000;
+                                    } else if (event.type === "service" || event.type === "pathology") {
+                                      // Service and pathology events need to add 5.5 hours to correct display
+                                      displayTimestamp = displayTimestamp + 5.5 * 60 * 60 * 1000;
                                     }
 
                                     return new Date(
