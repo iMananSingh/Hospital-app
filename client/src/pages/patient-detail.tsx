@@ -3026,8 +3026,7 @@ export default function PatientDetail() {
                         const order = orderData.order || orderData;
                         if (!order) return;
 
-                        // Use orderedDate preferentially for chronological order
-                        const orderTime = order.orderedDate || order.createdAt;
+                        const orderTime = order.createdAt || order.orderedDate;
                         timelineEvents.push({
                           id: `pathology-${order.id || Date.now()}`,
                           type: "pathology",
