@@ -39,7 +39,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             receiptData.title === 'OPD Consultation' ||
             receiptData.title?.includes('OPD') ||
             receiptData.description?.includes('OPD') ||
-            details?.type === 'opd_visit') {
+            details?.type === 'opd_visit' ||
+            details?.consultationFee) {
           return 'OPD Receipt';
         }
         

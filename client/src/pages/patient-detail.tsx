@@ -393,6 +393,21 @@ export default function PatientDetail() {
       return "No Doctor Assigned";
     };
 
+    // Calculate the correct amount based on event type
+    let eventAmount = 0;
+    
+    if (eventType === "opd_visit") {
+      // For OPD visits, prioritize consultation fee from the event data
+      if (event.rawData?.visit) {
+        eventAmount = event.rawData.visit.consultationFee || 
+                     (event.rawData.doctor ? event.rawData.doctor.consultationFee : 0);
+      } else {
+        eventAmount = event.amount || 0;
+      }
+    } else {
+      eventAmount = event.amount || event.price || event.totalPrice || 0;
+    }
+
     // Base receipt data structure
     const baseReceiptData = {
       type: (eventType === "opd_visit" ? "service" : eventType) as
@@ -409,7 +424,7 @@ export default function PatientDetail() {
         event.description ||
         "Service",
       date: event.sortTimestamp,
-      amount: event.amount || event.price || event.totalPrice || 0,
+      amount: eventAmount,
       description:
         event.description || event.serviceName || event.testName || "",
       patientName: patient?.name || "Unknown Patient",
@@ -420,6 +435,7 @@ export default function PatientDetail() {
         patientGender: patient?.gender,
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
+        consultationFee: eventAmount, // Ensure consultation fee is in details
       },
     };
 
@@ -3088,14 +3104,18 @@ export default function PatientDetail() {
                         const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
                         const doctorName = doctor ? doctor.name : "Unknown Doctor";
 
+                        // Get the consultation fee from the visit or doctor
+                        const consultationFee = visit.consultationFee || (doctor ? doctor.consultationFee : 0);
+
                         timelineEvents.push({
                           id: `opd-${visit.id}`,
                           type: "opd_visit",
                           title: "OPD Consultation",
-                          description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""}`,
+                          description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""} - Fee: ₹${consultationFee}`,
                           color: "bg-indigo-500",
                           sortTimestamp: getDisplayTimestamp(visitDate, "opd_visit"),
                           originalTimestamp: visitDate,
+                          amount: consultationFee,
                           rawData: { visit, doctor },
                         });
                       });
@@ -4655,7 +4675,8 @@ export default function PatientDetail() {
 
                   createOpdVisitMutation.mutate({
                     ...data,
-                    consultationFee: consultationFee
+                    consultationFee: consultationFee,
+                    amount: consultationFee // Also store as amount for consistent access
                   });
                 })}
                 className="space-y-4"
