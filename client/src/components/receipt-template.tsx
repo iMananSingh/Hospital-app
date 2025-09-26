@@ -22,7 +22,7 @@ interface ReceiptTemplateProps {
     registrationNumber?: string;
     logo?: string;
   };
-  onPrint: () => void;
+  onPrint?: () => void;
 }
 
 export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptTemplateProps) {
@@ -623,7 +623,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       printWindow.close();
     }, 250);
 
-    onPrint();
+    onPrint?.();
   };
 
   return (
