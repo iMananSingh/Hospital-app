@@ -470,7 +470,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               </div>
               <div class="patient-line-2">
                 <span>Doctor: ${getDoctorName()}</span>
-                <span>Receipt No: ${receiptNumber}</span>
+                <span>${receiptData.type === 'pathology' ? `Order ID: ${receiptData.id} | ` : ''}Receipt No: ${receiptNumber}</span>
               </div>
             </div>
             
