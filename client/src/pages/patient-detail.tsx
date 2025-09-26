@@ -442,16 +442,19 @@ export default function PatientDetail() {
         | "payment"
         | "discount",
       id: event.id,
-      title:
+      title: eventType === "opd_visit" ? "OPD Consultation" : (
         event.title ||
         event.serviceName ||
         event.testName ||
         event.description ||
-        "Service",
+        "Service"
+      ),
       date: event.sortTimestamp,
       amount: eventAmount,
-      description:
-        event.description || event.serviceName || event.testName || "",
+      description: eventType === "opd_visit" ? 
+        `OPD Consultation - ${getDoctorName()}` : (
+        event.description || event.serviceName || event.testName || ""
+      ),
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
       details: {
@@ -461,6 +464,13 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
+        // For OPD visits, add explicit identifiers for receipt title detection
+        ...(eventType === "opd_visit" ? {
+          serviceType: "opd",
+          serviceName: "OPD Consultation",
+          category: "OPD Consultation",
+          type: "opd_visit"
+        } : {}),
         // For pathology orders, ensure tests are accessible
         tests: eventType === "pathology" ? (event.tests || event.rawData?.tests || event.order?.tests) : undefined,
       },
