@@ -3332,33 +3332,16 @@ export default function PatientDetail() {
                                       </div>
                                     );
                                   case "admission":
-                                    return (
+                                    const admissionContent = (
                                       <div className="space-y-1">
                                         <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
-                                        {(() => {
-                                          // Get doctor name from the admission
-                                          let doctorName = null;
-                                          
-                                          // Try to get doctor ID from the event data
-                                          const doctorId = event.data.doctorId;
-                                          
-                                          if (doctorId && doctors && doctors.length > 0) {
-                                            const doctor = doctors.find((d: Doctor) => d.id === doctorId);
-                                            if (doctor) {
-                                              doctorName = doctor.name;
-                                            }
-                                          }
-                                          
-                                          return doctorName ? (
-                                            <div><span className="font-medium">Doctor:</span> Dr. {doctorName}</div>
-                                          ) : null;
-                                        })()}
                                         {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
                                         {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
                                         {event.data.admitEventNotes && <div><span className="font-medium">Notes:</span> {event.data.admitEventNotes}</div>}
                                         {event.data.initialDeposit > 0 && <div><span className="font-medium">Initial Deposit:</span> ₹{event.data.initialDeposit}</div>}
                                       </div>
                                     );
+                                    return admissionContent;
                                   case "admission_event":
                                     return (
                                       <div className="space-y-1">
@@ -3380,6 +3363,28 @@ export default function PatientDetail() {
                                 }
                               })()}
                             </div>
+                            
+                            {/* Doctor information outside details section for admission events */}
+                            {event.type === "admission" && (() => {
+                              // Get doctor name from the admission
+                              let doctorName = null;
+                              
+                              // Try to get doctor ID from the event data
+                              const doctorId = event.data.doctorId;
+                              
+                              if (doctorId && doctors && doctors.length > 0) {
+                                const doctor = doctors.find((d: Doctor) => d.id === doctorId);
+                                if (doctor) {
+                                  doctorName = doctor.name;
+                                }
+                              }
+                              
+                              return doctorName ? (
+                                <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600 bg-white/30 rounded px-2 py-1">
+                                  <span className="font-medium">Doctor:</span> Dr. {doctorName}
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                       );
