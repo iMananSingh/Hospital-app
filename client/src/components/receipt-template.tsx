@@ -519,15 +519,15 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       
                       if (tests && tests.length > 0) {
                         return tests.map((test, index) => {
-                          const testName = test.testName || test.test_name || test.name || \`Lab Test \${index + 1}\`;
+                          const testName = test.testName || test.test_name || test.name || `Lab Test ${index + 1}`;
                           const testPrice = test.price || 0;
-                          console.log(\`Test \${index + 1}: \${testName} - ₹\${testPrice}\`);
-                          return \`
+                          console.log(`Test ${index + 1}: ${testName} - ₹${testPrice}`);
+                          return `
                             <tr>
-                              <td>\${testName}</td>
-                              <td class="amount-cell" style="text-align: right !important;">₹\${testPrice.toLocaleString()}</td>
+                              <td>${testName}</td>
+                              <td class="amount-cell" style="text-align: right !important;">₹${testPrice.toLocaleString()}</td>
                             </tr>
-                          \`;
+                          `;
                         }).join('');
                       } else {
                         console.log('No tests found, falling back to order ID display');
@@ -535,12 +535,12 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     }
                     
                     // For other types or if no tests available, use the title as usual
-                    return \`
+                    return `
                       <tr>
-                        <td>\${receiptData.title}</td>
-                        <td class="amount-cell" style="text-align: right !important;">₹\${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                        <td>${receiptData.title}</td>
+                        <td class="amount-cell" style="text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                       </tr>
-                    \`;
+                    `;
                   })()}
                   <tr class="total-row">
                     <td style="text-align: right; font-weight: bold;">Total Amount:</td>
