@@ -2818,7 +2818,7 @@ export default function PatientDetail() {
                                 if (test.orderDate) {
                                   // Parse the timestamp with better error handling
                                   let displayDate;
-                                  
+
                                   try {
                                     // Handle different date formats
                                     if (typeof test.orderDate === 'string') {
@@ -2911,415 +2911,362 @@ export default function PatientDetail() {
               <CardContent>
                 <div className="space-y-4">
                   {(() => {
-                    // Simple function to get timestamp for any date input
-                    const getEventTimestamp = (dateInput: any, fallbackDate?: any) => {
-                      if (!dateInput && fallbackDate) dateInput = fallbackDate;
-                      if (!dateInput) return new Date().getTime();
+                    // Combine all events with timestamps for sorting
+                    let allEvents: Array<{
+                      type: string;
+                      data: any;
+                      timestamp: Date;
+                      sortTimestamp: number;
+                      orderId?: string;
+                    }> = [];
 
-                      // Handle string dates
-                      if (typeof dateInput === 'string') {
-                        // SQLite format: "YYYY-MM-DD HH:MM:SS"
-                        if (dateInput.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                          const timestamp = new Date(dateInput.replace(' ', 'T')).getTime();
-                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
-                        }
-                        // Date with time: "YYYY-MM-DDTHH:MM:SS"
-                        if (dateInput.includes('T')) {
-                          const timestamp = new Date(dateInput).getTime();
-                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
-                        }
-                        // Date only: "YYYY-MM-DD"
-                        if (dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                          const timestamp = new Date(dateInput + 'T00:00:00').getTime();
-                          return isNaN(timestamp) ? new Date().getTime() : timestamp;
-                        }
-                        const timestamp = new Date(dateInput).getTime();
-                        return isNaN(timestamp) ? new Date().getTime() : timestamp;
-                      }
+                    // Add OPD visits
+                    if (opdVisits && opdVisits.length > 0) {
+                      opdVisits.forEach((visit: any) => {
+                        const visitDateTime = visit.scheduledDate && visit.scheduledTime 
+                          ? new Date(`${visit.scheduledDate}T${visit.scheduledTime}:00`)
+                          : new Date(visit.createdAt);
 
-                      const timestamp = new Date(dateInput).getTime();
-                      return isNaN(timestamp) ? new Date().getTime() : timestamp;
-                    };
-
-                    // Function to get display timestamp that matches what's shown to user
-                    const getDisplayTimestamp = (originalTimestamp: any, eventType: string) => {
-                      const baseTimestamp = getEventTimestamp(originalTimestamp);
-                      let displayDate = new Date(baseTimestamp);
-
-                      // Apply same timezone adjustments as display logic
-                      if (eventType === "pathology") {
-                        // Pathology orders are 5.5 hours behind - add 5.5 hours
-                        displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
-                      } else if (eventType === "service") {
-                        // Services are 11 hours ahead - subtract 11 hours
-                        displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
-                      }
-
-                      return displayDate.getTime();
-                    };
-
-                    // Create timeline events array
-                    const timelineEvents = [];
-
-                    // Add patient registration
-                    if (patient?.createdAt) {
-                      timelineEvents.push({
-                        id: "registration",
-                        type: "registration",
-                        title: "Patient Registered",
-                        description: `Patient ID: ${patient.patientId}`,
-                        color: "bg-blue-500",
-                        sortTimestamp: getDisplayTimestamp(patient.createdAt, "registration"),
-                        originalTimestamp: patient.createdAt,
+                        allEvents.push({
+                          type: "opd_visit",
+                          data: visit,
+                          timestamp: visitDateTime,
+                          sortTimestamp: visitDateTime.getTime(),
+                        });
                       });
                     }
 
-                    // Add services  
+                    // Add patient services (grouped by orderId)
                     if (services && services.length > 0) {
-                      services.forEach((service: any) => {
-                        let serviceDate = service.createdAt;
-                        if (!serviceDate && service.scheduledDate) {
-                          serviceDate = service.scheduledTime
-                            ? `${service.scheduledDate}T${service.scheduledTime}:00`
-                            : `${service.scheduledDate}T00:00:00`;
+                      // Group services by orderId
+                      const serviceGroups = services.reduce((groups: any, service: any) => {
+                        const key = service.orderId || service.id; // fallback to individual service id if no orderId
+                        if (!groups[key]) {
+                          groups[key] = [];
                         }
+                        groups[key].push(service);
+                        return groups;
+                      }, {});
 
-                        const cost = service.calculatedAmount || (service.price * (service.quantity || 1));
+                      // Add each group as a single timeline event
+                      Object.entries(serviceGroups).forEach(([orderId, groupServices]: [string, any]) => {
+                        const firstService = groupServices[0];
+                        const serviceDateTime = new Date(
+                          `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
+                        );
 
-                        timelineEvents.push({
-                          id: `service-${service.id}`,
-                          type: "service",
-                          title: service.serviceName,
-                          description: `Status: ${service.status} • Cost: ₹${cost}`,
-                          color: "bg-green-500",
-                          sortTimestamp: getDisplayTimestamp(serviceDate, "service"),
-                          originalTimestamp: serviceDate,
-                          rawData: { service },
+                        allEvents.push({
+                          type: groupServices.length > 1 ? "service_group" : "service",
+                          data: {
+                            services: groupServices,
+                            orderId: orderId,
+                            scheduledDate: firstService.scheduledDate,
+                            scheduledTime: firstService.scheduledTime,
+                            totalAmount: groupServices.reduce((sum: number, s: any) => sum + (s.calculatedAmount || s.price), 0),
+                            receiptNumber: firstService.receiptNumber,
+                            doctorId: firstService.doctorId,
+                            notes: firstService.notes,
+                          },
+                          timestamp: serviceDateTime,
+                          sortTimestamp: serviceDateTime.getTime(),
+                          orderId: orderId,
                         });
-                      });
-                    }
-
-                    // Add admission events
-                    if (admissions && admissions.length > 0) {
-                      admissions.forEach((admission: any) => {
-                        const events = admissionEventsMap[admission.id] || [];
-                        const doctor = doctors.find((d: Doctor) => d.id === admission.doctorId);
-                        const doctorName = doctor ? doctor.name : "No Doctor Assigned";
-
-                        // Add admission events 
-                        events.forEach((event: AdmissionEvent) => {
-                          let title = "";
-                          let color = "bg-orange-500";
-                          let description = "";
-
-                          switch (event.eventType) {
-                            case "admit":
-                              title = "Patient Admitted";
-                              color = "bg-green-500";
-                              break;
-                            case "room_change":
-                              title = "Room Transfer";
-                              color = "bg-blue-500";
-                              break;
-                            case "discharge":
-                              title = "Patient Discharged";
-                              color = "bg-gray-500";
-                              break;
-                            default:
-                              title = `Admission ${event.eventType}`;
-                          }
-
-                          if (event.roomNumber && event.wardType) {
-                            description = `Room: ${event.roomNumber} (${event.wardType})`;
-                          }
-
-                          const eventTime = event.eventTime || event.createdAt;
-                          timelineEvents.push({
-                            id: `admission-${event.id}`,
-                            type: "admission_event",
-                            title,
-                            description,
-                            color,
-                            sortTimestamp: getDisplayTimestamp(eventTime, "admission_event"),
-                            originalTimestamp: eventTime,
-                            rawData: { event },
-                          });
-                        });
-
-                        // Add basic admission if no events
-                        if (events.length === 0) {
-                          const admissionTime = admission.createdAt || admission.admissionDate;
-                          timelineEvents.push({
-                            id: `admission-${admission.id}`,
-                            type: "admission",
-                            title: "Patient Admission",
-                            description: `Doctor: ${doctorName} • Ward: ${admission.wardType || 'N/A'}`,
-                            color: "bg-orange-500",
-                            sortTimestamp: getDisplayTimestamp(admissionTime, "admission"),
-                            originalTimestamp: admissionTime,
-                            rawData: { admission },
-                          });
-                        }
-
-                        // Add payments
-                        if (admission.lastPaymentDate && admission.lastPaymentAmount) {
-                          timelineEvents.push({
-                            id: `payment-${admission.id}`,
-                            type: "payment",
-                            title: "Payment Received",
-                            description: `Amount: ₹${admission.lastPaymentAmount}`,
-                            color: "bg-green-600",
-                            sortTimestamp: getDisplayTimestamp(admission.lastPaymentDate, "payment"),
-                            originalTimestamp: admission.lastPaymentDate,
-                          });
-                        }
-
-                        // Add discounts
-                        if (admission.lastDiscountDate && admission.lastDiscountAmount) {
-                          timelineEvents.push({
-                            id: `discount-${admission.id}`,
-                            type: "discount",
-                            title: "Discount Applied",
-                            description: `Amount: ₹${admission.lastDiscountAmount}`,
-                            color: "bg-red-500",
-                            sortTimestamp: getDisplayTimestamp(admission.lastDiscountDate, "discount"),
-                            originalTimestamp: admission.lastDiscountDate,
-                          });
-                        }
                       });
                     }
 
                     // Add pathology orders
-                    pathologyOrders.forEach((orderData: any) => {
-                      const { order, tests } = orderData;
-                      if (order) {
-                        // Use better timestamp logic for pathology orders
-                        let orderTimestamp = order.createdAt;
-                        
-                        // Prefer orderedDate if it has time information
-                        if (order.orderedDate && /[:T]/.test(order.orderedDate)) {
-                          orderTimestamp = order.orderedDate;
-                        }
-
-                        timelineEvents.push({
-                          id: order.id,
+                    if (pathologyOrders && pathologyOrders.length > 0) {
+                      pathologyOrders.forEach((order: any) => {
+                        allEvents.push({
                           type: "pathology",
-                          title: `Pathology Order: ${order.orderId}`,
-                          date: order.orderedDate,
-                          amount: order.totalPrice,
-                          description: tests
-                            .map((test: any) => test.testName)
-                            .join(", "),
-                          sortTimestamp: getDisplayTimestamp(orderTimestamp, "pathology"),
-                          originalTimestamp: orderTimestamp,
-                          status: order.status,
-                          receiptNumber: order.receiptNumber,
-                          tests: tests, // Direct access to tests
-                          order: order, // Direct access to order
-                          rawData: { order, tests }, // Store both order and tests as backup
-                        });
-                      }
-                    });
-
-                    // Add OPD visits 
-                    if (opdVisits && opdVisits.length > 0) {
-                      opdVisits.forEach((visit: any) => {
-                        // Construct visit date consistently - prioritize scheduled date over createdAt for chronological ordering
-                        let visitDate = visit.createdAt; // Default fallback
-
-                        // If we have scheduled date, use that for proper chronological order
-                        if (visit.scheduledDate) {
-                          if (visit.scheduledTime) {
-                            // Ensure time has seconds component
-                            const timeSegments = visit.scheduledTime.split(':');
-                            const time = timeSegments.length === 2 ? `${visit.scheduledTime}:00` : visit.scheduledTime;
-                            visitDate = `${visit.scheduledDate}T${time}`;
-                          } else {
-                            // If no time specified, default to noon to ensure chronological order
-                            visitDate = `${visit.scheduledDate}T12:00:00`;
-                          }
-                        }
-
-                        const doctor = doctors?.find((d: Doctor) => d.id === visit.doctorId);
-                        const doctorName = doctor ? doctor.name : "Unknown Doctor";
-
-                        // Get the consultation fee from the visit or doctor
-                        const consultationFee = visit.consultationFee || (doctor ? doctor.consultationFee : 0);
-
-                        timelineEvents.push({
-                          id: `opd-${visit.id}`,
-                          type: "opd_visit",
-                          title: "OPD Consultation",
-                          description: `OPD consultation with ${doctorName}${visit.symptoms ? ` - ${visit.symptoms}` : ""} - Fee: ₹${consultationFee}`,
-                          color: "bg-indigo-500",
-                          sortTimestamp: getDisplayTimestamp(visitDate, "opd_visit"),
-                          originalTimestamp: visitDate,
-                          amount: consultationFee,
-                          rawData: { visit, doctor },
+                          data: order,
+                          timestamp: new Date(order.orderedDate),
+                          sortTimestamp: new Date(order.orderedDate).getTime(),
                         });
                       });
                     }
 
-                    // Sort all events chronologically (latest first, except registration goes last)
-                    timelineEvents.sort((a, b) => {
-                      // Always put registration at the bottom (earliest)
-                      if (a.type === "registration" && b.type !== "registration") return 1;
-                      if (b.type === "registration" && a.type !== "registration") return -1;
+                    // Add admissions and related events
+                    if (admissions && admissions.length > 0) {
+                      admissions.forEach((admission: any) => {
+                        // Add admission event
+                        allEvents.push({
+                          type: "admission",
+                          data: admission,
+                          timestamp: new Date(admission.admissionDate),
+                          sortTimestamp: new Date(admission.admissionDate).getTime(),
+                        });
 
-                      const timestampDiff = b.sortTimestamp - a.sortTimestamp;
-                      if (timestampDiff !== 0) return timestampDiff;
-                      // Stable secondary sort by id
-                      return a.id.localeCompare(b.id);
-                    });
+                        // Add admission events
+                        const events = admissionEventsMap[admission.id] || [];
+                        events.forEach((event: any) => {
+                          allEvents.push({
+                            type: "admission_event",
+                            data: { ...event, admission },
+                            timestamp: new Date(event.eventTime),
+                            sortTimestamp: new Date(event.eventTime).getTime(),
+                          });
+                        });
 
-                    return timelineEvents.length > 0 ? (
-                      timelineEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className={
-                            event.type === "registration"
-                              ? "w-full"
-                              : "flex items-stretch gap-3"
-                          }
-                        >
-                          <div
-                            className={`${event.type === "registration" ? "w-full" : "flex-1"} flex items-start gap-3 p-3 border rounded-lg`}
-                          >
-                            <div
-                              className={`w-3 h-3 ${event.color} rounded-full mt-1`}
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="font-medium">{event.title}</p>
-                                <span className="text-sm text-muted-foreground">
-                                  {(() => {
-                                    // Display stored time as local IST in 12-hour format with proper timezone corrections
-                                    let timestampToFormat = event.originalTimestamp;
+                        // Add discharge event if discharged
+                        if (admission.dischargeDate) {
+                          allEvents.push({
+                            type: "discharge",
+                            data: admission,
+                            timestamp: new Date(admission.dischargeDate),
+                            sortTimestamp: new Date(admission.dischargeDate).getTime(),
+                          });
+                        }
+                      });
+                    }
 
-                                    // Special handling for OPD visits to show actual scheduled time
-                                    if (event.type === "opd_visit" && (event as any).rawData?.visit) {
-                                      const visit = (event as any).rawData.visit;
-                                      if (visit.scheduledDate && visit.scheduledTime) {
-                                        // Create proper datetime from scheduled date and time
-                                        timestampToFormat = `${visit.scheduledDate}T${visit.scheduledTime}`;
-                                      }
-                                    }
+                    // Sort events by timestamp (most recent first)
+                    allEvents.sort((a, b) => b.sortTimestamp - a.sortTimestamp);
 
-                                    // For patient registration, show the exact stored time without any timezone adjustment
-                                    if (event.type === "registration") {
-                                      // Parse the stored timestamp as a local datetime string to avoid timezone conversion
-                                      const storedTime = timestampToFormat;
+                    if (allEvents.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">No timeline events yet</p>
+                        </div>
+                      );
+                    }
 
-                                      // Handle ISO format timestamps by extracting components manually
-                                      if (storedTime && storedTime.includes('T')) {
-                                        const [datePart, timePart] = storedTime.split('T');
-                                        if (datePart && timePart) {
-                                          const [year, month, day] = datePart.split('-').map(Number);
-                                          const timeSegments = timePart.split(':');
-                                          const hours = parseInt(timeSegments[0]) || 0;
-                                          const minutes = parseInt(timeSegments[1]) || 0;
-                                          const seconds = parseInt(timeSegments[2]) || 0;
+                    return (
+                      <div className="space-y-4">
+                        {allEvents.map((event, index) => (
+                          <div key={`${event.type}-${index}`} className="relative">
+                            {/* Timeline line */}
+                            {index < allEvents.length - 1 && (
+                              <div className="absolute left-6 top-12 w-0.5 h-8 bg-gray-200" />
+                            )}
 
-                                          // Validate parsed values
-                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) &&
-                                              !isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
-                                            // Create date using local timezone components (no UTC conversion)
-                                            const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
-
-                                            // Check if the created date is valid
-                                            if (!isNaN(localDate.getTime())) {
-                                              return localDate.toLocaleString("en-US", {
-                                                year: "numeric",
-                                                month: "short",
-                                                day: "numeric",
-                                                hour: "numeric",
-                                                minute: "2-digit",
-                                                hour12: true,
-                                              });
-                                            }
-                                          }
-                                        }
-                                      }
-
-                                      // Fallback: try standard date parsing
-                                      const fallbackDate = new Date(storedTime);
-                                      if (!isNaN(fallbackDate.getTime())) {
-                                        return fallbackDate.toLocaleString("en-US", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "numeric",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        });
-                                      }
-
-                                      // Final fallback
-                                      return "Registration Date";
-                                    }
-
-                                    // Fix timezone issues for pathology and services
-                                    let displayDate = new Date(timestampToFormat);
-
-                                    // Pathology orders are 5.5 hours behind - add 5.5 hours
-                                    if (event.type === "pathology") {
-                                      displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
-                                    }
-
-                                    // Services are 11 hours ahead - subtract 11 hours  
-                                    if (event.type === "service") {
-                                      displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
-                                    }
-
-                                    return displayDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  })()}
-                                </span>
+                            <div className="flex items-start gap-4">
+                              {/* Timeline dot */}
+                              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                {(() => {
+                                  switch (event.type) {
+                                    case "opd_visit":
+                                      return <Stethoscope className="w-5 h-5 text-blue-600" />;
+                                    case "service":
+                                    case "service_group":
+                                      return <Heart className="w-5 h-5 text-green-600" />;
+                                    case "pathology":
+                                      return <TestTube className="w-5 h-5 text-purple-600" />;
+                                    case "admission":
+                                      return <Bed className="w-5 h-5 text-orange-600" />;
+                                    case "admission_event":
+                                      return <ClipboardList className="w-5 h-5 text-yellow-600" />;
+                                    case "discharge":
+                                      return <X className="w-5 h-5 text-red-600" />;
+                                    default:
+                                      return <Clock className="w-5 h-5 text-gray-600" />;
+                                  }
+                                })()}
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {event.description}
-                              </p>
-                              {(event as any).extraInfo && (
-                                <p className="text-sm text-green-600">
-                                  {(event as any).extraInfo}
-                                </p>
-                              )}
+
+                              {/* Event card */}
+                              <div className="flex-1 bg-white border rounded-lg p-4 shadow-sm">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className="font-semibold text-gray-900">
+                                    {(() => {
+                                      switch (event.type) {
+                                        case "opd_visit":
+                                          return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
+                                        case "service":
+                                          return event.data.services[0].serviceName || "Service";
+                                        case "service_group":
+                                          return `${event.data.services.length} Services`;
+                                        case "pathology":
+                                          return `Pathology Tests - Order ${event.data.orderId}`;
+                                        case "admission":
+                                          return `Patient Admitted - ${event.data.currentWardType} (${event.data.currentRoomNumber})`;
+                                        case "admission_event":
+                                          if (event.data.eventType === "room_change") {
+                                            return `Room Transfer - ${event.data.wardType} (${event.data.roomNumber})`;
+                                          }
+                                          return `Admission ${event.data.eventType}`;
+                                        case "discharge":
+                                          return "Patient Discharged";
+                                        default:
+                                          return "Timeline Event";
+                                      }
+                                    })()}
+                                  </h3>
+
+                                  <div className="flex items-center gap-2">
+                                    {/* Receipt/Print button for applicable events */}
+                                    {(event.type === "service" || 
+                                      event.type === "service_group" ||
+                                      event.type === "pathology" || 
+                                      event.type === "admission" || 
+                                      event.type === "admission_event" ||
+                                      event.type === "opd_visit") && (
+                                      <ReceiptTemplate
+                                        receiptData={event.type === "service_group" 
+                                          ? {
+                                              type: "service" as const,
+                                              id: event.data.orderId,
+                                              title: `${event.data.services.length} Services`,
+                                              date: event.data.scheduledDate,
+                                              amount: event.data.totalAmount,
+                                              description: event.data.services.map((s: any) => s.serviceName).join(", "),
+                                              patientName: patient?.name || "Unknown Patient",
+                                              patientId: patient?.patientId || "Unknown ID",
+                                              details: {
+                                                ...event.data,
+                                                services: event.data.services,
+                                                patientAge: patient?.age,
+                                                patientGender: patient?.gender,
+                                                doctorName: event.data.doctorId ? doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor" : "No Doctor Assigned",
+                                                receiptNumber: event.data.receiptNumber,
+                                              },
+                                            }
+                                          : generateReceiptData(event.data, event.type)
+                                        }
+                                        hospitalInfo={hospitalInfo}
+                                        trigger={
+                                          <Button size="sm" variant="outline" className="flex items-center gap-1">
+                                            <Printer className="w-3 h-3" />
+                                            Receipt
+                                          </Button>
+                                        }
+                                      />
+                                    )}
+
+                                    <span className="text-xs text-gray-500">
+                                      {formatDate(event.timestamp.toISOString())}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="text-sm text-gray-600">
+                                  {(() => {
+                                    switch (event.type) {
+                                      case "opd_visit":
+                                        return (
+                                          <div>
+                                            <div className="mb-1">
+                                              <strong>Consultation Fee:</strong> ₹{event.data.consultationFee || 0}
+                                            </div>
+                                            {event.data.symptoms && (
+                                              <div className="mb-1">
+                                                <strong>Symptoms:</strong> {event.data.symptoms}
+                                              </div>
+                                            )}
+                                            {event.data.diagnosis && (
+                                              <div className="mb-1">
+                                                <strong>Diagnosis:</strong> {event.data.diagnosis}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "service":
+                                        return (
+                                          <div>
+                                            <div className="mb-1">
+                                              <strong>Cost:</strong> ₹{event.data.services[0].calculatedAmount || event.data.services[0].price}
+                                            </div>
+                                            {event.data.notes && (
+                                              <div className="mb-1">
+                                                <strong>Notes:</strong> {event.data.notes}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "service_group":
+                                        return (
+                                          <div>
+                                            <div className="mb-2">
+                                              <strong>Services:</strong>
+                                              <ul className="ml-4 mt-1">
+                                                {event.data.services.map((service: any, idx: number) => (
+                                                  <li key={idx} className="flex justify-between">
+                                                    <span>{service.serviceName}</span>
+                                                    <span>₹{service.calculatedAmount || service.price}</span>
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            </div>
+                                            <div className="mb-1">
+                                              <strong>Total Cost:</strong> ₹{event.data.totalAmount}
+                                            </div>
+                                            {event.data.notes && (
+                                              <div className="mb-1">
+                                                <strong>Notes:</strong> {event.data.notes}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "pathology":
+                                        return (
+                                          <div>
+                                            <div className="mb-1">
+                                              <strong>Total Cost:</strong> ₹{event.data.totalPrice}
+                                            </div>
+                                            <div className="mb-1">
+                                              <strong>Status:</strong> {event.data.status}
+                                            </div>
+                                            {event.data.remarks && (
+                                              <div className="mb-1">
+                                                <strong>Remarks:</strong> {event.data.remarks}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "admission":
+                                        return (
+                                          <div>
+                                            <div className="mb-1">
+                                              <strong>Daily Cost:</strong> ₹{event.data.dailyCost}
+                                            </div>
+                                            {event.data.reason && (
+                                              <div className="mb-1">
+                                                <strong>Reason:</strong> {event.data.reason}
+                                              </div>
+                                            )}
+                                            {event.data.diagnosis && (
+                                              <div className="mb-1">
+                                                <strong>Diagnosis:</strong> {event.data.diagnosis}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "admission_event":
+                                        return (
+                                          <div>
+                                            {event.data.eventType === "room_change" && (
+                                              <div className="mb-1">
+                                                <strong>Previous Room:</strong> {event.data.admission?.currentRoomNumber}
+                                              </div>
+                                            )}
+                                            {event.data.notes && (
+                                              <div className="mb-1">
+                                                <strong>Notes:</strong> {event.data.notes}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      case "discharge":
+                                        return (
+                                          <div>
+                                            <div className="mb-1">
+                                              <strong>Total Stay:</strong> {calcStayDays(event.data.admissionDate, event.data.dischargeDate)} days
+                                            </div>
+                                            <div className="mb-1">
+                                              <strong>Total Cost:</strong> ₹{event.data.totalCost}
+                                            </div>
+                                          </div>
+                                        );
+                                      default:
+                                        return <div>Event details not available</div>;
+                                    }
+                                  })()}
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          {event.type !== "registration" && (
-                            <div className="flex items-stretch">
-                              <div className="flex items-center h-full">
-                                <ReceiptTemplate
-                                  receiptData={generateReceiptData(
-                                    event,
-                                    event.type,
-                                  )}
-                                  hospitalInfo={hospitalInfo}
-                                  onPrint={() => {
-                                    toast({
-                                      title: "Receipt printed",
-                                      description:
-                                        "Receipt has been sent to printer.",
-                                    });
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        <p>
-                          Patient timeline will show services, admissions, and
-                          pathology orders as they are added.
-                        </p>
+                        ))}
                       </div>
                     );
                   })()}

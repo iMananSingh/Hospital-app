@@ -1303,14 +1303,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Request body must be an array of services" });
       }
 
+      if (req.body.length === 0) {
+        return res.status(400).json({ message: "No services provided" });
+      }
+
+      // Generate a single receipt number and orderId for the entire batch
+      const firstService = req.body[0];
+      const serviceType = firstService.serviceType === "opd" ? "opd" : "service";
+      const eventDate = new Date(firstService.scheduledDate).toISOString().split("T")[0];
+      
+      // Get daily count for receipt numbering
+      let count;
+      try {
+        const response = await fetch(`http://localhost:5000/api/receipts/daily-count/${serviceType}/${eventDate}`, {
+          headers: {
+            Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          count = data.count;
+        } else {
+          count = 1;
+        }
+      } catch (error) {
+        console.error("Error fetching daily count:", error);
+        count = 1;
+      }
+
+      // Generate receipt number
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, "").slice(0, 6);
+      const typeCode = serviceType === "opd" ? "OPD" : "SER";
+      const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, "0")}`;
+
+      // Generate single orderId for the batch
+      const orderId = `SRV-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+
+      console.log("Generated receipt number:", receiptNumber);
+      console.log("Generated order ID:", orderId);
+
+      // Add receipt number and orderId to all services
+      const servicesWithMetadata = req.body.map((service: any) => ({
+        ...service,
+        receiptNumber: receiptNumber,
+        orderId: orderId,
+      }));
+
       // Log doctor IDs for each service with more detail
-      req.body.forEach((service: any, index: number) => {
+      servicesWithMetadata.forEach((service: any, index: number) => {
         console.log(`=== SERVICE ${index + 1} INPUT ANALYSIS ===`);
         console.log(`Doctor ID:`, service.doctorId);
         console.log(`Doctor ID type:`, typeof service.doctorId);
         console.log(`Service Name:`, service.serviceName);
         console.log(`Service Type:`, service.serviceType);
         console.log(`Patient ID:`, service.patientId);
+        console.log(`Receipt Number:`, service.receiptNumber);
+        console.log(`Order ID:`, service.orderId);
 
         // Check if doctorId is actually null vs undefined vs empty string
         if (service.doctorId === null) {
@@ -1324,7 +1374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      const services = await storage.createPatientServicesBatch(req.body, req.user.id);
+      const services = await storage.createPatientServicesBatch(servicesWithMetadata, req.user.id);
       console.log("=== BATCH SERVICE CREATION RESULT ===");
       console.log("Created services count:", services.length);
 
@@ -1336,6 +1386,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Doctor ID type:`, typeof service.doctorId);
         console.log(`Service Name:`, service.serviceName);
         console.log(`Service Type:`, service.serviceType);
+        console.log(`Receipt Number:`, service.receiptNumber);
+        console.log(`Order ID:`, service.orderId);
       });
 
       res.json(services);

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
@@ -33,7 +32,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
         return 'Pathology Receipt';
       case 'service':
         // Check if it's an OPD consultation first - check multiple possible identifiers
-        if (details?.category === 'OPD Consultation' || 
+        if (details?.category === 'OPD Consultation' ||
             details?.serviceType === 'opd' ||
             details?.serviceName === 'OPD Consultation' ||
             receiptData.title === 'OPD Consultation' ||
@@ -43,7 +42,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             details?.consultationFee) {
           return 'OPD Receipt';
         }
-        
+
         // Get the service category from details
         const category = details?.category;
         if (category) {
@@ -88,25 +87,25 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       const doctorName = receiptData.details.doctorName;
       return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
-    
+
     // For pathology receipts, try to get doctor from the details
     if (receiptData.type === 'pathology' && receiptData.details?.doctor) {
       const doctorName = receiptData.details.doctor.name;
       return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
-    
+
     // For service receipts, try to get doctor from the details
     if (receiptData.type === 'service' && receiptData.details?.doctor) {
       const doctorName = receiptData.details.doctor.name;
       return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
-    
+
     // For admission receipts, try to get doctor from the details
     if (receiptData.type === 'admission' && receiptData.details?.doctor) {
       const doctorName = receiptData.details.doctor.name;
       return doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
     }
-    
+
     // If no doctor information is available
     return 'No Doctor Assigned';
   };
@@ -133,7 +132,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               padding: 0;
               box-sizing: border-box;
             }
-            
+
             body {
               font-family: Arial, sans-serif;
               line-height: 1.4;
@@ -141,7 +140,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               background: white;
               font-size: 14px;
             }
-            
+
             .receipt {
               max-width: 800px;
               margin: 0 auto;
@@ -149,7 +148,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               display: flex;
               flex-direction: column;
             }
-            
+
             /* Page Header for printing */
             .page-header {
               display: none;
@@ -169,25 +168,25 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               padding-bottom: 15px;
               border-bottom: 2px solid #333;
             }
-            
+
             .hospital-info {
               display: flex;
               align-items: center;
               gap: 15px;
             }
-            
+
             .hospital-logo {
               width: 60px;
               height: 60px;
               object-fit: contain;
             }
-            
+
             .hospital-name {
               font-size: 24px;
               font-weight: bold;
               color: #333;
             }
-            
+
             /* Receipt Title */
             .receipt-title {
               text-align: center;
@@ -197,7 +196,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               text-transform: uppercase;
               letter-spacing: 1px;
             }
-            
+
             /* Patient Information Box */
             .patient-info-box {
               border: 2px solid #333;
@@ -205,7 +204,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               margin: 8px 0 5px 0;
               background: #f9f9f9;
             }
-            
+
             .patient-line-1 {
               display: flex;
               margin-bottom: 8px;
@@ -213,79 +212,79 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               gap: 20px;
               align-items: center;
             }
-            
+
             .patient-line-1 .name-section {
               flex: 2;
               min-width: 0;
             }
-            
+
             .patient-line-1 .age-section {
               flex: 0 0 auto;
               min-width: 80px;
             }
-            
+
             .patient-line-1 .sex-section {
               flex: 0 0 auto;
               min-width: 80px;
             }
-            
+
             .patient-line-1 .date-section {
               flex: 0 0 auto;
               min-width: 120px;
               text-align: right;
             }
-            
+
             .patient-line-2 {
               display: flex;
               justify-content: space-between;
               font-weight: bold;
             }
-            
+
             /* Bill Details */
             .bill-section {
               margin: 2px 0 5px 0;
               flex-grow: 1;
             }
-            
+
             .bill-table {
               width: 100%;
               border-collapse: collapse;
               margin: 5px 0;
             }
-            
+
             .bill-table th,
             .bill-table td {
               border: 1px solid #333;
               padding: 8px;
               text-align: left;
             }
-            
+
             .bill-table th {
               background: #f0f0f0;
               font-weight: bold;
             }
-            
+
             .amount-cell {
               text-align: right !important;
             }
-            
+
             .total-row {
               font-weight: bold;
               background: #f0f0f0;
             }
-            
+
             .description-section {
               margin: 5px 0;
               padding: 8px;
               background: #f9f9f9;
               border: 1px solid #ddd;
             }
-            
+
             .description-title {
               font-weight: bold;
               margin-bottom: 5px;
             }
-            
+
             /* Signature Section */
             .signature-section {
               margin: 35px 0;
@@ -293,18 +292,18 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               justify-content: space-between;
               align-items: center;
             }
-            
+
             .signature-box {
               text-align: center;
               min-width: 200px;
             }
-            
+
             .signature-line {
               border-bottom: 1px solid #333;
               margin-bottom: 5px;
               height: 40px;
             }
-            
+
             /* Footer */
             .footer {
               margin-top: 8px;
@@ -314,59 +313,59 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               font-size: 12px;
               line-height: 1.5;
             }
-            
+
             .footer-line {
               margin-bottom: 3px;
             }
-            
+
             .receipt-id {
               margin-top: 15px;
               font-family: monospace;
               font-size: 10px;
               color: #666;
             }
-            
+
             @page {
               margin: 1.5in 1in 1in 1in;
               size: A4;
             }
-            
+
             @media print {
               @page {
                 margin: 0;
                 size: A4;
               }
             }
-            
+
             @media print {
               * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
               }
-              
+
               html, body {
                 margin: 0 !important;
                 padding: 0 !important;
                 height: auto !important;
                 background: white !important;
               }
-              
+
               /* Hide browser default headers and footers */
               @page {
                 margin: 0;
                 size: A4;
               }
-              
+
               html {
                 -webkit-print-color-adjust: exact;
               }
-              
+
               .receipt {
                 margin: 0 !important;
                 padding: 0 !important;
                 page-break-inside: avoid;
               }
-              
+
               /* Show headers and footers on every page */
               .page-header {
                 display: flex !important;
@@ -446,12 +445,12 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <div class="hospital-name">${hospitalInfo.name}</div>
               </div>
             </div>
-            
+
             <!-- Receipt Title -->
             <div class="receipt-title">
               ${getReceiptTitle(receiptData.type, receiptData.details)}
             </div>
-            
+
             <!-- Patient Information Box -->
             <div class="patient-info-box">
               <div class="patient-line-1">
@@ -477,7 +476,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     if (receiptData.details?.orderNumber) {
                       return receiptData.details.orderNumber;
                     }
-                    // Check if there's an order object with orderNumber  
+                    // Check if there's an order object with orderNumber
                     if (receiptData.details?.order?.orderNumber) {
                       return receiptData.details.order.orderNumber;
                     }
@@ -501,7 +500,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 ` : `<span>Receipt No: ${receiptNumber}</span>`}
               </div>
             </div>
-            
+
             <!-- Bill Section -->
             <div class="bill-section">
               <table class="bill-table">
@@ -517,10 +516,10 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     if (receiptData.type === 'pathology') {
                       // Try multiple possible locations for test data
                       let tests = null;
-                      
+
                       console.log('=== PATHOLOGY RECEIPT DEBUG ===');
                       console.log('receiptData.details:', receiptData.details);
-                      
+
                       // Check if tests are in details.tests (direct from API)
                       if (receiptData.details?.tests && Array.isArray(receiptData.details.tests)) {
                         tests = receiptData.details.tests;
@@ -542,9 +541,9 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                         tests = receiptData.details;
                         console.log('Found tests as details array directly:', tests);
                       }
-                      
+
                       console.log('Final tests to use:', tests);
-                      
+
                       if (tests && tests.length > 0) {
                         return tests.map((test, index) => {
                           const testName = test.testName || test.test_name || test.name || `Lab Test ${index + 1}`;
@@ -561,7 +560,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                         console.log('No tests found, falling back to order ID display');
                       }
                     }
-                    
+
                     // For other types or if no tests available, use the title as usual
                     return `
                       <tr>
@@ -577,7 +576,38 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 </tbody>
               </table>
             </div>
-            
+
+            {/* Service Items */}
+            <div className="mt-6 space-y-2">
+              {receiptData.details?.services && receiptData.details.services.length > 1 ? (
+                // Multiple services - show each service with its price
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-700 mb-2">Services:</div>
+                  {receiptData.details.services.map((service: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center ml-4">
+                      <span>{service.serviceName}</span>
+                      <span>₹{(service.calculatedAmount || service.price).toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <div className="border-t pt-2 mt-2 flex justify-between items-center font-bold">
+                    <span>Total:</span>
+                    <span>₹{receiptData.amount.toLocaleString()}</span>
+                  </div>
+                </div>
+              ) : (
+                // Single service
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{receiptData.title}</span>
+                  <span className="font-bold">₹{receiptData.amount.toLocaleString()}</span>
+                </div>
+              )}
+              {receiptData.description && !receiptData.details?.services && (
+                <div className="text-sm text-gray-600 ml-4">
+                  {receiptData.description}
+                </div>
+              )}
+            </div>
+
             <!-- Signature Section -->
             <div class="signature-section">
               <div class="signature-box" style="margin-left: auto;">
@@ -585,7 +615,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <div>Authorized Signature & Stamp</div>
               </div>
             </div>
-            
+
             <!-- Footer -->
             <div class="footer">
               <div class="footer-line">Address: ${hospitalInfo.address}</div>
@@ -602,7 +632,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     printWindow.document.write(receiptHtml);
     printWindow.document.close();
     printWindow.focus();
-    
+
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
