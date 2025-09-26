@@ -3274,11 +3274,29 @@ export default function PatientDetail() {
                                     );
                                   case "pathology":
                                     return (
-                                      <div className="space-y-1">
-                                        <div><span className="font-medium">Tests:</span> {event.data.testName}</div>
-                                        <div><span className="font-medium">Total Cost:</span> ₹{event.data.totalPrice}</div>
-                                        <div><span className="font-medium">Status:</span> {event.data.status}</div>
-                                        {event.data.remarks && <div><span className="font-medium">Remarks:</span> {event.data.remarks}</div>}
+                                      <div>
+                                        <div className="font-medium mb-2 text-gray-800">Tests in this order:</div>
+                                        <div className="space-y-1 ml-4 bg-white rounded p-2 border">
+                                          {event.data.tests && event.data.tests.length > 0 ? (
+                                            event.data.tests.map((test: any, idx: number) => (
+                                              <div key={idx} className="flex justify-between items-center text-sm">
+                                                <span>• {test.testName}</span>
+                                                <span className="font-medium">₹{test.price || 0}</span>
+                                              </div>
+                                            ))
+                                          ) : (
+                                            <div className="flex justify-between items-center text-sm">
+                                              <span>• {event.data.testName}</span>
+                                              <span className="font-medium">₹{event.data.totalPrice || 0}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
+                                          <span>Total Cost:</span>
+                                          <span className="text-lg">₹{event.data.totalPrice}</span>
+                                        </div>
+                                        <div className="mt-2"><span className="font-medium">Status:</span> {event.data.status}</div>
+                                        {event.data.remarks && <div className="mt-1"><span className="font-medium">Remarks:</span> {event.data.remarks}</div>}
                                       </div>
                                     );
                                   case "admission":
