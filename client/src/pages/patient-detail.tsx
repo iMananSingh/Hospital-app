@@ -310,7 +310,6 @@ export default function PatientDetail() {
     }
 
     // Helper function to get doctor name from doctor ID
-    const getDoctorName = () => {
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
       // For services, always use the stored receiptNumber
