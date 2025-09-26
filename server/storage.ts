@@ -2401,14 +2401,21 @@ export class SqliteStorage implements IStorage {
           }
 
           // Calculate doctor earnings if doctor is assigned and service exists
-          if (serviceData.doctorId) {
-            console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`);
-            if (service) {
-              console.log(`Triggering batch earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`);
+          if (serviceData.doctorId && serviceData.serviceId) {
+            // Get service details for earnings calculation
+            const serviceForEarnings = tx
+              .select()
+              .from(schema.services)
+              .where(eq(schema.services.id, serviceData.serviceId))
+              .get();
+
+            console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`);
+            if (serviceForEarnings) {
+              console.log(`Triggering batch earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`);
               // We need to calculate this outside the transaction to avoid issues
               setImmediate(async () => {
                 try {
-                  await this.calculateDoctorEarning(created, service);
+                  await this.calculateDoctorEarning(created, serviceForEarnings);
                 } catch (error) {
                   console.error(`Error in batch async earnings calculation for doctor ${serviceData.doctorId}:`, error);
                 }
