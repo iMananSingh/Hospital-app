@@ -470,7 +470,23 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               </div>
               <div class="patient-line-2">
                 <span>Doctor: ${getDoctorName()}</span>
-                <span>${receiptData.type === 'pathology' ? `Order ID: ${receiptData.id} | ` : ''}Receipt No: ${receiptNumber}</span>
+                <span>${receiptData.type === 'pathology' ? `Pathology Order: ${(() => {
+                  // Check if there's a formatted order number in the details
+                  if (receiptData.details?.orderNumber) {
+                    return receiptData.details.orderNumber;
+                  }
+                  // Check if there's an order object with orderNumber
+                  if (receiptData.details?.order?.orderNumber) {
+                    return receiptData.details.order.orderNumber;
+                  }
+                  // Generate a formatted order number based on date and ID
+                  const date = new Date(receiptData.date);
+                  const year = date.getFullYear();
+                  const month = String(date.getMonth() + 1).padStart(2, '0');
+                  const day = String(date.getDate()).padStart(2, '0');
+                  const shortId = receiptData.id.substring(0, 3);
+                  return `LAB-${year}-${month}${day}-${shortId}`;
+                })()} | ` : ''}Receipt No: ${receiptNumber}</span>
               </div>
             </div>
             
