@@ -418,64 +418,6 @@ export default function PatientDetail() {
       return "RECEIPT-NOT-FOUND";
     };
 
-    // Helper function to get doctor name from doctor ID
-    const getDoctorName = () => {
-      // First try to get doctor name from event directly
-      if (event.doctorName) {
-        return event.doctorName;
-      }
-
-      // Try to get from nested doctor object
-      if (event.doctor?.name) {
-        return event.doctor.name;
-      }
-
-      // Try to resolve doctor ID from the doctors array
-      if (event.doctorId && doctors && doctors.length > 0) {
-        const doctor = doctors.find((d: Doctor) => d.id === event.doctorId);
-        if (doctor) {
-          return doctor.name;
-        }
-      }
-
-      // Try to get from rawData for pathology orders
-      if (eventType === "pathology" && event.rawData?.order?.doctorId) {
-        const doctor = doctors.find(
-          (d: Doctor) => d.id === event.rawData.order.doctorId,
-        );
-        if (doctor) {
-          return doctor.name;
-        }
-      }
-
-      // Try to get from rawData for admission events
-      if (eventType === "admission_event" && event.rawData?.event?.doctorId) {
-        const doctor = doctors.find(
-          (d: Doctor) => d.id === event.rawData.event.doctorId,
-        );
-        if (doctor) {
-          return doctor.name;
-        }
-      }
-
-      // Try to get from rawData for admission fallback
-      if (eventType === "admission" && event.rawData?.admission?.doctorId) {
-        const doctor = doctors.find(
-          (d: Doctor) => d.id === event.rawData.admission.doctorId,
-        );
-        if (doctor) {
-          return doctor.name;
-        }
-      }
-
-      // For OPD visits, use the doctor name from rawData if available
-      if (eventType === "opd_visit" && event.rawData?.doctor?.name) {
-        return event.rawData.doctor.name;
-      }
-
-      return "No Doctor Assigned";
-    };
-
     // Calculate the correct amount based on event type
     let eventAmount = 0;
 
