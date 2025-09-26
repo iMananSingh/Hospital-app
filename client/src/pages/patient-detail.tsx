@@ -3380,7 +3380,7 @@ export default function PatientDetail() {
                               }
                               
                               return doctorName ? (
-                                <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600 bg-white/30 rounded px-2 py-1">
+                                <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600">
                                   <span className="font-medium">Doctor:</span> Dr. {doctorName}
                                 </div>
                               ) : null;
