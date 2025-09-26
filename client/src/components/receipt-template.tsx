@@ -585,36 +585,13 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               </table>
             </div>
 
-            {/* Service Items */}
-            <div className="mt-6 space-y-2">
-              {receiptData.details?.services && receiptData.details.services.length > 1 ? (
-                // Multiple services - show each service with its price
-                <div className="space-y-2">
-                  <div className="font-medium text-gray-700 mb-2">Services:</div>
-                  {receiptData.details.services.map((service: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center ml-4">
-                      <span>{service.serviceName}</span>
-                      <span>₹{(service.calculatedAmount || service.price).toLocaleString()}</span>
-                    </div>
-                  ))}
-                  <div className="border-t pt-2 mt-2 flex justify-between items-center font-bold">
-                    <span>Total:</span>
-                    <span>₹{receiptData.amount.toLocaleString()}</span>
-                  </div>
-                </div>
-              ) : (
-                // Single service
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{receiptData.title}</span>
-                  <span className="font-bold">₹{receiptData.amount.toLocaleString()}</span>
-                </div>
-              )}
-              {receiptData.description && !receiptData.details?.services && (
-                <div className="text-sm text-gray-600 ml-4">
-                  {receiptData.description}
-                </div>
-              )}
-            </div>
+            <!-- Description Section (if applicable) -->
+            ${receiptData.description && !receiptData.details?.services ? `
+              <div class="description-section">
+                <div class="description-title">Additional Information:</div>
+                <div>${receiptData.description}</div>
+              </div>
+            ` : ''}
 
             <!-- Signature Section -->
             <div class="signature-section">
