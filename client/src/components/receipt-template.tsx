@@ -490,36 +490,57 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       // Try multiple possible locations for test data
                       let tests = null;
                       
-                      // Check if tests are in details.tests
+                      console.log('=== PATHOLOGY RECEIPT DEBUG ===');
+                      console.log('receiptData.details:', receiptData.details);
+                      
+                      // Check if tests are in details.tests (direct from API)
                       if (receiptData.details?.tests && Array.isArray(receiptData.details.tests)) {
                         tests = receiptData.details.tests;
+                        console.log('Found tests in details.tests:', tests);
                       }
-                      // Check if tests are in details.order.tests
+                      // Check if tests are in details.order.tests (from pathology order structure)
                       else if (receiptData.details?.order?.tests && Array.isArray(receiptData.details.order.tests)) {
                         tests = receiptData.details.order.tests;
+                        console.log('Found tests in details.order.tests:', tests);
                       }
-                      // Check if tests are in details.rawData.tests
+                      // Check if tests are in details.rawData.tests (backup location)
                       else if (receiptData.details?.rawData?.tests && Array.isArray(receiptData.details.rawData.tests)) {
                         tests = receiptData.details.rawData.tests;
+                        console.log('Found tests in details.rawData.tests:', tests);
+                      }
+                      // Check if the entire details object is a pathology order with tests
+                      else if (receiptData.details && Array.isArray(receiptData.details) && receiptData.details.length > 0) {
+                        // Sometimes the details might be the tests array directly
+                        tests = receiptData.details;
+                        console.log('Found tests as details array directly:', tests);
                       }
                       
+                      console.log('Final tests to use:', tests);
+                      
                       if (tests && tests.length > 0) {
-                        return tests.map(test => `
-                          <tr>
-                            <td>${test.testName || test.test_name || 'Lab Test'}</td>
-                            <td class="amount-cell" style="text-align: right !important;">₹${test.price ? test.price.toLocaleString() : '0'}</td>
-                          </tr>
-                        `).join('');
+                        return tests.map((test, index) => {
+                          const testName = test.testName || test.test_name || test.name || \`Lab Test \${index + 1}\`;
+                          const testPrice = test.price || 0;
+                          console.log(\`Test \${index + 1}: \${testName} - ₹\${testPrice}\`);
+                          return \`
+                            <tr>
+                              <td>\${testName}</td>
+                              <td class="amount-cell" style="text-align: right !important;">₹\${testPrice.toLocaleString()}</td>
+                            </tr>
+                          \`;
+                        }).join('');
+                      } else {
+                        console.log('No tests found, falling back to order ID display');
                       }
                     }
                     
                     // For other types or if no tests available, use the title as usual
-                    return `
+                    return \`
                       <tr>
-                        <td>${receiptData.title}</td>
-                        <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                        <td>\${receiptData.title}</td>
+                        <td class="amount-cell" style="text-align: right !important;">₹\${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                       </tr>
-                    `;
+                    \`;
                   })()}
                   <tr class="total-row">
                     <td style="text-align: right; font-weight: bold;">Total Amount:</td>

@@ -395,11 +395,11 @@ export default function PatientDetail() {
 
     // Calculate the correct amount based on event type
     let eventAmount = 0;
-    
+
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
       if (event.rawData?.visit) {
-        eventAmount = event.rawData.visit.consultationFee || 
+        eventAmount = event.rawData.visit.consultationFee ||
                      (event.rawData.doctor ? event.rawData.doctor.consultationFee : 0);
       } else {
         eventAmount = event.amount || 0;
@@ -1824,8 +1824,8 @@ export default function PatientDetail() {
                   console.log("OPD button clicked");
                   const now = new Date();
                   // Use current local time for OPD appointment scheduling
-                  const currentDate = now.getFullYear() + "-" + 
-                    String(now.getMonth() + 1).padStart(2, "0") + "-" + 
+                  const currentDate = now.getFullYear() + "-" +
+                    String(now.getMonth() + 1).padStart(2, "0") + "-" +
                     String(now.getDate()).padStart(2, "0");
                   const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
@@ -2954,7 +2954,7 @@ export default function PatientDetail() {
                       services.forEach((service: any) => {
                         let serviceDate = service.createdAt;
                         if (!serviceDate && service.scheduledDate) {
-                          serviceDate = service.scheduledTime 
+                          serviceDate = service.scheduledTime
                             ? `${service.scheduledDate}T${service.scheduledTime}:00`
                             : `${service.scheduledDate}T00:00:00`;
                         }
@@ -3065,24 +3065,27 @@ export default function PatientDetail() {
                     }
 
                     // Add pathology orders
-                    if (pathologyOrders && pathologyOrders.length > 0) {
-                      pathologyOrders.forEach((orderData: any) => {
-                        const order = orderData.order || orderData;
-                        if (!order) return;
-
-                        const orderTime = order.createdAt || order.orderedDate;
+                    pathologyOrders.forEach((orderData: any) => {
+                      const { order, tests } = orderData;
+                      if (order) {
                         timelineEvents.push({
-                          id: `pathology-${order.id || Date.now()}`,
+                          id: order.id,
                           type: "pathology",
-                          title: `Pathology Order: ${order.orderId || "Unknown"}`,
-                          description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
-                          color: "bg-purple-500",
-                          sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
-                          originalTimestamp: orderTime,
-                          rawData: { order },
+                          title: `Pathology Order: ${order.orderId}`,
+                          date: order.orderedDate,
+                          amount: order.totalPrice,
+                          description: tests
+                            .map((test: any) => test.testName)
+                            .join(", "),
+                          sortTimestamp: order.createdAt,
+                          status: order.status,
+                          receiptNumber: order.receiptNumber,
+                          tests: tests, // Direct access to tests
+                          order: order, // Direct access to order
+                          rawData: { order, tests }, // Store both order and tests as backup
                         });
-                      });
-                    }
+                      }
+                    });
 
                     // Add OPD visits 
                     if (opdVisits && opdVisits.length > 0) {
@@ -3184,7 +3187,7 @@ export default function PatientDetail() {
                                           const seconds = parseInt(timeSegments[2]) || 0;
 
                                           // Validate parsed values
-                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) &&
                                               !isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
                                             // Create date using local timezone components (no UTC conversion)
                                             const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
@@ -4690,7 +4693,7 @@ export default function PatientDetail() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Doctor *</FormLabel>
-                        <Select 
+                        <Select
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Auto-fill consultation fee when doctor is selected
@@ -4701,7 +4704,7 @@ export default function PatientDetail() {
                               // If no doctor is selected or it's an invalid ID, reset fee
                               opdVisitForm.setValue("consultationFee", undefined);
                             }
-                          }} 
+                          }}
                           defaultValue={field.value}
                         >
                           <FormControl>
