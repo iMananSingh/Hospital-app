@@ -436,6 +436,8 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
+        // For pathology orders, ensure tests are accessible
+        tests: eventType === "pathology" ? (event.tests || event.rawData?.tests || event.order?.tests) : undefined,
       },
     };
 

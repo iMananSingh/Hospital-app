@@ -486,14 +486,33 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <tbody>
                   ${(() => {
                     // For pathology receipts, show individual tests if available
-                    if (receiptData.type === 'pathology' && receiptData.details?.tests && Array.isArray(receiptData.details.tests)) {
-                      return receiptData.details.tests.map(test => `
-                        <tr>
-                          <td>${test.testName || test.test_name || 'Lab Test'}</td>
-                          <td class="amount-cell" style="text-align: right !important;">₹${test.price ? test.price.toLocaleString() : '0'}</td>
-                        </tr>
-                      `).join('');
+                    if (receiptData.type === 'pathology') {
+                      // Try multiple possible locations for test data
+                      let tests = null;
+                      
+                      // Check if tests are in details.tests
+                      if (receiptData.details?.tests && Array.isArray(receiptData.details.tests)) {
+                        tests = receiptData.details.tests;
+                      }
+                      // Check if tests are in details.order.tests
+                      else if (receiptData.details?.order?.tests && Array.isArray(receiptData.details.order.tests)) {
+                        tests = receiptData.details.order.tests;
+                      }
+                      // Check if tests are in details.rawData.tests
+                      else if (receiptData.details?.rawData?.tests && Array.isArray(receiptData.details.rawData.tests)) {
+                        tests = receiptData.details.rawData.tests;
+                      }
+                      
+                      if (tests && tests.length > 0) {
+                        return tests.map(test => `
+                          <tr>
+                            <td>${test.testName || test.test_name || 'Lab Test'}</td>
+                            <td class="amount-cell" style="text-align: right !important;">₹${test.price ? test.price.toLocaleString() : '0'}</td>
+                          </tr>
+                        `).join('');
+                      }
                     }
+                    
                     // For other types or if no tests available, use the title as usual
                     return `
                       <tr>
