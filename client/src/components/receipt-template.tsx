@@ -557,15 +557,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                           `;
                         }).join('');
                       } else {
-                        console.log('No tests found, falling back to order display');
-                        // Fallback: show the pathology order as a single line item
-                        const orderName = receiptData.title || `Pathology Order ${receiptData.details?.orderId || receiptData.id}`;
-                        return `
-                          <tr>
-                            <td>${orderName}</td>
-                            <td class="amount-cell" style="text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
-                          </tr>
-                        `;
+                        console.log('No tests found, falling back to order ID display');
                       }
                     }
 
