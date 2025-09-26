@@ -570,9 +570,24 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     }
 
                     // For other types or if no tests available, use the title as usual
+                    // Check if this is an OPD consultation and format accordingly
+                    let serviceDescription = receiptData.title;
+                    if (receiptData.details?.category === 'OPD Consultation' ||
+                        receiptData.details?.serviceType === 'opd' ||
+                        receiptData.details?.serviceName === 'OPD Consultation' ||
+                        receiptData.title === 'OPD Consultation' ||
+                        receiptData.title?.includes('OPD') ||
+                        receiptData.description?.includes('OPD') ||
+                        receiptData.details?.type === 'opd_visit' ||
+                        receiptData.details?.consultationFee) {
+                      // For OPD consultations, show "OPD Consultation - Doctor Name"
+                      const doctorName = getDoctorName();
+                      serviceDescription = `OPD Consultation - ${doctorName}`;
+                    }
+                    
                     return `
                       <tr>
-                        <td>${receiptData.title}</td>
+                        <td>${serviceDescription}</td>
                         <td class="amount-cell" style="text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                       </tr>
                     `;
