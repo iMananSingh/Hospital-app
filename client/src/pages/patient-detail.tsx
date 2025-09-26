@@ -423,12 +423,11 @@ export default function PatientDetail() {
 
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
-      if (event.rawData?.visit) {
-        eventAmount = event.rawData.visit.consultationFee ||
-                     (event.rawData.doctor ? event.rawData.doctor.consultationFee : 0);
-      } else {
-        eventAmount = event.amount || 0;
-      }
+      eventAmount = event.consultationFee || 
+                   event.amount || 
+                   (event.rawData?.visit?.consultationFee) ||
+                   (event.rawData?.doctor?.consultationFee) || 
+                   0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
     }
