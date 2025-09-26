@@ -3060,43 +3060,56 @@ export default function PatientDetail() {
                     // Add admissions and related events
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
-                        // Add admission event
+                        // Get admission events for this admission
+                        const events = admissionEventsMap[admission.id] || [];
+                        
+                        // Find the initial 'admit' event (if any)
+                        const admitEvent = events.find((event: any) => event.eventType === 'admit');
+                        
+                        // Add consolidated admission event (merge admission record with admit event)
                         allEvents.push({
                           type: "admission",
                           data: {
                             ...admission,
+                            // Merge admit event details if available
+                            admitEventNotes: admitEvent?.notes,
+                            admitEventTime: admitEvent?.eventTime,
                             sortTimestamp: new Date(admission.admissionDate).getTime(),
                           },
                           timestamp: new Date(admission.admissionDate),
                           sortTimestamp: new Date(admission.admissionDate).getTime(),
                         });
 
-                        // Add admission events
-                        const events = admissionEventsMap[admission.id] || [];
+                        // Add other admission events (excluding 'admit' events to avoid duplication)
                         events.forEach((event: any) => {
-                          allEvents.push({
-                            type: "admission_event",
-                            data: {
-                              ...event,
-                              admission,
+                          if (event.eventType !== 'admit') {
+                            allEvents.push({
+                              type: "admission_event",
+                              data: {
+                                ...event,
+                                admission,
+                                sortTimestamp: new Date(event.eventTime).getTime(),
+                              },
+                              timestamp: new Date(event.eventTime),
                               sortTimestamp: new Date(event.eventTime).getTime(),
-                            },
-                            timestamp: new Date(event.eventTime),
-                            sortTimestamp: new Date(event.eventTime).getTime(),
-                          });
+                            });
+                          }
                         });
 
-                        // Add discharge event if discharged
+                        // Add discharge event if discharged (only if no explicit discharge event exists)
                         if (admission.dischargeDate) {
-                          allEvents.push({
-                            type: "discharge",
-                            data: {
-                              ...admission,
+                          const hasDischargeEvent = events.some((event: any) => event.eventType === 'discharge');
+                          if (!hasDischargeEvent) {
+                            allEvents.push({
+                              type: "discharge",
+                              data: {
+                                ...admission,
+                                sortTimestamp: new Date(admission.dischargeDate).getTime(),
+                              },
+                              timestamp: new Date(admission.dischargeDate),
                               sortTimestamp: new Date(admission.dischargeDate).getTime(),
-                            },
-                            timestamp: new Date(admission.dischargeDate),
-                            sortTimestamp: new Date(admission.dischargeDate).getTime(),
-                          });
+                            });
+                          }
                         }
                       });
                     }
@@ -3324,6 +3337,8 @@ export default function PatientDetail() {
                                         <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
                                         {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
                                         {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
+                                        {event.data.admitEventNotes && <div><span className="font-medium">Notes:</span> {event.data.admitEventNotes}</div>}
+                                        {event.data.initialDeposit > 0 && <div><span className="font-medium">Initial Deposit:</span> ₹{event.data.initialDeposit}</div>}
                                       </div>
                                     );
                                   case "admission_event":
