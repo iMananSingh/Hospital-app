@@ -3295,7 +3295,26 @@ export default function PatientDetail() {
                                           <span>Total Cost:</span>
                                           <span className="text-lg">₹{event.data.totalPrice}</span>
                                         </div>
-                                        <div className="mt-2"><span className="font-medium">Status:</span> {event.data.status}</div>
+                                        {(() => {
+                                          // Get doctor name from the pathology order
+                                          let doctorName = null;
+                                          
+                                          // Try to get doctor ID from the event data
+                                          const doctorId = event.data.doctorId || 
+                                                         (event.data.rawData?.order?.doctorId) ||
+                                                         (event.data.order?.doctorId);
+                                          
+                                          if (doctorId && doctors && doctors.length > 0) {
+                                            const doctor = doctors.find((d: Doctor) => d.id === doctorId);
+                                            if (doctor) {
+                                              doctorName = doctor.name;
+                                            }
+                                          }
+                                          
+                                          return doctorName ? (
+                                            <div className="mt-2"><span className="font-medium">Doctor:</span> Dr. {doctorName}</div>
+                                          ) : null;
+                                        })()}
                                         {event.data.remarks && <div className="mt-1"><span className="font-medium">Remarks:</span> {event.data.remarks}</div>}
                                       </div>
                                     );
