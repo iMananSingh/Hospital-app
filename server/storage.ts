@@ -1650,7 +1650,7 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async searchPatients(query: string): Promise<Patient[]> {
+  async searchPatients(query: string): Promise<Patient[]>{
     return db
       .select()
       .from(schema.patients)
@@ -2201,6 +2201,7 @@ export class SqliteStorage implements IStorage {
       .from(schema.pathologyOrders)
       .where(eq(schema.pathologyOrders.id, id))
       .get();
+
     if (!order) return null;
 
     const tests = db
@@ -2208,11 +2209,17 @@ export class SqliteStorage implements IStorage {
       .from(schema.pathologyTests)
       .where(eq(schema.pathologyTests.orderId, id))
       .all();
-    const patient = db
-      .select()
-      .from(schema.patients)
-      .where(eq(schema.patients.id, order.patientId))
-      .get();
+
+    // Get patient info
+    const patient = order.patientId
+      ? db
+          .select()
+          .from(schema.patients)
+          .where(eq(schema.patients.id, order.patientId))
+          .get()
+      : null;
+
+    // Get doctor info if applicable
     const doctor = order.doctorId
       ? db
           .select()
@@ -2222,7 +2229,10 @@ export class SqliteStorage implements IStorage {
       : null;
 
     return {
-      order,
+      order: {
+        ...order,
+        tests, // Include tests in the order object for receipt generation
+      },
       tests,
       patient,
       doctor,

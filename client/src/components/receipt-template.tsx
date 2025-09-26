@@ -484,17 +484,24 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>${(() => {
-                      // For pathology receipts, show the individual test name if available
-                      if (receiptData.type === 'pathology' && receiptData.details?.rawData?.test?.testName) {
-                        return receiptData.details.rawData.test.testName;
-                      }
-                      // For other types, use the title as usual
-                      return receiptData.title;
-                    })()}</td>
-                    <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
-                  </tr>
+                  ${(() => {
+                    // For pathology receipts, show individual tests if available
+                    if (receiptData.type === 'pathology' && receiptData.details?.tests && Array.isArray(receiptData.details.tests)) {
+                      return receiptData.details.tests.map(test => `
+                        <tr>
+                          <td>${test.testName || test.test_name || 'Lab Test'}</td>
+                          <td class="amount-cell" style="text-align: right !important;">₹${test.price ? test.price.toLocaleString() : '0'}</td>
+                        </tr>
+                      `).join('');
+                    }
+                    // For other types or if no tests available, use the title as usual
+                    return `
+                      <tr>
+                        <td>${receiptData.title}</td>
+                        <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
+                      </tr>
+                    `;
+                  })()}
                   <tr class="total-row">
                     <td style="text-align: right; font-weight: bold;">Total Amount:</td>
                     <td class="amount-cell" style="font-weight: bold; text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
