@@ -30,6 +30,10 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   const getReceiptTitle = (type: string, details?: Record<string, any>) => {
     switch (type) {
       case 'pathology':
+        // Check if it's an individual test receipt
+        if (details?.isIndividualTest && details?.test?.testName) {
+          return `${details.test.testName} - Test Receipt`;
+        }
         return 'Pathology Receipt';
       case 'service':
         // Check if it's an OPD consultation first - check multiple possible identifiers
@@ -485,7 +489,15 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 </thead>
                 <tbody>
                   <tr>
-                    <td>${receiptData.title}</td>
+                    <td>${(() => {
+                      // For individual pathology tests, show test name and order reference
+                      if (receiptData.type === 'pathology' && receiptData.details?.isIndividualTest) {
+                        const testName = receiptData.details.test?.testName || receiptData.title;
+                        const orderId = receiptData.details.order?.orderId || 'Unknown Order';
+                        return `${testName} (Order: ${orderId})`;
+                      }
+                      return receiptData.title;
+                    })()}</td>
                     <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                   <tr class="total-row">

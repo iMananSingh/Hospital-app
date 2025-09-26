@@ -291,8 +291,9 @@ export default function PatientDetail() {
         return event.receiptNumber;
       }
 
-      // For pathology, try to get from order data
+      // For pathology orders, try to get from order data
       if (eventType === "pathology") {
+        // For individual tests, use the order's receipt number
         if (event.rawData?.order?.receiptNumber) {
           return event.rawData.order.receiptNumber;
         }
@@ -301,6 +302,10 @@ export default function PatientDetail() {
         }
         if (event.receiptNumber) {
           return event.receiptNumber;
+        }
+        // Generate a test-specific receipt number if needed
+        if (event.rawData?.isIndividualTest && event.rawData?.test?.id) {
+          return `TEST-${event.rawData.test.id}`;
         }
       }
 
@@ -395,16 +400,20 @@ export default function PatientDetail() {
 
     // Calculate the correct amount based on event type
     let eventAmount = 0;
-    
+
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
       if (event.rawData?.visit) {
-        eventAmount = event.rawData.visit.consultationFee || 
+        eventAmount = event.rawData.visit.consultationFee ||
                      (event.rawData.doctor ? event.rawData.doctor.consultationFee : 0);
       } else {
         eventAmount = event.amount || 0;
       }
-    } else {
+    } else if (eventType === "pathology" && event.rawData?.isIndividualTest && event.rawData?.test?.price !== undefined) {
+      // Specifically for individual pathology tests, use the test price
+      eventAmount = event.rawData.test.price;
+    }
+    else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
     }
 
@@ -420,7 +429,7 @@ export default function PatientDetail() {
       title:
         event.title ||
         event.serviceName ||
-        event.testName ||
+        event.testName || // Use testName for pathology tests
         event.description ||
         "Service",
       date: event.sortTimestamp,
@@ -1822,8 +1831,8 @@ export default function PatientDetail() {
                   console.log("OPD button clicked");
                   const now = new Date();
                   // Use current local time for OPD appointment scheduling
-                  const currentDate = now.getFullYear() + "-" + 
-                    String(now.getMonth() + 1).padStart(2, "0") + "-" + 
+                  const currentDate = now.getFullYear() + "-" +
+                    String(now.getMonth() + 1).padStart(2, "0") + "-" +
                     String(now.getDate()).padStart(2, "0");
                   const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
@@ -2784,6 +2793,8 @@ export default function PatientDetail() {
                             orderDate: orderDateRaw,
                             orderStatus: order.status,
                             receiptNumber: order.receiptNumber,
+                            // Add a flag to indicate this is an individual test entry
+                            isIndividualTest: true,
                           });
                         });
                       }
@@ -2923,7 +2934,7 @@ export default function PatientDetail() {
                       if (eventType === "pathology") {
                         // Pathology orders are 5.5 hours behind - add 5.5 hours
                         displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
-                      } else if (eventType === "service") {
+                      } else if (event.type === "service") {
                         // Services are 11 hours ahead - subtract 11 hours
                         displayDate = new Date(displayDate.getTime() - (11 * 60 * 60 * 1000));
                       }
@@ -2952,7 +2963,7 @@ export default function PatientDetail() {
                       services.forEach((service: any) => {
                         let serviceDate = service.createdAt;
                         if (!serviceDate && service.scheduledDate) {
-                          serviceDate = service.scheduledTime 
+                          serviceDate = service.scheduledTime
                             ? `${service.scheduledDate}T${service.scheduledTime}:00`
                             : `${service.scheduledDate}T00:00:00`;
                         }
@@ -4688,7 +4699,7 @@ export default function PatientDetail() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Doctor *</FormLabel>
-                        <Select 
+                        <Select
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Auto-fill consultation fee when doctor is selected
@@ -4699,7 +4710,7 @@ export default function PatientDetail() {
                               // If no doctor is selected or it's an invalid ID, reset fee
                               opdVisitForm.setValue("consultationFee", undefined);
                             }
-                          }} 
+                          }}
                           defaultValue={field.value}
                         >
                           <FormControl>
