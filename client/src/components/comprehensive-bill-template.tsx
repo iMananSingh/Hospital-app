@@ -162,9 +162,15 @@ export function ComprehensiveBillTemplate({
     if (item.details?.quantity) {
       quantity = item.details.quantity;
     } else if (item.type === 'admission') {
-      // For admission, check stayDuration
+      // For admission, use stayDuration from details
       if (item.details?.stayDuration) {
         quantity = item.details.stayDuration;
+        // Clean up description to remove duplicate day information
+        description = description.replace(/\s*\(\d+\s+days?\)/g, '');
+        // Format as: "Bed Charges - Ward Type - Admission ID"
+        const wardType = item.details.wardType || 'General Ward';
+        const admissionId = item.details.admissionId || '';
+        description = `Bed Charges - ${wardType}${admissionId ? ` - ${admissionId}` : ''}`;
       } else {
         // Extract days from bed charges description as fallback
         const dayMatch = description.match(/(\d+)\s+day\(s\)/);

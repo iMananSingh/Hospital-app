@@ -5068,33 +5068,35 @@ export class SqliteStorage implements IStorage {
           const dailyCost = admission.dailyCost || 0;
           const admissionCharges = dailyCost * stayDuration;
 
-          if (admissionCharges > 0) {
-            billItems.push({
-              id: `bed-${admission.id}`,
-              type: "admission",
-              description: `Bed Charges - (${admission.currentWardType || admission.wardType || 'General Ward'}) - ${admission.admissionId}`,
-              date: admission.admissionDate,
-              amount: admissionCharges,
-              category: "admission",
-              details: {
-                doctor:
-                  admissionDoctors.get(admission.doctorId) ||
-                  "No Doctor Assigned",
-                admissionId: admission.admissionId,
-                wardType: admission.currentWardType,
-                roomNumber: admission.currentRoomNumber,
-                dailyCost: admission.dailyCost,
-                stayDuration: stayDuration,
-                unitPrice: dailyCost,
-                totalAmount: admissionCharges,
-                status: admission.status,
-                admissionDate: admission.admissionDate,
-                dischargeDate: admission.dischargeDate,
-                quantity: stayDuration,
-                isDischargeEntry: true,
-              },
-            });
-          }
+          // Always add admission charges, even if zero (for tracking purposes)
+          billItems.push({
+            id: `bed-${admission.id}`,
+            type: "admission",
+            description: `Bed Charges - ${admission.currentWardType || admission.wardType || 'General Ward'} (${stayDuration} ${stayDuration === 1 ? 'day' : 'days'}) - ${admission.admissionId}`,
+            date: admission.admissionDate,
+            amount: admissionCharges,
+            category: "admission",
+            details: {
+              doctor:
+                admissionDoctors.get(admission.doctorId) ||
+                "No Doctor Assigned",
+              admissionId: admission.admissionId,
+              wardType: admission.currentWardType || admission.wardType,
+              roomNumber: admission.currentRoomNumber || admission.roomNumber,
+              dailyCost: dailyCost,
+              stayDuration: stayDuration,
+              unitPrice: dailyCost,
+              totalAmount: admissionCharges,
+              status: admission.status,
+              admissionDate: admission.admissionDate,
+              dischargeDate: admission.dischargeDate,
+              quantity: stayDuration,
+              reason: admission.reason,
+              diagnosis: admission.diagnosis,
+              initialDeposit: admission.initialDeposit,
+              isAdmissionEntry: true,
+            },
+          });
 
           // Add discharge entry if patient was discharged
           if (admission.dischargeDate && admission.status === "discharged") {
