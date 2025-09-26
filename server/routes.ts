@@ -2183,7 +2183,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
     try {
-      const deleted = await storage.deleteServiceCategory(req.params.id);
+      const { id } = req.params;
+      
+      // Get the service category to find its name
+      const categories = await storage.getServiceCategories();
+      const categoryToDelete = categories.find(cat => cat.id === id);
+      
+      if (!categoryToDelete) {
+        return res.status(404).json({ message: "Service category not found" });
+      }
+      
+      // Check if there are any services using this category
+      const services = await storage.getServices();
+      const servicesInCategory = services.filter(service => service.category === categoryToDelete.name);
+      
+      if (servicesInCategory.length > 0) {
+        return res.status(400).json({ 
+          message: `Cannot delete category "${categoryToDelete.label}". There are ${servicesInCategory.length} service(s) still using this category. Please delete or move these services to another category first.`,
+          servicesCount: servicesInCategory.length,
+          services: servicesInCategory.map(s => ({ id: s.id, name: s.name }))
+        });
+      }
+      
+      const deleted = await storage.deleteServiceCategory(id);
       if (!deleted) {
         return res.status(404).json({ message: "Service category not found" });
       }

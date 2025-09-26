@@ -434,8 +434,8 @@ export default function ServiceManagement() {
         },
       });
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to delete service category: ${errorText}`);
+        const errorData = await response.json().catch(() => ({ message: "Failed to delete service category" }));
+        throw new Error(errorData.message || "Failed to delete service category");
       }
       return response.json();
     },
@@ -448,7 +448,7 @@ export default function ServiceManagement() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: "Cannot Delete Category",
         description: error.message || "Failed to delete service category",
         variant: "destructive",
       });
