@@ -2917,7 +2917,6 @@ export default function PatientDetail() {
                       data: any;
                       timestamp: Date;
                       sortTimestamp: number;
-                      orderId?: string;
                     }> = [];
 
                     // Add OPD visits
@@ -2929,59 +2928,58 @@ export default function PatientDetail() {
 
                         allEvents.push({
                           type: "opd_visit",
-                          data: visit,
+                          data: {
+                            ...visit,
+                            sortTimestamp: visitDateTime.getTime(),
+                          },
                           timestamp: visitDateTime,
                           sortTimestamp: visitDateTime.getTime(),
                         });
                       });
                     }
 
-                    // Add patient services (grouped by orderId)
+                    // Add patient services
                     if (services && services.length > 0) {
-                      // Group services by orderId
-                      const serviceGroups = services.reduce((groups: any, service: any) => {
-                        const key = service.orderId || service.id; // fallback to individual service id if no orderId
-                        if (!groups[key]) {
-                          groups[key] = [];
-                        }
-                        groups[key].push(service);
-                        return groups;
-                      }, {});
-
-                      // Add each group as a single timeline event
-                      Object.entries(serviceGroups).forEach(([orderId, groupServices]: [string, any]) => {
-                        const firstService = groupServices[0];
+                      services.forEach((service: any) => {
                         const serviceDateTime = new Date(
-                          `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
+                          `${service.scheduledDate}T${service.scheduledTime}:00`
                         );
 
                         allEvents.push({
-                          type: groupServices.length > 1 ? "service_group" : "service",
+                          type: "service",
                           data: {
-                            services: groupServices,
-                            orderId: orderId,
-                            scheduledDate: firstService.scheduledDate,
-                            scheduledTime: firstService.scheduledTime,
-                            totalAmount: groupServices.reduce((sum: number, s: any) => sum + (s.calculatedAmount || s.price), 0),
-                            receiptNumber: firstService.receiptNumber,
-                            doctorId: firstService.doctorId,
-                            notes: firstService.notes,
+                            ...service,
+                            sortTimestamp: serviceDateTime.getTime(),
                           },
                           timestamp: serviceDateTime,
                           sortTimestamp: serviceDateTime.getTime(),
-                          orderId: orderId,
                         });
                       });
                     }
 
                     // Add pathology orders
                     if (pathologyOrders && pathologyOrders.length > 0) {
-                      pathologyOrders.forEach((order: any) => {
+                      pathologyOrders.forEach((orderItem: any) => {
+                        const order = orderItem.order || orderItem;
+                        const tests = orderItem.tests || [];
+                        
+                        // Use the ordered date for timeline
+                        const orderDate = order.orderedDate || order.createdAt;
+                        const orderDateTime = new Date(orderDate);
+
                         allEvents.push({
                           type: "pathology",
-                          data: order,
-                          timestamp: new Date(order.orderedDate),
-                          sortTimestamp: new Date(order.orderedDate).getTime(),
+                          data: {
+                            ...order,
+                            tests: tests,
+                            testName: tests.map((test: any) => test.testName).join(", "),
+                            orderId: order.orderId || order.id,
+                            totalPrice: order.totalPrice,
+                            receiptNumber: order.receiptNumber,
+                            sortTimestamp: orderDateTime.getTime(),
+                          },
+                          timestamp: orderDateTime,
+                          sortTimestamp: orderDateTime.getTime(),
                         });
                       });
                     }
@@ -2992,7 +2990,10 @@ export default function PatientDetail() {
                         // Add admission event
                         allEvents.push({
                           type: "admission",
-                          data: admission,
+                          data: {
+                            ...admission,
+                            sortTimestamp: new Date(admission.admissionDate).getTime(),
+                          },
                           timestamp: new Date(admission.admissionDate),
                           sortTimestamp: new Date(admission.admissionDate).getTime(),
                         });
@@ -3002,7 +3003,11 @@ export default function PatientDetail() {
                         events.forEach((event: any) => {
                           allEvents.push({
                             type: "admission_event",
-                            data: { ...event, admission },
+                            data: {
+                              ...event,
+                              admission,
+                              sortTimestamp: new Date(event.eventTime).getTime(),
+                            },
                             timestamp: new Date(event.eventTime),
                             sortTimestamp: new Date(event.eventTime).getTime(),
                           });
@@ -3012,7 +3017,10 @@ export default function PatientDetail() {
                         if (admission.dischargeDate) {
                           allEvents.push({
                             type: "discharge",
-                            data: admission,
+                            data: {
+                              ...admission,
+                              sortTimestamp: new Date(admission.dischargeDate).getTime(),
+                            },
                             timestamp: new Date(admission.dischargeDate),
                             sortTimestamp: new Date(admission.dischargeDate).getTime(),
                           });
@@ -3032,243 +3040,113 @@ export default function PatientDetail() {
                       );
                     }
 
-                    return (
-                      <div className="space-y-4">
-                        {allEvents.map((event, index) => (
-                          <div key={`${event.type}-${index}`} className="relative">
-                            {/* Timeline line */}
-                            {index < allEvents.length - 1 && (
-                              <div className="absolute left-6 top-12 w-0.5 h-8 bg-gray-200" />
-                            )}
-
-                            <div className="flex items-start gap-4">
-                              {/* Timeline dot */}
-                              <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                {(() => {
-                                  switch (event.type) {
-                                    case "opd_visit":
-                                      return <Stethoscope className="w-5 h-5 text-blue-600" />;
-                                    case "service":
-                                    case "service_group":
-                                      return <Heart className="w-5 h-5 text-green-600" />;
-                                    case "pathology":
-                                      return <TestTube className="w-5 h-5 text-purple-600" />;
-                                    case "admission":
-                                      return <Bed className="w-5 h-5 text-orange-600" />;
-                                    case "admission_event":
-                                      return <ClipboardList className="w-5 h-5 text-yellow-600" />;
-                                    case "discharge":
-                                      return <X className="w-5 h-5 text-red-600" />;
-                                    default:
-                                      return <Clock className="w-5 h-5 text-gray-600" />;
+                    return allEvents.map((event, index) => (
+                      <div key={`${event.type}-${index}`} className="border-l-4 border-blue-200 pl-4 pb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">
+                            {(() => {
+                              switch (event.type) {
+                                case "opd_visit":
+                                  return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
+                                case "service":
+                                  return event.data.serviceName || "Service";
+                                case "pathology":
+                                  return `Pathology Tests - Order ${event.data.orderId}`;
+                                case "admission":
+                                  return `Patient Admitted - ${event.data.currentWardType} (${event.data.currentRoomNumber})`;
+                                case "admission_event":
+                                  if (event.data.eventType === "room_change") {
+                                    return `Room Transfer - ${event.data.wardType} (${event.data.roomNumber})`;
                                   }
-                                })()}
-                              </div>
-
-                              {/* Event card */}
-                              <div className="flex-1 bg-white border rounded-lg p-4 shadow-sm">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h3 className="font-semibold text-gray-900">
-                                    {(() => {
-                                      switch (event.type) {
-                                        case "opd_visit":
-                                          return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
-                                        case "service":
-                                          return event.data.services[0].serviceName || "Service";
-                                        case "service_group":
-                                          return `${event.data.services.length} Services`;
-                                        case "pathology":
-                                          return `Pathology Tests - Order ${event.data.orderId}`;
-                                        case "admission":
-                                          return `Patient Admitted - ${event.data.currentWardType} (${event.data.currentRoomNumber})`;
-                                        case "admission_event":
-                                          if (event.data.eventType === "room_change") {
-                                            return `Room Transfer - ${event.data.wardType} (${event.data.roomNumber})`;
-                                          }
-                                          return `Admission ${event.data.eventType}`;
-                                        case "discharge":
-                                          return "Patient Discharged";
-                                        default:
-                                          return "Timeline Event";
-                                      }
-                                    })()}
-                                  </h3>
-
-                                  <div className="flex items-center gap-2">
-                                    {/* Receipt/Print button for applicable events */}
-                                    {(event.type === "service" || 
-                                      event.type === "service_group" ||
-                                      event.type === "pathology" || 
-                                      event.type === "admission" || 
-                                      event.type === "admission_event" ||
-                                      event.type === "opd_visit") && (
-                                      <ReceiptTemplate
-                                        receiptData={event.type === "service_group" 
-                                          ? {
-                                              type: "service" as const,
-                                              id: event.data.orderId,
-                                              title: `${event.data.services.length} Services`,
-                                              date: event.data.scheduledDate,
-                                              amount: event.data.totalAmount,
-                                              description: event.data.services.map((s: any) => s.serviceName).join(", "),
-                                              patientName: patient?.name || "Unknown Patient",
-                                              patientId: patient?.patientId || "Unknown ID",
-                                              details: {
-                                                ...event.data,
-                                                services: event.data.services,
-                                                patientAge: patient?.age,
-                                                patientGender: patient?.gender,
-                                                doctorName: event.data.doctorId ? doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor" : "No Doctor Assigned",
-                                                receiptNumber: event.data.receiptNumber,
-                                              },
-                                            }
-                                          : generateReceiptData(event.data, event.type)
-                                        }
-                                        hospitalInfo={hospitalInfo}
-                                        trigger={
-                                          <Button size="sm" variant="outline" className="flex items-center gap-1">
-                                            <Printer className="w-3 h-3" />
-                                            Receipt
-                                          </Button>
-                                        }
-                                      />
-                                    )}
-
-                                    <span className="text-xs text-gray-500">
-                                      {formatDate(event.timestamp.toISOString())}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="text-sm text-gray-600">
-                                  {(() => {
-                                    switch (event.type) {
-                                      case "opd_visit":
-                                        return (
-                                          <div>
-                                            <div className="mb-1">
-                                              <strong>Consultation Fee:</strong> ₹{event.data.consultationFee || 0}
-                                            </div>
-                                            {event.data.symptoms && (
-                                              <div className="mb-1">
-                                                <strong>Symptoms:</strong> {event.data.symptoms}
-                                              </div>
-                                            )}
-                                            {event.data.diagnosis && (
-                                              <div className="mb-1">
-                                                <strong>Diagnosis:</strong> {event.data.diagnosis}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "service":
-                                        return (
-                                          <div>
-                                            <div className="mb-1">
-                                              <strong>Cost:</strong> ₹{event.data.services[0].calculatedAmount || event.data.services[0].price}
-                                            </div>
-                                            {event.data.notes && (
-                                              <div className="mb-1">
-                                                <strong>Notes:</strong> {event.data.notes}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "service_group":
-                                        return (
-                                          <div>
-                                            <div className="mb-2">
-                                              <strong>Services:</strong>
-                                              <ul className="ml-4 mt-1">
-                                                {event.data.services.map((service: any, idx: number) => (
-                                                  <li key={idx} className="flex justify-between">
-                                                    <span>{service.serviceName}</span>
-                                                    <span>₹{service.calculatedAmount || service.price}</span>
-                                                  </li>
-                                                ))}
-                                              </ul>
-                                            </div>
-                                            <div className="mb-1">
-                                              <strong>Total Cost:</strong> ₹{event.data.totalAmount}
-                                            </div>
-                                            {event.data.notes && (
-                                              <div className="mb-1">
-                                                <strong>Notes:</strong> {event.data.notes}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "pathology":
-                                        return (
-                                          <div>
-                                            <div className="mb-1">
-                                              <strong>Total Cost:</strong> ₹{event.data.totalPrice}
-                                            </div>
-                                            <div className="mb-1">
-                                              <strong>Status:</strong> {event.data.status}
-                                            </div>
-                                            {event.data.remarks && (
-                                              <div className="mb-1">
-                                                <strong>Remarks:</strong> {event.data.remarks}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "admission":
-                                        return (
-                                          <div>
-                                            <div className="mb-1">
-                                              <strong>Daily Cost:</strong> ₹{event.data.dailyCost}
-                                            </div>
-                                            {event.data.reason && (
-                                              <div className="mb-1">
-                                                <strong>Reason:</strong> {event.data.reason}
-                                              </div>
-                                            )}
-                                            {event.data.diagnosis && (
-                                              <div className="mb-1">
-                                                <strong>Diagnosis:</strong> {event.data.diagnosis}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "admission_event":
-                                        return (
-                                          <div>
-                                            {event.data.eventType === "room_change" && (
-                                              <div className="mb-1">
-                                                <strong>Previous Room:</strong> {event.data.admission?.currentRoomNumber}
-                                              </div>
-                                            )}
-                                            {event.data.notes && (
-                                              <div className="mb-1">
-                                                <strong>Notes:</strong> {event.data.notes}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      case "discharge":
-                                        return (
-                                          <div>
-                                            <div className="mb-1">
-                                              <strong>Total Stay:</strong> {calcStayDays(event.data.admissionDate, event.data.dischargeDate)} days
-                                            </div>
-                                            <div className="mb-1">
-                                              <strong>Total Cost:</strong> ₹{event.data.totalCost}
-                                            </div>
-                                          </div>
-                                        );
-                                      default:
-                                        return <div>Event details not available</div>;
-                                    }
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
+                                  return `Admission ${event.data.eventType}`;
+                                case "discharge":
+                                  return "Patient Discharged";
+                                default:
+                                  return "Timeline Event";
+                              }
+                            })()}
+                          </h3>
+                          <div className="flex items-center gap-2">
+                            {/* Receipt/Print button for applicable events */}
+                            {(event.type === "service" || 
+                              event.type === "pathology" || 
+                              event.type === "admission" || 
+                              event.type === "admission_event" ||
+                              event.type === "opd_visit") && (
+                              <ReceiptTemplate
+                                receiptData={generateReceiptData(event.data, event.type)}
+                                hospitalInfo={hospitalInfo}
+                                trigger={
+                                  <Button size="sm" variant="outline" className="flex items-center gap-1">
+                                    <Printer className="w-3 h-3" />
+                                    Receipt
+                                  </Button>
+                                }
+                              />
+                            )}
+                            <span className="text-sm text-gray-500">
+                              {formatDate(event.timestamp.toISOString())}
+                            </span>
                           </div>
-                        ))}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {(() => {
+                            switch (event.type) {
+                              case "opd_visit":
+                                return (
+                                  <div>
+                                    <div>Consultation Fee: ₹{event.data.consultationFee || 0}</div>
+                                    {event.data.symptoms && <div>Symptoms: {event.data.symptoms}</div>}
+                                    {event.data.diagnosis && <div>Diagnosis: {event.data.diagnosis}</div>}
+                                  </div>
+                                );
+                              case "service":
+                                return (
+                                  <div>
+                                    <div>Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
+                                    {event.data.notes && <div>Notes: {event.data.notes}</div>}
+                                  </div>
+                                );
+                              case "pathology":
+                                return (
+                                  <div>
+                                    <div>Tests: {event.data.testName}</div>
+                                    <div>Total Cost: ₹{event.data.totalPrice}</div>
+                                    <div>Status: {event.data.status}</div>
+                                    {event.data.remarks && <div>Remarks: {event.data.remarks}</div>}
+                                  </div>
+                                );
+                              case "admission":
+                                return (
+                                  <div>
+                                    <div>Daily Cost: ₹{event.data.dailyCost}</div>
+                                    {event.data.reason && <div>Reason: {event.data.reason}</div>}
+                                    {event.data.diagnosis && <div>Diagnosis: {event.data.diagnosis}</div>}
+                                  </div>
+                                );
+                              case "admission_event":
+                                return (
+                                  <div>
+                                    {event.data.eventType === "room_change" && (
+                                      <div>Previous Room: {event.data.admission?.currentRoomNumber}</div>
+                                    )}
+                                    {event.data.notes && <div>Notes: {event.data.notes}</div>}
+                                  </div>
+                                );
+                              case "discharge":
+                                return (
+                                  <div>
+                                    <div>Total Stay: {calcStayDays(event.data.admissionDate, event.data.dischargeDate)} days</div>
+                                    <div>Total Cost: ₹{event.data.totalCost}</div>
+                                  </div>
+                                );
+                              default:
+                                return <div>Event details not available</div>;
+                            }
+                          })()}
+                        </div>
                       </div>
-                    );
+                    ));
                   })()}
                 </div>
               </CardContent>
