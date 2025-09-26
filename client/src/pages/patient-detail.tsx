@@ -395,11 +395,11 @@ export default function PatientDetail() {
 
     // Calculate the correct amount based on event type
     let eventAmount = 0;
-    
+
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
       if (event.rawData?.visit) {
-        eventAmount = event.rawData.visit.consultationFee || 
+        eventAmount = event.rawData.visit.consultationFee ||
                      (event.rawData.doctor ? event.rawData.doctor.consultationFee : 0);
       } else {
         eventAmount = event.amount || 0;
@@ -436,6 +436,8 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
+        // For pathology orders, ensure tests are accessible
+        tests: eventType === "pathology" ? (event.tests || event.rawData?.tests || event.order?.tests) : undefined,
       },
     };
 
@@ -1822,8 +1824,8 @@ export default function PatientDetail() {
                   console.log("OPD button clicked");
                   const now = new Date();
                   // Use current local time for OPD appointment scheduling
-                  const currentDate = now.getFullYear() + "-" + 
-                    String(now.getMonth() + 1).padStart(2, "0") + "-" + 
+                  const currentDate = now.getFullYear() + "-" +
+                    String(now.getMonth() + 1).padStart(2, "0") + "-" +
                     String(now.getDate()).padStart(2, "0");
                   const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
@@ -2814,35 +2816,60 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Parse the timestamp and apply the same 5.5 hour adjustment as timeline
-                                  let displayDate = new Date(test.orderDate);
+                                  // Parse the timestamp with better error handling
+                                  let displayDate;
+                                  
+                                  try {
+                                    // Handle different date formats
+                                    if (typeof test.orderDate === 'string') {
+                                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                        displayDate = new Date(test.orderDate.replace(' ', 'T'));
+                                      } 
+                                      // Handle ISO format or other string formats
+                                      else {
+                                        displayDate = new Date(test.orderDate);
+                                      }
+                                    } else {
+                                      displayDate = new Date(test.orderDate);
+                                    }
 
-                                  // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
-                                  displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                                    // Check if date is valid before adjusting
+                                    if (isNaN(displayDate.getTime())) {
+                                      console.warn('Invalid date for pathology order:', test.orderDate);
+                                      return "Invalid Date";
+                                    }
 
-                                  const formattedDate = displayDate.toLocaleString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  });
+                                    // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
+                                    displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
 
-                                  // Split the display to add styling
-                                  const parts = formattedDate.split(" at ");
-                                  if (parts.length === 2) {
-                                    return (
-                                      <>
-                                        {parts[0]}
-                                        <span className="text-muted-foreground ml-2">
-                                          at {parts[1]}
-                                        </span>
-                                      </>
-                                    );
+                                    const formattedDate = displayDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    });
+
+                                    // Split the display to add styling
+                                    const parts = formattedDate.split(" at ");
+                                    if (parts.length === 2) {
+                                      return (
+                                        <>
+                                          {parts[0]}
+                                          <span className="text-muted-foreground ml-2">
+                                            at {parts[1]}
+                                          </span>
+                                        </>
+                                      );
+                                    }
+
+                                    return formattedDate;
+                                  } catch (error) {
+                                    console.error('Error parsing pathology date:', test.orderDate, error);
+                                    return "Date Parse Error";
                                   }
-
-                                  return formattedDate;
                                 }
                                 return "N/A";
                               })()}
@@ -2952,7 +2979,7 @@ export default function PatientDetail() {
                       services.forEach((service: any) => {
                         let serviceDate = service.createdAt;
                         if (!serviceDate && service.scheduledDate) {
-                          serviceDate = service.scheduledTime 
+                          serviceDate = service.scheduledTime
                             ? `${service.scheduledDate}T${service.scheduledTime}:00`
                             : `${service.scheduledDate}T00:00:00`;
                         }
@@ -3063,24 +3090,36 @@ export default function PatientDetail() {
                     }
 
                     // Add pathology orders
-                    if (pathologyOrders && pathologyOrders.length > 0) {
-                      pathologyOrders.forEach((orderData: any) => {
-                        const order = orderData.order || orderData;
-                        if (!order) return;
+                    pathologyOrders.forEach((orderData: any) => {
+                      const { order, tests } = orderData;
+                      if (order) {
+                        // Use better timestamp logic for pathology orders
+                        let orderTimestamp = order.createdAt;
+                        
+                        // Prefer orderedDate if it has time information
+                        if (order.orderedDate && /[:T]/.test(order.orderedDate)) {
+                          orderTimestamp = order.orderedDate;
+                        }
 
-                        const orderTime = order.createdAt || order.orderedDate;
                         timelineEvents.push({
-                          id: `pathology-${order.id || Date.now()}`,
+                          id: order.id,
                           type: "pathology",
-                          title: `Pathology Order: ${order.orderId || "Unknown"}`,
-                          description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
-                          color: "bg-purple-500",
-                          sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
-                          originalTimestamp: orderTime,
-                          rawData: { order },
+                          title: `Pathology Order: ${order.orderId}`,
+                          date: order.orderedDate,
+                          amount: order.totalPrice,
+                          description: tests
+                            .map((test: any) => test.testName)
+                            .join(", "),
+                          sortTimestamp: getDisplayTimestamp(orderTimestamp, "pathology"),
+                          originalTimestamp: orderTimestamp,
+                          status: order.status,
+                          receiptNumber: order.receiptNumber,
+                          tests: tests, // Direct access to tests
+                          order: order, // Direct access to order
+                          rawData: { order, tests }, // Store both order and tests as backup
                         });
-                      });
-                    }
+                      }
+                    });
 
                     // Add OPD visits 
                     if (opdVisits && opdVisits.length > 0) {
@@ -3182,7 +3221,7 @@ export default function PatientDetail() {
                                           const seconds = parseInt(timeSegments[2]) || 0;
 
                                           // Validate parsed values
-                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && 
+                                          if (!isNaN(year) && !isNaN(month) && !isNaN(day) &&
                                               !isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
                                             // Create date using local timezone components (no UTC conversion)
                                             const localDate = new Date(year, month - 1, day, hours, minutes, seconds);
@@ -4688,7 +4727,7 @@ export default function PatientDetail() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Doctor *</FormLabel>
-                        <Select 
+                        <Select
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Auto-fill consultation fee when doctor is selected
@@ -4699,7 +4738,7 @@ export default function PatientDetail() {
                               // If no doctor is selected or it's an invalid ID, reset fee
                               opdVisitForm.setValue("consultationFee", undefined);
                             }
-                          }} 
+                          }}
                           defaultValue={field.value}
                         >
                           <FormControl>
