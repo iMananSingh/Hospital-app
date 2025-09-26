@@ -479,7 +479,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               <table class="bill-table">
                 <thead>
                   <tr>
-                    <th style="width: 80%;">Description</th>
+                    <th style="width: 80%;">${receiptData.type === 'pathology' ? 'Tests' : 'Description'}</th>
                     <th style="width: 20%; text-align: right !important;">Amount (₹)</th>
                   </tr>
                 </thead>
