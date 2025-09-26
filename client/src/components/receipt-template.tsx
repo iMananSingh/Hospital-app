@@ -485,7 +485,14 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 </thead>
                 <tbody>
                   <tr>
-                    <td>${receiptData.title}</td>
+                    <td>${(() => {
+                      // For pathology receipts, show the individual test name if available
+                      if (receiptData.type === 'pathology' && receiptData.details?.rawData?.test?.testName) {
+                        return receiptData.details.rawData.test.testName;
+                      }
+                      // For other types, use the title as usual
+                      return receiptData.title;
+                    })()}</td>
                     <td class="amount-cell" style="text-align: right !important;">${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                   </tr>
                   <tr class="total-row">
