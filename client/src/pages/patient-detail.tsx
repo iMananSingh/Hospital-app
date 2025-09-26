@@ -3335,6 +3335,24 @@ export default function PatientDetail() {
                                     return (
                                       <div className="space-y-1">
                                         <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
+                                        {(() => {
+                                          // Get doctor name from the admission
+                                          let doctorName = null;
+                                          
+                                          // Try to get doctor ID from the event data
+                                          const doctorId = event.data.doctorId;
+                                          
+                                          if (doctorId && doctors && doctors.length > 0) {
+                                            const doctor = doctors.find((d: Doctor) => d.id === doctorId);
+                                            if (doctor) {
+                                              doctorName = doctor.name;
+                                            }
+                                          }
+                                          
+                                          return doctorName ? (
+                                            <div><span className="font-medium">Doctor:</span> Dr. {doctorName}</div>
+                                          ) : null;
+                                        })()}
                                         {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
                                         {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
                                         {event.data.admitEventNotes && <div><span className="font-medium">Notes:</span> {event.data.admitEventNotes}</div>}
