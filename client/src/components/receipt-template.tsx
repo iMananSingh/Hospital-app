@@ -470,30 +470,35 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               </div>
               <div class="patient-line-2">
                 <span>Doctor: ${getDoctorName()}</span>
-                <span>${receiptData.type === 'pathology' ? `Pathology Order: ${(() => {
-                  // Check if there's a formatted order number in the details
-                  if (receiptData.details?.orderNumber) {
-                    return receiptData.details.orderNumber;
-                  }
-                  // Check if there's an order object with orderNumber  
-                  if (receiptData.details?.order?.orderNumber) {
-                    return receiptData.details.order.orderNumber;
-                  }
-                  // Check if there's an orderId in the order object
-                  if (receiptData.details?.order?.orderId) {
-                    return receiptData.details.order.orderId;
-                  }
-                  // Check if there's an orderId in the details
-                  if (receiptData.details?.orderId) {
-                    return receiptData.details.orderId;
-                  }
-                  // Check if there's an orderId in the rawData
-                  if (receiptData.details?.rawData?.order?.orderId) {
-                    return receiptData.details.rawData.order.orderId;
-                  }
-                  // Fallback to the ID if no order number is found
-                  return receiptData.id;
-                })()} | ` : ''}Receipt No: ${receiptNumber}</span>
+                ${receiptData.type === 'pathology' ? `
+                <div style="display: flex; gap: 30px; align-items: center;">
+                  <span>Pathology Order: ${(() => {
+                    // Check if there's a formatted order number in the details
+                    if (receiptData.details?.orderNumber) {
+                      return receiptData.details.orderNumber;
+                    }
+                    // Check if there's an order object with orderNumber  
+                    if (receiptData.details?.order?.orderNumber) {
+                      return receiptData.details.order.orderNumber;
+                    }
+                    // Check if there's an orderId in the order object
+                    if (receiptData.details?.order?.orderId) {
+                      return receiptData.details.order.orderId;
+                    }
+                    // Check if there's an orderId in the details
+                    if (receiptData.details?.orderId) {
+                      return receiptData.details.orderId;
+                    }
+                    // Check if there's an orderId in the rawData
+                    if (receiptData.details?.rawData?.order?.orderId) {
+                      return receiptData.details.rawData.order.orderId;
+                    }
+                    // Fallback to the ID if no order number is found
+                    return receiptData.id;
+                  })()}</span>
+                  <span>Receipt No: ${receiptNumber}</span>
+                </div>
+                ` : `<span>Receipt No: ${receiptNumber}</span>`}
               </div>
             </div>
             
