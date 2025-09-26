@@ -284,31 +284,6 @@ export default function PatientDetail() {
   };
 
   const generateReceiptData = (event: any, eventType: string) => {
-    // Handle service batch specially
-    if (eventType === "service_batch") {
-      const firstService = event.services[0];
-      
-      return {
-        type: "service" as const,
-        id: event.receiptNumber,
-        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? 's' : ''}`,
-        date: firstService.sortTimestamp,
-        amount: event.totalCost,
-        description: event.services.map((s: any) => s.serviceName).join(", "),
-        patientName: patient?.name || "Unknown Patient",
-        patientId: patient?.patientId || "Unknown ID",
-        details: {
-          ...firstService,
-          services: event.services,
-          totalCost: event.totalCost,
-          patientAge: patient?.age,
-          patientGender: patient?.gender,
-          doctorName: event.doctorName || getDoctorName(),
-          receiptNumber: event.receiptNumber,
-        },
-      };
-    }
-
     // Helper function to get doctor name from doctor ID
     const getDoctorName = () => {
       // First try to get doctor name from event directly
@@ -366,6 +341,31 @@ export default function PatientDetail() {
 
       return "No Doctor Assigned";
     };
+
+    // Handle service batch specially
+    if (eventType === "service_batch") {
+      const firstService = event.services[0];
+
+      return {
+        type: "service" as const,
+        id: event.receiptNumber,
+        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? 's' : ''}`,
+        date: firstService.sortTimestamp,
+        amount: event.totalCost,
+        description: event.services.map((s: any) => s.serviceName).join(", "),
+        patientName: patient?.name || "Unknown Patient",
+        patientId: patient?.patientId || "Unknown ID",
+        details: {
+          ...firstService,
+          services: event.services,
+          totalCost: event.totalCost,
+          patientAge: patient?.age,
+          patientGender: patient?.gender,
+          doctorName: event.doctorName || getDoctorName(),
+          receiptNumber: event.receiptNumber,
+        },
+      };
+    }
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
@@ -2867,7 +2867,7 @@ export default function PatientDetail() {
                                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                                       if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                         displayDate = new Date(test.orderDate.replace(' ', 'T'));
-                                      } 
+                                      }
                                       // Handle ISO format or other string formats
                                       else {
                                         displayDate = new Date(test.orderDate);
@@ -2964,7 +2964,7 @@ export default function PatientDetail() {
                     // Add OPD visits
                     if (opdVisits && opdVisits.length > 0) {
                       opdVisits.forEach((visit: any) => {
-                        const visitDateTime = visit.scheduledDate && visit.scheduledTime 
+                        const visitDateTime = visit.scheduledDate && visit.scheduledTime
                           ? new Date(`${visit.scheduledDate}T${visit.scheduledTime}:00`)
                           : new Date(visit.createdAt);
 
@@ -3026,7 +3026,7 @@ export default function PatientDetail() {
                       pathologyOrders.forEach((orderItem: any) => {
                         const order = orderItem.order || orderItem;
                         const tests = orderItem.tests || [];
-                        
+
                         // Use the ordered date for timeline
                         const orderDate = order.orderedDate || order.createdAt;
                         const orderDateTime = new Date(orderDate);
@@ -3135,10 +3135,10 @@ export default function PatientDetail() {
                           </h3>
                           <div className="flex items-center gap-2">
                             {/* Receipt/Print button for applicable events */}
-                            {(event.type === "service" || 
+                            {(event.type === "service" ||
                               event.type === "service_batch" ||
-                              event.type === "pathology" || 
-                              event.type === "admission" || 
+                              event.type === "pathology" ||
+                              event.type === "admission" ||
                               event.type === "admission_event" ||
                               event.type === "opd_visit") && (
                               <ReceiptTemplate
