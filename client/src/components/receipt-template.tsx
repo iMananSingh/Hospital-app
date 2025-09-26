@@ -475,17 +475,24 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                   if (receiptData.details?.orderNumber) {
                     return receiptData.details.orderNumber;
                   }
-                  // Check if there's an order object with orderNumber
+                  // Check if there's an order object with orderNumber  
                   if (receiptData.details?.order?.orderNumber) {
                     return receiptData.details.order.orderNumber;
                   }
-                  // Generate a formatted order number based on date and ID
-                  const date = new Date(receiptData.date);
-                  const year = date.getFullYear();
-                  const month = String(date.getMonth() + 1).padStart(2, '0');
-                  const day = String(date.getDate()).padStart(2, '0');
-                  const shortId = receiptData.id.substring(0, 3);
-                  return `LAB-${year}-${month}${day}-${shortId}`;
+                  // Check if there's an orderId in the order object
+                  if (receiptData.details?.order?.orderId) {
+                    return receiptData.details.order.orderId;
+                  }
+                  // Check if there's an orderId in the details
+                  if (receiptData.details?.orderId) {
+                    return receiptData.details.orderId;
+                  }
+                  // Check if there's an orderId in the rawData
+                  if (receiptData.details?.rawData?.order?.orderId) {
+                    return receiptData.details.rawData.order.orderId;
+                  }
+                  // Fallback to the ID if no order number is found
+                  return receiptData.id;
                 })()} | ` : ''}Receipt No: ${receiptNumber}</span>
               </div>
             </div>
