@@ -404,9 +404,6 @@ export default function PatientDetail() {
       } else {
         eventAmount = event.amount || 0;
       }
-    } else if (eventType === "pathology" && event.rawData?.test) {
-      // For pathology tests, use the individual test price
-      eventAmount = event.rawData.test.price || 0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
     }
@@ -420,28 +417,16 @@ export default function PatientDetail() {
         | "payment"
         | "discount",
       id: event.id,
-      title: (() => {
-        // For pathology tests, use the test name if available
-        if (eventType === "pathology" && event.rawData?.test?.testName) {
-          return event.rawData.test.testName;
-        }
-        // For other types, use the existing logic
-        return event.title ||
-               event.serviceName ||
-               event.testName ||
-               event.description ||
-               "Service";
-      })(),
+      title:
+        event.title ||
+        event.serviceName ||
+        event.testName ||
+        event.description ||
+        "Service",
       date: event.sortTimestamp,
       amount: eventAmount,
-      description: (() => {
-        // For pathology tests, create a description with order info
-        if (eventType === "pathology" && event.rawData?.test) {
-          return `Order: ${event.rawData.order?.orderId || "Unknown"} • Test: ${event.rawData.test.testName || "Unknown Test"}`;
-        }
-        // For other types, use the existing logic
-        return event.description || event.serviceName || event.testName || "";
-      })(),
+      description:
+        event.description || event.serviceName || event.testName || "",
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
       details: {
@@ -3081,39 +3066,19 @@ export default function PatientDetail() {
                     if (pathologyOrders && pathologyOrders.length > 0) {
                       pathologyOrders.forEach((orderData: any) => {
                         const order = orderData.order || orderData;
-                        const tests = orderData.tests || [];
                         if (!order) return;
 
                         const orderTime = order.createdAt || order.orderedDate;
-
-                        // If there are individual tests, create timeline events for each test
-                        if (tests && tests.length > 0) {
-                          tests.forEach((test: any, index: number) => {
-                            timelineEvents.push({
-                              id: `pathology-${order.id || Date.now()}-test-${index}`,
-                              type: "pathology",
-                              title: test.testName || "Unknown Test",
-                              description: `Order: ${order.orderId || "Unknown"} • Status: ${order.status || "ordered"}`,
-                              color: "bg-purple-500",
-                              sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
-                              originalTimestamp: orderTime,
-                              amount: test.price || 0,
-                              rawData: { order, test },
-                            });
-                          });
-                        } else {
-                          // Fallback to order-level event if no tests found
-                          timelineEvents.push({
-                            id: `pathology-${order.id || Date.now()}`,
-                            type: "pathology",
-                            title: `Pathology Order: ${order.orderId || "Unknown"}`,
-                            description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
-                            color: "bg-purple-500",
-                            sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
-                            originalTimestamp: orderTime,
-                            rawData: { order },
-                          });
-                        }
+                        timelineEvents.push({
+                          id: `pathology-${order.id || Date.now()}`,
+                          type: "pathology",
+                          title: `Pathology Order: ${order.orderId || "Unknown"}`,
+                          description: `Status: ${order.status || "ordered"} • Cost: ₹${order.totalPrice || 0}`,
+                          color: "bg-purple-500",
+                          sortTimestamp: getDisplayTimestamp(orderTime, "pathology"),
+                          originalTimestamp: orderTime,
+                          rawData: { order },
+                        });
                       });
                     }
 
