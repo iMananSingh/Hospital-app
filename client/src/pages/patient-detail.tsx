@@ -2816,35 +2816,60 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Parse the timestamp and apply the same 5.5 hour adjustment as timeline
-                                  let displayDate = new Date(test.orderDate);
+                                  // Parse the timestamp with better error handling
+                                  let displayDate;
+                                  
+                                  try {
+                                    // Handle different date formats
+                                    if (typeof test.orderDate === 'string') {
+                                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                        displayDate = new Date(test.orderDate.replace(' ', 'T'));
+                                      } 
+                                      // Handle ISO format or other string formats
+                                      else {
+                                        displayDate = new Date(test.orderDate);
+                                      }
+                                    } else {
+                                      displayDate = new Date(test.orderDate);
+                                    }
 
-                                  // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
-                                  displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                                    // Check if date is valid before adjusting
+                                    if (isNaN(displayDate.getTime())) {
+                                      console.warn('Invalid date for pathology order:', test.orderDate);
+                                      return "Invalid Date";
+                                    }
 
-                                  const formattedDate = displayDate.toLocaleString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  });
+                                    // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
+                                    displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
 
-                                  // Split the display to add styling
-                                  const parts = formattedDate.split(" at ");
-                                  if (parts.length === 2) {
-                                    return (
-                                      <>
-                                        {parts[0]}
-                                        <span className="text-muted-foreground ml-2">
-                                          at {parts[1]}
-                                        </span>
-                                      </>
-                                    );
+                                    const formattedDate = displayDate.toLocaleString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    });
+
+                                    // Split the display to add styling
+                                    const parts = formattedDate.split(" at ");
+                                    if (parts.length === 2) {
+                                      return (
+                                        <>
+                                          {parts[0]}
+                                          <span className="text-muted-foreground ml-2">
+                                            at {parts[1]}
+                                          </span>
+                                        </>
+                                      );
+                                    }
+
+                                    return formattedDate;
+                                  } catch (error) {
+                                    console.error('Error parsing pathology date:', test.orderDate, error);
+                                    return "Date Parse Error";
                                   }
-
-                                  return formattedDate;
                                 }
                                 return "N/A";
                               })()}
@@ -3068,6 +3093,14 @@ export default function PatientDetail() {
                     pathologyOrders.forEach((orderData: any) => {
                       const { order, tests } = orderData;
                       if (order) {
+                        // Use better timestamp logic for pathology orders
+                        let orderTimestamp = order.createdAt;
+                        
+                        // Prefer orderedDate if it has time information
+                        if (order.orderedDate && /[:T]/.test(order.orderedDate)) {
+                          orderTimestamp = order.orderedDate;
+                        }
+
                         timelineEvents.push({
                           id: order.id,
                           type: "pathology",
@@ -3077,7 +3110,8 @@ export default function PatientDetail() {
                           description: tests
                             .map((test: any) => test.testName)
                             .join(", "),
-                          sortTimestamp: order.createdAt,
+                          sortTimestamp: getDisplayTimestamp(orderTimestamp, "pathology"),
+                          originalTimestamp: orderTimestamp,
                           status: order.status,
                           receiptNumber: order.receiptNumber,
                           tests: tests, // Direct access to tests
