@@ -2048,15 +2048,17 @@ export class SqliteStorage implements IStorage {
               
               // Log activity
               if (userId) {
-                this.logActivity(
-                  userId,
-                  "orphaned_service_deleted",
-                  "Orphaned service deleted",
-                  `${service.name} - ${service.category}`,
-                  service.id,
-                  "service",
-                  { serviceName: service.name, category: service.category },
-                );
+                setImmediate(() => {
+                  this.logActivity(
+                    userId,
+                    "orphaned_service_deleted",
+                    "Orphaned service deleted",
+                    `${service.name} - ${service.category}`,
+                    service.id,
+                    "service",
+                    { serviceName: service.name, category: service.category },
+                  );
+                });
               }
             }
           } catch (error) {
