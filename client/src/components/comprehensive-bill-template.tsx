@@ -159,10 +159,23 @@ export function ComprehensiveBillTemplate({
     let description = item.description;
 
     // First check if quantity is directly available in details
-    if (item.details?.quantity) {
+    if (item.details?.quantity && item.details.quantity > 1) {
       quantity = item.details.quantity;
+      
+      // For admission services, add appropriate suffix to description
+      if (item.type === 'service' && item.details?.serviceType === 'admission') {
+        if (item.details.serviceName?.toLowerCase().includes('bed charges')) {
+          description = `${item.details.serviceName} (${quantity} ${quantity === 1 ? 'day' : 'days'})`;
+        } else if (
+          item.details.serviceName?.toLowerCase().includes('doctor charges') ||
+          item.details.serviceName?.toLowerCase().includes('nursing charges') ||
+          item.details.serviceName?.toLowerCase().includes('rmo charges')
+        ) {
+          description = `${item.details.serviceName} (${quantity} ${quantity === 1 ? 'day' : 'days'})`;
+        }
+      }
     } else if (item.type === 'admission') {
-      // For admission, use stayDuration from details
+      // Legacy admission entries - try to extract from details
       if (item.details?.stayDuration) {
         quantity = item.details.stayDuration;
         // Clean up description to remove duplicate day information

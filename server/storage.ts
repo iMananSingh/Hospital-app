@@ -3116,11 +3116,16 @@ export class SqliteStorage implements IStorage {
         totalCharges += order.totalPrice || 0;
       });
 
-      // 4. Other patient services charges
+      // 4. Other patient services charges (with daily calculation for admission services)
       const otherServices = db
         .select({
+          id: schema.patientServices.id,
+          serviceType: schema.patientServices.serviceType,
+          serviceName: schema.patientServices.serviceName,
           amount: schema.patientServices.calculatedAmount,
           price: schema.patientServices.price,
+          scheduledDate: schema.patientServices.scheduledDate,
+          createdAt: schema.patientServices.createdAt,
         })
         .from(schema.patientServices)
         .where(
@@ -3132,7 +3137,58 @@ export class SqliteStorage implements IStorage {
         .all();
 
       otherServices.forEach(service => {
-        const charge = service.amount || service.price || 0;
+        let charge = service.amount || service.price || 0;
+        
+        // For admission services, calculate based on stay duration
+        if (service.serviceType === 'admission') {
+          // Get admissions for this patient
+          const patientAdmissions = db
+            .select()
+            .from(schema.admissions)
+            .where(eq(schema.admissions.patientId, patientId))
+            .all();
+          
+          if (patientAdmissions.length > 0) {
+            // Find relevant admission
+            let relevantAdmission = patientAdmissions[0];
+            
+            const matchingAdmission = patientAdmissions.find(admission => {
+              const admissionDate = new Date(admission.admissionDate).toDateString();
+              const serviceDate = new Date(service.scheduledDate || service.createdAt).toDateString();
+              return admissionDate === serviceDate;
+            });
+            
+            if (matchingAdmission) {
+              relevantAdmission = matchingAdmission;
+            }
+            
+            // Calculate stay duration and apply daily charges
+            const stayDuration = calculateStayDays(relevantAdmission);
+            
+            if (stayDuration > 0) {
+              if (service.serviceName.toLowerCase().includes('bed charges')) {
+                // Bed charges: charge for each completed 24-hour period
+                charge = (service.price || 0) * stayDuration;
+              } else if (
+                service.serviceName.toLowerCase().includes('doctor charges') ||
+                service.serviceName.toLowerCase().includes('nursing charges') ||
+                service.serviceName.toLowerCase().includes('rmo charges')
+              ) {
+                // Other admission services: charge for each calendar day
+                const admissionDate = new Date(relevantAdmission.admissionDate);
+                const dischargeDate = relevantAdmission.dischargeDate 
+                  ? new Date(relevantAdmission.dischargeDate)
+                  : new Date();
+                
+                const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
+                const calendarDays = Math.max(1, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+                
+                charge = (service.price || 0) * calendarDays;
+              }
+            }
+          }
+        }
+        
         totalCharges += charge;
       });
 
@@ -4996,11 +5052,63 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // Add patient services
+      // Add patient services with daily calculation for admission services
       patientServices.forEach((ps) => {
-        const serviceAmount =
-          (ps.calculatedAmount as number) || (ps.price as number) || 0;
-        const serviceQuantity = ps.billingQuantity || 1;
+        let serviceAmount = (ps.calculatedAmount as number) || (ps.price as number) || 0;
+        let serviceQuantity = ps.billingQuantity || 1;
+        
+        // For admission services, calculate based on patient's stay duration
+        if (ps.serviceType === 'admission') {
+          // Find the admission for this patient to get stay duration
+          const patientAdmissions = admissions.filter(admission => 
+            admission.patientId === patientId
+          );
+          
+          if (patientAdmissions.length > 0) {
+            // Use the most recent admission or find matching admission by date
+            let relevantAdmission = patientAdmissions[0];
+            
+            // Try to find admission that matches the service date
+            const matchingAdmission = patientAdmissions.find(admission => {
+              const admissionDate = new Date(admission.admissionDate).toDateString();
+              const serviceDate = new Date(ps.scheduledDate || ps.createdAt).toDateString();
+              return admissionDate === serviceDate;
+            });
+            
+            if (matchingAdmission) {
+              relevantAdmission = matchingAdmission;
+            }
+            
+            // Calculate stay duration using the same logic as calculateStayDays
+            const stayDuration = calculateStayDays(relevantAdmission);
+            
+            if (stayDuration > 0) {
+              if (ps.serviceName.toLowerCase().includes('bed charges')) {
+                // Bed charges: charge for each completed 24-hour period
+                serviceQuantity = stayDuration;
+                serviceAmount = (ps.price || 0) * serviceQuantity;
+              } else if (
+                ps.serviceName.toLowerCase().includes('doctor charges') ||
+                ps.serviceName.toLowerCase().includes('nursing charges') ||
+                ps.serviceName.toLowerCase().includes('rmo charges')
+              ) {
+                // Other admission services: charge for each calendar day
+                const admissionDate = new Date(relevantAdmission.admissionDate);
+                const dischargeDate = relevantAdmission.dischargeDate 
+                  ? new Date(relevantAdmission.dischargeDate)
+                  : new Date(); // Use current date if not discharged
+                
+                // Calculate calendar days (inclusive)
+                const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
+                const calendarDays = Math.max(1, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+                
+                serviceQuantity = calendarDays;
+                serviceAmount = (ps.price || 0) * serviceQuantity;
+              }
+            }
+          }
+        }
+        
         if (serviceAmount > 0) {
           billItems.push({
             type: "service",
@@ -5016,7 +5124,7 @@ export class SqliteStorage implements IStorage {
               billingType: ps.billingType,
               billingQuantity: ps.billingQuantity,
               unitPrice: ps.price,
-              calculatedAmount: ps.calculatedAmount,
+              calculatedAmount: serviceAmount,
               notes: ps.notes,
               quantity: serviceQuantity,
             },
