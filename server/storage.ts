@@ -1999,13 +1999,13 @@ export class SqliteStorage implements IStorage {
       const deletedServices: string[] = [];
       
       // Use transaction to ensure data consistency
-      return db.transaction(() => {
+      return db.transaction((tx) => {
         for (const service of orphanedServices) {
           try {
             console.log(`Attempting to delete orphaned service: ${service.name} (ID: ${service.id})`);
             
             // First, delete all patient_services records that reference this service
-            const patientServicesDeleted = db
+            const patientServicesDeleted = tx
               .delete(schema.patientServices)
               .where(eq(schema.patientServices.serviceId, service.id))
               .run();
@@ -2013,7 +2013,7 @@ export class SqliteStorage implements IStorage {
             console.log(`Deleted ${patientServicesDeleted.changes} patient_services records for service ${service.name}`);
             
             // Delete all bill_items records that reference this service
-            const billItemsDeleted = db
+            const billItemsDeleted = tx
               .delete(schema.billItems)
               .where(eq(schema.billItems.serviceId, service.id))
               .run();
@@ -2021,7 +2021,7 @@ export class SqliteStorage implements IStorage {
             console.log(`Deleted ${billItemsDeleted.changes} bill_items records for service ${service.name}`);
             
             // Delete any doctor_service_rates records that reference this service
-            const doctorRatesDeleted = db
+            const doctorRatesDeleted = tx
               .delete(schema.doctorServiceRates)
               .where(eq(schema.doctorServiceRates.serviceId, service.id))
               .run();
@@ -2029,7 +2029,7 @@ export class SqliteStorage implements IStorage {
             console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records for service ${service.name}`);
             
             // Delete any doctor_earnings records that reference this service
-            const doctorEarningsDeleted = db
+            const doctorEarningsDeleted = tx
               .delete(schema.doctorEarnings)
               .where(eq(schema.doctorEarnings.serviceId, service.id))
               .run();
@@ -2037,7 +2037,7 @@ export class SqliteStorage implements IStorage {
             console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records for service ${service.name}`);
             
             // Finally, delete the service itself
-            const serviceDeleted = db
+            const serviceDeleted = tx
               .delete(schema.services)
               .where(eq(schema.services.id, service.id))
               .run();
