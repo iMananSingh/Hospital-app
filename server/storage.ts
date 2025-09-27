@@ -911,6 +911,7 @@ export interface IStorage {
     userId?: string,
   ): Promise<Service | undefined>;
   deleteService(id: string, userId?: string): Promise<boolean>;
+  getOrphanedServices(): Promise<Service[]>;
 
   // Billing
   createBill(
@@ -1948,6 +1949,38 @@ export class SqliteStorage implements IStorage {
     }
 
     return result.changes > 0;
+  }
+
+  async getOrphanedServices(): Promise<Service[]> {
+    try {
+      // Get all services and service categories
+      const allServices = await this.getServices();
+      const customCategories = await this.getServiceCategories();
+
+      // Define system/predefined categories
+      const predefinedCategories = [
+        'rooms',
+        'pathology',
+        'diagnostics',
+        'procedures',
+        'operations',
+        'misc'
+      ];
+
+      // Create a set of all valid category names
+      const validCategories = new Set([
+        ...predefinedCategories,
+        ...customCategories.map(cat => cat.name)
+      ]);
+
+      // Find orphaned services (services with categories that don't exist)
+      return allServices.filter(service =>
+        !validCategories.has(service.category)
+      );
+    } catch (error) {
+      console.error("Get orphaned services error:", error);
+      throw new Error("Failed to get orphaned services");
+    }
   }
 
   async createBill(

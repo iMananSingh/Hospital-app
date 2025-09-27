@@ -2150,6 +2150,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clean up orphaned services
+  app.post("/api/services/cleanup-orphaned", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to cleanup orphaned services
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      // Get all services and service categories
+      const allServices = await storage.getServices();
+      const customCategories = await storage.getServiceCategories();
+      
+      // Define system/predefined categories
+      const predefinedCategories = [
+        'rooms',
+        'pathology', 
+        'diagnostics',
+        'procedures',
+        'operations',
+        'misc'
+      ];
+      
+      // Create a set of all valid category names
+      const validCategories = new Set([
+        ...predefinedCategories,
+        ...customCategories.map(cat => cat.name)
+      ]);
+      
+      // Find orphaned services (services with categories that don't exist)
+      const orphanedServices = allServices.filter(service => 
+        !validCategories.has(service.category)
+      );
+      
+      // Log orphaned services for debugging
+      console.log("Found orphaned services:", orphanedServices.map(s => ({
+        id: s.id,
+        name: s.name,
+        category: s.category
+      })));
+      
+      // Delete orphaned services
+      const deletedServices = [];
+      for (const service of orphanedServices) {
+        try {
+          await storage.deleteService(service.id, req.user.id);
+          deletedServices.push({
+            id: service.id,
+            name: service.name,
+            category: service.category
+          });
+        } catch (error) {
+          console.error(`Failed to delete service ${service.name}:`, error);
+        }
+      }
+      
+      res.json({
+        message: `Successfully cleaned up ${deletedServices.length} orphaned services`,
+        deletedServices,
+        totalOrphaned: orphanedServices.length
+      });
+    } catch (error) {
+      console.error("Error cleaning up orphaned services:", error);
+      res.status(500).json({ message: "Failed to cleanup orphaned services" });
+    }
+  });
+
   app.post("/api/service-categories", authenticateToken, async (req: any, res) => {
     try {
       const categoryData = insertServiceCategorySchema.parse(req.body);
