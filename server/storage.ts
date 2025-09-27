@@ -1086,6 +1086,7 @@ export interface IStorage {
     category: Partial<InsertServiceCategory>,
   ): Promise<ServiceCategory | undefined>;
   deleteServiceCategory(id: string): Promise<boolean>;
+  cleanupOrphanedServices(userId?: string): Promise<{ deletedCount: number; deletedServices: string[] }>;
 
   // Comprehensive Bill Generation
   generateComprehensiveBill(patientId: string): Promise<any>;
@@ -1980,6 +1981,96 @@ export class SqliteStorage implements IStorage {
     } catch (error) {
       console.error("Get orphaned services error:", error);
       throw new Error("Failed to get orphaned services");
+    }
+  }
+
+  async cleanupOrphanedServices(userId?: string): Promise<{ deletedCount: number; deletedServices: string[] }> {
+    try {
+      console.log("Starting cleanup of orphaned services...");
+      
+      // Get orphaned services
+      const orphanedServices = await this.getOrphanedServices();
+      console.log("Found orphaned services:", orphanedServices.map(s => ({ id: s.id, name: s.name, category: s.category })));
+      
+      if (orphanedServices.length === 0) {
+        return { deletedCount: 0, deletedServices: [] };
+      }
+
+      const deletedServices: string[] = [];
+      
+      // Use transaction to ensure data consistency
+      return db.transaction(() => {
+        for (const service of orphanedServices) {
+          try {
+            console.log(`Attempting to delete orphaned service: ${service.name} (ID: ${service.id})`);
+            
+            // First, delete all patient_services records that reference this service
+            const patientServicesDeleted = db
+              .delete(schema.patientServices)
+              .where(eq(schema.patientServices.serviceId, service.id))
+              .run();
+            
+            console.log(`Deleted ${patientServicesDeleted.changes} patient_services records for service ${service.name}`);
+            
+            // Delete all bill_items records that reference this service
+            const billItemsDeleted = db
+              .delete(schema.billItems)
+              .where(eq(schema.billItems.serviceId, service.id))
+              .run();
+            
+            console.log(`Deleted ${billItemsDeleted.changes} bill_items records for service ${service.name}`);
+            
+            // Delete any doctor_service_rates records that reference this service
+            const doctorRatesDeleted = db
+              .delete(schema.doctorServiceRates)
+              .where(eq(schema.doctorServiceRates.serviceId, service.id))
+              .run();
+            
+            console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records for service ${service.name}`);
+            
+            // Delete any doctor_earnings records that reference this service
+            const doctorEarningsDeleted = db
+              .delete(schema.doctorEarnings)
+              .where(eq(schema.doctorEarnings.serviceId, service.id))
+              .run();
+            
+            console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records for service ${service.name}`);
+            
+            // Finally, delete the service itself
+            const serviceDeleted = db
+              .delete(schema.services)
+              .where(eq(schema.services.id, service.id))
+              .run();
+            
+            if (serviceDeleted.changes > 0) {
+              deletedServices.push(service.name);
+              console.log(`Successfully deleted orphaned service: ${service.name}`);
+              
+              // Log activity
+              if (userId) {
+                this.logActivity(
+                  userId,
+                  "orphaned_service_deleted",
+                  "Orphaned service deleted",
+                  `${service.name} - ${service.category}`,
+                  service.id,
+                  "service",
+                  { serviceName: service.name, category: service.category },
+                );
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to delete orphaned service ${service.name}:`, error);
+            // Continue with other services even if one fails
+          }
+        }
+        
+        return { deletedCount: deletedServices.length, deletedServices };
+      });
+      
+    } catch (error) {
+      console.error("Cleanup orphaned services error:", error);
+      throw new Error("Failed to cleanup orphaned services");
     }
   }
 

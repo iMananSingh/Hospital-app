@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add 5.5 hours (5 hours 30 minutes) to UTC to get Indian time
       const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
       patientData.createdAt = indianTime.toISOString();
-      
+
       const patient = await storage.createPatient(patientData, req.user.id);
       res.json(patient);
     } catch (error) {
@@ -1237,24 +1237,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const serviceData = req.body;
 
       console.log('Creating patient service with data:', JSON.stringify(serviceData, null, 2));
-      
+
       // Validate required fields
       if (!serviceData.patientId) {
         return res.status(400).json({ error: "Patient ID is required" });
       }
-      
+
       if (!serviceData.serviceType) {
         return res.status(400).json({ error: "Service type is required" });
       }
-      
+
       if (!serviceData.serviceName) {
         return res.status(400).json({ error: "Service name is required" });
       }
-      
+
       if (!serviceData.scheduledDate) {
         return res.status(400).json({ error: "Scheduled date is required" });
       }
-      
+
       if (!serviceData.scheduledTime) {
         return res.status(400).json({ error: "Scheduled time is required" });
       }
@@ -1273,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!serviceData.doctorId || serviceData.doctorId === "" || serviceData.doctorId === "none" || serviceData.doctorId === "external") {
           return res.status(400).json({ error: "Doctor is required for OPD consultation" });
         }
-        
+
         if (!serviceData.price || serviceData.price <= 0) {
           return res.status(400).json({ error: "Valid consultation fee is required for OPD" });
         }
@@ -1311,7 +1311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstService = req.body[0];
       const serviceType = firstService.serviceType === "opd" ? "opd" : "service";
       const eventDate = new Date(firstService.scheduledDate).toISOString().split("T")[0];
-      
+
       // Get daily count for receipt numbering
       let count;
       try {
@@ -1320,7 +1320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             Authorization: `Bearer ${req.headers.authorization?.split(' ')[1]}`,
           },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           count = data.count;
@@ -1542,38 +1542,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ==================== OPD Visits ====================
-  
+
   // Get OPD visits with filters  
   app.get("/api/opd-visits", requireAuth, async (req, res) => {
     try {
       const { doctorId, patientId, scheduledDate, status, fromDate, toDate } = req.query;
-      
+
       const filters: any = {};
-      
+
       if (doctorId && doctorId !== "all") {
         filters.doctorId = doctorId as string;
       }
-      
+
       if (patientId) {
         filters.patientId = patientId as string;
       }
-      
+
       if (scheduledDate) {
         filters.scheduledDate = scheduledDate as string;
       }
-      
+
       if (status && status !== "all") {
         filters.status = status as string;
       }
-      
+
       if (fromDate) {
         filters.fromDate = fromDate as string;
       }
-      
+
       if (toDate) {
         filters.toDate = toDate as string;
       }
-      
+
       const opdVisits = await storage.getOpdVisits(filters);
       res.json(opdVisits);
     } catch (error) {
@@ -1586,24 +1586,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/opd-visits", requireAuth, async (req, res) => {
     try {
       const visitData = req.body;
-      
+
       // Validate required fields
       if (!visitData.patientId) {
         return res.status(400).json({ error: "Patient ID is required" });
       }
-      
+
       if (!visitData.doctorId) {
         return res.status(400).json({ error: "Doctor is required for OPD consultation" });
       }
-      
+
       if (!visitData.scheduledDate) {
         return res.status(400).json({ error: "Scheduled date is required" });
       }
-      
+
       // Convert scheduled date/time to IST
       const visitDateTime = new Date(`${visitData.scheduledDate}T${visitData.scheduledTime || "09:00"}:00`);
       const istDateTime = new Date(visitDateTime.getTime() + (5.5 * 60 * 60 * 1000));
-      
+
       // Create the OPD visit with IST timestamps
       const opdVisit = await storage.createOpdVisit({
         patientId: visitData.patientId,
@@ -1619,7 +1619,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: istDateTime.toISOString(),
         updatedAt: istDateTime.toISOString()
       });
-      
+
       res.status(201).json(opdVisit);
     } catch (error) {
       console.error("Error creating OPD visit:", error);
@@ -1632,17 +1632,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       if (!status) {
         return res.status(400).json({ error: "Status is required" });
       }
-      
+
       const updated = await storage.updateOpdVisitStatus(id, status);
-      
+
       if (!updated) {
         return res.status(404).json({ error: "OPD visit not found" });
       }
-      
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating OPD visit status:", error);
@@ -2039,7 +2039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+
 
   // Patient Payment Routes
   app.post("/api/patients/:patientId/payments", authenticateToken, async (req: any, res) => {
@@ -2161,7 +2161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all services and service categories
       const allServices = await storage.getServices();
       const customCategories = await storage.getServiceCategories();
-      
+
       // Define system/predefined categories
       const predefinedCategories = [
         'rooms',
@@ -2171,25 +2171,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'operations',
         'misc'
       ];
-      
+
       // Create a set of all valid category names
       const validCategories = new Set([
         ...predefinedCategories,
         ...customCategories.map(cat => cat.name)
       ]);
-      
+
       // Find orphaned services (services with categories that don't exist)
       const orphanedServices = allServices.filter(service => 
         !validCategories.has(service.category)
       );
-      
+
       // Log orphaned services for debugging
       console.log("Found orphaned services:", orphanedServices.map(s => ({
         id: s.id,
         name: s.name,
         category: s.category
       })));
-      
+
       // Delete orphaned services
       const deletedServices = [];
       for (const service of orphanedServices) {
@@ -2204,7 +2204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`Failed to delete service ${service.name}:`, error);
         }
       }
-      
+
       res.json({
         message: `Successfully cleaned up ${deletedServices.length} orphaned services`,
         deletedServices,
@@ -2250,19 +2250,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       // Get the service category to find its name
       const categories = await storage.getServiceCategories();
       const categoryToDelete = categories.find(cat => cat.id === id);
-      
+
       if (!categoryToDelete) {
         return res.status(404).json({ message: "Service category not found" });
       }
-      
+
       // Check if there are any services using this category
       const services = await storage.getServices();
       const servicesInCategory = services.filter(service => service.category === categoryToDelete.name);
-      
+
       if (servicesInCategory.length > 0) {
         return res.status(400).json({ 
           message: `Cannot delete category "${categoryToDelete.label}". There are ${servicesInCategory.length} service(s) still using this category. Please delete or move these services to another category first.`,
@@ -2270,7 +2270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           services: servicesInCategory.map(s => ({ id: s.id, name: s.name }))
         });
       }
-      
+
       const deleted = await storage.deleteServiceCategory(id);
       if (!deleted) {
         return res.status(404).json({ message: "Service category not found" });
