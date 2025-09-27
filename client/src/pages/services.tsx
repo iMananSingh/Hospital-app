@@ -713,6 +713,8 @@ export default function ServiceManagement() {
 
   const getServiceCategoryIcon = (category: string) => {
     switch (category) {
+      case 'admissions':
+        return <Bed className="h-4 w-4" />;
       case 'diagnostics':
         return <Heart className="h-4 w-4" />;
       case 'procedures':
@@ -728,6 +730,8 @@ export default function ServiceManagement() {
 
   const getServiceCategoryColor = (category: string) => {
     switch (category) {
+      case 'admissions':
+        return 'bg-orange-100 text-orange-800';
       case 'diagnostics':
         return 'bg-pink-100 text-pink-800';
       case 'procedures':
@@ -745,6 +749,8 @@ export default function ServiceManagement() {
     switch (tab) {
       case 'rooms':
         return <Building2 className="h-4 w-4" />;
+      case 'admissions':
+        return <Bed className="h-4 w-4" />;
       case 'diagnostics':
         return <Heart className="h-4 w-4" />;
       case 'procedures':
@@ -761,6 +767,7 @@ export default function ServiceManagement() {
   // Combine predefined and custom service categories
   const predefinedCategories = [
     { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2, isSystem: true },
+    { key: 'admissions', label: 'Admission Services', icon: Bed, isSystem: true },
     { key: 'pathology', label: 'Pathology Tests', icon: Activity, isSystem: true },
     { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart, isSystem: true },
     { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope, isSystem: true },
