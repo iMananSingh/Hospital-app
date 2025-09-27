@@ -1994,6 +1994,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comprehensive Bill Generation
+  app.get("/api/patients/:patientId/comprehensive-bill", authenticateToken, async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const comprehensiveBill = await storage.generateComprehensiveBill(patientId);
+      res.json(comprehensiveBill);
+    } catch (error) {
+      console.error("Error generating comprehensive bill:", error);
+      res.status(500).json({ error: "Failed to generate comprehensive bill" });
+    }
+  });
+
   // Inpatient Management Detail Routes (IST-based calculations)
   app.get("/api/inpatients/bed-occupancy", authenticateToken, async (req, res) => {
     try {

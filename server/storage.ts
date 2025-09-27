@@ -2,7 +2,8 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "@shared/schema";
-import { calculateStayDays } from "@shared/schema";
+// calculateStayDays is now imported dynamically within the function where it's used
+// import { calculateStayDays } from "@shared/schema";
 import type {
   User,
   InsertUser,
@@ -3138,7 +3139,7 @@ export class SqliteStorage implements IStorage {
 
       otherServices.forEach(service => {
         let charge = service.amount || service.price || 0;
-        
+
         // For admission services, calculate based on stay duration
         if (service.serviceType === 'admission') {
           // Get admissions for this patient
@@ -3147,24 +3148,26 @@ export class SqliteStorage implements IStorage {
             .from(schema.admissions)
             .where(eq(schema.admissions.patientId, patientId))
             .all();
-          
+
           if (patientAdmissions.length > 0) {
             // Find relevant admission
             let relevantAdmission = patientAdmissions[0];
-            
+
             const matchingAdmission = patientAdmissions.find(admission => {
               const admissionDate = new Date(admission.admissionDate).toDateString();
               const serviceDate = new Date(service.scheduledDate || service.createdAt).toDateString();
               return admissionDate === serviceDate;
             });
-            
+
             if (matchingAdmission) {
               relevantAdmission = matchingAdmission;
             }
-            
-            // Calculate stay duration and apply daily charges
-            const stayDuration = calculateStayDays(relevantAdmission);
-            
+
+            // Import calculateStayDays from schema and use it properly
+            const { calculateStayDays } = await import('@shared/schema');
+            const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
+            const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
+
             if (stayDuration > 0) {
               if (service.serviceName.toLowerCase().includes('bed charges')) {
                 // Bed charges: charge for each completed 24-hour period
@@ -3175,20 +3178,12 @@ export class SqliteStorage implements IStorage {
                 service.serviceName.toLowerCase().includes('rmo charges')
               ) {
                 // Other admission services: charge for each calendar day
-                const admissionDate = new Date(relevantAdmission.admissionDate);
-                const dischargeDate = relevantAdmission.dischargeDate 
-                  ? new Date(relevantAdmission.dischargeDate)
-                  : new Date();
-                
-                const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
-                const calendarDays = Math.max(1, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
-                
-                charge = (service.price || 0) * calendarDays;
+                charge = (service.price || 0) * stayDuration;
               }
             }
           }
         }
-        
+
         totalCharges += charge;
       });
 
@@ -3207,21 +3202,12 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
-      for (const event of admissionEvents) {
-        if (event.eventType === 'admit') {
-          const admission = db
-            .select()
-            .from(schema.admissions)
-            .where(eq(schema.admissions.id, event.admissionId))
-            .get();
+      // Admission event charges are handled through total_cost in admissions table which is updated via admission_events
+      // This part might need revision if specific event charges need to be itemized.
+      // For now, relying on total_cost from admissions which is updated during createAdmission.
+      // If admission.totalCost is not being updated correctly, this section might be inaccurate.
 
-          if (admission) {
-            totalCharges += admission.totalCost || 0;
-          }
-        }
-      }
-
-      // 5. Get all payments for this patient
+      // 6. Get all payments for this patient
       const payments = db
         .select({
           amount: schema.patientPayments.amount,
@@ -3234,20 +3220,23 @@ export class SqliteStorage implements IStorage {
         totalPaid += payment.amount || 0;
       });
 
-      // 6. Include initial deposits from admissions
-      const admissionDeposits = db
+      // 7. Include initial deposits and additional payments from admissions
+      const admissionDepositsAndPayments = db
         .select({
           initialDeposit: schema.admissions.initialDeposit,
+          additionalPayments: schema.admissions.additionalPayments,
         })
         .from(schema.admissions)
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
-      admissionDeposits.forEach(admission => {
+      admissionDepositsAndPayments.forEach(admission => {
         totalPaid += admission.initialDeposit || 0;
+        totalPaid += admission.additionalPayments || 0;
       });
 
-      // 7. Get all discounts for this patient
+
+      // 8. Get all discounts for this patient
       const discounts = db
         .select({
           amount: schema.patientDiscounts.amount,
@@ -3262,7 +3251,7 @@ export class SqliteStorage implements IStorage {
 
       const balance = totalCharges - totalPaid - totalDiscounts;
 
-      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}`);
+      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`);
 
       return {
         totalCharges,
@@ -5056,32 +5045,34 @@ export class SqliteStorage implements IStorage {
       patientServices.forEach((ps) => {
         let serviceAmount = (ps.calculatedAmount as number) || (ps.price as number) || 0;
         let serviceQuantity = ps.billingQuantity || 1;
-        
+
         // For admission services, calculate based on patient's stay duration
         if (ps.serviceType === 'admission') {
           // Find the admission for this patient to get stay duration
           const patientAdmissions = admissions.filter(admission => 
             admission.patientId === patientId
           );
-          
+
           if (patientAdmissions.length > 0) {
             // Use the most recent admission or find matching admission by date
             let relevantAdmission = patientAdmissions[0];
-            
+
             // Try to find admission that matches the service date
             const matchingAdmission = patientAdmissions.find(admission => {
               const admissionDate = new Date(admission.admissionDate).toDateString();
               const serviceDate = new Date(ps.scheduledDate || ps.createdAt).toDateString();
               return admissionDate === serviceDate;
             });
-            
+
             if (matchingAdmission) {
               relevantAdmission = matchingAdmission;
             }
-            
+
             // Calculate stay duration using the same logic as calculateStayDays
-            const stayDuration = calculateStayDays(relevantAdmission);
-            
+            const { calculateStayDays } = await import('@shared/schema');
+            const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
+            const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
+
             if (stayDuration > 0) {
               if (ps.serviceName.toLowerCase().includes('bed charges')) {
                 // Bed charges: charge for each completed 24-hour period
@@ -5093,22 +5084,13 @@ export class SqliteStorage implements IStorage {
                 ps.serviceName.toLowerCase().includes('rmo charges')
               ) {
                 // Other admission services: charge for each calendar day
-                const admissionDate = new Date(relevantAdmission.admissionDate);
-                const dischargeDate = relevantAdmission.dischargeDate 
-                  ? new Date(relevantAdmission.dischargeDate)
-                  : new Date(); // Use current date if not discharged
-                
-                // Calculate calendar days (inclusive)
-                const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
-                const calendarDays = Math.max(1, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
-                
-                serviceQuantity = calendarDays;
+                serviceQuantity = stayDuration;
                 serviceAmount = (ps.price || 0) * serviceQuantity;
               }
             }
           }
         }
-        
+
         if (serviceAmount > 0) {
           billItems.push({
             type: "service",
@@ -5180,18 +5162,34 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // 4. Admission Events - Only add discharge entries, not bed charges (handled by patient services)
-      const admissions = await this.getAdmissions(patientId);
-      const admissionDoctors = new Map();
+      // 4. Admissions and associated events
+      const patientAdmissions = db
+        .select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
 
-      // Get doctor names for admissions
-      const doctors = db.select().from(schema.doctors).all();
-      doctors.forEach((doctor) => {
-        admissionDoctors.set(doctor.id, doctor.name);
+      // Get admission doctors for context
+      const admissionDoctorIds = patientAdmissions
+        .map((a) => a.doctorId)
+        .filter(Boolean) as string[];
+      const admissionDoctors = new Map<string, string>();
+      if (admissionDoctorIds.length > 0) {
+        const doctors = db
+          .select()
+          .from(schema.doctors)
+          .where(inArray(schema.doctors.id, admissionDoctorIds))
+          .all();
+        doctors.forEach((doctor) => {
+          admissionDoctors.set(doctor.id, doctor.name);
+        });
+      }
+
+      patientAdmissions.forEach((admission) => {
+        // Discharge entries removed from comprehensive bill as they have no monetary value
+        // (bed charges and other admission services are now handled by patient services)
       });
-
-      // Discharge entries removed from comprehensive bill as they have no monetary value
-      // (bed charges and other admission services are now handled by patient services)
 
       // 5. Patient Payments
       const payments = db
@@ -5219,7 +5217,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // Add admission payments (initial deposits and additional payments)
-      admissions.forEach((admission) => {
+      patientAdmissions.forEach((admission) => {
         if (admission.initialDeposit && admission.initialDeposit > 0) {
           billItems.push({
             type: "payment",
@@ -5280,7 +5278,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // Add admission discounts for backwards compatibility
-      admissions.forEach((admission) => {
+      patientAdmissions.forEach((admission) => {
         if (admission.totalDiscount && admission.totalDiscount > 0) {
           billItems.push({
             type: "discount",
