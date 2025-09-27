@@ -4180,7 +4180,7 @@ export default function PatientDetail() {
               onSubmit={admissionForm.handleSubmit(onAdmissionSubmit)}
               className="space-y-4"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Doctor *</Label>
                   <Select
@@ -4235,9 +4235,7 @@ export default function PatientDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Room Number *</Label>
                   <Select
@@ -4318,7 +4316,9 @@ export default function PatientDetail() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Admission Date & Time *</Label>
                   <Input
@@ -4327,18 +4327,7 @@ export default function PatientDetail() {
                     data-testid="input-admission-date"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Reason for Admission</Label>
-                <Input
-                  {...admissionForm.register("reason")}
-                  placeholder="Brief reason for admission (optional)"
-                  data-testid="input-admission-reason"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Daily Cost (₹) *</Label>
                   <Input
@@ -4366,15 +4355,6 @@ export default function PatientDetail() {
                     data-testid="input-initial-deposit"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  {...admissionForm.register("notes")}
-                  placeholder="Additional notes..."
-                  data-testid="textarea-admission-notes"
-                />
               </div>
 
               {/* Admission Services Selection */}
@@ -4511,6 +4491,15 @@ export default function PatientDetail() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason for Admission</Label>
+                <Input
+                  {...admissionForm.register("reason")}
+                  placeholder="Brief reason for admission (optional)"
+                  data-testid="input-admission-reason"
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
