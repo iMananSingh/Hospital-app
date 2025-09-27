@@ -1950,9 +1950,9 @@ export class SqliteStorage implements IStorage {
     return result.changes > 0;
   }
 
-  
 
-  
+
+
 
   async createBill(
     billData: InsertBill,
@@ -3165,7 +3165,7 @@ export class SqliteStorage implements IStorage {
         }
       }
 
-      // Calculate total payments
+      // 5. Get all payments for this patient
       const payments = db
         .select({
           amount: schema.patientPayments.amount,
@@ -3178,7 +3178,20 @@ export class SqliteStorage implements IStorage {
         totalPaid += payment.amount || 0;
       });
 
-      // Calculate total discounts
+      // 6. Include initial deposits from admissions
+      const admissionDeposits = db
+        .select({
+          initialDeposit: schema.admissions.initialDeposit,
+        })
+        .from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .all();
+
+      admissionDeposits.forEach(admission => {
+        totalPaid += admission.initialDeposit || 0;
+      });
+
+      // 7. Get all discounts for this patient
       const discounts = db
         .select({
           amount: schema.patientDiscounts.amount,
@@ -4724,7 +4737,7 @@ export class SqliteStorage implements IStorage {
         String(now.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(now.getDate()).padStart(2, "0");
-      
+
       // Create start and end of today for range comparison
       // Use SQL date function to extract just the date part for comparison
       const todayAdmissions = db
@@ -4769,7 +4782,7 @@ export class SqliteStorage implements IStorage {
         String(now.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(now.getDate()).padStart(2, "0");
-      
+
       // Use SQL date function to extract just the date part for comparison
       const todayDischarges = db
         .select({
