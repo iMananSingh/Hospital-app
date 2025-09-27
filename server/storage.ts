@@ -2,8 +2,7 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "@shared/schema";
-// calculateStayDays is now imported dynamically within the function where it's used
-// import { calculateStayDays } from "@shared/schema";
+import { calculateStayDays } from "@shared/schema";
 import type {
   User,
   InsertUser,
@@ -3163,8 +3162,7 @@ export class SqliteStorage implements IStorage {
               relevantAdmission = matchingAdmission;
             }
 
-            // Import calculateStayDays from schema and use it properly
-            const { calculateStayDays } = await import('@shared/schema');
+            // Use the calculateStayDays function that was imported at the top
             const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
             const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
 
@@ -5068,8 +5066,7 @@ export class SqliteStorage implements IStorage {
               relevantAdmission = matchingAdmission;
             }
 
-            // Calculate stay duration using the same logic as calculateStayDays
-            const { calculateStayDays } = await import('@shared/schema');
+            // Calculate stay duration using the calculateStayDays function
             const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
             const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
 
