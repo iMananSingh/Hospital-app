@@ -2158,15 +2158,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
+      console.log(`Starting orphaned services cleanup requested by user: ${req.user.username}`);
       const result = await storage.cleanupOrphanedServices(req.user.id);
+      
+      const responseMessage = result.deletedCount > 0 
+        ? `Successfully cleaned up ${result.deletedCount} orphaned service(s): ${result.deletedServices.join(', ')}`
+        : "No orphaned services found to cleanup";
+      
+      console.log(`Cleanup completed: ${responseMessage}`);
+      
       res.json({
-        message: `Successfully cleaned up ${result.deletedCount} orphaned services`,
+        message: responseMessage,
         deletedServices: result.deletedServices,
+        deletedCount: result.deletedCount,
         totalOrphaned: result.deletedCount
       });
     } catch (error) {
       console.error("Error cleaning up orphaned services:", error);
-      res.status(500).json({ message: "Failed to cleanup orphaned services" });
+      res.status(500).json({ 
+        message: "Failed to cleanup orphaned services", 
+        error: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 

@@ -1993,82 +1993,114 @@ export class SqliteStorage implements IStorage {
       console.log("Found orphaned services:", orphanedServices.map(s => ({ id: s.id, name: s.name, category: s.category })));
       
       if (orphanedServices.length === 0) {
+        console.log("No orphaned services found to cleanup");
         return { deletedCount: 0, deletedServices: [] };
       }
 
       const deletedServices: string[] = [];
+      let totalPatientServices = 0;
+      let totalBillItems = 0;
+      let totalDoctorRates = 0;
+      let totalDoctorEarnings = 0;
       
-      // Use transaction to ensure data consistency
-      return db.transaction((tx) => {
-        for (const service of orphanedServices) {
-          try {
-            console.log(`Attempting to delete orphaned service: ${service.name} (ID: ${service.id})`);
-            
-            // First, delete all patient_services records that reference this service
-            const patientServicesDeleted = tx
-              .delete(schema.patientServices)
-              .where(eq(schema.patientServices.serviceId, service.id))
-              .run();
-            
-            console.log(`Deleted ${patientServicesDeleted.changes} patient_services records for service ${service.name}`);
-            
-            // Delete all bill_items records that reference this service
-            const billItemsDeleted = tx
-              .delete(schema.billItems)
-              .where(eq(schema.billItems.serviceId, service.id))
-              .run();
-            
-            console.log(`Deleted ${billItemsDeleted.changes} bill_items records for service ${service.name}`);
-            
-            // Delete any doctor_service_rates records that reference this service
-            const doctorRatesDeleted = tx
-              .delete(schema.doctorServiceRates)
-              .where(eq(schema.doctorServiceRates.serviceId, service.id))
-              .run();
-            
-            console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records for service ${service.name}`);
-            
-            // Delete any doctor_earnings records that reference this service
-            const doctorEarningsDeleted = tx
-              .delete(schema.doctorEarnings)
-              .where(eq(schema.doctorEarnings.serviceId, service.id))
-              .run();
-            
-            console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records for service ${service.name}`);
-            
-            // Finally, delete the service itself
-            const serviceDeleted = tx
-              .delete(schema.services)
-              .where(eq(schema.services.id, service.id))
-              .run();
-            
-            if (serviceDeleted.changes > 0) {
-              deletedServices.push(service.name);
-              console.log(`Successfully deleted orphaned service: ${service.name}`);
+      // Process each orphaned service individually for better error handling
+      for (const service of orphanedServices) {
+        try {
+          console.log(`Processing orphaned service: ${service.name} (ID: ${service.id}, Category: ${service.category})`);
+          
+          // Use individual transaction for each service to prevent one failure from affecting others
+          const result = db.transaction((tx) => {
+            try {
+              // Delete all patient_services records that reference this service
+              const patientServicesDeleted = tx
+                .delete(schema.patientServices)
+                .where(eq(schema.patientServices.serviceId, service.id))
+                .run();
               
-              // Log activity
-              if (userId) {
-                setImmediate(() => {
-                  this.logActivity(
-                    userId,
-                    "orphaned_service_deleted",
-                    "Orphaned service deleted",
-                    `${service.name} - ${service.category}`,
-                    service.id,
-                    "service",
-                    { serviceName: service.name, category: service.category },
-                  );
-                });
-              }
+              console.log(`  - Deleted ${patientServicesDeleted.changes} patient_services records`);
+              
+              // Delete all bill_items records that reference this service
+              const billItemsDeleted = tx
+                .delete(schema.billItems)
+                .where(eq(schema.billItems.serviceId, service.id))
+                .run();
+              
+              console.log(`  - Deleted ${billItemsDeleted.changes} bill_items records`);
+              
+              // Delete any doctor_service_rates records that reference this service
+              const doctorRatesDeleted = tx
+                .delete(schema.doctorServiceRates)
+                .where(eq(schema.doctorServiceRates.serviceId, service.id))
+                .run();
+              
+              console.log(`  - Deleted ${doctorRatesDeleted.changes} doctor_service_rates records`);
+              
+              // Delete any doctor_earnings records that reference this service
+              const doctorEarningsDeleted = tx
+                .delete(schema.doctorEarnings)
+                .where(eq(schema.doctorEarnings.serviceId, service.id))
+                .run();
+              
+              console.log(`  - Deleted ${doctorEarningsDeleted.changes} doctor_earnings records`);
+              
+              // Finally, delete the service itself
+              const serviceDeleted = tx
+                .delete(schema.services)
+                .where(eq(schema.services.id, service.id))
+                .run();
+              
+              console.log(`  - Deleted ${serviceDeleted.changes} service records`);
+              
+              return {
+                patientServices: patientServicesDeleted.changes,
+                billItems: billItemsDeleted.changes,
+                doctorRates: doctorRatesDeleted.changes,
+                doctorEarnings: doctorEarningsDeleted.changes,
+                service: serviceDeleted.changes
+              };
+            } catch (txError) {
+              console.error(`Transaction error for service ${service.id}:`, txError);
+              throw txError;
             }
-          } catch (error) {
-            console.error(`Failed to delete orphaned service ${service.name}:`, error);
-            // Continue with other services even if one fails
+          });
+          
+          if (result.service > 0) {
+            deletedServices.push(service.name);
+            totalPatientServices += result.patientServices;
+            totalBillItems += result.billItems;
+            totalDoctorRates += result.doctorRates;
+            totalDoctorEarnings += result.doctorEarnings;
+            
+            console.log(`✓ Successfully deleted orphaned service: ${service.name}`);
+            
+            // Log activity asynchronously
+            if (userId) {
+              setImmediate(() => {
+                this.logActivity(
+                  userId,
+                  "orphaned_service_deleted",
+                  "Orphaned service deleted",
+                  `${service.name} - ${service.category}`,
+                  service.id,
+                  "service",
+                  { serviceName: service.name, category: service.category },
+                );
+              });
+            }
+          } else {
+            console.warn(`✗ Failed to delete service record for: ${service.name}`);
           }
+          
+        } catch (error) {
+          console.error(`✗ Failed to delete orphaned service ${service.name}:`, error);
+          // Continue with other services even if one fails
         }
-        
-        return { deletedCount: deletedServices.length, deletedServices };
-      });
+      }
+      
+      const summary = `Cleanup complete: deleted ${deletedServices.length} services, cleaned up ${totalPatientServices} patient services, ${totalBillItems} bill items, ${totalDoctorRates} doctor rates, ${totalDoctorEarnings} doctor earnings`;
+      console.log(summary);
+      
+      return { deletedCount: deletedServices.length, deletedServices };
       
     } catch (error) {
       console.error("Cleanup orphaned services error:", error);
@@ -2078,10 +2110,10 @@ export class SqliteStorage implements IStorage {
 
   async manuallyDeleteDoctorVisitService(): Promise<{ success: boolean; message: string }> {
     try {
-      console.log("Manually deleting Doctor Visit service...");
+      console.log("Manually deleting all Doctor Visit services...");
       
-      // Find the Doctor Visit service with "Admission Related" category
-      const doctorVisitService = db
+      // Find ALL Doctor Visit services with "Admission Related" category
+      const doctorVisitServices = db
         .select()
         .from(schema.services)
         .where(
@@ -2090,63 +2122,94 @@ export class SqliteStorage implements IStorage {
             eq(schema.services.category, "Admission Related")
           )
         )
-        .get();
+        .all();
 
-      if (!doctorVisitService) {
-        return { success: false, message: "Doctor Visit service not found" };
+      if (doctorVisitServices.length === 0) {
+        return { success: false, message: "No Doctor Visit services found" };
       }
 
-      console.log(`Found Doctor Visit service with ID: ${doctorVisitService.id}`);
+      console.log(`Found ${doctorVisitServices.length} Doctor Visit service(s) to delete`);
 
-      // Use transaction to delete all references and the service
-      return db.transaction((tx) => {
+      let totalDeleted = 0;
+      let totalPatientServices = 0;
+      let totalBillItems = 0;
+      let totalDoctorRates = 0;
+      let totalDoctorEarnings = 0;
+
+      // Process each Doctor Visit service
+      for (const service of doctorVisitServices) {
+        console.log(`Processing Doctor Visit service with ID: ${service.id}`);
+
         try {
-          // Delete from patient_services
-          const patientServicesDeleted = tx
-            .delete(schema.patientServices)
-            .where(eq(schema.patientServices.serviceId, doctorVisitService.id))
-            .run();
-          console.log(`Deleted ${patientServicesDeleted.changes} patient_services records`);
+          // Use transaction to delete all references and the service
+          const result = db.transaction((tx) => {
+            try {
+              // Delete from patient_services
+              const patientServicesDeleted = tx
+                .delete(schema.patientServices)
+                .where(eq(schema.patientServices.serviceId, service.id))
+                .run();
+              console.log(`Deleted ${patientServicesDeleted.changes} patient_services records for service ${service.id}`);
 
-          // Delete from bill_items
-          const billItemsDeleted = tx
-            .delete(schema.billItems)
-            .where(eq(schema.billItems.serviceId, doctorVisitService.id))
-            .run();
-          console.log(`Deleted ${billItemsDeleted.changes} bill_items records`);
+              // Delete from bill_items
+              const billItemsDeleted = tx
+                .delete(schema.billItems)
+                .where(eq(schema.billItems.serviceId, service.id))
+                .run();
+              console.log(`Deleted ${billItemsDeleted.changes} bill_items records for service ${service.id}`);
 
-          // Delete from doctor_service_rates
-          const doctorRatesDeleted = tx
-            .delete(schema.doctorServiceRates)
-            .where(eq(schema.doctorServiceRates.serviceId, doctorVisitService.id))
-            .run();
-          console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records`);
+              // Delete from doctor_service_rates
+              const doctorRatesDeleted = tx
+                .delete(schema.doctorServiceRates)
+                .where(eq(schema.doctorServiceRates.serviceId, service.id))
+                .run();
+              console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records for service ${service.id}`);
 
-          // Delete from doctor_earnings
-          const doctorEarningsDeleted = tx
-            .delete(schema.doctorEarnings)
-            .where(eq(schema.doctorEarnings.serviceId, doctorVisitService.id))
-            .run();
-          console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records`);
+              // Delete from doctor_earnings
+              const doctorEarningsDeleted = tx
+                .delete(schema.doctorEarnings)
+                .where(eq(schema.doctorEarnings.serviceId, service.id))
+                .run();
+              console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records for service ${service.id}`);
 
-          // Finally delete the service itself
-          const serviceDeleted = tx
-            .delete(schema.services)
-            .where(eq(schema.services.id, doctorVisitService.id))
-            .run();
-          console.log(`Deleted ${serviceDeleted.changes} service records`);
+              // Finally delete the service itself
+              const serviceDeleted = tx
+                .delete(schema.services)
+                .where(eq(schema.services.id, service.id))
+                .run();
+              console.log(`Deleted ${serviceDeleted.changes} service records for service ${service.id}`);
 
-          if (serviceDeleted.changes > 0) {
-            console.log("Successfully deleted Doctor Visit service");
-            return { success: true, message: "Doctor Visit service deleted successfully" };
-          } else {
-            return { success: false, message: "Failed to delete Doctor Visit service" };
-          }
+              return {
+                patientServices: patientServicesDeleted.changes,
+                billItems: billItemsDeleted.changes,
+                doctorRates: doctorRatesDeleted.changes,
+                doctorEarnings: doctorEarningsDeleted.changes,
+                service: serviceDeleted.changes
+              };
+            } catch (error) {
+              console.error(`Error in transaction for service ${service.id}:`, error);
+              throw error;
+            }
+          });
+
+          totalPatientServices += result.patientServices;
+          totalBillItems += result.billItems;
+          totalDoctorRates += result.doctorRates;
+          totalDoctorEarnings += result.doctorEarnings;
+          totalDeleted += result.service;
+
         } catch (error) {
-          console.error("Error in transaction:", error);
-          throw error;
+          console.error(`Failed to delete Doctor Visit service ${service.id}:`, error);
         }
-      });
+      }
+
+      const message = `Successfully deleted ${totalDeleted} Doctor Visit service(s). Cleaned up: ${totalPatientServices} patient services, ${totalBillItems} bill items, ${totalDoctorRates} doctor rates, ${totalDoctorEarnings} doctor earnings.`;
+      console.log(message);
+
+      return { 
+        success: totalDeleted > 0, 
+        message: totalDeleted > 0 ? message : "Failed to delete any Doctor Visit services" 
+      };
 
     } catch (error) {
       console.error("Manual delete error:", error);
