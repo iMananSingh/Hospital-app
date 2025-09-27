@@ -1146,76 +1146,9 @@ export default function PatientDetail() {
         return;
       }
 
-      try {
-        console.log("Creating services:", servicesToCreate);
-
-        if (servicesToCreate.length === 1) {
-          // Single service - use the regular API
-          console.log("Creating single service:", servicesToCreate[0]);
-          const response = await fetch("/api/patient-services", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-            },
-            body: JSON.stringify(servicesToCreate[0]),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Single service creation failed:", errorText);
-            throw new Error(`Server error: ${response.status} ${errorText}`);
-          }
-
-          const result = await response.json();
-          console.log("Service created:", result);
-        } else if (servicesToCreate.length > 1) {
-          // Multiple services - use the batch API
-          console.log("Creating batch services:", servicesToCreate);
-          const response = await fetch("/api/patient-services/batch", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-            },
-            body: JSON.stringify(servicesToCreate),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Batch service creation failed:", errorText);
-            throw new Error(`Batch service creation failed: ${response.status} ${errorText}`);
-          }
-
-          const result = await response.json();
-          console.log("Batch services created:", result);
-        }
-
-        // Success
-        queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-
-        toast({
-          title: "Success",
-          description: `${selectedServiceType === "opd" ? "OPD appointment" : "Service"} scheduled successfully`,
-        });
-
-        setIsServiceDialogOpen(false);
-        serviceForm.reset();
-        setSelectedServices([]);
-        setSelectedServiceType("");
-        setBillingPreview(null);
-        setSelectedServiceCategory("");
-        setSelectedCatalogService(null);
-      } catch (error) {
-        console.error("Error creating service:", error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to schedule service",
-          variant: "destructive",
-        });
-      }
+      // Use the createServiceMutation which properly handles isPending state
+      console.log("Creating services:", servicesToCreate);
+      createServiceMutation.mutate(servicesToCreate);
     } catch (error) {
       console.error("Error in onServiceSubmit:", error);
       toast({
