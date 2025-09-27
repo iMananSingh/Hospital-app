@@ -2158,61 +2158,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
-      // Get all services and service categories
-      const allServices = await storage.getServices();
-      const customCategories = await storage.getServiceCategories();
-
-      // Define system/predefined categories
-      const predefinedCategories = [
-        'rooms',
-        'pathology', 
-        'diagnostics',
-        'procedures',
-        'operations',
-        'misc'
-      ];
-
-      // Create a set of all valid category names
-      const validCategories = new Set([
-        ...predefinedCategories,
-        ...customCategories.map(cat => cat.name)
-      ]);
-
-      // Find orphaned services (services with categories that don't exist)
-      const orphanedServices = allServices.filter(service => 
-        !validCategories.has(service.category)
-      );
-
-      // Log orphaned services for debugging
-      console.log("Found orphaned services:", orphanedServices.map(s => ({
-        id: s.id,
-        name: s.name,
-        category: s.category
-      })));
-
-      // Delete orphaned services
-      const deletedServices = [];
-      for (const service of orphanedServices) {
-        try {
-          await storage.deleteService(service.id, req.user.id);
-          deletedServices.push({
-            id: service.id,
-            name: service.name,
-            category: service.category
-          });
-        } catch (error) {
-          console.error(`Failed to delete service ${service.name}:`, error);
-        }
-      }
-
+      const result = await storage.cleanupOrphanedServices(req.user.id);
       res.json({
-        message: `Successfully cleaned up ${deletedServices.length} orphaned services`,
-        deletedServices,
-        totalOrphaned: orphanedServices.length
+        message: `Successfully cleaned up ${result.deletedCount} orphaned services`,
+        deletedServices: result.deletedServices,
+        totalOrphaned: result.deletedCount
       });
     } catch (error) {
       console.error("Error cleaning up orphaned services:", error);
       res.status(500).json({ message: "Failed to cleanup orphaned services" });
+    }
+  });
+
+  // Manually delete Doctor Visit service
+  app.post("/api/services/manual-delete-doctor-visit", authenticateToken, async (req: any, res) => {
+    try {
+      // Only allow admin users to manually delete services
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      const result = await storage.manuallyDeleteDoctorVisitService();
+      
+      if (result.success) {
+        res.json({ message: result.message });
+      } else {
+        res.status(400).json({ message: result.message });
+      }
+    } catch (error) {
+      console.error("Error manually deleting Doctor Visit service:", error);
+      res.status(500).json({ message: "Failed to manually delete Doctor Visit service" });
     }
   });
 

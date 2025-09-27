@@ -2076,6 +2076,84 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  async manuallyDeleteDoctorVisitService(): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log("Manually deleting Doctor Visit service...");
+      
+      // Find the Doctor Visit service with "Admission Related" category
+      const doctorVisitService = db
+        .select()
+        .from(schema.services)
+        .where(
+          and(
+            eq(schema.services.name, "Doctor Visit"),
+            eq(schema.services.category, "Admission Related")
+          )
+        )
+        .get();
+
+      if (!doctorVisitService) {
+        return { success: false, message: "Doctor Visit service not found" };
+      }
+
+      console.log(`Found Doctor Visit service with ID: ${doctorVisitService.id}`);
+
+      // Use transaction to delete all references and the service
+      return db.transaction((tx) => {
+        try {
+          // Delete from patient_services
+          const patientServicesDeleted = tx
+            .delete(schema.patientServices)
+            .where(eq(schema.patientServices.serviceId, doctorVisitService.id))
+            .run();
+          console.log(`Deleted ${patientServicesDeleted.changes} patient_services records`);
+
+          // Delete from bill_items
+          const billItemsDeleted = tx
+            .delete(schema.billItems)
+            .where(eq(schema.billItems.serviceId, doctorVisitService.id))
+            .run();
+          console.log(`Deleted ${billItemsDeleted.changes} bill_items records`);
+
+          // Delete from doctor_service_rates
+          const doctorRatesDeleted = tx
+            .delete(schema.doctorServiceRates)
+            .where(eq(schema.doctorServiceRates.serviceId, doctorVisitService.id))
+            .run();
+          console.log(`Deleted ${doctorRatesDeleted.changes} doctor_service_rates records`);
+
+          // Delete from doctor_earnings
+          const doctorEarningsDeleted = tx
+            .delete(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.serviceId, doctorVisitService.id))
+            .run();
+          console.log(`Deleted ${doctorEarningsDeleted.changes} doctor_earnings records`);
+
+          // Finally delete the service itself
+          const serviceDeleted = tx
+            .delete(schema.services)
+            .where(eq(schema.services.id, doctorVisitService.id))
+            .run();
+          console.log(`Deleted ${serviceDeleted.changes} service records`);
+
+          if (serviceDeleted.changes > 0) {
+            console.log("Successfully deleted Doctor Visit service");
+            return { success: true, message: "Doctor Visit service deleted successfully" };
+          } else {
+            return { success: false, message: "Failed to delete Doctor Visit service" };
+          }
+        } catch (error) {
+          console.error("Error in transaction:", error);
+          throw error;
+        }
+      });
+
+    } catch (error) {
+      console.error("Manual delete error:", error);
+      return { success: false, message: `Error: ${error.message}` };
+    }
+  }
+
   async createBill(
     billData: InsertBill,
     itemsData: InsertBillItem[],
