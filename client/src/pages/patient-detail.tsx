@@ -930,48 +930,8 @@ export default function PatientDetail() {
     },
   });
 
-  const createAdmissionMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch("/api/admissions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error("Failed to create admission");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/admissions", patientId],
-      });
-      setIsAdmissionDialogOpen(false);
-      admissionForm.reset();
-      toast({
-        title: "Admission created successfully",
-        description: "The patient has been admitted.",
-      });
-    },
-    onError: (error: any) => {
-      console.error("Admission creation error:", error);
-
-      // Handle room occupancy error specifically
-      let errorMessage = "Please try again.";
-      if (error.message && error.message.includes("already occupied")) {
-        errorMessage = error.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast({
-        title: "Error creating admission",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    },
-  });
+  // Track loading state for admission creation
+  const [isCreatingAdmission, setIsCreatingAdmission] = useState(false);
 
   const onServiceSubmit = async (data: any) => {
     try {
@@ -1266,7 +1226,7 @@ export default function PatientDetail() {
     }
   };
 
-  const onAdmissionSubmit = (data: any) => {
+  const onAdmissionSubmit = async (data: any) => {
     // Validate required fields (reason is now optional)
     const requiredFields = [
       "doctorId",
@@ -1288,11 +1248,94 @@ export default function PatientDetail() {
       return;
     }
 
-    const admissionData = {
-      ...data,
-      admissionId: `ADM-${Date.now()}`,
-    };
-    createAdmissionMutation.mutate(admissionData);
+    setIsCreatingAdmission(true);
+
+    try {
+      // Create admission first
+      const admissionData = {
+        ...data,
+        admissionId: `ADM-${Date.now()}`,
+      };
+      
+      const admissionResult = await apiRequest("/api/admissions", {
+        method: "POST",
+        body: admissionData,
+      });
+
+      // Create selected admission services
+      if (selectedServices.length > 0) {
+        const servicesToCreate = [];
+        const selectedDoctorId = data.doctorId;
+
+        for (const service of selectedServices) {
+          servicesToCreate.push({
+            patientId: patientId,
+            serviceType: "admission",
+            serviceName: service.name,
+            serviceId: service.id,
+            price: service.price,
+            quantity: 1,
+            notes: `Admission service - ${service.name}`,
+            scheduledDate: data.admissionDate.split('T')[0], // Extract date part
+            scheduledTime: data.admissionDate.split('T')[1] || "00:00", // Extract time part
+            status: "scheduled",
+            doctorId: selectedDoctorId,
+            billingType: service.billingType || "per_instance",
+            calculatedAmount: service.price,
+            billingQuantity: 1,
+          });
+        }
+
+        // Create services if any selected
+        if (servicesToCreate.length > 0) {
+          if (servicesToCreate.length === 1) {
+            await apiRequest("/api/patient-services", {
+              method: "POST",
+              body: servicesToCreate[0],
+            });
+          } else {
+            await apiRequest("/api/patient-services/batch", {
+              method: "POST",
+              body: servicesToCreate,
+            });
+          }
+        }
+      }
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      
+      setIsAdmissionDialogOpen(false);
+      setSelectedServices([]); // Clear selected services
+      setSelectedServiceSearchQuery(""); // Clear search
+      admissionForm.reset();
+      
+      toast({
+        title: "Admission created successfully",
+        description: `Patient admitted${selectedServices.length > 0 ? ` with ${selectedServices.length} admission service(s)` : ""}.`,
+      });
+
+    } catch (error: any) {
+      console.error("Admission creation error:", error);
+
+      // Handle room occupancy error specifically
+      let errorMessage = "Please try again.";
+      if (error.message && error.message.includes("already occupied")) {
+        errorMessage = error.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Error creating admission",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingAdmission(false);
+    }
   };
 
   const dischargePatientMutation = useMutation({
@@ -4127,7 +4170,7 @@ export default function PatientDetail() {
         open={isAdmissionDialogOpen}
         onOpenChange={setIsAdmissionDialogOpen}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Admit Patient</DialogTitle>
           </DialogHeader>
@@ -4334,21 +4377,161 @@ export default function PatientDetail() {
                 />
               </div>
 
+              {/* Admission Services Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-lg font-semibold">Select Admission Services</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Search admission services..."
+                      value={selectedServiceSearchQuery}
+                      onChange={(e) => {
+                        setSelectedServiceSearchQuery(e.target.value);
+                      }}
+                      className="w-64"
+                      data-testid="search-admission-services"
+                    />
+                  </div>
+                </div>
+
+                <div className="border rounded-lg max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">Select</TableHead>
+                        <TableHead>Service Name</TableHead>
+                        <TableHead>Billing Type</TableHead>
+                        <TableHead className="text-right">Price (₹)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(() => {
+                        // Filter admission services
+                        const admissionServices = allServices?.filter((service) => 
+                          service.category === "admissions" && service.isActive
+                        ) || [];
+
+                        // Apply search filter
+                        const filteredServices = selectedServiceSearchQuery.trim()
+                          ? admissionServices.filter(service =>
+                              service.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
+                              (service.description && 
+                               service.description.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
+                            )
+                          : admissionServices;
+
+                        if (filteredServices.length === 0) {
+                          return (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                No admission services found. {selectedServiceSearchQuery ? 'Try adjusting your search.' : 'Create admission services in the Services page first.'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        }
+
+                        return filteredServices.map((service) => {
+                          const isSelected = selectedServices.some((s) => s.id === service.id);
+                          return (
+                            <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={isSelected}
+                                  data-testid={`checkbox-admission-service-${service.id}`}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedServices([
+                                        ...selectedServices,
+                                        { ...service, quantity: 1 } // Default quantity, will be managed automatically
+                                      ]);
+                                    } else {
+                                      setSelectedServices(
+                                        selectedServices.filter((s) => s.id !== service.id)
+                                      );
+                                    }
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {service.name}
+                                {service.description && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {service.description}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={
+                                  service.billingType === "per_date" ? "bg-indigo-100 text-indigo-800" :
+                                  service.billingType === "per_24_hours" ? "bg-green-100 text-green-800" :
+                                  "bg-gray-100 text-gray-800"
+                                }>
+                                  {service.billingType === "per_date" ? "Per Date" :
+                                   service.billingType === "per_24_hours" ? "Per 24 Hours" :
+                                   service.billingType || "Per Instance"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                ₹{service.price}
+                                {(service.billingType === "per_date" || service.billingType === "per_24_hours") && (
+                                  <div className="text-xs text-muted-foreground">
+                                    Auto-billed during stay
+                                  </div>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        });
+                      })()}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Selected Services Summary */}
+                {selectedServices.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium mb-3">Selected Admission Services</h4>
+                    <div className="space-y-2">
+                      {selectedServices.map((service) => (
+                        <div key={service.id} className="flex justify-between items-center text-sm">
+                          <span className="font-medium">{service.name}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {service.billingType === "per_date" ? "Per Date" :
+                               service.billingType === "per_24_hours" ? "Per 24 Hours" :
+                               service.billingType || "Per Instance"}
+                            </Badge>
+                            <span>₹{service.price}</span>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t pt-2 mt-2 text-xs text-muted-foreground">
+                        * Services with per_date/per_24_hours billing will be automatically charged during the admission period
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsAdmissionDialogOpen(false)}
+                  onClick={() => {
+                    setIsAdmissionDialogOpen(false);
+                    setSelectedServices([]); // Clear selected services
+                    setSelectedServiceSearchQuery(""); // Clear search
+                  }}
                   data-testid="button-cancel-admission"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createAdmissionMutation.isPending}
+                  disabled={isCreatingAdmission}
                   data-testid="button-admit"
                 >
-                  {createAdmissionMutation.isPending
+                  {isCreatingAdmission
                     ? "Admitting..."
                     : "Admit Patient"}
                 </Button>
