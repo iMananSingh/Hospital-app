@@ -3037,7 +3037,12 @@ export default function PatientDetail() {
 
                     // Group patient services by receipt number (batch)
                     if (services && services.length > 0) {
-                      const serviceGroups = services.reduce((groups: any, service: any) => {
+                      // Filter out admission services to prevent duplicates in timeline
+                      const nonAdmissionServices = services.filter((service: any) => 
+                        service.serviceType !== "admission"
+                      );
+
+                      const serviceGroups = nonAdmissionServices.reduce((groups: any, service: any) => {
                         const receiptNumber = service.receiptNumber || `BATCH-${service.id}`;
                         if (!groups[receiptNumber]) {
                           groups[receiptNumber] = [];
