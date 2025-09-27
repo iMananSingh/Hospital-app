@@ -5082,31 +5082,8 @@ export class SqliteStorage implements IStorage {
         admissionDoctors.set(doctor.id, doctor.name);
       });
 
-      admissions.forEach((admission) => {
-        // Only add discharge entry if patient was discharged (bed charges are now handled by patient services)
-        if (admission.dischargeDate && admission.status === "discharged") {
-          billItems.push({
-            type: "admission",
-            id: `${admission.id}-discharge`,
-            date: admission.dischargeDate,
-            description: `Patient Discharged - ${admission.admissionId}`,
-            amount: 0,
-            category: "admission",
-            details: {
-              doctor:
-                admissionDoctors.get(admission.doctorId) ||
-                "No Doctor Assigned",
-              admissionId: admission.admissionId,
-              wardType: admission.currentWardType,
-              roomNumber: admission.currentRoomNumber,
-              status: admission.status,
-              admissionDate: admission.admissionDate,
-              dischargeDate: admission.dischargeDate,
-              isDischargeEntry: true,
-            },
-          });
-        }
-      });
+      // Discharge entries removed from comprehensive bill as they have no monetary value
+      // (bed charges and other admission services are now handled by patient services)
 
       // 5. Patient Payments
       const payments = db
