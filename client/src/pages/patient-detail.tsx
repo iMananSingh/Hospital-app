@@ -4210,15 +4210,32 @@ export default function PatientDetail() {
                     onValueChange={(value) => {
                       admissionForm.setValue("currentWardType", value);
                       admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
-                      // Auto-set daily cost based on selected room type
+                      
+                      // Get selected room type details
                       const selectedRoomType = roomTypes.find(
                         (rt: any) => rt.name === value,
                       );
+                      
                       if (selectedRoomType) {
-                        admissionForm.setValue(
-                          "dailyCost",
-                          selectedRoomType.dailyCost,
-                        );
+                        // Update Bed Charges service price if it's selected
+                        const updatedServices = selectedServices.map(service => {
+                          if (service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) {
+                            return {
+                              ...service,
+                              price: selectedRoomType.dailyCost
+                            };
+                          }
+                          return service;
+                        });
+                        setSelectedServices(updatedServices);
+                        
+                        // Calculate total daily cost from all selected services
+                        const totalServicesCost = updatedServices.reduce((total, service) => {
+                          return total + (service.price || 0);
+                        }, 0);
+                        
+                        // Set the daily cost to the total of all selected services
+                        admissionForm.setValue("dailyCost", totalServicesCost);
                       }
                     }}
                     data-testid="select-ward-type"
@@ -4335,13 +4352,14 @@ export default function PatientDetail() {
                     {...admissionForm.register("dailyCost", {
                       valueAsNumber: true,
                     })}
-                    placeholder="Daily ward cost"
+                    placeholder="Total cost of selected services"
                     data-testid="input-daily-cost"
-                    readOnly={!!admissionForm.watch("currentWardType")}
-                    className={
-                      admissionForm.watch("currentWardType") ? "bg-gray-50" : ""
-                    }
+                    readOnly={true}
+                    className="bg-gray-50"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Automatically calculated from selected admission services
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -4412,6 +4430,14 @@ export default function PatientDetail() {
 
                         return filteredServices.map((service) => {
                           const isSelected = selectedServices.some((s) => s.id === service.id);
+                          const selectedService = selectedServices.find((s) => s.id === service.id);
+                          
+                          // For Bed Charges service, show the room type price if available
+                          let displayPrice = service.price;
+                          if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedService) {
+                            displayPrice = selectedService.price;
+                          }
+                          
                           return (
                             <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
                               <TableCell>
@@ -4419,16 +4445,33 @@ export default function PatientDetail() {
                                   checked={isSelected}
                                   data-testid={`checkbox-admission-service-${service.id}`}
                                   onCheckedChange={(checked) => {
+                                    let updatedServices;
                                     if (checked) {
-                                      setSelectedServices([
-                                        ...selectedServices,
-                                        { ...service, quantity: 1 } // Default quantity, will be managed automatically
-                                      ]);
+                                      // Get current room type for Bed Charges pricing
+                                      const currentWardType = admissionForm.watch("currentWardType");
+                                      const selectedRoomType = roomTypes.find((rt: any) => rt.name === currentWardType);
+                                      
+                                      let serviceToAdd = { ...service, quantity: 1 };
+                                      
+                                      // If this is Bed Charges and we have a room type selected, use room type price
+                                      if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedRoomType) {
+                                        serviceToAdd.price = selectedRoomType.dailyCost;
+                                      }
+                                      
+                                      updatedServices = [...selectedServices, serviceToAdd];
                                     } else {
-                                      setSelectedServices(
-                                        selectedServices.filter((s) => s.id !== service.id)
-                                      );
+                                      updatedServices = selectedServices.filter((s) => s.id !== service.id);
                                     }
+                                    
+                                    setSelectedServices(updatedServices);
+                                    
+                                    // Recalculate total daily cost from all selected services
+                                    const totalServicesCost = updatedServices.reduce((total, selectedService) => {
+                                      return total + (selectedService.price || 0);
+                                    }, 0);
+                                    
+                                    // Update the daily cost field
+                                    admissionForm.setValue("dailyCost", totalServicesCost);
                                   }}
                                 />
                               </TableCell>
@@ -4452,7 +4495,7 @@ export default function PatientDetail() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                ₹{service.price}
+                                ₹{displayPrice}
                                 {(service.billingType === "per_date" || service.billingType === "per_24_hours") && (
                                   <div className="text-xs text-muted-foreground">
                                     Auto-billed during stay
@@ -4485,7 +4528,11 @@ export default function PatientDetail() {
                           </div>
                         </div>
                       ))}
-                      <div className="border-t pt-2 mt-2 text-xs text-muted-foreground">
+                      <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
+                        <span>Total Daily Cost:</span>
+                        <span>₹{selectedServices.reduce((total, service) => total + (service.price || 0), 0)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
                         * Services with per_date/per_24_hours billing will be automatically charged during the admission period
                       </div>
                     </div>
