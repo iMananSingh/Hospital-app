@@ -4726,9 +4726,7 @@ export class SqliteStorage implements IStorage {
         String(now.getDate()).padStart(2, "0");
       
       // Create start and end of today for range comparison
-      const startOfToday = `${today} 00:00:00`;
-      const endOfToday = `${today} 23:59:59`;
-
+      // Use SQL date function to extract just the date part for comparison
       const todayAdmissions = db
         .select({
           admission: schema.admissions,
@@ -4745,10 +4743,7 @@ export class SqliteStorage implements IStorage {
           eq(schema.admissions.doctorId, schema.doctors.id),
         )
         .where(
-          and(
-            gte(schema.admissions.admissionDate, startOfToday),
-            lte(schema.admissions.admissionDate, endOfToday)
-          )
+          sql`DATE(${schema.admissions.admissionDate}) = ${today}`
         )
         .orderBy(desc(schema.admissions.createdAt))
         .all();
@@ -4775,10 +4770,7 @@ export class SqliteStorage implements IStorage {
         "-" +
         String(now.getDate()).padStart(2, "0");
       
-      // Create start and end of today for range comparison
-      const startOfToday = `${today} 00:00:00`;
-      const endOfToday = `${today} 23:59:59`;
-
+      // Use SQL date function to extract just the date part for comparison
       const todayDischarges = db
         .select({
           admission: schema.admissions,
@@ -4798,8 +4790,7 @@ export class SqliteStorage implements IStorage {
           and(
             eq(schema.admissions.status, "discharged"),
             isNotNull(schema.admissions.dischargeDate),
-            gte(schema.admissions.dischargeDate, startOfToday),
-            lte(schema.admissions.dischargeDate, endOfToday)
+            sql`DATE(${schema.admissions.dischargeDate}) = ${today}`
           ),
         )
         .orderBy(desc(schema.admissions.updatedAt))
