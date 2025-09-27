@@ -1591,6 +1591,9 @@ export default function PatientDetail() {
 
     let filtered = allServices.filter((s) => s.isActive);
 
+    // Exclude pathology services from general service selection
+    filtered = filtered.filter((s) => s.category !== "pathology");
+
     // Filter by category
     if (category && category !== "all") {
       filtered = filtered.filter((s) => s.category === category);
