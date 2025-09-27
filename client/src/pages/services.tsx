@@ -455,35 +455,7 @@ export default function ServiceManagement() {
     },
   });
 
-  const cleanupOrphanedServicesMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/services/cleanup-orphaned", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to cleanup orphaned services" }));
-        throw new Error(errorData.message || "Failed to cleanup orphaned services");
-      }
-      return response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      toast({
-        title: "Cleanup Complete",
-        description: `${data.deletedServices.length} orphaned services have been deleted`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Cleanup Failed",
-        description: error.message || "Failed to cleanup orphaned services",
-        variant: "destructive",
-      });
-    },
-  });
+  
 
   const deleteCategory = async (categoryId: string) => {
     try {
@@ -853,19 +825,6 @@ export default function ServiceManagement() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Service Categories</h2>
             <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  if (confirm("This will delete all services that belong to categories that no longer exist. Are you sure you want to continue?")) {
-                    cleanupOrphanedServicesMutation.mutate();
-                  }
-                }}
-                variant="outline"
-                className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                disabled={cleanupOrphanedServicesMutation.isPending}
-              >
-                <Trash2 className="h-4 w-4" />
-                {cleanupOrphanedServicesMutation.isPending ? "Cleaning..." : "Cleanup Orphaned"}
-              </Button>
               <Button
                 onClick={() => openServiceCategoryDialog()}
                 className="flex items-center gap-2"

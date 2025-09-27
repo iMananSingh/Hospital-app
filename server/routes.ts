@@ -2150,58 +2150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clean up orphaned services
-  app.post("/api/services/cleanup-orphaned", authenticateToken, async (req: any, res) => {
-    try {
-      // Only allow admin users to cleanup orphaned services
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
-      }
-
-      console.log(`Starting orphaned services cleanup requested by user: ${req.user.username}`);
-      const result = await storage.cleanupOrphanedServices(req.user.id);
-      
-      const responseMessage = result.deletedCount > 0 
-        ? `Successfully cleaned up ${result.deletedCount} orphaned service(s): ${result.deletedServices.join(', ')}`
-        : "No orphaned services found to cleanup";
-      
-      console.log(`Cleanup completed: ${responseMessage}`);
-      
-      res.json({
-        message: responseMessage,
-        deletedServices: result.deletedServices,
-        deletedCount: result.deletedCount,
-        totalOrphaned: result.deletedCount
-      });
-    } catch (error) {
-      console.error("Error cleaning up orphaned services:", error);
-      res.status(500).json({ 
-        message: "Failed to cleanup orphaned services", 
-        error: error instanceof Error ? error.message : "Unknown error" 
-      });
-    }
-  });
-
-  // Manually delete Doctor Visit service
-  app.post("/api/services/manual-delete-doctor-visit", authenticateToken, async (req: any, res) => {
-    try {
-      // Only allow admin users to manually delete services
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
-      }
-
-      const result = await storage.manuallyDeleteDoctorVisitService();
-      
-      if (result.success) {
-        res.json({ message: result.message });
-      } else {
-        res.status(400).json({ message: result.message });
-      }
-    } catch (error) {
-      console.error("Error manually deleting Doctor Visit service:", error);
-      res.status(500).json({ message: "Failed to manually delete Doctor Visit service" });
-    }
-  });
+  
 
   app.post("/api/service-categories", authenticateToken, async (req: any, res) => {
     try {
