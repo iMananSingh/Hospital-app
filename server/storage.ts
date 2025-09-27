@@ -5009,6 +5009,14 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.patientServices.scheduledDate))
         .all();
 
+      // 3. Get admissions data for calculating admission service durations
+      const admissions = db
+        .select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
+
       // Add OPD visits as bill items
       opdVisits.forEach(visit => {
         const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
