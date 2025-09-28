@@ -1310,7 +1310,7 @@ export class SqliteStorage implements IStorage {
       ...userData,
       password: hashedPassword,
       roles: rolesJson,
-      primaryRole: primaryRole,
+      primaryRole: userData.primaryRole || primaryRole,
     }).returning().get();
 
     // Add parsed roles array for convenience

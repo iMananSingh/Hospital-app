@@ -96,7 +96,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userData.roles = JSON.stringify(['admin']);
       }
 
-      const user = await storage.createUser(userData);
+      // Set primaryRole to the first role in the array
+      const userDataWithPrimaryRole = {
+        ...userData,
+        primaryRole: userData.roles[0]
+      };
+
+      const user = await storage.createUser(userDataWithPrimaryRole);
       res.json({ 
         id: user.id, 
         username: user.username, 
