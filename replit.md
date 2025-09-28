@@ -12,6 +12,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Self-Profile Editing Feature - COMPLETED (September 28, 2025)
+- **Security Enhancement**: Implemented secure self-profile editing allowing all users to modify their own username, full name, and password
+- **API Endpoint**: Created `/api/profile` PUT endpoint with JWT authentication and Zod validation preventing cross-user profile editing
+- **UI Integration**: Made sidebar profile section clickable to open profile edit dialog with intuitive user experience
+- **Form Validation**: Added React Hook Form with password confirmation, minimum length requirements, and real-time validation
+- **Error Handling**: Comprehensive error handling with username uniqueness checks, loading states, and success/error toast notifications
+- **Cache Management**: Implemented proper cache invalidation to ensure UI reflects profile changes immediately
+- **Security Audit**: Verified users can only edit their own profiles with no privilege escalation risks
+- **Final Status**: ✅ COMPLETE - All users can now safely edit their own profile information
+
 ### Fresh GitHub Import Setup - COMPLETED (September 25, 2025)
 - **Project Import**: Successfully imported MedCare Pro hospital management system from GitHub repository
 - **Dependencies Resolution**: Fixed missing cross-env dependency that was preventing application startup
