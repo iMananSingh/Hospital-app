@@ -25,39 +25,15 @@ import {
   Stethoscope,
   Syringe,
   Scissors,
-  Settings,
-  Shield
+  Settings
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest, ServiceCategory } from "@shared/schema";
 
 export default function ServiceManagement() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("rooms");
-
-  // Only show service management if user has admin role
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  if (!currentUserRoles.includes('admin')) {
-    return (
-      <div className="space-y-6">
-        <TopBar title="Service Management" />
-        <div className="p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only administrators can access service management.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
   const [roomsSubTab, setRoomsSubTab] = useState("room-types");
   const [selectedRoomTypeId, setSelectedRoomTypeId] = useState<string>("");
   const [isRoomTypeDialogOpen, setIsRoomTypeDialogOpen] = useState(false);

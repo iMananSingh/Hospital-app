@@ -15,11 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet, Settings, Shield } from "lucide-react";
+import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet, Settings } from "lucide-react";
 import { insertDoctorSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 import type { Doctor } from "@shared/schema";
 
 export default function Doctors() {
@@ -32,31 +31,6 @@ export default function Doctors() {
   const [doctorToPermanentlyDelete, setDoctorToPermanentlyDelete] = useState<Doctor | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const { user } = useAuth();
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isAdmin = currentUserRoles.includes('admin');
-  const isBillingStaff = currentUserRoles.includes('billing_staff');
-  
-  // Check if user can access doctor management at all
-  if (!isAdmin && !isBillingStaff) {
-    return (
-      <div className="space-y-6">
-        <TopBar title="Doctor Management" />
-        <div className="p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only administrators and billing staff can access doctor management.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   // Salary Management States
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
@@ -699,44 +673,35 @@ export default function Doctors() {
     <div className="space-y-6">
       <TopBar 
         title="Doctor Management"
-        searchPlaceholder={isAdmin ? "Search doctors by name or specialization..." : undefined}
-        onSearch={isAdmin ? setSearchQuery : undefined}
-        onNewAction={isAdmin ? () => setIsNewDoctorOpen(true) : undefined}
-        newActionLabel={isAdmin ? "Add Doctor" : undefined}
+        searchPlaceholder="Search doctors by name or specialization..."
+        onSearch={setSearchQuery}
+        onNewAction={() => setIsNewDoctorOpen(true)}
+        newActionLabel="Add Doctor"
       />
 
       <div className="p-6">
-        <Tabs defaultValue={isBillingStaff && !isAdmin ? "salary" : "all-doctors"} className="space-y-6">
+        <Tabs defaultValue="all-doctors" className="space-y-6">
           <TabsList>
-            {isAdmin && (
-              <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">Active Doctors</TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="manage-salary" data-testid="tab-manage-salary">
-                <Calculator className="w-4 h-4 mr-1" />
-                Manage Salary
-              </TabsTrigger>
-            )}
-            {(isAdmin || isBillingStaff) && (
-              <TabsTrigger value="salary" data-testid="tab-salary">
-                <Wallet className="w-4 h-4 mr-1" />
-                Salary
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Inactive Doctors</TabsTrigger>
-            )}
+            <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">Active Doctors</TabsTrigger>
+            <TabsTrigger value="manage-salary" data-testid="tab-manage-salary">
+              <Calculator className="w-4 h-4 mr-1" />
+              Manage Salary
+            </TabsTrigger>
+            <TabsTrigger value="salary" data-testid="tab-salary">
+              <Wallet className="w-4 h-4 mr-1" />
+              Salary
+            </TabsTrigger>
+            <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Inactive Doctors</TabsTrigger>
           </TabsList>
 
-          {isAdmin && (
-            <TabsContent value="all-doctors">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Doctor Profiles</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Total: {filteredDoctors.length} doctors
-                  </p>
-                </CardHeader>
+          <TabsContent value="all-doctors">
+            <Card>
+              <CardHeader>
+                <CardTitle>Doctor Profiles</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Total: {filteredDoctors.length} doctors
+                </p>
+              </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className="text-center py-8">
@@ -844,9 +809,7 @@ export default function Doctors() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
 
-          {isAdmin && (
           <TabsContent value="deleted-doctors">
             <Card>
               <CardHeader>
@@ -941,9 +904,9 @@ export default function Doctors() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
 
-          {isAdmin && (
+
+
           <TabsContent value="manage-salary">
             <Card>
               <CardHeader>
@@ -1438,9 +1401,7 @@ export default function Doctors() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
 
-          {(isAdmin || isBillingStaff) && (
           <TabsContent value="salary">
             <Card>
               <CardHeader>
@@ -1593,7 +1554,6 @@ export default function Doctors() {
               </CardContent>
             </Card>
           </TabsContent>
-          )}
         </Tabs>
       </div>
 

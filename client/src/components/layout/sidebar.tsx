@@ -14,14 +14,14 @@ import {
   Building2
 } from "lucide-react";
 
-const baseNavigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3, roles: ["admin", "doctor", "receptionist", "billing_staff"] },
-  { name: "Patient Registration", href: "/patients", icon: Users, roles: ["admin", "doctor", "receptionist", "billing_staff"] },
-  { name: "Pathology Tests", href: "/pathology", icon: TestTube, roles: ["admin", "doctor", "receptionist", "billing_staff"] },
-  { name: "Doctor Management", href: "/doctors", icon: UserPlus, roles: ["admin", "billing_staff"] },
-  { name: "Service Management", href: "/services", icon: Building2, roles: ["admin"] },
-  { name: "Revenue & Payments", href: "/revenue", icon: FileText, roles: ["admin", "billing_staff"] },
-  { name: "System Settings", href: "/settings", icon: Settings, roles: ["admin"] },
+const navigation = [
+  { name: "Dashboard", href: "/", icon: BarChart3 },
+  { name: "Patient Registration", href: "/patients", icon: Users },
+  { name: "Pathology Tests", href: "/pathology", icon: TestTube },
+  { name: "Doctor Management", href: "/doctors", icon: UserPlus },
+  { name: "Service Management", href: "/services", icon: Building2 },
+  { name: "Revenue & Payments", href: "/revenue", icon: FileText },
+  { name: "System Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -39,12 +39,6 @@ export default function Sidebar() {
   const isActive = (href: string) => {
     return location === href || (href !== "/" && location.startsWith(href));
   };
-
-  // Filter navigation based on user roles
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const navigation = baseNavigation.filter(item => 
-    item.roles.some(role => currentUserRoles.includes(role))
-  );
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">
