@@ -39,8 +39,9 @@ export default function Doctors() {
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
   const isAdmin = currentUserRoles.includes('admin');
   const isBillingStaff = currentUserRoles.includes('billing_staff');
+  const isSuperUser = currentUserRoles.includes('super_user');
 
-  if (!isAdmin && !isBillingStaff) {
+  if (!isAdmin && !isBillingStaff && !isSuperUser) {
     return (
       <div className="space-y-6">
         <TopBar title="Doctor Management" />
@@ -700,36 +701,36 @@ export default function Doctors() {
     <div className="space-y-6">
       <TopBar 
         title="Doctor Management"
-        searchPlaceholder={isAdmin ? "Search doctors by name or specialization..." : undefined}
-        onSearch={isAdmin ? setSearchQuery : undefined}
-        onNewAction={isAdmin ? () => setIsNewDoctorOpen(true) : undefined}
-        newActionLabel={isAdmin ? "Add Doctor" : undefined}
+        searchPlaceholder={isAdmin || isSuperUser ? "Search doctors by name or specialization..." : undefined}
+        onSearch={isAdmin || isSuperUser ? setSearchQuery : undefined}
+        onNewAction={isAdmin || isSuperUser ? () => setIsNewDoctorOpen(true) : undefined}
+        newActionLabel={isAdmin || isSuperUser ? "Add Doctor" : undefined}
       />
 
       <div className="p-6">
-        <Tabs defaultValue={isBillingStaff && !isAdmin ? "salary" : "all-doctors"} className="space-y-6">
+        <Tabs defaultValue={isBillingStaff && !isAdmin && !isSuperUser ? "salary" : "all-doctors"} className="space-y-6">
           <TabsList>
-            {isAdmin && (
+            {(isAdmin || isSuperUser) && (
               <TabsTrigger value="all-doctors" data-testid="tab-all-doctors">Active Doctors</TabsTrigger>
             )}
-            {isAdmin && (
+            {(isAdmin || isSuperUser) && (
               <TabsTrigger value="manage-salary" data-testid="tab-manage-salary">
                 <Calculator className="w-4 h-4 mr-1" />
                 Manage Salary
               </TabsTrigger>
             )}
-            {(isAdmin || isBillingStaff) && (
+            {(isAdmin || isBillingStaff || isSuperUser) && (
               <TabsTrigger value="salary" data-testid="tab-salary">
                 <Wallet className="w-4 h-4 mr-1" />
                 Salary
               </TabsTrigger>
             )}
-            {isAdmin && (
+            {(isAdmin || isSuperUser) && (
               <TabsTrigger value="deleted-doctors" data-testid="tab-deleted-doctors">Inactive Doctors</TabsTrigger>
             )}
           </TabsList>
 
-          {isAdmin && (
+          {(isAdmin || isSuperUser) && (
             <TabsContent value="all-doctors">
               <Card>
                 <CardHeader>
@@ -847,7 +848,7 @@ export default function Doctors() {
           </TabsContent>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isSuperUser) && (
           <TabsContent value="deleted-doctors">
             <Card>
               <CardHeader>
@@ -944,7 +945,7 @@ export default function Doctors() {
           </TabsContent>
           )}
 
-          {isAdmin && (
+          {(isAdmin || isSuperUser) && (
           <TabsContent value="manage-salary">
             <Card>
               <CardHeader>
@@ -1441,7 +1442,7 @@ export default function Doctors() {
           </TabsContent>
           )}
 
-          {(isAdmin || isBillingStaff) && (
+          {(isAdmin || isBillingStaff || isSuperUser) && (
           <TabsContent value="salary">
             <Card>
               <CardHeader>

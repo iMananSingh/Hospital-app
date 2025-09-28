@@ -38,9 +38,9 @@ export default function ServiceManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Only show service management if user has admin role
+  // Only show service management if user has admin or super_user role
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  if (!currentUserRoles.includes('admin')) {
+  if (!currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user')) {
     return (
       <div className="space-y-6">
         <TopBar title="Service Management" />
