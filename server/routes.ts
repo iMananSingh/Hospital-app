@@ -154,30 +154,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes - Allow users to edit their own profile
   app.put("/api/profile", authenticateToken, async (req: any, res) => {
     try {
-      const { username, password, fullName } = req.body;
+      // Import the schema for validation
+      const { updateProfileSchema } = await import("@shared/schema");
+      
+      // Validate request body with Zod schema
+      const validatedData = updateProfileSchema.parse(req.body);
       const userId = req.user.id;
       
-      // Prepare update data, only include fields that are provided
-      const updateData: any = {};
-      if (username !== undefined) updateData.username = username;
-      if (password !== undefined) updateData.password = password;
-      if (fullName !== undefined) updateData.fullName = fullName;
-      
-      // Validate that at least one field is being updated
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ message: "No fields to update" });
-      }
-      
       // If username is being changed, check if it's already taken
-      if (username) {
-        const existingUser = await storage.getUserByUsername(username);
+      if (validatedData.username) {
+        const existingUser = await storage.getUserByUsername(validatedData.username);
         if (existingUser && existingUser.id !== userId) {
           return res.status(400).json({ message: "Username already taken" });
         }
       }
       
-      // Update the user's own profile
-      const updatedUser = await storage.updateUser(userId, updateData);
+      // Update the user's own profile (storage.updateUser handles password hashing)
+      const updatedUser = await storage.updateUser(userId, validatedData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -191,6 +184,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Profile update error:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: error.errors 
+        });
+      }
       res.status(500).json({ message: "Failed to update profile" });
     }
   });

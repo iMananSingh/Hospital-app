@@ -444,6 +444,16 @@ export const insertUserSchema = createInsertSchema(users).omit({
   roles: z.array(z.enum(["admin", "doctor", "receptionist", "billing_staff"])).min(1, "At least one role is required"),
 });
 
+// Profile update schema - for users to edit their own profile
+export const updateProfileSchema = z.object({
+  username: z.string().min(1, "Username is required").trim(),
+  fullName: z.string().min(1, "Full name is required").trim(),
+  password: z.string().min(8, "Password must be at least 8 characters").optional(),
+}).partial().refine((data) => {
+  // At least one field must be provided
+  return Object.keys(data).length > 0;
+}, { message: "At least one field must be provided" });
+
 export const insertDoctorSchema = createInsertSchema(doctors).omit({
   id: true,
   createdAt: true,

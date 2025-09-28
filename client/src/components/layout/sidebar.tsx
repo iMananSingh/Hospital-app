@@ -22,6 +22,192 @@ import {
   DialogTitle,
   DialogTrigger 
 } from "@/components/ui/dialog";
+import { 
+  Form, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+// Profile edit form schema
+const profileEditSchema = z.object({
+  username: z.string().min(1, "Username is required").trim(),
+  fullName: z.string().min(1, "Full name is required").trim(),
+  password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
+  confirmPassword: z.string().optional(),
+}).refine((data) => {
+  if (data.password && data.password !== "" && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+interface ProfileEditFormProps {
+  user: any;
+  onSuccess: () => void;
+}
+
+function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const form = useForm({
+    resolver: zodResolver(profileEditSchema),
+    defaultValues: {
+      username: user?.username || "",
+      fullName: user?.fullName || "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const updateData: any = {
+        username: data.username,
+        fullName: data.fullName,
+      };
+      
+      // Only include password if it's provided
+      if (data.password && data.password.trim() !== "") {
+        updateData.password = data.password;
+      }
+      
+      return await apiRequest("/api/profile", {
+        method: "PUT",
+        body: JSON.stringify(updateData),
+      });
+    },
+    onSuccess: (updatedUser) => {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully.",
+      });
+      // Update the user data in cache
+      queryClient.setQueryData(["/api/users/me"], updatedUser);
+      onSuccess();
+      form.reset({
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        password: "",
+        confirmPassword: "",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: any) => {
+    updateProfileMutation.mutate(data);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input {...field} data-testid="input-username" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="fullName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input {...field} data-testid="input-fullname" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>New Password (optional)</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  type="password" 
+                  placeholder="Leave blank to keep current password"
+                  data-testid="input-password" 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm New Password</FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  type="password" 
+                  placeholder="Confirm new password"
+                  data-testid="input-confirm-password" 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex gap-2 pt-4">
+          <Button 
+            type="submit" 
+            disabled={updateProfileMutation.isPending}
+            data-testid="button-save-profile"
+          >
+            {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onSuccess}
+            data-testid="button-cancel-profile"
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
 
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, roles: ["admin", "doctor", "receptionist", "billing_staff"] },
