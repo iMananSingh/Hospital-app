@@ -391,7 +391,8 @@ export default function Settings() {
       username: "",
       password: "",
       fullName: "",
-      role: "",
+      roles: [],
+      primaryRole: "",
     },
   });
 
@@ -399,7 +400,8 @@ export default function Settings() {
     defaultValues: {
       username: "",
       fullName: "",
-      role: "",
+      roles: [],
+      primaryRole: "",
     },
   });
 
@@ -445,7 +447,8 @@ export default function Settings() {
     editUserForm.reset({
       username: user.username,
       fullName: user.fullName,
-      role: user.role,
+      roles: user.roles || [user.role], // Backward compatibility
+      primaryRole: user.primaryRole || user.role,
     });
     setIsEditUserOpen(true);
   };
@@ -587,8 +590,9 @@ export default function Settings() {
     }
   };
 
-  // Only show settings if user is admin
-  if (user?.role !== 'admin') {
+  // Only show settings if user has admin role
+  const userRoles = user?.roles || [user?.role]; // Backward compatibility
+  if (!userRoles.includes('admin')) {
     return (
       <div className="space-y-6">
         <TopBar title="System Settings" />
@@ -680,13 +684,19 @@ export default function Settings() {
                             {tableUser.username}
                           </TableCell>
                           <TableCell>
-                            <Badge 
-                              variant="secondary" 
-                              className={getRoleColor(tableUser.role)}
-                              data-testid={`user-role-${tableUser.id}`}
-                            >
-                              {tableUser.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                            </Badge>
+                            <div className="flex flex-wrap gap-1">
+                              {(tableUser.roles || [tableUser.role]).map((role: string) => (
+                                <Badge 
+                                  key={role}
+                                  variant={role === (tableUser.primaryRole || tableUser.role) ? "default" : "secondary"} 
+                                  className={getRoleColor(role)}
+                                  data-testid={`user-role-${tableUser.id}-${role}`}
+                                >
+                                  {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  {role === (tableUser.primaryRole || tableUser.role) && " (Primary)"}
+                                </Badge>
+                              ))}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge 
@@ -1156,7 +1166,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <Input
@@ -1172,21 +1182,54 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
-                <Select onValueChange={(value) => userForm.setValue("role", value)}>
-                  <SelectTrigger data-testid="select-user-role">
-                    <SelectValue placeholder="Select role" />
+                <Label>Roles *</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {userRoles.map((role) => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`role-${role}`}
+                        checked={userForm.watch("roles").includes(role)}
+                        onChange={(e) => {
+                          const currentRoles = userForm.watch("roles");
+                          if (e.target.checked) {
+                            userForm.setValue("roles", [...currentRoles, role]);
+                          } else {
+                            userForm.setValue("roles", currentRoles.filter(r => r !== role));
+                          }
+                        }}
+                        data-testid={`checkbox-role-${role}`}
+                      />
+                      <Label htmlFor={`role-${role}`} className="text-sm">
+                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {userForm.formState.errors.roles && (
+                  <p className="text-sm text-destructive">{userForm.formState.errors.roles.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="primaryRole">Primary Role *</Label>
+                <Select 
+                  value={userForm.watch("primaryRole")} 
+                  onValueChange={(value) => userForm.setValue("primaryRole", value)}
+                >
+                  <SelectTrigger data-testid="select-primary-role">
+                    <SelectValue placeholder="Select primary role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {userRoles.map((role) => (
+                    {userForm.watch("roles").map((role) => (
                       <SelectItem key={role} value={role}>
                         {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {userForm.formState.errors.role && (
-                  <p className="text-sm text-destructive">{userForm.formState.errors.role.message}</p>
+                {userForm.formState.errors.primaryRole && (
+                  <p className="text-sm text-destructive">{userForm.formState.errors.primaryRole.message}</p>
                 )}
               </div>
             </div>
@@ -1249,7 +1292,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="editPassword">New Password</Label>
                 <Input
@@ -1265,24 +1308,54 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="editRole">Role *</Label>
+                <Label>Roles *</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {userRoles.map((role) => (
+                    <div key={role} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`edit-role-${role}`}
+                        checked={editUserForm.watch("roles").includes(role)}
+                        onChange={(e) => {
+                          const currentRoles = editUserForm.watch("roles");
+                          if (e.target.checked) {
+                            editUserForm.setValue("roles", [...currentRoles, role]);
+                          } else {
+                            editUserForm.setValue("roles", currentRoles.filter(r => r !== role));
+                          }
+                        }}
+                        data-testid={`edit-checkbox-role-${role}`}
+                      />
+                      <Label htmlFor={`edit-role-${role}`} className="text-sm">
+                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                {editUserForm.formState.errors.roles && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.roles.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editPrimaryRole">Primary Role *</Label>
                 <Select 
-                  value={editUserForm.watch("role")} 
-                  onValueChange={(value) => editUserForm.setValue("role", value)}
+                  value={editUserForm.watch("primaryRole")} 
+                  onValueChange={(value) => editUserForm.setValue("primaryRole", value)}
                 >
-                  <SelectTrigger data-testid="select-edit-user-role">
-                    <SelectValue placeholder="Select role" />
+                  <SelectTrigger data-testid="select-edit-primary-role">
+                    <SelectValue placeholder="Select primary role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {userRoles.map((role) => (
+                    {editUserForm.watch("roles").map((role) => (
                       <SelectItem key={role} value={role}>
                         {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {editUserForm.formState.errors.role && (
-                  <p className="text-sm text-destructive">{editUserForm.formState.errors.role.message}</p>
+                {editUserForm.formState.errors.primaryRole && (
+                  <p className="text-sm text-destructive">{editUserForm.formState.errors.primaryRole.message}</p>
                 )}
               </div>
             </div>

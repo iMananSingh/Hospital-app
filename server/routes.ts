@@ -51,10 +51,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      const rolesArray = JSON.parse(user.roles);
+      
       const token = jwt.sign({
         id: user.id,
         username: user.username,
-        role: user.role
+        roles: rolesArray,
+        primaryRole: user.primaryRole
       }, JWT_SECRET, { expiresIn: '8h' });
 
       res.json({
@@ -63,7 +66,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           username: user.username,
           fullName: user.fullName,
-          role: user.role
+          roles: rolesArray,
+          primaryRole: user.primaryRole
         }
       });
     } catch (error) {
@@ -75,7 +79,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
-      res.json({ id: user.id, username: user.username, fullName: user.fullName, role: user.role });
+      res.json({ 
+        id: user.id, 
+        username: user.username, 
+        fullName: user.fullName, 
+        roles: user.rolesArray,
+        primaryRole: user.primaryRole 
+      });
     } catch (error) {
       res.status(400).json({ message: "Registration failed" });
     }
@@ -88,7 +98,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ id: user.id, username: user.username, fullName: user.fullName, role: user.role });
+      res.json({ 
+        id: user.id, 
+        username: user.username, 
+        fullName: user.fullName, 
+        roles: user.rolesArray,
+        primaryRole: user.primaryRole
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user" });
     }
@@ -96,8 +112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to fetch all users
-      if (req.user.role !== 'admin') {
+      // Check if user has admin role
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      if (!userRoles.includes('admin')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
@@ -106,7 +123,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
-        role: user.role
+        roles: user.rolesArray,
+        primaryRole: user.primaryRole
       })));
     } catch (error) {
       res.status(500).json({ message: "Failed to get users" });
@@ -115,8 +133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to update users
-      if (req.user.role !== 'admin') {
+      // Check if user has admin role
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      if (!userRoles.includes('admin')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
@@ -134,9 +153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot edit the root user" });
       }
 
-      // Prevent updating self to a non-admin role
-      if (req.user.id === id && userData.role !== 'admin') {
-        return res.status(400).json({ message: "Cannot change your own admin role" });
+      // Prevent updating self to remove admin role
+      if (req.user.id === id && userData.roles && !userData.roles.includes('admin')) {
+        return res.status(400).json({ message: "Cannot remove your own admin role" });
       }
 
       const updatedUser = await storage.updateUser(id, userData);
@@ -148,7 +167,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: updatedUser.id,
         username: updatedUser.username,
         fullName: updatedUser.fullName,
-        role: updatedUser.role
+        roles: updatedUser.rolesArray,
+        primaryRole: updatedUser.primaryRole
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update user" });

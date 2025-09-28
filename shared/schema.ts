@@ -9,7 +9,8 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").notNull(), // admin, doctor, receptionist, billing_staff
+  roles: text("roles").notNull(), // JSON array: ["admin", "doctor", "receptionist", "billing_staff"]
+  primaryRole: text("primary_role").notNull(), // Primary role for display purposes
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
@@ -438,6 +439,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  roles: z.array(z.enum(["admin", "doctor", "receptionist", "billing_staff"])).min(1, "At least one role is required"),
+  primaryRole: z.enum(["admin", "doctor", "receptionist", "billing_staff"], {
+    errorMap: () => ({ message: "Primary role must be admin, doctor, receptionist, or billing_staff" })
+  }),
 });
 
 export const insertDoctorSchema = createInsertSchema(doctors).omit({
@@ -679,7 +685,9 @@ export const insertDoctorPaymentSchema = createInsertSchema(doctorPayments).omit
 });
 
 // Types
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & {
+  rolesArray?: string[]; // Helper property for parsed roles
+};
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Doctor = typeof doctors.$inferSelect;
 export type InsertDoctor = z.infer<typeof insertDoctorSchema>;

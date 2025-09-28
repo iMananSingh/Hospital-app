@@ -10,6 +10,16 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// Define the User interface to accommodate multiple roles
+interface User {
+  id: string;
+  username: string;
+  fullName: string;
+  role?: string; // For backward compatibility
+  roles?: string[];
+  primaryRole?: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {

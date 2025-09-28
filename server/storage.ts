@@ -105,7 +105,8 @@ async function initializeDatabase() {
         username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         full_name TEXT NOT NULL,
-        role TEXT NOT NULL,
+        roles TEXT NOT NULL DEFAULT '["user"]', -- Store roles as JSON array
+        primary_role TEXT, -- Optional: for quick access to a primary role
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -748,28 +749,32 @@ async function createDemoData() {
         username: "admin",
         password: "admin123",
         fullName: "System Administrator",
-        role: "admin",
+        roles: ["admin"], // Multiple roles
+        primaryRole: "admin",
         id: "admin-user-id",
       },
       {
         username: "doctor",
         password: "doctor123",
         fullName: "Dr. John Smith",
-        role: "doctor",
+        roles: ["doctor", "billing_staff"], // Multiple roles
+        primaryRole: "doctor",
         id: "doctor-user-id",
       },
       {
         username: "billing",
         password: "billing123",
         fullName: "Billing Staff",
-        role: "billing_staff",
+        roles: ["billing_staff"],
+        primaryRole: "billing_staff",
         id: "billing-user-id",
       },
       {
         username: "reception",
         password: "reception123",
         fullName: "Reception Staff",
-        role: "receptionist",
+        roles: ["receptionist"],
+        primaryRole: "receptionist",
         id: "reception-user-id",
       },
     ];
@@ -787,13 +792,15 @@ async function createDemoData() {
         const allUsers = db.select().from(schema.users).all();
         if (allUsers.length === 0 || userData.username === "admin") {
           const hashedPassword = await bcrypt.hash(userData.password, 10);
+          const rolesJson = JSON.stringify(userData.roles);
           db.insert(schema.users)
             .values({
               id: userData.id,
               username: userData.username,
               password: hashedPassword,
               fullName: userData.fullName,
-              role: userData.role,
+              roles: rolesJson, // Store roles as JSON string
+              primaryRole: userData.primaryRole,
               isActive: true,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -1290,53 +1297,111 @@ export class SqliteStorage implements IStorage {
     return bcrypt.compare(password, hashedPassword);
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const hashedPassword = await this.hashPassword(user.password);
-    const created = db
-      .insert(schema.users)
-      .values({
-        ...user,
-        password: hashedPassword,
-      })
-      .returning()
-      .get();
-    return created;
+  async createUser(userData: InsertUser): Promise<User> {
+    const hashedPassword = await this.hashPassword(userData.password);
+
+    // Convert roles array to JSON string for storage
+    const rolesJson = JSON.stringify(userData.roles);
+
+    const user = db.insert(schema.users).values({
+      ...userData,
+      password: hashedPassword,
+      roles: rolesJson,
+    }).returning().get();
+
+    // Add parsed roles array for convenience
+    const userWithRoles = {
+      ...user,
+      rolesArray: JSON.parse(user.roles)
+    };
+
+    this.logActivity(
+      "system",
+      "user_created",
+      "User created",
+      `New user: ${user.username} (${user.fullName})`,
+      user.id,
+      "user",
+      { username: user.username, roles: userData.roles, primaryRole: user.primaryRole }
+    );
+
+    return userWithRoles;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const user = db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.username, username))
-      .get();
-    return user;
+    const user = db.select().from(schema.users).where(eq(schema.users.username, username)).get();
+    if (!user) return undefined;
+
+    // Parse the roles JSON string into an array
+    return {
+      ...user,
+      rolesArray: JSON.parse(user.roles)
+    };
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    return db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+    const user = db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+    if (!user) return undefined;
+
+    // Parse the roles JSON string into an array
+    return {
+      ...user,
+      rolesArray: JSON.parse(user.roles)
+    };
   }
 
   async getAllUsers(): Promise<User[]> {
-    return db.select().from(schema.users).all();
+    const users = db.select().from(schema.users).where(eq(schema.users.isActive, true)).all();
+    // Parse the roles JSON string into an array for each user
+    return users.map(user => ({
+      ...user,
+      rolesArray: JSON.parse(user.roles)
+    }));
   }
 
   async updateUser(
     id: string,
     userData: Partial<InsertUser>,
   ): Promise<User | undefined> {
-    // Hash password if it's being updated
-    const updateData = { ...userData };
-    if (updateData.password) {
-      updateData.password = await this.hashPassword(updateData.password);
+    let updateData: any = { ...userData };
+
+    if (userData.password) {
+      updateData.password = await this.hashPassword(userData.password);
     }
 
-    const updated = db
-      .update(schema.users)
-      .set({ ...updateData, updatedAt: new Date().toISOString() })
+    // Convert roles array to JSON string if provided
+    if (userData.roles) {
+      updateData.roles = JSON.stringify(userData.roles);
+    }
+
+    updateData.updatedAt = new Date().toISOString();
+
+    const user = db.update(schema.users)
+      .set(updateData)
       .where(eq(schema.users.id, id))
       .returning()
       .get();
-    return updated;
+
+    if (user) {
+      const userWithRoles = {
+        ...user,
+        rolesArray: JSON.parse(user.roles)
+      };
+
+      this.logActivity(
+        "system",
+        "user_updated",
+        "User updated",
+        `Updated user: ${user.username} (${user.fullName})`,
+        user.id,
+        "user",
+        { username: user.username, roles: userWithRoles.rolesArray, primaryRole: user.primaryRole }
+      );
+
+      return userWithRoles;
+    }
+
+    return undefined;
   }
 
   async deleteUser(id: string): Promise<User | undefined> {
@@ -5055,7 +5120,7 @@ export class SqliteStorage implements IStorage {
         // For admission services, calculate based on patient's stay duration
         if (ps.serviceType === 'admission') {
           // Find the admission for this patient to get stay duration
-          const patientAdmissions = admissions.filter(admission => 
+          const patientAdmissions = admissions.filter(admission =>
             admission.patientId === patientId
           );
 
