@@ -419,7 +419,6 @@ export default function Settings() {
       password: "",
       fullName: "",
       roles: [],
-      primaryRole: "",
     },
   });
 
@@ -428,7 +427,6 @@ export default function Settings() {
       username: "",
       fullName: "",
       roles: [],
-      primaryRole: "",
     },
   });
 
@@ -475,7 +473,6 @@ export default function Settings() {
       username: user.username,
       fullName: user.fullName,
       roles: user.roles || [user.role], // Backward compatibility
-      primaryRole: user.primaryRole || user.role,
     });
     setIsEditUserOpen(true);
   };
@@ -715,12 +712,11 @@ export default function Settings() {
                               {(tableUser.roles || [tableUser.role]).map((role: string) => (
                                 <Badge 
                                   key={role}
-                                  variant={role === (tableUser.primaryRole || tableUser.role) ? "default" : "secondary"} 
+                                  variant="default"
                                   className={getRoleColor(role)}
                                   data-testid={`user-role-${tableUser.id}-${role}`}
                                 >
                                   {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                  {role === (tableUser.primaryRole || tableUser.role) && " (Primary)"}
                                 </Badge>
                               ))}
                             </div>
@@ -1240,28 +1236,6 @@ export default function Settings() {
                   <p className="text-sm text-destructive">{userForm.formState.errors.roles.message}</p>
                 )}
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="primaryRole">Primary Role *</Label>
-                <Select 
-                  value={userForm.watch("primaryRole")} 
-                  onValueChange={(value) => userForm.setValue("primaryRole", value)}
-                >
-                  <SelectTrigger data-testid="select-primary-role">
-                    <SelectValue placeholder="Select primary role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userForm.watch("roles").map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {userForm.formState.errors.primaryRole && (
-                  <p className="text-sm text-destructive">{userForm.formState.errors.primaryRole.message}</p>
-                )}
-              </div>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
@@ -1364,28 +1338,6 @@ export default function Settings() {
                 </div>
                 {editUserForm.formState.errors.roles && (
                   <p className="text-sm text-destructive">{editUserForm.formState.errors.roles.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="editPrimaryRole">Primary Role *</Label>
-                <Select 
-                  value={editUserForm.watch("primaryRole")} 
-                  onValueChange={(value) => editUserForm.setValue("primaryRole", value)}
-                >
-                  <SelectTrigger data-testid="select-edit-primary-role">
-                    <SelectValue placeholder="Select primary role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {editUserForm.watch("roles").map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {editUserForm.formState.errors.primaryRole && (
-                  <p className="text-sm text-destructive">{editUserForm.formState.errors.primaryRole.message}</p>
                 )}
               </div>
             </div>

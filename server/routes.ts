@@ -57,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         roles: rolesArray,
-        primaryRole: user.primaryRole
+        role: rolesArray[0] // Use first role for backward compatibility
       }, JWT_SECRET, { expiresIn: '8h' });
 
       res.json({
@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: user.username,
           fullName: user.fullName,
           roles: rolesArray,
-          primaryRole: user.primaryRole
+          role: rolesArray[0] // Use first role for backward compatibility
         }
       });
     } catch (error) {
@@ -84,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username, 
         fullName: user.fullName, 
         roles: user.rolesArray,
-        primaryRole: user.primaryRole 
+        role: user.rolesArray[0] // Use first role for backward compatibility
       });
     } catch (error) {
       res.status(400).json({ message: "Registration failed" });
@@ -103,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username, 
         fullName: user.fullName, 
         roles: user.rolesArray,
-        primaryRole: user.primaryRole
+        role: user.rolesArray[0] // Use first role for backward compatibility
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to get user" });
@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         fullName: user.fullName,
         roles: user.rolesArray,
-        primaryRole: user.primaryRole
+        role: user.rolesArray[0] // Use first role for backward compatibility
       })));
     } catch (error) {
       res.status(500).json({ message: "Failed to get users" });
@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: updatedUser.username,
         fullName: updatedUser.fullName,
         roles: updatedUser.rolesArray,
-        primaryRole: updatedUser.primaryRole
+        role: updatedUser.rolesArray[0] // Use first role for backward compatibility
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to update user" });

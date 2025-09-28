@@ -17,7 +17,6 @@ interface User {
   fullName: string;
   role?: string; // For backward compatibility
   roles?: string[];
-  primaryRole?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
