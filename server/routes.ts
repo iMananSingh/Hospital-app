@@ -78,6 +78,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
+      
+      // Ensure roles is properly formatted
+      if (userData.roles && Array.isArray(userData.roles)) {
+        userData.roles = JSON.stringify(userData.roles);
+      } else if (userData.roles && typeof userData.roles === 'string') {
+        // If it's already a string, try to parse and re-stringify to validate
+        try {
+          const parsed = JSON.parse(userData.roles);
+          userData.roles = JSON.stringify(parsed);
+        } catch {
+          // If parsing fails, treat as single role
+          userData.roles = JSON.stringify([userData.roles]);
+        }
+      } else {
+        // Default to admin role if no roles provided
+        userData.roles = JSON.stringify(['admin']);
+      }
+
       const user = await storage.createUser(userData);
       res.json({ 
         id: user.id, 
@@ -87,7 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.rolesArray[0] // Use first role for backward compatibility
       });
     } catch (error) {
-      res.status(400).json({ message: "Registration failed" });
+      console.error("User registration error:", error);
+      res.status(400).json({ message: "Registration failed", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
