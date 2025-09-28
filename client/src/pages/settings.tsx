@@ -419,6 +419,7 @@ export default function Settings() {
       password: "",
       fullName: "",
       roles: [],
+      primaryRole: "",
     },
   });
 
@@ -1234,6 +1235,28 @@ export default function Settings() {
                 </div>
                 {userForm.formState.errors.roles && (
                   <p className="text-sm text-destructive">{userForm.formState.errors.roles.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Primary Role *</Label>
+                <Select 
+                  value={userForm.watch("primaryRole")} 
+                  onValueChange={(value) => userForm.setValue("primaryRole", value)}
+                >
+                  <SelectTrigger data-testid="select-primary-role">
+                    <SelectValue placeholder="Select primary role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userRoles.map((role) => (
+                      <SelectItem key={role} value={role} data-testid={`option-primary-role-${role}`}>
+                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {userForm.formState.errors.primaryRole && (
+                  <p className="text-sm text-destructive">{userForm.formState.errors.primaryRole.message}</p>
                 )}
               </div>
             </div>
