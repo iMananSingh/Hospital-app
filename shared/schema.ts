@@ -439,11 +439,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  primaryRole: true,
 }).extend({
   roles: z.array(z.enum(["admin", "doctor", "receptionist", "billing_staff"])).min(1, "At least one role is required"),
-  primaryRole: z.enum(["admin", "doctor", "receptionist", "billing_staff"], {
-    errorMap: () => ({ message: "Primary role must be admin, doctor, receptionist, or billing_staff" })
-  }),
 });
 
 export const insertDoctorSchema = createInsertSchema(doctors).omit({

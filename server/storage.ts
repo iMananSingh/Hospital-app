@@ -1302,11 +1302,15 @@ export class SqliteStorage implements IStorage {
 
     // Convert roles array to JSON string for storage
     const rolesJson = JSON.stringify(userData.roles);
+    
+    // Set primary role to the first role in the array
+    const primaryRole = userData.roles[0];
 
     const user = db.insert(schema.users).values({
       ...userData,
       password: hashedPassword,
       roles: rolesJson,
+      primaryRole: primaryRole,
     }).returning().get();
 
     // Add parsed roles array for convenience
