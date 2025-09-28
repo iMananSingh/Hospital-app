@@ -72,24 +72,51 @@ export default function Settings() {
 
   const { data: backupHistory = [], isLoading: backupHistoryLoading, refetch: refetchBackupHistory } = useQuery({
     queryKey: ["/api/backup/history"],
-    queryFn: () => fetch("/api/backup/history", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
-    }).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch("/api/backup/history", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+      });
+      
+      if (!response.ok) {
+        return []; // Return empty array on error
+      }
+      
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   // Get all backup logs (including restores) for finding last restored
   const { data: allBackupLogs = [] } = useQuery({
     queryKey: ["/api/backup/logs"],
-    queryFn: () => fetch("/api/backup/logs", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
-    }).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch("/api/backup/logs", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+      });
+      
+      if (!response.ok) {
+        return []; // Return empty array on error
+      }
+      
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: availableBackups = [], refetch: refetchAvailableBackups } = useQuery({
     queryKey: ["/api/backup/available"],
-    queryFn: () => fetch("/api/backup/available", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
-    }).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch("/api/backup/available", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
+      });
+      
+      if (!response.ok) {
+        return []; // Return empty array on error
+      }
+      
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
     enabled: showRestoreDialog,
   });
 
