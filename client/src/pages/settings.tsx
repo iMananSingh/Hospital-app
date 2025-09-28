@@ -985,7 +985,7 @@ export default function Settings() {
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
                       <p className="text-sm text-muted-foreground mt-2">Loading backup history...</p>
                     </div>
-                  ) : backupHistory.length === 0 ? (
+                  ) : !backupHistory || backupHistory.length === 0 ? (
                     <div className="text-center py-8">
                       <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No backups created yet</p>
@@ -1020,12 +1020,12 @@ export default function Settings() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <p className="text-muted-foreground">Total Backups</p>
-                        <p className="font-medium">{backupHistory.length}</p>
+                        <p className="font-medium">{backupHistory?.length || 0}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Backup Storage</p>
                         <p className="font-medium">
-                          {backupHistory.length > 0 
+                          {backupHistory && backupHistory.length > 0 
                             ? `${(backupHistory.reduce((sum: number, b: any) => sum + (b.size || 0), 0) / (1024 * 1024)).toFixed(2)} MB`
                             : '0 MB'
                           }
