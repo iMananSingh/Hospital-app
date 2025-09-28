@@ -96,10 +96,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userData.roles = JSON.stringify(['admin']);
       }
 
+      // Parse roles if it's a string, and set primaryRole to the first role in the array
+      let parsedRoles = userData.roles;
+      if (typeof userData.roles === 'string') {
+        try {
+          parsedRoles = JSON.parse(userData.roles);
+        } catch {
+          parsedRoles = [userData.roles];
+        }
+      }
+
       // Set primaryRole to the first role in the array
       const userDataWithPrimaryRole = {
         ...userData,
-        primaryRole: userData.roles[0]
+        roles: parsedRoles,
+        primaryRole: Array.isArray(parsedRoles) ? parsedRoles[0] : parsedRoles
       };
 
       const user = await storage.createUser(userDataWithPrimaryRole);
