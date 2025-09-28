@@ -106,7 +106,7 @@ async function initializeDatabase() {
         password TEXT NOT NULL,
         full_name TEXT NOT NULL,
         roles TEXT NOT NULL DEFAULT '["user"]', -- Store roles as JSON array
-        primary_role TEXT, -- Optional: for quick access to a primary role
+        primary_role TEXT NOT NULL, -- Required: for quick access to a primary role
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -1310,7 +1310,7 @@ export class SqliteStorage implements IStorage {
       ...userData,
       password: hashedPassword,
       roles: rolesJson,
-      primaryRole: userData.primaryRole || primaryRole,
+      primaryRole: primaryRole, // Always use the calculated primaryRole
     }).returning().get();
 
     // Add parsed roles array for convenience
