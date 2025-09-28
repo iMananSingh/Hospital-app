@@ -54,7 +54,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
-function Router() {
+function AppRoutes() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
@@ -94,7 +94,7 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <AppRoutes />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
