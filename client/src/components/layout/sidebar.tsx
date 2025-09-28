@@ -11,8 +11,17 @@ import {
   BarChart3, 
   Settings,
   LogOut,
-  Building2
+  Building2,
+  UserCog
 } from "lucide-react";
+import { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from "@/components/ui/dialog";
 
 const baseNavigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, roles: ["admin", "doctor", "receptionist", "billing_staff"] },
@@ -27,6 +36,7 @@ const baseNavigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -81,21 +91,32 @@ export default function Sidebar() {
 
       {/* User Profile Section */}
       <div className="p-4 border-t border-border">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-10 h-10 bg-healthcare-green rounded-full flex items-center justify-center">
-            <span className="text-white font-medium text-sm" data-testid="user-initials">
-              {user ? getInitials(user.fullName) : "U"}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-dark truncate" data-testid="user-name">
-              {user?.fullName || "User"}
-            </p>
-            <p className="text-xs text-text-muted capitalize" data-testid="user-role">
-              {user?.role?.replace('_', ' ') || "Role"}
-            </p>
-          </div>
-        </div>
+        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex items-center space-x-3 mb-3 cursor-pointer hover:bg-muted rounded-lg p-2 transition-colors" data-testid="profile-trigger">
+              <div className="w-10 h-10 bg-healthcare-green rounded-full flex items-center justify-center">
+                <span className="text-white font-medium text-sm" data-testid="user-initials">
+                  {user ? getInitials(user.fullName) : "U"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-dark truncate" data-testid="user-name">
+                  {user?.fullName || "User"}
+                </p>
+                <p className="text-xs text-text-muted capitalize" data-testid="user-role">
+                  {user?.role?.replace('_', ' ') || "Role"}
+                </p>
+              </div>
+              <UserCog className="w-4 h-4 text-text-muted" />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+            </DialogHeader>
+            <ProfileEditForm user={user} onSuccess={() => setIsProfileDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
         <Button
           variant="ghost"
           size="sm"
