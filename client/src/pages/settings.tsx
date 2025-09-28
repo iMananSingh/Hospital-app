@@ -758,7 +758,7 @@ export default function Settings() {
                                   <Edit className="w-4 h-4" />
                                 </Button>
                               )}
-                              {(tableUser.username !== 'root' || currentUserRoles.includes('super_user')) && (
+                              {tableUser.username !== 'root' && (
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
