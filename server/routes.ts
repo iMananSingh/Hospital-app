@@ -239,13 +239,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if the user being updated is an admin and the current user is not a super_user
       const targetUserRoles = userToUpdate.rolesArray || [];
-      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user') && req.user.id !== id) {
-        return res.status(403).json({ message: "Cannot edit another administrator's account" });
+      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Only super users can edit administrator accounts" });
       }
 
-      // Prevent updating self to remove admin role unless the current user is a super_user
-      if (req.user.id === id && userData.roles && !userData.roles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(400).json({ message: "Cannot remove your own admin role" });
+      // Role restrictions for admin users (not super users)
+      if (userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        // Prevent admin from changing their own roles
+        if (req.user.id === id) {
+          return res.status(403).json({ message: "Cannot modify your own roles" });
+        }
+
+        // Prevent admin from granting admin or super_user roles to others
+        if (userData.roles) {
+          if (userData.roles.includes('admin') || userData.roles.includes('super_user')) {
+            return res.status(403).json({ message: "Cannot grant admin or super user roles" });
+          }
+        }
       }
 
       const updatedUser = await storage.updateUser(id, userData);
@@ -291,10 +301,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot delete the root user" });
       }
 
-      // Prevent deleting any admin user unless the current user is a super_user
+      // Only super users can delete admin users
       const targetUserRoles = userToDelete.rolesArray || [];
       if (targetUserRoles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Cannot delete an administrator account" });
+        return res.status(403).json({ message: "Only super users can delete administrator accounts" });
       }
 
       const deleted = await storage.deleteUser(id);

@@ -744,11 +744,10 @@ export default function Settings() {
                                   size="sm"
                                   onClick={() => handleEditUser(tableUser)}
                                   disabled={
-                                    // Disable if trying to edit another admin (but allow editing self or if current user is super_user)
+                                    // Only super users can edit admin accounts
                                     (tableUser.roles || [tableUser.role]).includes('admin') && 
-                                    tableUser.id !== user?.id && 
                                     !currentUserRoles.includes('super_user') ||
-                                    // Disable if trying to edit super_user unless current user is also super_user
+                                    // Only super users can edit super_user accounts (except themselves)
                                     (tableUser.roles || [tableUser.role]).includes('super_user') && 
                                     tableUser.id !== user?.id && 
                                     !currentUserRoles.includes('super_user')
@@ -766,8 +765,8 @@ export default function Settings() {
                                   onClick={() => handleDeleteUser(tableUser)}
                                   disabled={
                                     tableUser.id === user?.id || // Prevent deleting self
-                                    ((tableUser.roles || [tableUser.role]).includes('admin') && !currentUserRoles.includes('super_user')) || // Prevent deleting admin unless super_user
-                                    ((tableUser.roles || [tableUser.role]).includes('super_user') && !currentUserRoles.includes('super_user')) // Prevent deleting super_user unless current user is super_user
+                                    ((tableUser.roles || [tableUser.role]).includes('admin') && !currentUserRoles.includes('super_user')) || // Only super users can delete admin accounts
+                                    ((tableUser.roles || [tableUser.role]).includes('super_user') && !currentUserRoles.includes('super_user')) // Only super users can delete super_user accounts
                                   }
                                   data-testid={`button-delete-user-${tableUser.id}`}
                                 >
@@ -1230,30 +1229,43 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label>Roles *</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {userRoles.map((role) => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`role-${role}`}
-                        checked={userForm.watch("roles").includes(role)}
-                        onChange={(e) => {
-                          const currentRoles = userForm.watch("roles");
-                          if (e.target.checked) {
-                            userForm.setValue("roles", [...currentRoles, role]);
-                          } else {
-                            userForm.setValue("roles", currentRoles.filter(r => r !== role));
-                          }
-                        }}
-                        data-testid={`checkbox-role-${role}`}
-                      />
-                      <Label htmlFor={`role-${role}`} className="text-sm">
-                        {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Label>
-                    </div>
-                  ))}
+                  {userRoles.map((role) => {
+                    // Disable admin and super_user roles for admin users (not super users)
+                    const isRoleDisabled = currentUserRoles.includes('admin') && 
+                                         !currentUserRoles.includes('super_user') && 
+                                         (role === 'admin' || role === 'super_user');
+
+                    return (
+                      <div key={role} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`role-${role}`}
+                          checked={userForm.watch("roles").includes(role)}
+                          disabled={isRoleDisabled}
+                          onChange={(e) => {
+                            const currentRoles = userForm.watch("roles");
+                            if (e.target.checked) {
+                              userForm.setValue("roles", [...currentRoles, role]);
+                            } else {
+                              userForm.setValue("roles", currentRoles.filter(r => r !== role));
+                            }
+                          }}
+                          data-testid={`checkbox-role-${role}`}
+                        />
+                        <Label htmlFor={`role-${role}`} className={`text-sm ${isRoleDisabled ? 'text-gray-400' : ''}`}>
+                          {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </div>
                 {userForm.formState.errors.roles && (
                   <p className="text-sm text-destructive">{userForm.formState.errors.roles.message}</p>
+                )}
+                {currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user') && (
+                  <p className="text-xs text-muted-foreground">
+                    Note: Admin users cannot grant admin or super user roles.
+                  </p>
                 )}
               </div>
 
@@ -1335,30 +1347,47 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label>Roles *</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {userRoles.map((role) => (
-                    <div key={role} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`edit-role-${role}`}
-                        checked={editUserForm.watch("roles").includes(role)}
-                        onChange={(e) => {
-                          const currentRoles = editUserForm.watch("roles");
-                          if (e.target.checked) {
-                            editUserForm.setValue("roles", [...currentRoles, role]);
-                          } else {
-                            editUserForm.setValue("roles", currentRoles.filter(r => r !== role));
-                          }
-                        }}
-                        data-testid={`edit-checkbox-role-${role}`}
-                      />
-                      <Label htmlFor={`edit-role-${role}`} className="text-sm">
-                        {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Label>
-                    </div>
-                  ))}
+                  {userRoles.map((role) => {
+                    // Determine if this role should be disabled for admin users
+                    const isRoleDisabled = currentUserRoles.includes('admin') && 
+                                         !currentUserRoles.includes('super_user') && 
+                                         (role === 'admin' || role === 'super_user');
+                    
+                    // Also disable if admin is editing their own account
+                    const isEditingSelf = selectedUser?.id === user?.id;
+                    const isSelfRoleEdit = isEditingSelf && currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+
+                    return (
+                      <div key={role} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`edit-role-${role}`}
+                          checked={editUserForm.watch("roles").includes(role)}
+                          disabled={isRoleDisabled || isSelfRoleEdit}
+                          onChange={(e) => {
+                            const currentRoles = editUserForm.watch("roles");
+                            if (e.target.checked) {
+                              editUserForm.setValue("roles", [...currentRoles, role]);
+                            } else {
+                              editUserForm.setValue("roles", currentRoles.filter(r => r !== role));
+                            }
+                          }}
+                          data-testid={`edit-checkbox-role-${role}`}
+                        />
+                        <Label htmlFor={`edit-role-${role}`} className={`text-sm ${isRoleDisabled || isSelfRoleEdit ? 'text-gray-400' : ''}`}>
+                          {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </div>
                 {editUserForm.formState.errors.roles && (
                   <p className="text-sm text-destructive">{editUserForm.formState.errors.roles.message}</p>
+                )}
+                {currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user') && (
+                  <p className="text-xs text-muted-foreground">
+                    Note: Admin users cannot grant admin or super user roles, and cannot modify their own roles.
+                  </p>
                 )}
               </div>
             </div>
