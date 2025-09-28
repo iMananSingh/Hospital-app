@@ -246,7 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Role restrictions for admin users (not super users)
       if (userRoles.includes('admin') && !userRoles.includes('super_user')) {
         // Prevent admin from changing their own roles
-        if (req.user.id === id) {
+        if (req.user.id === id && userData.roles) {
           return res.status(403).json({ message: "Cannot modify your own roles" });
         }
 

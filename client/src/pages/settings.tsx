@@ -1353,7 +1353,7 @@ export default function Settings() {
                                          !currentUserRoles.includes('super_user') && 
                                          (role === 'admin' || role === 'super_user');
                     
-                    // Also disable if admin is editing their own account
+                    // Disable role editing if admin is editing their own account
                     const isEditingSelf = selectedUser?.id === user?.id;
                     const isSelfRoleEdit = isEditingSelf && currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
 
