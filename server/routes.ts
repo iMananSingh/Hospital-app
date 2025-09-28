@@ -177,8 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to delete users
-      if (req.user.role !== 'admin') {
+      // Check if user has admin role
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      if (!userRoles.includes('admin')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
