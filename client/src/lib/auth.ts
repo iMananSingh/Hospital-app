@@ -1,36 +1,62 @@
-import { apiRequest } from "./queryClient";
 
 export interface User {
   id: string;
   username: string;
   fullName: string;
-  role: string;
+  role?: string; // For backward compatibility
+  roles?: string[]; // New multiple roles support
 }
 
-export interface LoginResponse {
+interface LoginResponse {
   token: string;
   user: User;
 }
 
+const API_BASE = "";
+
 export const authApi = {
-  login: async (username: string, password: string): Promise<LoginResponse> => {
-    const response = await apiRequest("POST", "/api/auth/login", { username, password });
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Invalid credentials");
+    }
+
     return response.json();
   },
 
-  register: async (userData: { username: string; password: string; fullName: string; role: string }): Promise<User> => {
-    const response = await apiRequest("POST", "/api/auth/register", userData);
-    return response.json();
-  },
+  async getMe(): Promise<User> {
+    const token = tokenStorage.get();
+    const response = await fetch(`${API_BASE}/api/users/me`, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
 
-  getMe: async (): Promise<User> => {
-    const response = await apiRequest("GET", "/api/users/me");
+    if (!response.ok) {
+      throw new Error("Failed to get user info");
+    }
+
     return response.json();
   },
 };
 
 export const tokenStorage = {
-  get: () => localStorage.getItem("hospital_token"),
-  set: (token: string) => localStorage.setItem("hospital_token", token),
-  remove: () => localStorage.removeItem("hospital_token"),
+  get(): string | null {
+    return localStorage.getItem("hospital_token");
+  },
+
+  set(token: string): void {
+    localStorage.setItem("hospital_token", token);
+  },
+
+  remove(): void {
+    localStorage.removeItem("hospital_token");
+  },
 };

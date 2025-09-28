@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authApi, tokenStorage, type User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -8,15 +9,6 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-}
-
-// Define the User interface to accommodate multiple roles
-interface User {
-  id: string;
-  username: string;
-  fullName: string;
-  role?: string; // For backward compatibility
-  roles?: string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
