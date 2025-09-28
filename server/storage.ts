@@ -734,9 +734,61 @@ async function initializeDatabase() {
     // Always ensure demo users and data exist on every restart
     await createDemoData();
 
+    // Ensure Root user has super_user role
+    await ensureRootUserSuperRole();
+
     console.log("Database initialized successfully");
   } catch (error) {
     console.error("Database initialization error:", error);
+  }
+}
+
+// Ensure Root user has super_user role
+async function ensureRootUserSuperRole() {
+  try {
+    // Check if root user exists
+    const rootUser = db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.username, "root"))
+      .get();
+
+    if (!rootUser) {
+      // Create root user with super_user role
+      const hashedPassword = await bcrypt.hash("root123", 10);
+      const rolesJson = JSON.stringify(["super_user"]);
+      db.insert(schema.users)
+        .values({
+          id: "root-user-id",
+          username: "root",
+          password: hashedPassword,
+          fullName: "Root User",
+          roles: rolesJson,
+          primaryRole: "super_user",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+      console.log("Created Root user with super_user role");
+    } else {
+      // Update existing root user to have super_user role if it doesn't already
+      const currentRoles = JSON.parse(rootUser.roles);
+      if (!currentRoles.includes("super_user") || rootUser.primaryRole !== "super_user") {
+        const updatedRoles = JSON.stringify(["super_user"]);
+        db.update(schema.users)
+          .set({
+            roles: updatedRoles,
+            primaryRole: "super_user",
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(schema.users.id, rootUser.id))
+          .run();
+        console.log("Updated Root user to have super_user role");
+      }
+    }
+  } catch (error) {
+    console.error("Error ensuring Root user super role:", error);
   }
 }
 
@@ -745,14 +797,6 @@ async function createDemoData() {
   try {
     // Check and create demo users (only create if they've never existed before)
     const demoUserData = [
-      {
-        username: "admin",
-        password: "admin123",
-        fullName: "System Administrator",
-        roles: ["admin"], // Multiple roles
-        primaryRole: "admin",
-        id: "admin-user-id",
-      },
       {
         username: "doctor",
         password: "doctor123",
@@ -788,9 +832,8 @@ async function createDemoData() {
         .get();
       if (!existing) {
         // Only create if it's the first time the system is running (no users exist at all)
-        // or if this is the admin user (which should always exist)
         const allUsers = db.select().from(schema.users).all();
-        if (allUsers.length === 0 || userData.username === "admin") {
+        if (allUsers.length <= 1) { // Allow for root user existence
           const hashedPassword = await bcrypt.hash(userData.password, 10);
           const rolesJson = JSON.stringify(userData.roles);
           db.insert(schema.users)

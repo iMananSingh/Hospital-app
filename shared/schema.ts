@@ -9,7 +9,7 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  roles: text("roles").notNull(), // JSON array: ["admin", "doctor", "receptionist", "billing_staff"]
+  roles: text("roles").notNull(), // JSON array: ["super_user", "admin", "doctor", "receptionist", "billing_staff"]
   primaryRole: text("primary_role").notNull(), // Primary role for display purposes
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
@@ -441,7 +441,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
   primaryRole: true,
 }).extend({
-  roles: z.array(z.enum(["admin", "doctor", "receptionist", "billing_staff"])).min(1, "At least one role is required"),
+  roles: z.array(z.enum(["super_user", "admin", "doctor", "receptionist", "billing_staff"])).min(1, "At least one role is required"),
 });
 
 // Profile update schema - for users to edit their own profile

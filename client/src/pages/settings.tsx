@@ -573,6 +573,7 @@ export default function Settings() {
   ];
 
   const userRoles = [
+    "super_user",
     "admin",
     "doctor",
     "receptionist", 
@@ -602,6 +603,8 @@ export default function Settings() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
+      case 'super_user':
+        return 'bg-gray-100 text-gray-600 border border-gray-300'; // Silver styling
       case 'admin':
         return 'bg-red-100 text-red-800';
       case 'doctor':
@@ -615,9 +618,9 @@ export default function Settings() {
     }
   };
 
-  // Only show settings if user has admin role
+  // Only show settings if user has admin or super_user role
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const hasAccess = currentUserRoles.includes('admin');
+  const hasAccess = currentUserRoles.includes('admin') || currentUserRoles.includes('super_user');
 
   if (!hasAccess) {
     return (
@@ -629,7 +632,7 @@ export default function Settings() {
               <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
               <p className="text-muted-foreground">
-                Only administrators can access system settings.
+                Only administrators and super users can access system settings.
               </p>
             </CardContent>
           </Card>
@@ -719,7 +722,7 @@ export default function Settings() {
                                   className={getRoleColor(role)}
                                   data-testid={`user-role-${tableUser.id}-${role}`}
                                 >
-                                  {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                 </Badge>
                               ))}
                             </div>
@@ -735,22 +738,27 @@ export default function Settings() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              {tableUser.username !== 'root' && (
+                              {(tableUser.username !== 'root' || currentUserRoles.includes('super_user')) && (
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => handleEditUser(tableUser)}
                                   disabled={
-                                    // Disable if trying to edit another admin (but allow editing self)
+                                    // Disable if trying to edit another admin (but allow editing self or if current user is super_user)
                                     (tableUser.roles || [tableUser.role]).includes('admin') && 
-                                    tableUser.id !== user?.id
+                                    tableUser.id !== user?.id && 
+                                    !currentUserRoles.includes('super_user') ||
+                                    // Disable if trying to edit super_user unless current user is also super_user
+                                    (tableUser.roles || [tableUser.role]).includes('super_user') && 
+                                    tableUser.id !== user?.id && 
+                                    !currentUserRoles.includes('super_user')
                                   }
                                   data-testid={`button-edit-user-${tableUser.id}`}
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                               )}
-                              {tableUser.username !== 'root' && (
+                              {(tableUser.username !== 'root' || currentUserRoles.includes('super_user')) && (
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
@@ -758,7 +766,8 @@ export default function Settings() {
                                   onClick={() => handleDeleteUser(tableUser)}
                                   disabled={
                                     tableUser.id === user?.id || // Prevent deleting self
-                                    (tableUser.roles || [tableUser.role]).includes('admin') // Prevent deleting any admin
+                                    ((tableUser.roles || [tableUser.role]).includes('admin') && !currentUserRoles.includes('super_user')) || // Prevent deleting admin unless super_user
+                                    ((tableUser.roles || [tableUser.role]).includes('super_user') && !currentUserRoles.includes('super_user')) // Prevent deleting super_user unless current user is super_user
                                   }
                                   data-testid={`button-delete-user-${tableUser.id}`}
                                 >
@@ -1238,7 +1247,7 @@ export default function Settings() {
                         data-testid={`checkbox-role-${role}`}
                       />
                       <Label htmlFor={`role-${role}`} className="text-sm">
-                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </Label>
                     </div>
                   ))}
@@ -1343,7 +1352,7 @@ export default function Settings() {
                         data-testid={`edit-checkbox-role-${role}`}
                       />
                       <Label htmlFor={`edit-role-${role}`} className="text-sm">
-                        {role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </Label>
                     </div>
                   ))}

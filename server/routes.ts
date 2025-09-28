@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const rolesArray = JSON.parse(user.roles);
-      
+
       const token = jwt.sign({
         id: user.id,
         username: user.username,
@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Ensure roles is properly formatted
       if (userData.roles && Array.isArray(userData.roles)) {
         userData.roles = JSON.stringify(userData.roles);
@@ -119,10 +119,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const user = await storage.createUser(userDataWithPrimaryRole);
-      res.json({ 
-        id: user.id, 
-        username: user.username, 
-        fullName: user.fullName, 
+      res.json({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
         roles: user.rolesArray,
         role: user.rolesArray[0] // Use first role for backward compatibility
       });
@@ -139,10 +139,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json({ 
-        id: user.id, 
-        username: user.username, 
-        fullName: user.fullName, 
+      res.json({
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
         roles: user.rolesArray,
         role: user.rolesArray[0] // Use first role for backward compatibility
       });
@@ -156,11 +156,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Import the schema for validation
       const { updateProfileSchema } = await import("@shared/schema");
-      
+
       // Validate request body with Zod schema
       const validatedData = updateProfileSchema.parse(req.body);
       const userId = req.user.id;
-      
+
       // If username is being changed, check if it's already taken
       if (validatedData.username) {
         const existingUser = await storage.getUserByUsername(validatedData.username);
@@ -168,13 +168,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Username already taken" });
         }
       }
-      
+
       // Update the user's own profile (storage.updateUser handles password hashing)
       const updatedUser = await storage.updateUser(userId, validatedData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       res.json({
         id: updatedUser.id,
         username: updatedUser.username,
@@ -185,9 +185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Profile update error:", error);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ 
-          message: "Validation failed", 
-          errors: error.errors 
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.errors
         });
       }
       res.status(500).json({ message: "Failed to update profile" });
@@ -196,9 +196,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has admin role
+      // Check if user has admin or super_user role
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      if (!userRoles.includes('admin')) {
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
@@ -217,9 +217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has admin role
+      // Check if user has admin or super_user role
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      if (!userRoles.includes('admin')) {
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
@@ -232,19 +232,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Prevent editing root user
-      if (userToUpdate.username === 'root') {
+      // Prevent editing root user unless the current user is a super_user
+      if (userToUpdate.username === 'root' && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Cannot edit the root user" });
       }
 
-      // Check if the user being updated is an admin
+      // Check if the user being updated is an admin and the current user is not a super_user
       const targetUserRoles = userToUpdate.rolesArray || [];
-      if (targetUserRoles.includes('admin') && req.user.id !== id) {
+      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user') && req.user.id !== id) {
         return res.status(403).json({ message: "Cannot edit another administrator's account" });
       }
 
-      // Prevent updating self to remove admin role
-      if (req.user.id === id && userData.roles && !userData.roles.includes('admin')) {
+      // Prevent updating self to remove admin role unless the current user is a super_user
+      if (req.user.id === id && userData.roles && !userData.roles.includes('admin') && !userRoles.includes('super_user')) {
         return res.status(400).json({ message: "Cannot remove your own admin role" });
       }
 
@@ -267,9 +267,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has admin role
+      // Check if user has admin or super_user role
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      if (!userRoles.includes('admin')) {
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Access denied. Admin role required." });
       }
 
@@ -280,20 +280,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      // Get user to check if it's the root user or admin
+      // Get user to check if it's the root user
       const userToDelete = await storage.getUserById(id);
       if (!userToDelete) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Prevent deleting root user
-      if (userToDelete.username === 'root') {
+      // Prevent deleting root user unless the current user is a super_user
+      if (userToDelete.username === 'root' && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Cannot delete the root user" });
       }
 
-      // Prevent deleting any admin user
+      // Prevent deleting any admin user unless the current user is a super_user
       const targetUserRoles = userToDelete.rolesArray || [];
-      if (targetUserRoles.includes('admin')) {
+      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user')) {
         return res.status(403).json({ message: "Cannot delete an administrator account" });
       }
 
@@ -1402,8 +1402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
-      res.status(500).json({ 
-        error: "Failed to create patient service", 
+      res.status(500).json({
+        error: "Failed to create patient service",
         message: error instanceof Error ? error.message : "Unknown error"
       });
     }
@@ -1660,7 +1660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ==================== OPD Visits ====================
 
-  // Get OPD visits with filters  
+  // Get OPD visits with filters
   app.get("/api/opd-visits", requireAuth, async (req, res) => {
     try {
       const { doctorId, patientId, scheduledDate, status, fromDate, toDate } = req.query;
@@ -2279,7 +2279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+
 
   app.post("/api/service-categories", authenticateToken, async (req: any, res) => {
     try {
@@ -2329,7 +2329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const servicesInCategory = services.filter(service => service.category === categoryToDelete.name);
 
       if (servicesInCategory.length > 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: `Cannot delete category "${categoryToDelete.label}". There are ${servicesInCategory.length} service(s) still using this category. Please delete or move these services to another category first.`,
           servicesCount: servicesInCategory.length,
           services: servicesInCategory.map(s => ({ id: s.id, name: s.name }))
@@ -2364,9 +2364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { doctorId } = req.body;
       const result = await storage.recalculateDoctorEarnings(doctorId);
-      res.json({ 
+      res.json({
         message: `Recalculation complete: processed ${result.processed} services, created ${result.created} new earnings`,
-        ...result 
+        ...result
       });
     } catch (error) {
       console.error("Error recalculating doctor earnings:", error);
