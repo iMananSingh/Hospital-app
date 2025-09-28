@@ -591,8 +591,8 @@ export default function Settings() {
   };
 
   // Only show settings if user has admin role
-  const userRoles = user?.roles || [user?.role]; // Backward compatibility
-  if (!userRoles.includes('admin')) {
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  if (!currentUserRoles.includes('admin')) {
     return (
       <div className="space-y-6">
         <TopBar title="System Settings" />
