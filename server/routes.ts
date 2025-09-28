@@ -217,14 +217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has admin or super_user role
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
-      }
-
       const { id } = req.params;
       const userData = req.body;
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
 
       // Get user to check if it's the root user
       const userToUpdate = await storage.getUserById(id);
@@ -232,26 +227,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
+      const targetUserRoles = userToUpdate.rolesArray || [];
+      const isEditingSelf = req.user.id === id;
+      const currentUserIsAdmin = userRoles.includes('admin');
+      const currentUserIsSuperUser = userRoles.includes('super_user');
+      const targetIsAdmin = targetUserRoles.includes('admin');
+      const targetIsSuperUser = targetUserRoles.includes('super_user');
+
       // Prevent editing root user unless the current user is a super_user
-      if (userToUpdate.username === 'root' && !userRoles.includes('super_user')) {
+      if (userToUpdate.username === 'root' && !currentUserIsSuperUser) {
         return res.status(403).json({ message: "Cannot edit the root user" });
       }
 
-      // Check if the user being updated is an admin and the current user is not a super_user
-      const targetUserRoles = userToUpdate.rolesArray || [];
-      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Only super users can edit administrator accounts" });
-      }
-
-      // Role restrictions for admin users (not super users)
-      if (userRoles.includes('admin') && !userRoles.includes('super_user')) {
-        // Prevent admin from changing their own roles
-        if (req.user.id === id && userData.roles) {
+      // Permission checks based on user roles
+      if (currentUserIsSuperUser) {
+        // Super users can edit anyone (no restrictions)
+      } else if (currentUserIsAdmin) {
+        // Admins can edit themselves and non-admin users
+        if (!isEditingSelf && targetIsAdmin) {
+          return res.status(403).json({ message: "Admins cannot edit other administrator accounts" });
+        }
+        if (!isEditingSelf && targetIsSuperUser) {
+          return res.status(403).json({ message: "Admins cannot edit super user accounts" });
+        }
+        
+        // Role restrictions for admin users
+        if (isEditingSelf && userData.roles) {
           return res.status(403).json({ message: "Cannot modify your own roles" });
         }
-
+        
         // Prevent admin from granting admin or super_user roles to others
-        if (userData.roles) {
+        if (!isEditingSelf && userData.roles) {
+          if (userData.roles.includes('admin') || userData.roles.includes('super_user')) {
+            return res.status(403).json({ message: "Cannot grant admin or super user roles" });
+          }
+        }
+      } else {
+        // Non-admin, non-super users
+        if (!isEditingSelf && (targetIsAdmin || targetIsSuperUser)) {
+          return res.status(403).json({ message: "Cannot edit administrator or super user accounts" });
+        }
+        
+        // Role restrictions for non-admin users
+        if (isEditingSelf && userData.roles) {
+          return res.status(403).json({ message: "Cannot modify your own roles" });
+        }
+        
+        // Prevent non-admin from granting admin or super_user roles to others
+        if (!isEditingSelf && userData.roles) {
           if (userData.roles.includes('admin') || userData.roles.includes('super_user')) {
             return res.status(403).json({ message: "Cannot grant admin or super user roles" });
           }

@@ -738,25 +738,44 @@ export default function Settings() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              {(tableUser.username !== 'root' || currentUserRoles.includes('super_user')) && (
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleEditUser(tableUser)}
-                                  disabled={
-                                    // Only super users can edit admin accounts
-                                    (tableUser.roles || [tableUser.role]).includes('admin') && 
-                                    !currentUserRoles.includes('super_user') ||
-                                    // Only super users can edit super_user accounts (except themselves)
-                                    (tableUser.roles || [tableUser.role]).includes('super_user') && 
-                                    tableUser.id !== user?.id && 
-                                    !currentUserRoles.includes('super_user')
-                                  }
-                                  data-testid={`button-edit-user-${tableUser.id}`}
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              )}
+                              {(() => {
+                                const targetUserRoles = tableUser.roles || [tableUser.role];
+                                const isEditingSelf = tableUser.id === user?.id;
+                                const currentUserIsAdmin = currentUserRoles.includes('admin');
+                                const currentUserIsSuperUser = currentUserRoles.includes('super_user');
+                                const targetIsAdmin = targetUserRoles.includes('admin');
+                                const targetIsSuperUser = targetUserRoles.includes('super_user');
+                                
+                                // Don't show edit button for root user unless current user is super user
+                                if (tableUser.username === 'root' && !currentUserIsSuperUser) {
+                                  return null;
+                                }
+                                
+                                let disabled = false;
+                                
+                                if (currentUserIsSuperUser) {
+                                  // Super users can edit anyone
+                                  disabled = false;
+                                } else if (currentUserIsAdmin) {
+                                  // Admins can edit themselves and non-admin users
+                                  disabled = !isEditingSelf && (targetIsAdmin || targetIsSuperUser);
+                                } else {
+                                  // Non-admin users can edit themselves and other non-admin, non-super users
+                                  disabled = !isEditingSelf && (targetIsAdmin || targetIsSuperUser);
+                                }
+                                
+                                return (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleEditUser(tableUser)}
+                                    disabled={disabled}
+                                    data-testid={`button-edit-user-${tableUser.id}`}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                );
+                              })()}
                               {tableUser.username !== 'root' && (
                                 <Button 
                                   variant="ghost" 
@@ -1348,14 +1367,30 @@ export default function Settings() {
                 <Label>Roles *</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {userRoles.map((role) => {
-                    // Determine if this role should be disabled for admin users
-                    const isRoleDisabled = currentUserRoles.includes('admin') && 
-                                         !currentUserRoles.includes('super_user') && 
-                                         (role === 'admin' || role === 'super_user');
-                    
-                    // Disable role editing if admin is editing their own account
                     const isEditingSelf = selectedUser?.id === user?.id;
-                    const isSelfRoleEdit = isEditingSelf && currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+                    const currentUserIsAdmin = currentUserRoles.includes('admin');
+                    const currentUserIsSuperUser = currentUserRoles.includes('super_user');
+                    
+                    let isRoleDisabled = false;
+                    
+                    if (currentUserIsSuperUser) {
+                      // Super users can grant any role (no restrictions)
+                      isRoleDisabled = false;
+                    } else if (currentUserIsAdmin) {
+                      // Admins cannot modify their own roles or grant admin/super_user roles
+                      if (isEditingSelf) {
+                        isRoleDisabled = true; // Cannot modify own roles
+                      } else {
+                        isRoleDisabled = role === 'admin' || role === 'super_user'; // Cannot grant admin/super roles
+                      }
+                    } else {
+                      // Non-admin users cannot modify their own roles or grant admin/super_user roles
+                      if (isEditingSelf) {
+                        isRoleDisabled = true; // Cannot modify own roles
+                      } else {
+                        isRoleDisabled = role === 'admin' || role === 'super_user'; // Cannot grant admin/super roles
+                      }
+                    }
 
                     return (
                       <div key={role} className="flex items-center space-x-2">
@@ -1363,7 +1398,7 @@ export default function Settings() {
                           type="checkbox"
                           id={`edit-role-${role}`}
                           checked={editUserForm.watch("roles").includes(role)}
-                          disabled={isRoleDisabled || isSelfRoleEdit}
+                          disabled={isRoleDisabled}
                           onChange={(e) => {
                             const currentRoles = editUserForm.watch("roles");
                             if (e.target.checked) {
@@ -1374,7 +1409,7 @@ export default function Settings() {
                           }}
                           data-testid={`edit-checkbox-role-${role}`}
                         />
-                        <Label htmlFor={`edit-role-${role}`} className={`text-sm ${isRoleDisabled || isSelfRoleEdit ? 'text-gray-400' : ''}`}>
+                        <Label htmlFor={`edit-role-${role}`} className={`text-sm ${isRoleDisabled ? 'text-gray-400' : ''}`}>
                           {role === 'super_user' ? 'Super User' : role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Label>
                       </div>
@@ -1384,9 +1419,9 @@ export default function Settings() {
                 {editUserForm.formState.errors.roles && (
                   <p className="text-sm text-destructive">{editUserForm.formState.errors.roles.message}</p>
                 )}
-                {currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user') && (
+                {!currentUserRoles.includes('super_user') && (
                   <p className="text-xs text-muted-foreground">
-                    Note: Admin users cannot grant admin or super user roles, and cannot modify their own roles.
+                    Note: {currentUserRoles.includes('admin') ? 'Admin users' : 'Users'} cannot grant admin or super user roles, and cannot modify their own roles.
                   </p>
                 )}
               </div>
