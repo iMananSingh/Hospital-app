@@ -151,6 +151,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile routes - Allow users to edit their own profile
+  app.put("/api/profile", authenticateToken, async (req: any, res) => {
+    try {
+      const { username, password, fullName } = req.body;
+      const userId = req.user.id;
+      
+      // Prepare update data, only include fields that are provided
+      const updateData: any = {};
+      if (username !== undefined) updateData.username = username;
+      if (password !== undefined) updateData.password = password;
+      if (fullName !== undefined) updateData.fullName = fullName;
+      
+      // Validate that at least one field is being updated
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No fields to update" });
+      }
+      
+      // If username is being changed, check if it's already taken
+      if (username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Username already taken" });
+        }
+      }
+      
+      // Update the user's own profile
+      const updatedUser = await storage.updateUser(userId, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        roles: updatedUser.rolesArray,
+        role: updatedUser.rolesArray[0] // Use first role for backward compatibility
+      });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   app.get("/api/users", authenticateToken, async (req: any, res) => {
     try {
       // Check if user has admin role
