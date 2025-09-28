@@ -964,6 +964,9 @@ export default function Settings() {
                     }</p>
                     <p>Last restored: {(() => {
                       // Find the most recent restore operation from all backup logs
+                      if (!allBackupLogs || !Array.isArray(allBackupLogs)) {
+                        return 'N/A';
+                      }
                       const restoreOperations = allBackupLogs
                         .filter((log: any) => log.backupType === 'restore' && log.status === 'completed')
                         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
