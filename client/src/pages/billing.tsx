@@ -52,7 +52,7 @@ export default function Billing() {
   });
 
   const { data: opdDataApi = [] } = useQuery<any[]>({
-    queryKey: [`/api/patient-services?serviceType=opd&fromDate=${fromDate}&toDate=${toDate}${selectedDoctor !== "all" ? `&doctorId=${selectedDoctor}` : ""}`],
+    queryKey: [`/api/opd-visits?fromDate=${fromDate}&toDate=${toDate}${selectedDoctor !== "all" ? `&doctorId=${selectedDoctor}` : ""}`],
     enabled: leftActiveTab === "opd",
   });
 
