@@ -40,11 +40,9 @@ export default function Sidebar() {
     return location === href || (href !== "/" && location.startsWith(href));
   };
 
-  // Filter navigation based on user roles
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const navigation = baseNavigation.filter(item => 
-    item.roles.some(role => currentUserRoles.includes(role))
-  );
+  // Show all navigation items regardless of user roles
+  // Access control will be handled at the page level
+  const navigation = baseNavigation;
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">

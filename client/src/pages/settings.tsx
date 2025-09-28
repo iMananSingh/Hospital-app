@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import TopBar from "@/components/layout/topbar";
@@ -32,6 +32,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { Service, User } from "@shared/schema";
+import AccessRestricted from "@/components/access-restricted";
 
 export default function Settings() {
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
@@ -76,11 +77,11 @@ export default function Settings() {
       const response = await fetch("/api/backup/history", {
         headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
       });
-      
+
       if (!response.ok) {
         return []; // Return empty array on error
       }
-      
+
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -93,11 +94,11 @@ export default function Settings() {
       const response = await fetch("/api/backup/logs", {
         headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
       });
-      
+
       if (!response.ok) {
         return []; // Return empty array on error
       }
-      
+
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -109,11 +110,11 @@ export default function Settings() {
       const response = await fetch("/api/backup/available", {
         headers: { Authorization: `Bearer ${localStorage.getItem("hospital_token")}` }
       });
-      
+
       if (!response.ok) {
         return []; // Return empty array on error
       }
-      
+
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -364,7 +365,7 @@ export default function Settings() {
     },
   });
 
-  
+
 
   const restoreBackupMutation = useMutation({
     mutationFn: async (backupFilePath: string) => {
@@ -545,7 +546,7 @@ export default function Settings() {
     createBackupMutation.mutate();
   };
 
-  
+
 
   const handleRestoreBackup = () => {
     if (selectedBackupFile) {
@@ -616,7 +617,9 @@ export default function Settings() {
 
   // Only show settings if user has admin role
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  if (!currentUserRoles?.includes('admin')) {
+  const hasAccess = currentUserRoles.includes('admin');
+
+  if (!hasAccess) {
     return (
       <div className="space-y-6">
         <TopBar title="System Settings" />
@@ -647,7 +650,7 @@ export default function Settings() {
             <TabsTrigger value="backup" data-testid="tab-backup">Backup</TabsTrigger>
           </TabsList>
 
-          
+
 
           <TabsContent value="users">
             <Card>
@@ -961,9 +964,9 @@ export default function Settings() {
                         <Database className="w-4 h-4 mr-2" />
                         {createBackupMutation.isPending ? "Creating..." : "Create Manual Backup"}
                       </Button>
-                      
-                      
-                      
+
+
+
                       <Button 
                         variant="outline" 
                         className="w-full" 

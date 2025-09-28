@@ -21,6 +21,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { Doctor } from "@shared/schema";
+import AccessRestricted from "@/components/access-restricted";
 
 export default function Doctors() {
   const [isNewDoctorOpen, setIsNewDoctorOpen] = useState(false);
@@ -34,11 +35,11 @@ export default function Doctors() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const { user } = useAuth();
+  // Check if user can access doctor management at all
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
   const isAdmin = currentUserRoles.includes('admin');
   const isBillingStaff = currentUserRoles.includes('billing_staff');
-  
-  // Check if user can access doctor management at all
+
   if (!isAdmin && !isBillingStaff) {
     return (
       <div className="space-y-6">

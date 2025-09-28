@@ -32,11 +32,11 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest, ServiceCategory } from "@shared/schema";
+import AccessRestricted from "@/components/access-restricted";
 
 export default function ServiceManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("rooms");
 
   // Only show service management if user has admin role
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
@@ -479,7 +479,7 @@ export default function ServiceManagement() {
     },
   });
 
-  
+
 
   const deleteCategory = async (categoryId: string) => {
     try {
@@ -959,7 +959,7 @@ export default function ServiceManagement() {
                           // Calculate dynamic total beds based on actual rooms for this room type
                           const roomsForThisType = rooms.filter(room => room.roomTypeId === roomType.id);
                           const dynamicTotalBeds = roomsForThisType.reduce((sum, room) => sum + (room.capacity || 1), 0);
-                          
+
                           return (
                             <TableRow key={roomType.id}>
                               <TableCell className="font-medium">{roomType.name}</TableCell>
