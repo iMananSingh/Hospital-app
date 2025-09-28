@@ -70,8 +70,8 @@ export default function OpdList() {
     }, {} as Record<string, any[]>);
 
     // Sort visits within each doctor group by scheduled date and time
-    Object.values(grouped).forEach((visits: any[]) => {
-      visits.sort((a: any, b: any) => {
+    Object.values(grouped).forEach((visits) => {
+      (visits as any[]).sort((a: any, b: any) => {
         const dateCompare = new Date(`${a.scheduledDate}T${a.scheduledTime || '00:00'}`).getTime() - 
                            new Date(`${b.scheduledDate}T${b.scheduledTime || '00:00'}`).getTime();
         return dateCompare;
@@ -235,7 +235,7 @@ export default function OpdList() {
                 <CardTitle className="flex items-center gap-2">
                   <Stethoscope className="w-5 h-5" />
                   {getDoctorName(doctorId)}
-                  <Badge variant="outline">{services.length} patients</Badge>
+                  <Badge variant="outline">{(services as any[]).length} patients</Badge>
                 </CardTitle>
                 <CardDescription>
                   {getDoctorSpecialization(doctorId)}
@@ -243,7 +243,7 @@ export default function OpdList() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {services.map((visit: any) => {
+                  {(services as any[]).map((visit: any) => {
                     const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime || '00:00'}`);
                     
                     return (
@@ -291,21 +291,21 @@ export default function OpdList() {
 
                         <div className="flex items-center gap-3">
                           <Badge 
-                            variant={getStatusBadgeVariant(service.status)}
-                            data-testid={`status-${service.id}`}
+                            variant={getStatusBadgeVariant(visit.status)}
+                            data-testid={`status-${visit.id}`}
                           >
-                            {service.status.charAt(0).toUpperCase() + service.status.slice(1)}
+                            {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                           </Badge>
                           
                           <div className="text-right">
-                            <div className="font-medium">₹{service.price}</div>
+                            <div className="font-medium">₹{visit.price}</div>
                             <div className="text-xs text-muted-foreground">
                               Consultation Fee
                             </div>
                           </div>
                           
-                          <Link href={`/patients/${service.patientId}`}>
-                            <Button variant="outline" size="sm" data-testid={`view-patient-${service.id}`}>
+                          <Link href={`/patients/${visit.patientId}`}>
+                            <Button variant="outline" size="sm" data-testid={`view-patient-${visit.id}`}>
                               View
                             </Button>
                           </Link>
