@@ -740,6 +740,11 @@ export default function Settings() {
                                   variant="ghost" 
                                   size="sm"
                                   onClick={() => handleEditUser(tableUser)}
+                                  disabled={
+                                    // Disable if trying to edit another admin (but allow editing self)
+                                    (tableUser.roles || [tableUser.role]).includes('admin') && 
+                                    tableUser.id !== user?.id
+                                  }
                                   data-testid={`button-edit-user-${tableUser.id}`}
                                 >
                                   <Edit className="w-4 h-4" />
@@ -751,7 +756,10 @@ export default function Settings() {
                                   size="sm"
                                   className="text-destructive hover:text-destructive"
                                   onClick={() => handleDeleteUser(tableUser)}
-                                  disabled={tableUser.id === user?.id} // Prevent deleting self
+                                  disabled={
+                                    tableUser.id === user?.id || // Prevent deleting self
+                                    (tableUser.roles || [tableUser.role]).includes('admin') // Prevent deleting any admin
+                                  }
                                   data-testid={`button-delete-user-${tableUser.id}`}
                                 >
                                   <Trash2 className="w-4 h-4" />

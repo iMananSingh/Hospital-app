@@ -194,6 +194,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Cannot edit the root user" });
       }
 
+      // Check if the user being updated is an admin
+      const targetUserRoles = userToUpdate.rolesArray || [];
+      if (targetUserRoles.includes('admin') && req.user.id !== id) {
+        return res.status(403).json({ message: "Cannot edit another administrator's account" });
+      }
+
       // Prevent updating self to remove admin role
       if (req.user.id === id && userData.roles && !userData.roles.includes('admin')) {
         return res.status(400).json({ message: "Cannot remove your own admin role" });
@@ -231,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      // Get user to check if it's the root user
+      // Get user to check if it's the root user or admin
       const userToDelete = await storage.getUserById(id);
       if (!userToDelete) {
         return res.status(404).json({ message: "User not found" });
@@ -240,6 +246,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prevent deleting root user
       if (userToDelete.username === 'root') {
         return res.status(403).json({ message: "Cannot delete the root user" });
+      }
+
+      // Prevent deleting any admin user
+      const targetUserRoles = userToDelete.rolesArray || [];
+      if (targetUserRoles.includes('admin')) {
+        return res.status(403).json({ message: "Cannot delete an administrator account" });
       }
 
       const deleted = await storage.deleteUser(id);
