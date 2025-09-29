@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +20,6 @@ export default function Login() {
     return null;
   }
 
-  // Handle redirect after successful login for non-admin-only users
-  React.useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      setLocation("/");
-    }
-  }, [isAuthenticated, isLoading, setLocation]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
@@ -34,8 +27,7 @@ export default function Login() {
     setIsLoading(true);
     try {
       await login(username, password);
-      // Don't redirect here - let the login function handle the redirect
-      // for admin-only users, others will go to dashboard via useEffect below
+      setLocation("/");
     } catch (error) {
       // Error handling is done in the login function
     } finally {
