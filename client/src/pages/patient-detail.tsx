@@ -422,14 +422,15 @@ export default function PatientDetail() {
 
     // Base receipt data structure
     const baseReceiptData = {
-      type: (eventType === "opd_visit" ? "service" : eventType) as
+      type: (eventType === "opd_visit" ? "service" : (eventType === "service_group" ? "service" : eventType)) as
         | "service"
         | "pathology"
         | "admission"
         | "payment"
         | "discount",
-      id: event.id,
-      title: eventType === "opd_visit" ? "OPD Consultation" : (
+      id: event.id || event.receiptNumber || `group-${Date.now()}`,
+      title: eventType === "opd_visit" ? "OPD Consultation" : 
+             eventType === "service_group" ? "Multiple Services" : (
         event.title ||
         event.serviceName ||
         event.testName ||
@@ -437,9 +438,11 @@ export default function PatientDetail() {
         "Service"
       ),
       date: event.sortTimestamp,
-      amount: eventAmount,
+      amount: eventType === "service_group" ? event.totalAmount : eventAmount,
       description: eventType === "opd_visit" ? 
-        `OPD Consultation - ${getDoctorName()}` : (
+        `OPD Consultation - ${getDoctorName()}` : 
+        eventType === "service_group" ? 
+        `${event.services.length} services ordered together` : (
         event.description || event.serviceName || event.testName || ""
       ),
       patientName: patient?.name || "Unknown Patient",
@@ -451,6 +454,11 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
+        // For service groups, include the services array for detailed receipt
+        ...(eventType === "service_group" ? {
+          services: event.services,
+          isServiceGroup: true
+        } : {}),
         // For OPD visits, add explicit identifiers for receipt title detection
         ...(eventType === "opd_visit" ? {
           serviceType: "opd",
@@ -2956,28 +2964,79 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Add individual patient services (no grouping)
+                    // Group services by receipt number and timestamp to combine related services
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
                       const nonAdmissionServices = services.filter((service: any) => 
                         service.serviceType !== "admission"
                       );
 
-                      // Add each service as a separate event
+                      // Group services by receipt number and scheduled date/time
+                      const serviceGroups = new Map();
+                      
                       nonAdmissionServices.forEach((service: any) => {
                         const serviceDateTime = new Date(
                           `${service.scheduledDate}T${service.scheduledTime}:00`
                         );
+                        
+                        // Create a unique key for grouping services together
+                        // Use receipt number if available, otherwise use date/time + patient ID
+                        const groupKey = service.receiptNumber 
+                          ? service.receiptNumber 
+                          : `${service.patientId}-${service.scheduledDate}-${service.scheduledTime}`;
 
-                        allEvents.push({
-                          type: "service",
-                          data: {
-                            ...service,
+                        if (!serviceGroups.has(groupKey)) {
+                          serviceGroups.set(groupKey, {
+                            services: [],
+                            timestamp: serviceDateTime,
                             sortTimestamp: serviceDateTime.getTime(),
-                          },
-                          timestamp: serviceDateTime,
-                          sortTimestamp: serviceDateTime.getTime(),
-                        });
+                            receiptNumber: service.receiptNumber,
+                            scheduledDate: service.scheduledDate,
+                            scheduledTime: service.scheduledTime,
+                            patientId: service.patientId
+                          });
+                        }
+
+                        serviceGroups.get(groupKey).services.push(service);
+                      });
+
+                      // Convert groups to timeline events
+                      serviceGroups.forEach((group) => {
+                        if (group.services.length === 1) {
+                          // Single service - add as individual event
+                          const service = group.services[0];
+                          allEvents.push({
+                            type: "service",
+                            data: {
+                              ...service,
+                              sortTimestamp: group.sortTimestamp,
+                            },
+                            timestamp: group.timestamp,
+                            sortTimestamp: group.sortTimestamp,
+                          });
+                        } else {
+                          // Multiple services - add as grouped event
+                          allEvents.push({
+                            type: "service_group",
+                            data: {
+                              services: group.services,
+                              receiptNumber: group.receiptNumber,
+                              scheduledDate: group.scheduledDate,
+                              scheduledTime: group.scheduledTime,
+                              patientId: group.patientId,
+                              sortTimestamp: group.sortTimestamp,
+                              // Calculate total amount for the group
+                              totalAmount: group.services.reduce((total: number, service: any) => 
+                                total + (service.calculatedAmount || service.price || 0), 0
+                              ),
+                              // Get the first service's doctor for display
+                              doctorId: group.services.find((s: any) => s.doctorId)?.doctorId || null,
+                              doctorName: group.services.find((s: any) => s.doctorName)?.doctorName || null,
+                            },
+                            timestamp: group.timestamp,
+                            sortTimestamp: group.sortTimestamp,
+                          });
+                        }
                       });
                     }
 
@@ -3093,6 +3152,12 @@ export default function PatientDetail() {
                               bgColor: "bg-purple-50",
                               iconColor: "text-purple-600"
                             };
+                          case "service_group":
+                            return {
+                              borderColor: "border-l-purple-500",
+                              bgColor: "bg-purple-50",
+                              iconColor: "text-purple-600"
+                            };
                           case "pathology":
                             return {
                               borderColor: "border-l-pink-500",
@@ -3152,6 +3217,8 @@ export default function PatientDetail() {
                                       return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
                                     case "service":
                                       return event.data.serviceName || "Service";
+                                    case "service_group":
+                                      return `Multiple Services (${event.data.services.length} services)`;
                                     case "pathology":
                                       return `Pathology Tests - Order ${event.data.orderId}`;
                                     case "admission":
@@ -3171,6 +3238,7 @@ export default function PatientDetail() {
                               <div className="flex items-center gap-3">
                                 {/* Receipt/Print button for applicable events */}
                                 {(event.type === "service" ||
+                                  event.type === "service_group" ||
                                   event.type === "pathology" ||
                                   event.type === "admission" ||
                                   event.type === "admission_event" ||
@@ -3208,6 +3276,34 @@ export default function PatientDetail() {
                                       <div className="space-y-1">
                                         <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
                                         {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
+                                      </div>
+                                    );
+                                  case "service_group":
+                                    return (
+                                      <div>
+                                        <div className="font-medium mb-2 text-gray-800">Services in this order:</div>
+                                        <div className="space-y-1 ml-4 bg-white rounded p-2 border">
+                                          {event.data.services.map((service: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between items-center text-sm">
+                                              <span>• {service.serviceName}</span>
+                                              <span className="font-medium">₹{(service.calculatedAmount || service.price || 0).toLocaleString()}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
+                                          <span>Total Cost:</span>
+                                          <span className="text-lg">₹{event.data.totalAmount.toLocaleString()}</span>
+                                        </div>
+                                        {event.data.services.some((s: any) => s.notes) && (
+                                          <div className="mt-2">
+                                            <span className="font-medium">Notes:</span>
+                                            <div className="ml-2 text-gray-600">
+                                              {event.data.services.filter((s: any) => s.notes).map((s: any, idx: number) => (
+                                                <div key={idx}>• {s.notes}</div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   case "pathology":
@@ -3289,9 +3385,9 @@ export default function PatientDetail() {
                               })()}
                             </div>
 
-                            {/* Doctor information outside details section for admission events */}
-                            {event.type === "admission" && (() => {
-                              // Get doctor name from the admission
+                            {/* Doctor information outside details section for admission events and service groups */}
+                            {(event.type === "admission" || event.type === "service_group") && (() => {
+                              // Get doctor name from the admission or service group
                               let doctorName = null;
 
                               // Try to get doctor ID from the event data
@@ -3302,6 +3398,11 @@ export default function PatientDetail() {
                                 if (doctor) {
                                   doctorName = doctor.name;
                                 }
+                              }
+
+                              // For service groups, try to get from doctorName field too
+                              if (!doctorName && event.type === "service_group" && event.data.doctorName) {
+                                doctorName = event.data.doctorName;
                               }
 
                               return doctorName ? (
