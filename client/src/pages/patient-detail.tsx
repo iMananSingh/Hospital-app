@@ -1616,7 +1616,8 @@ export default function PatientDetail() {
   };
 
   const openServiceDialog = (serviceType: string) => {
-    // Clear all service-related state first
+    // Clear all service-related state first and reset dialog
+    setIsServiceDialogOpen(false); // Close first to ensure clean state
     setSelectedServices([]);
     setSelectedServiceType(serviceType);
     setSelectedServiceCategory("");
@@ -1647,8 +1648,10 @@ export default function PatientDetail() {
       distance: 0,
     });
 
-    // Open dialog after state is cleared
-    setIsServiceDialogOpen(true);
+    // Use setTimeout to ensure state is cleared before opening
+    setTimeout(() => {
+      setIsServiceDialogOpen(true);
+    }, 10);
   };
 
   // Function to open the comprehensive bill dialog
@@ -1890,6 +1893,15 @@ export default function PatientDetail() {
 
                 <Button
                   onClick={() => {
+                    // Close first then clear all service-related state
+                    setIsServiceDialogOpen(false);
+                    setSelectedServices([]);
+                    setSelectedServiceType("");
+                    setSelectedServiceCategory("");
+                    setSelectedServiceSearchQuery("");
+                    setSelectedCatalogService(null); // Reset selected service
+                    setBillingPreview(null); // Reset billing preview
+
                     // Set current LOCAL date and time when opening service dialog
                     const now = new Date();
                     const currentDate =
@@ -1903,11 +1915,6 @@ export default function PatientDetail() {
                       ":" +
                       String(now.getMinutes()).padStart(2, "0");
 
-                    // Reset service type and category for general service
-                    setSelectedServiceType("");
-                    setSelectedServiceCategory("");
-                    setSelectedCatalogService(null); // Reset selected service
-                    setBillingPreview(null); // Reset billing preview
                     // Reset form completely first
                     serviceForm.reset({
                       patientId: patientId || "",
@@ -1923,7 +1930,10 @@ export default function PatientDetail() {
                       distance: 0,
                     });
 
-                    setIsServiceDialogOpen(true);
+                    // Use setTimeout to ensure state is cleared before opening
+                    setTimeout(() => {
+                      setIsServiceDialogOpen(true);
+                    }, 10);
                   }}
                   className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
                   data-testid="button-add-medical-service"
@@ -2294,7 +2304,8 @@ export default function PatientDetail() {
                 <CardTitle>Service History</CardTitle>
                 <Button
                   onClick={() => {
-                    // Clear all service-related state first
+                    // Clear all service-related state first and close dialog to reset
+                    setIsServiceDialogOpen(false);
                     setSelectedServices([]); // Clear selected services
                     setSelectedServiceType("");
                     setSelectedServiceCategory("");
@@ -2330,7 +2341,10 @@ export default function PatientDetail() {
                       distance: 0,
                     });
 
-                    setIsServiceDialogOpen(true);
+                    // Use setTimeout to ensure state is cleared before opening
+                    setTimeout(() => {
+                      setIsServiceDialogOpen(true);
+                    }, 10);
                   }}
                   size="sm"
                   className="flex items-center gap-2"
@@ -3629,7 +3643,7 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="border rounded-lg max-h-64 overflow-y-auto">
-                  <Table>
+                  <Table key={`service-table-${selectedServiceType}-${isServiceDialogOpen}`}>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">Select</TableHead>
