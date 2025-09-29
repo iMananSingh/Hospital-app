@@ -236,8 +236,11 @@ export default function Sidebar() {
     return location === href || (href !== "/" && location.startsWith(href));
   };
 
-  // Show all navigation items regardless of role
-  const navigation = baseNavigation;
+  // Filter navigation items based on user roles
+  const currentUserRoles = user?.roles || [user?.role];
+  const navigation = baseNavigation.filter(item => {
+    return item.roles.some(role => currentUserRoles.includes(role));
+  });
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">
