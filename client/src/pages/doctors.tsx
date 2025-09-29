@@ -700,8 +700,8 @@ export default function Doctors() {
         title="Doctor Management"
         searchPlaceholder={hasAccess ? "Search doctors by name or specialization..." : undefined}
         onSearch={hasAccess ? setSearchQuery : undefined}
-        onNewAction={hasAccess ? () => setIsNewDoctorOpen(true) : undefined}
-        newActionLabel={hasAccess ? "Add Doctor" : undefined}
+        onNewAction={(isAdmin || isSuperUser) ? () => setIsNewDoctorOpen(true) : undefined}
+        newActionLabel={(isAdmin || isSuperUser) ? "Add Doctor" : undefined}
       />
 
       <div className="p-6">
@@ -746,13 +746,15 @@ export default function Doctors() {
                   <div className="text-center py-8">
                     <Stethoscope className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">No doctors found</p>
-                    <Button 
-                      onClick={() => setIsNewDoctorOpen(true)}
-                      className="mt-4"
-                      data-testid="button-first-doctor"
-                    >
-                      Add your first doctor
-                    </Button>
+                    {(isAdmin || isSuperUser) && (
+                      <Button 
+                        onClick={() => setIsNewDoctorOpen(true)}
+                        className="mt-4"
+                        data-testid="button-first-doctor"
+                      >
+                        Add your first doctor
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="doctors-grid">
