@@ -1485,6 +1485,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Batch service creation - multiple services with same order ID
   app.post("/api/patient-services/batch", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create patient services." });
+      }
+
       console.log("=== BATCH SERVICE CREATION API ===");
       console.log("Raw request body:", JSON.stringify(req.body, null, 2));
 
