@@ -85,10 +85,21 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
         updateData.password = data.password;
       }
       
-      return await apiRequest("/api/profile", {
+      const response = await fetch("/api/profile", {
         method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
         body: JSON.stringify(updateData),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+
+      return response.json();
     },
     onSuccess: (updatedUser) => {
       toast({
