@@ -2332,19 +2332,19 @@ export default function PatientDetail() {
               <CardContent>
                 {services && services.length > 0 ? (
                   (() => {
-                    // Group services by receipt number for batch display
+                    // Group services by orderId - each service gets its own card with unique order ID
                     const serviceGroups = services.reduce((groups: any, service: any) => {
-                      const receiptNumber = service.receiptNumber || `INDIVIDUAL-${service.id}`;
-                      if (!groups[receiptNumber]) {
-                        groups[receiptNumber] = [];
+                      const orderId = service.orderId || `INDIVIDUAL-${service.id}`;
+                      if (!groups[orderId]) {
+                        groups[orderId] = [];
                       }
-                      groups[receiptNumber].push(service);
+                      groups[orderId].push(service);
                       return groups;
                     }, {});
 
                     return (
                       <div className="space-y-4">
-                        {Object.entries(serviceGroups).map(([receiptNumber, groupServices]: [string, any]) => {
+                        {Object.entries(serviceGroups).map(([orderId, groupServices]: [string, any]) => {
                           const firstService = groupServices[0];
                           const totalCost = groupServices.reduce((sum: number, service: any) => {
                             return sum + (service.calculatedAmount || service.price || 0);
@@ -2362,13 +2362,13 @@ export default function PatientDetail() {
                           }
 
                           return (
-                            <Card key={receiptNumber} className="border border-gray-200">
+                            <Card key={orderId} className="border border-gray-200">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                   <CardTitle className="text-lg">
                                     Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
                                   </CardTitle>
-                                  <Badge variant="outline">{receiptNumber}</Badge>
+                                  <Badge variant="outline">{orderId}</Badge>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                   <span>Doctor: {doctorName}</span>
