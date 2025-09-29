@@ -2306,6 +2306,8 @@ export default function PatientDetail() {
                     // Reset service type and category
                     setSelectedServiceType("");
                     setSelectedServiceCategory("");
+                    setSelectedServices([]); // Clear selected services
+                    setSelectedServiceSearchQuery(""); // Clear search query
                     setSelectedCatalogService(null); // Reset selected service
                     setBillingPreview(null); // Reset billing preview
                     // Reset form completely first
@@ -4072,6 +4074,7 @@ export default function PatientDetail() {
                   setIsServiceDialogOpen(false);
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
+                  setSelectedServices([]); // Clear selected services
                   setSelectedServiceSearchQuery(""); // Clear search query on close
                   setSelectedCatalogService(null); // Reset selected service
                   setBillingPreview(null); // Reset billing preview
