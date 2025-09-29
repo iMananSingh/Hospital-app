@@ -1781,8 +1781,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new OPD visit
-  app.post("/api/opd-visits", requireAuth, async (req, res) => {
+  app.post("/api/opd-visits", requireAuth, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create OPD visits." });
+      }
+
       const visitData = req.body;
 
       // Validate required fields
