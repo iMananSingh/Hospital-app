@@ -1616,12 +1616,13 @@ export default function PatientDetail() {
   };
 
   const openServiceDialog = (serviceType: string) => {
-    setSelectedServiceType(serviceType);
+    // Clear all service-related state first
     setSelectedServices([]);
+    setSelectedServiceType(serviceType);
     setSelectedServiceCategory("");
+    setSelectedServiceSearchQuery(""); // Clear search query
     setSelectedCatalogService(null);
     setBillingPreview(null);
-    setIsServiceDialogOpen(true);
 
     // Set the current time as default
     const now = new Date();
@@ -1645,6 +1646,9 @@ export default function PatientDetail() {
       hours: 1,
       distance: 0,
     });
+
+    // Open dialog after state is cleared
+    setIsServiceDialogOpen(true);
   };
 
   // Function to open the comprehensive bill dialog
@@ -2290,6 +2294,14 @@ export default function PatientDetail() {
                 <CardTitle>Service History</CardTitle>
                 <Button
                   onClick={() => {
+                    // Clear all service-related state first
+                    setSelectedServices([]); // Clear selected services
+                    setSelectedServiceType("");
+                    setSelectedServiceCategory("");
+                    setSelectedServiceSearchQuery(""); // Clear search query
+                    setSelectedCatalogService(null); // Reset selected service
+                    setBillingPreview(null); // Reset billing preview
+
                     // Set current LOCAL date and time when opening any service dialog
                     const now = new Date();
                     const currentDate =
@@ -2303,14 +2315,7 @@ export default function PatientDetail() {
                       ":" +
                       String(now.getMinutes()).padStart(2, "0");
 
-                    // Reset service type and category
-                    setSelectedServiceType("");
-                    setSelectedServiceCategory("");
-                    setSelectedServices([]); // Clear selected services
-                    setSelectedServiceSearchQuery(""); // Clear search query
-                    setSelectedCatalogService(null); // Reset selected service
-                    setBillingPreview(null); // Reset billing preview
-                    // Reset form completely first
+                    // Reset form completely
                     serviceForm.reset({
                       patientId: patientId || "",
                       serviceType: "",
