@@ -37,6 +37,9 @@ import AccessRestricted from "@/components/access-restricted";
 export default function ServiceManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Tab management state
+  const [activeTab, setActiveTab] = useState("rooms");
 
   // Only show service management if user has admin or super_user role
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
@@ -643,12 +646,8 @@ export default function ServiceManagement() {
         billingType: service.billingType || "per_instance",
         billingParameters: service.billingParameters || null,
       });
-      // If editing, pre-fill doctors if available in the service data
-      if (service.doctors && service.doctors.length > 0) {
-        setServiceDoctors(service.doctors);
-      } else {
-        setServiceDoctors([]);
-      }
+      // Reset doctors when editing (service.doctors doesn't exist in schema)
+      setServiceDoctors([]);
     } else {
       setEditingService(null);
       serviceForm.reset({
