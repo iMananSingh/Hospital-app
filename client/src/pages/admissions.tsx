@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
+import { useAuth } from "@/hooks/use-auth";
+import AccessRestricted from "@/components/access-restricted";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,25 @@ import type { Admission, Patient, RoomType } from "@shared/schema";
 export default function InPatientManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const { user } = useAuth();
+  
+  // Check if user has appropriate role for admissions operations
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+  
+  if (isBillingStaff) {
+    return (
+      <div className="space-y-6">
+        <TopBar title="In-Patient Management" />
+        <div className="p-6">
+          <AccessRestricted 
+            title="Access Restricted"
+            description="Billing staff cannot access patient admission management. Please contact an administrator."
+          />
+        </div>
+      </div>
+    );
+  }
 
   // Fetch all admissions
   const { data: admissions = [] } = useQuery<Admission[]>({

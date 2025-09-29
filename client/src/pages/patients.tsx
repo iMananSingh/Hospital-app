@@ -18,7 +18,9 @@ import { UserPlus, Edit, Eye } from "lucide-react";
 import { insertPatientSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template";
+import AccessRestricted from "@/components/access-restricted";
 import type { Patient } from "@shared/schema";
 
 export default function Patients() {
@@ -30,6 +32,7 @@ export default function Patients() {
   const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch hospital settings for bills
   const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
@@ -283,6 +286,10 @@ export default function Patients() {
     createPatientMutation.mutate(data);
   };
 
+  // Check user roles for billing staff restrictions
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+
   const filteredPatients = patients.filter((patient: Patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -313,8 +320,8 @@ export default function Patients() {
         title="Patient Registration"
         searchPlaceholder="Search patients by name, ID, or phone..."
         onSearch={setSearchQuery}
-        onNewAction={() => setIsNewPatientOpen(true)}
-        newActionLabel="New Patient"
+        onNewAction={isBillingStaff ? undefined : () => setIsNewPatientOpen(true)}
+        newActionLabel={isBillingStaff ? undefined : "New Patient"}
       />
       
       <div className="p-6">
@@ -334,13 +341,15 @@ export default function Patients() {
             ) : filteredPatients.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No patients found</p>
-                <Button 
-                  onClick={() => setIsNewPatientOpen(true)}
-                  className="mt-4"
-                  data-testid="button-first-patient"
-                >
-                  Register your first patient
-                </Button>
+                {!isBillingStaff && (
+                  <Button 
+                    onClick={() => setIsNewPatientOpen(true)}
+                    className="mt-4"
+                    data-testid="button-first-patient"
+                  >
+                    Register your first patient
+                  </Button>
+                )}
               </div>
             ) : (
               <Table data-testid="patients-table">
@@ -391,17 +400,19 @@ export default function Patients() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => {
-                              setSelectedPatient(patient);
-                              editForm.reset(patient);   // prefill fields
-                              setIsEditPatientOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          {!isBillingStaff && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedPatient(patient);
+                                editForm.reset(patient);   // prefill fields
+                                setIsEditPatientOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm"

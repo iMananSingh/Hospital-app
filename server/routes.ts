@@ -393,6 +393,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/patients", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create patients." });
+      }
+
       const patientData = insertPatientSchema.parse(req.body);
       // Set createdAt to current time in Indian timezone (UTC+5:30)
       const now = new Date();
@@ -424,8 +432,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  app.patch("/api/patients/:id", authenticateToken, async (req, res) => {
+  app.patch("/api/patients/:id", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot update patient information." });
+      }
+
       const { id } = req.params;
 
       // Validate incoming data (allow partial updates)
@@ -749,6 +765,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Services
   app.post("/api/services", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create services." });
+      }
+
       console.log("Creating service with data:", req.body);
 
       // Ensure all required fields are present with defaults
@@ -1242,6 +1266,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/pathology", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create pathology orders." });
+      }
+
       console.log("Received pathology order request:", JSON.stringify(req.body, null, 2));
       const { orderData, tests } = req.body;
 
@@ -1384,6 +1416,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Single service creation
   app.post("/api/patient-services", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create patient services." });
+      }
+
       const serviceData = req.body;
 
       console.log('Creating patient service with data:', JSON.stringify(serviceData, null, 2));
@@ -1570,8 +1610,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admissions", authenticateToken, async (req, res) => {
+  app.post("/api/admissions", authenticateToken, async (req: any, res) => {
     try {
+      // Check if user has billing staff role and restrict access
+      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+      
+      if (isBillingStaff) {
+        return res.status(403).json({ message: "Access denied. Billing staff cannot create admissions." });
+      }
+
       // Normalize admission date to ISO format if provided
       const requestBody = { ...req.body };
       if (requestBody.admissionDate && typeof requestBody.admissionDate === 'string') {

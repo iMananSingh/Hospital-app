@@ -19,7 +19,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import AccessRestricted from "@/components/access-restricted";
+import type { PathologyOrder, Patient, Doctor, Service, PathologyCategory, DynamicPathologyTest } from "@shared/schema";
 
 // Patient Search Combobox Component
 function PatientSearchCombobox({ value, onValueChange, patients }: {
@@ -63,8 +65,8 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
         <Command shouldFilter={false}>
-          <CommandInput 
-            placeholder="Type to search patients..." 
+          <CommandInput
+            placeholder="Type to search patients..."
             value={searchValue}
             onValueChange={setSearchValue}
             data-testid="input-search-patient"
@@ -159,7 +161,7 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
         <DialogHeader>
           <DialogTitle>Order Details - {order.orderId}</DialogTitle>
         </DialogHeader>
-        
+
         <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
           <div className="space-y-4 px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
@@ -192,7 +194,7 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
                 <p className="text-sm text-muted-foreground">{order.remarks}</p>
               </div>
             )}
-            
+
             <div className="mt-6">
               <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
               <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
@@ -251,6 +253,25 @@ export default function Pathology() {
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Check if user has appropriate role for pathology operations
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+
+  if (isBillingStaff) {
+    return (
+      <div className="space-y-6">
+        <TopBar title="Pathology Tests" />
+        <div className="p-6">
+          <AccessRestricted
+            title="Access Restricted"
+            description="Billing staff cannot access pathology test management. Please contact an administrator."
+          />
+        </div>
+      </div>
+    );
+  }
 
   const { data: pathologyOrders = [], isLoading } = useQuery({
     queryKey: ["/api/pathology"],
@@ -261,7 +282,7 @@ export default function Pathology() {
   });
 
   // Extract tests and categories from combined data
-  const testCatalog = combinedTestData?.categories?.flatMap(cat => 
+  const testCatalog = combinedTestData?.categories?.flatMap(cat =>
     cat.tests?.map(test => ({
       ...test,
       category: cat.name
@@ -288,11 +309,11 @@ export default function Pathology() {
         },
         body: JSON.stringify({ status }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update order status");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -322,13 +343,13 @@ export default function Pathology() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.text();
         console.error("Order creation failed:", errorData);
         throw new Error(`Failed to create pathology order: ${errorData}`);
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -341,7 +362,7 @@ export default function Pathology() {
         title: "Order placed successfully",
         description: "The pathology order has been placed.",
       });
-      
+
       // Redirect back to patient page if came from there
       if (preSelectedPatientId) {
         setTimeout(() => {
@@ -367,8 +388,8 @@ export default function Pathology() {
       orderedDate: (() => {
         // Use local timezone for pathology order date
         const now = new Date();
-        return now.getFullYear() + '-' + 
-          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+        return now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
           String(now.getDate()).padStart(2, '0');
       })(),
       remarks: "",
@@ -469,14 +490,14 @@ export default function Pathology() {
 
   return (
     <div className="space-y-6">
-      <TopBar 
+      <TopBar
         title="Pathology Tests"
         searchPlaceholder="Search tests by name or ID..."
         onSearch={setSearchQuery}
         onNewAction={() => setIsNewTestOpen(true)}
         newActionLabel="Order Test"
       />
-      
+
       <div className="p-6">
         <Card>
           <CardHeader>
@@ -557,8 +578,8 @@ export default function Pathology() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Select 
-                              value={order.status} 
+                            <Select
+                              value={order.status}
                               onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
                               disabled={updateOrderStatusMutation.isPending}
                             >
@@ -590,7 +611,7 @@ export default function Pathology() {
           <DialogHeader>
             <DialogTitle>Order Pathology Tests</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -607,7 +628,7 @@ export default function Pathology() {
 
               <div className="space-y-2">
                 <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
-                <Select 
+                <Select
                   onValueChange={(value) => form.setValue("doctorId", value)}
                   data-testid="select-doctor"
                 >
@@ -673,7 +694,7 @@ export default function Pathology() {
                     {filteredCatalog.map((test: any, index: number) => {
                       const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
                       return (
-                        <TableRow 
+                        <TableRow
                           key={`${test.category}-${test.test_name}-${index}`}
                           className={isSelected ? "bg-blue-50" : ""}
                         >

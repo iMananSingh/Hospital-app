@@ -1,38 +1,22 @@
-
 import { Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface AccessRestrictedProps {
-  message?: string;
-  allowedRoles?: string[];
+  title?: string;
+  description?: string;
 }
 
 export default function AccessRestricted({ 
-  message = "Access Restricted", 
-  allowedRoles = ["admin"] 
+  title = "Access Restricted", 
+  description = "You don't have permission to access this feature." 
 }: AccessRestrictedProps) {
-  const formattedRoles = allowedRoles
-    .map(role => role.replace('_', ' '))
-    .map(role => role.charAt(0).toUpperCase() + role.slice(1))
-    .join(', ');
-
-  const defaultMessage = `Only ${formattedRoles.toLowerCase()} can access this section.`;
-
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="w-full max-w-md">
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {message}
-          </h2>
-          <p className="text-gray-600">
-            {defaultMessage}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <Card>
+      <CardContent className="p-8 text-center">
+        <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-semibold mb-2">{title}</h3>
+        <p className="text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
   );
 }

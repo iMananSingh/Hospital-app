@@ -55,6 +55,10 @@ import {
   Printer,
   Search,
   DollarSign,
+  Loader2, // Import Loader2 for loading spinners
+  CreditCard, // Import CreditCard for payment button
+  Percent, // Import Percent for discount button
+  Zap, // Import Zap for smart billing button
 } from "lucide-react";
 import {
   insertPatientServiceSchema,
@@ -104,6 +108,7 @@ export default function PatientDetail() {
   const { user } = useAuth();
   const patientId = params.id;
 
+  // State for dialogs and selections
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState("opd");
   const [selectedServiceCategory, setSelectedServiceCategory] =
@@ -133,6 +138,10 @@ export default function PatientDetail() {
   const [comprehensiveBillData, setComprehensiveBillData] = useState<any>(null);
   const [isLoadingBill, setIsLoadingBill] = useState(false);
   const [isOpdVisitDialogOpen, setIsOpdVisitDialogOpen] = useState(false);
+
+  // Check user roles for billing staff restrictions
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
 
   // Fetch hospital settings for receipts and other uses with proper error handling
   const {
@@ -1099,10 +1108,6 @@ export default function PatientDetail() {
                 serviceData.calculatedAmount = variablePrice;
                 serviceData.price = variablePrice;
                 serviceData.billingQuantity = 1;
-              } else if (service.billingType === "per_date") {
-                const calculatedAmount = service.price * (service.quantity || 1);
-                serviceData.calculatedAmount = calculatedAmount;
-                serviceData.price = calculatedAmount;
               }
             }
 
@@ -1191,7 +1196,7 @@ export default function PatientDetail() {
         ...data,
         admissionId: `ADM-${Date.now()}`,
       };
-      
+
       const admissionResult = await apiRequest("/api/admissions", {
         method: "POST",
         body: admissionData,
@@ -1241,12 +1246,12 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
-      
+
       setIsAdmissionDialogOpen(false);
       setSelectedServices([]); // Clear selected services
       setSelectedServiceSearchQuery(""); // Clear search
       admissionForm.reset();
-      
+
       toast({
         title: "Admission created successfully",
         description: `Patient admitted${selectedServices.length > 0 ? ` with ${selectedServices.length} admission service(s)` : ""}.`,
@@ -2445,59 +2450,65 @@ export default function PatientDetail() {
                             <div className="w-2 h-2 bg-green-500 rounded-full" />
                             Admitted - Room {currentAdmission.currentRoomNumber}
                           </div>
-                          <Button
-                            onClick={() => setIsDischargeDialogOpen(true)}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                            data-testid="button-discharge-patient"
-                          >
-                            <Minus className="h-4 w-4" />
-                            Discharge Patient
-                          </Button>
-                          <Button
-                            onClick={() => setIsRoomUpdateDialogOpen(true)}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
-                            data-testid="button-update-room"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Update Room
-                          </Button>
+                          {!isBillingStaff && (
+                            <Button
+                              onClick={() => setIsDischargeDialogOpen(true)}
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                              data-testid="button-discharge-patient"
+                            >
+                              <Minus className="h-4 w-4" />
+                              Discharge Patient
+                            </Button>
+                          )}
+                          {!isBillingStaff && (
+                            <Button
+                              onClick={() => setIsRoomUpdateDialogOpen(true)}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center gap-2"
+                              data-testid="button-update-room"
+                            >
+                              <Edit className="h-4 w-4" />
+                              Update Room
+                            </Button>
+                          )}
                         </>
                       );
                     } else {
                       // Patient is not admitted - show admit button
                       return (
-                        <Button
-                          onClick={() => {
-                            // Set current LOCAL date and time when opening admission dialog
-                            const now = new Date();
-                            const currentDateTime =
-                              now.getFullYear() +
-                              "-" +
-                              String(now.getMonth() + 1).padStart(2, "0") +
-                              "-" +
-                              String(now.getDate()).padStart(2, "0") +
-                              "T" +
-                              String(now.getHours()).padStart(2, "0") +
-                              ":" +
-                              String(now.getMinutes()).padStart(2, "0");
+                        !isBillingStaff && (
+                          <Button
+                            onClick={() => {
+                              // Set current LOCAL date and time when opening admission dialog
+                              const now = new Date();
+                              const currentDateTime =
+                                now.getFullYear() +
+                                "-" +
+                                String(now.getMonth() + 1).padStart(2, "0") +
+                                "-" +
+                                String(now.getDate()).padStart(2, "0") +
+                                "T" +
+                                String(now.getHours()).padStart(2, "0") +
+                                ":" +
+                                String(now.getMinutes()).padStart(2, "0");
 
-                            admissionForm.setValue(
-                              "admissionDate",
-                              currentDateTime,
-                            );
-                            setIsAdmissionDialogOpen(true);
-                          }}
-                          size="sm"
-                          className="flex items-center gap-2"
-                          data-testid="button-add-admission"
-                        >
-                          <Plus className="h-4 w-4" />
-                          New Admission
-                        </Button>
+                              admissionForm.setValue(
+                                "admissionDate",
+                                currentDateTime,
+                              );
+                              setIsAdmissionDialogOpen(true);
+                            }}
+                            size="sm"
+                            className="flex items-center gap-2"
+                            data-testid="button-add-admission"
+                          >
+                            <Plus className="h-4 w-4" />
+                            New Admission
+                          </Button>
+                        )
                       );
                     }
                   })()}
@@ -3059,10 +3070,10 @@ export default function PatientDetail() {
                       admissions.forEach((admission: any) => {
                         // Get admission events for this admission
                         const events = admissionEventsMap[admission.id] || [];
-                        
+
                         // Find the initial 'admit' event (if any)
                         const admitEvent = events.find((event: any) => event.eventType === 'admit');
-                        
+
                         // Add consolidated admission event (merge admission record with admit event)
                         allEvents.push({
                           type: "admission",
@@ -3184,12 +3195,12 @@ export default function PatientDetail() {
                           {index < allEvents.length - 1 && (
                             <div className="absolute left-6 top-full h-6 w-0.5 bg-gray-300 z-0"></div>
                           )}
-                          
+
                           {/* Event icon circle */}
                           <div className={`absolute -left-3 top-4 w-6 h-6 rounded-full ${eventColors.bgColor} border-2 ${eventColors.borderColor} flex items-center justify-center`}>
                             <div className={`w-2 h-2 rounded-full ${eventColors.iconColor.replace('text-', 'bg-')}`}></div>
                           </div>
-                          
+
                           <div className="p-4 pl-8">
                             <div className="flex items-center justify-between mb-3">
                               <h3 className={`font-semibold text-lg ${eventColors.iconColor}`}>
@@ -3242,7 +3253,7 @@ export default function PatientDetail() {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="text-sm text-gray-700 bg-white/50 rounded-md p-3 border border-gray-200">
                               {(() => {
                                 switch (event.type) {
@@ -3308,19 +3319,19 @@ export default function PatientDetail() {
                                         {(() => {
                                           // Get doctor name from the pathology order
                                           let doctorName = null;
-                                          
+
                                           // Try to get doctor ID from the event data
                                           const doctorId = event.data.doctorId || 
                                                          (event.data.rawData?.order?.doctorId) ||
                                                          (event.data.order?.doctorId);
-                                          
+
                                           if (doctorId && doctors && doctors.length > 0) {
                                             const doctor = doctors.find((d: Doctor) => d.id === doctorId);
                                             if (doctor) {
                                               doctorName = doctor.name;
                                             }
                                           }
-                                          
+
                                           return doctorName ? (
                                             <div className="mt-2"><span className="font-medium">Doctor:</span> Dr. {doctorName}</div>
                                           ) : null;
@@ -3360,22 +3371,22 @@ export default function PatientDetail() {
                                 }
                               })()}
                             </div>
-                            
+
                             {/* Doctor information outside details section for admission events */}
                             {event.type === "admission" && (() => {
                               // Get doctor name from the admission
                               let doctorName = null;
-                              
+
                               // Try to get doctor ID from the event data
                               const doctorId = event.data.doctorId;
-                              
+
                               if (doctorId && doctors && doctors.length > 0) {
                                 const doctor = doctors.find((d: Doctor) => d.id === doctorId);
                                 if (doctor) {
                                   doctorName = doctor.name;
                                 }
                               }
-                              
+
                               return doctorName ? (
                                 <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600">
                                   <span className="font-medium">Doctor:</span> Dr. {doctorName}
@@ -4161,12 +4172,12 @@ export default function PatientDetail() {
                     onValueChange={(value) => {
                       admissionForm.setValue("currentWardType", value);
                       admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
-                      
+
                       // Get selected room type details
                       const selectedRoomType = roomTypes.find(
                         (rt: any) => rt.name === value,
                       );
-                      
+
                       if (selectedRoomType) {
                         // Update Bed Charges service price if it's selected
                         const updatedServices = selectedServices.map(service => {
@@ -4179,12 +4190,12 @@ export default function PatientDetail() {
                           return service;
                         });
                         setSelectedServices(updatedServices);
-                        
+
                         // Calculate total daily cost from all selected services
                         const totalServicesCost = updatedServices.reduce((total, service) => {
                           return total + (service.price || 0);
                         }, 0);
-                        
+
                         // Set the daily cost to the total of all selected services
                         admissionForm.setValue("dailyCost", totalServicesCost);
                       }
@@ -4382,13 +4393,13 @@ export default function PatientDetail() {
                         return filteredServices.map((service) => {
                           const isSelected = selectedServices.some((s) => s.id === service.id);
                           const selectedService = selectedServices.find((s) => s.id === service.id);
-                          
+
                           // For Bed Charges service, show the room type price if available
                           let displayPrice = service.price;
                           if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedService) {
                             displayPrice = selectedService.price;
                           }
-                          
+
                           return (
                             <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
                               <TableCell>
@@ -4401,26 +4412,26 @@ export default function PatientDetail() {
                                       // Get current room type for Bed Charges pricing
                                       const currentWardType = admissionForm.watch("currentWardType");
                                       const selectedRoomType = roomTypes.find((rt: any) => rt.name === currentWardType);
-                                      
+
                                       let serviceToAdd = { ...service, quantity: 1 };
-                                      
+
                                       // If this is Bed Charges and we have a room type selected, use room type price
                                       if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedRoomType) {
                                         serviceToAdd.price = selectedRoomType.dailyCost;
                                       }
-                                      
+
                                       updatedServices = [...selectedServices, serviceToAdd];
                                     } else {
                                       updatedServices = selectedServices.filter((s) => s.id !== service.id);
                                     }
-                                    
+
                                     setSelectedServices(updatedServices);
-                                    
+
                                     // Recalculate total daily cost from all selected services
                                     const totalServicesCost = updatedServices.reduce((total, selectedService) => {
                                       return total + (selectedService.price || 0);
                                     }, 0);
-                                    
+
                                     // Update the daily cost field
                                     admissionForm.setValue("dailyCost", totalServicesCost);
                                   }}
