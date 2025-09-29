@@ -6,7 +6,7 @@ export default function RevenuePage() {
   const { user } = useAuth();
 
   // Check if user has access - restrict receptionist role
-  const currentUserRoles = user?.roles || [user?.role];
+  const currentUserRoles = user?.roles || (user?.role ? [user.role] : []);
   const hasAccess = currentUserRoles.some(role => ["admin", "billing_staff", "super_user"].includes(role));
 
   if (!hasAccess) {

@@ -7,7 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
-import Billing from "@/pages/billing";
+import RevenuePage from "@/pages/revenue";
 import Patients from "@/pages/patients";
 import PatientDetail from "@/pages/patient-detail";
 import Pathology from "@/pages/pathology";
@@ -60,7 +60,7 @@ function AppRoutes() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/revenue" component={() => <ProtectedRoute component={Billing} />} />
+      <Route path="/revenue" component={() => <ProtectedRoute component={RevenuePage} />} />
       <Route path="/patients" component={() => <ProtectedRoute component={Patients} />} />
       <Route path="/patients/:id" component={() => <ProtectedRoute component={PatientDetail} />} />
       <Route path="/pathology" component={() => <ProtectedRoute component={Pathology} />} />
