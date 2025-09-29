@@ -1345,7 +1345,7 @@ export class SqliteStorage implements IStorage {
 
     // Convert roles array to JSON string for storage
     const rolesJson = JSON.stringify(userData.roles);
-    
+
     // Set primary role to the first role in the array
     const primaryRole = Array.isArray(userData.roles) ? userData.roles[0] : userData.roles;
 
@@ -4502,24 +4502,32 @@ export class SqliteStorage implements IStorage {
     metadata?: any,
   ): Promise<void> {
     try {
-      db.$client
-        .prepare(
-          `
-        INSERT INTO activities (user_id, activity_type, title, description, entity_id, entity_type, metadata, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `,
-        )
-        .run(
+      // Check if user exists before logging activity
+      const userExists = db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, userId))
+        .get();
+
+      if (!userExists) {
+        console.warn(`Skipping activity log - user ${userId} not found`);
+        return;
+      }
+
+      db.insert(schema.activities)
+        .values({
           userId,
           activityType,
           title,
           description,
-          entityId || null,
-          entityType || null,
-          metadata ? JSON.stringify(metadata) : null,
-        );
+          entityId,
+          entityType,
+          metadata: metadata ? JSON.stringify(metadata) : null,
+        })
+        .run();
     } catch (error) {
       console.error("Failed to log activity:", error);
+      // Don't throw error to avoid breaking the main operation
     }
   }
 

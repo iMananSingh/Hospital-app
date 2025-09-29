@@ -2014,9 +2014,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // System Settings Routes
   app.get("/api/settings/system", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to access system settings
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to access system settings
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const settings = await storage.getSystemSettings();
@@ -2029,9 +2030,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings/system", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to modify system settings
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to modify system settings
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const settings = await storage.saveSystemSettings(req.body);
@@ -2053,9 +2055,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backup Routes
   app.post("/api/backup/create", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to create backups
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to create backups
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const { backupType = 'manual' } = req.body;
@@ -2075,9 +2078,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/backup/logs", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to view backup logs
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to view backup logs
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const logs = await storage.getBackupLogs();
@@ -2090,9 +2094,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/backup/history", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to view backup history
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to view backup history
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const history = await storage.getBackupHistory();
@@ -2105,9 +2110,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/backup/cleanup", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to cleanup old backups
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to cleanup old backups
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       await storage.cleanOldBackups();
@@ -2120,9 +2126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/backup/available", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to view available backups
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to view available backups
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const backups = await storage.getAvailableBackups();
@@ -2135,9 +2142,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/backup/restore", authenticateToken, async (req: any, res) => {
     try {
-      // Only allow admin users to restore backups
-      if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+      // Allow admin and super_user roles to restore backups
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
       const { backupFilePath } = req.body;
