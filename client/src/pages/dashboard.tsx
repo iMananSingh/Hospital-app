@@ -18,9 +18,11 @@ import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
+import AccessRestricted from "@/components/access-restricted";
 import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { TestTube, Search, Check, ChevronsUpDown, Eye } from "lucide-react";
 
 interface DashboardStats {
@@ -44,12 +46,15 @@ export default function Dashboard() {
   const [isFakeBillDialogOpen, setIsFakeBillDialogOpen] = useState(false);
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [isPathologyOrderOpen, setIsPathologyOrderOpen] = useState(false);
+  const [isAccessDeniedPatientOpen, setIsAccessDeniedPatientOpen] = useState(false);
+  const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -643,7 +648,16 @@ export default function Dashboard() {
                 </button>
                 
                 <button 
-                  onClick={() => setIsNewPatientOpen(true)}
+                  onClick={() => {
+                    const userRoles = user?.roles || [user?.role];
+                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    
+                    if (isBillingStaff) {
+                      setIsAccessDeniedPatientOpen(true);
+                    } else {
+                      setIsNewPatientOpen(true);
+                    }
+                  }}
                   className="p-4 bg-healthcare-green text-white rounded-lg hover:bg-healthcare-green/90 transition-colors" 
                   data-testid="quick-new-patient"
                 >
@@ -654,7 +668,16 @@ export default function Dashboard() {
                 </button>
                 
                 <button 
-                  onClick={() => setIsPathologyOrderOpen(true)}
+                  onClick={() => {
+                    const userRoles = user?.roles || [user?.role];
+                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    
+                    if (isBillingStaff) {
+                      setIsAccessDeniedLabTestOpen(true);
+                    } else {
+                      setIsPathologyOrderOpen(true);
+                    }
+                  }}
                   className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" 
                   data-testid="quick-new-test"
                 >
@@ -972,6 +995,51 @@ export default function Dashboard() {
           }} 
         />
       )}
+
+      {/* Access Denied Dialogs for Billing Staff */}
+      <Dialog open={isAccessDeniedPatientOpen} onOpenChange={setIsAccessDeniedPatientOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Access Restricted</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <AccessRestricted 
+              title="Patient Registration Restricted"
+              description="Only administrators and super users can register new patients."
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                onClick={() => setIsAccessDeniedPatientOpen(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAccessDeniedLabTestOpen} onOpenChange={setIsAccessDeniedLabTestOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Access Restricted</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <AccessRestricted 
+              title="Lab Test Ordering Restricted"
+              description="Only administrators and super users can order lab tests."
+            />
+            <div className="flex justify-end mt-4">
+              <Button 
+                onClick={() => setIsAccessDeniedLabTestOpen(false)}
+                variant="outline"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
