@@ -353,30 +353,7 @@ export default function PatientDetail() {
       return "No Doctor Assigned";
     };
 
-    // Handle service batch specially
-    if (eventType === "service_batch") {
-      const firstService = event.services[0];
-
-      return {
-        type: "service" as const,
-        id: event.receiptNumber,
-        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? 's' : ''}`,
-        date: firstService.sortTimestamp,
-        amount: event.totalCost,
-        description: event.services.map((s: any) => s.serviceName).join(", "),
-        patientName: patient?.name || "Unknown Patient",
-        patientId: patient?.patientId || "Unknown ID",
-        details: {
-          ...firstService,
-          services: event.services,
-          totalCost: event.totalCost,
-          patientAge: patient?.age,
-          patientGender: patient?.gender,
-          doctorName: event.doctorName || getDoctorName(),
-          receiptNumber: event.receiptNumber,
-        },
-      };
-    }
+    
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
@@ -2356,94 +2333,58 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {services && services.length > 0 ? (
-                  (() => {
-                    // Group services by receipt number for batch display
-                    const serviceGroups = services.reduce((groups: any, service: any) => {
-                      const receiptNumber = service.receiptNumber || `INDIVIDUAL-${service.id}`;
-                      if (!groups[receiptNumber]) {
-                        groups[receiptNumber] = [];
+                  <div className="space-y-4">
+                    {services.map((service: any) => {
+                      // Determine doctor name with robust logic
+                      let doctorName = "No Doctor Assigned";
+                      if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                        if (service.doctorName && service.doctorName.trim() !== "") {
+                          doctorName = service.doctorName;
+                        } else {
+                          const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
+                          doctorName = doctor ? doctor.name : "Unknown Doctor";
+                        }
                       }
-                      groups[receiptNumber].push(service);
-                      return groups;
-                    }, {});
 
-                    return (
-                      <div className="space-y-4">
-                        {Object.entries(serviceGroups).map(([receiptNumber, groupServices]: [string, any]) => {
-                          const firstService = groupServices[0];
-                          const totalCost = groupServices.reduce((sum: number, service: any) => {
-                            return sum + (service.calculatedAmount || service.price || 0);
-                          }, 0);
-
-                          // Determine doctor name with robust logic
-                          let doctorName = "No Doctor Assigned";
-                          if (firstService.doctorId && firstService.doctorId !== "" && firstService.doctorId !== "none") {
-                            if (firstService.doctorName && firstService.doctorName.trim() !== "") {
-                              doctorName = firstService.doctorName;
-                            } else {
-                              const doctor = doctors?.find((d: Doctor) => d.id === firstService.doctorId);
-                              doctorName = doctor ? doctor.name : "Unknown Doctor";
-                            }
-                          }
-
-                          return (
-                            <Card key={receiptNumber} className="border border-gray-200">
-                              <CardHeader className="pb-3">
-                                <div className="flex items-center justify-between">
-                                  <CardTitle className="text-lg">
-                                    Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
-                                  </CardTitle>
-                                  <Badge variant="outline">{receiptNumber}</Badge>
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>Doctor: {doctorName}</span>
-                                  <span>Date: {formatDate(firstService.scheduledDate)}</span>
-                                  {firstService.scheduledTime && (
-                                    <span>
-                                      Time: {(() => {
-                                        const [hours, minutes] = firstService.scheduledTime.split(":");
-                                        const hour = parseInt(hours, 10);
-                                        const ampm = hour >= 12 ? "PM" : "AM";
-                                        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                                        return `${displayHour}:${minutes} ${ampm}`;
-                                      })()}
-                                    </span>
-                                  )}
-                                  <span className="font-medium">Total: ₹{totalCost}</span>
-                                </div>
-                              </CardHeader>
-                              <CardContent>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Service Name</TableHead>
-                                      <TableHead>Quantity</TableHead>
-                                      <TableHead className="text-right">Cost</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {groupServices.map((service: any) => (
-                                      <TableRow key={service.id}>
-                                        <TableCell className="font-medium">
-                                          {service.serviceName}
-                                        </TableCell>
-                                        <TableCell>
-                                          {service.billingQuantity || 1}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          ₹{service.calculatedAmount || service.price || 0}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()
+                      return (
+                        <Card key={service.id} className="border border-gray-200">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg">
+                                {service.serviceName}
+                              </CardTitle>
+                              <Badge className={getStatusColor(service.status)}>
+                                {service.status}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>Doctor: {doctorName}</span>
+                              <span>Date: {formatDate(service.scheduledDate)}</span>
+                              {service.scheduledTime && (
+                                <span>
+                                  Time: {(() => {
+                                    const [hours, minutes] = service.scheduledTime.split(":");
+                                    const hour = parseInt(hours, 10);
+                                    const ampm = hour >= 12 ? "PM" : "AM";
+                                    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                                    return `${displayHour}:${minutes} ${ampm}`;
+                                  })()}
+                                </span>
+                              )}
+                              <span className="font-medium">Cost: ₹{service.calculatedAmount || service.price || 0}</span>
+                            </div>
+                          </CardHeader>
+                          {service.notes && (
+                            <CardContent>
+                              <div className="text-sm text-muted-foreground">
+                                <span className="font-medium">Notes:</span> {service.notes}
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-sm text-muted-foreground">
@@ -3015,44 +2956,23 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Group patient services by receipt number (batch)
+                    // Add individual patient services (no grouping)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
                       const nonAdmissionServices = services.filter((service: any) => 
                         service.serviceType !== "admission"
                       );
 
-                      const serviceGroups = nonAdmissionServices.reduce((groups: any, service: any) => {
-                        const receiptNumber = service.receiptNumber || `BATCH-${service.id}`;
-                        if (!groups[receiptNumber]) {
-                          groups[receiptNumber] = [];
-                        }
-                        groups[receiptNumber].push(service);
-                        return groups;
-                      }, {});
-
-                      // Add each service group as a single event
-                      Object.entries(serviceGroups).forEach(([receiptNumber, groupServices]: [string, any]) => {
-                        const firstService = groupServices[0];
+                      // Add each service as a separate event
+                      nonAdmissionServices.forEach((service: any) => {
                         const serviceDateTime = new Date(
-                          `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
+                          `${service.scheduledDate}T${service.scheduledTime}:00`
                         );
 
-                        // Calculate total cost for the batch
-                        const totalCost = groupServices.reduce((sum: number, service: any) => {
-                          return sum + (service.calculatedAmount || service.price || 0);
-                        }, 0);
-
                         allEvents.push({
-                          type: "service_batch",
+                          type: "service",
                           data: {
-                            receiptNumber,
-                            services: groupServices,
-                            totalCost,
-                            scheduledDate: firstService.scheduledDate,
-                            scheduledTime: firstService.scheduledTime,
-                            doctorId: firstService.doctorId,
-                            doctorName: firstService.doctorName,
+                            ...service,
                             sortTimestamp: serviceDateTime.getTime(),
                           },
                           timestamp: serviceDateTime,
@@ -3167,7 +3087,6 @@ export default function PatientDetail() {
                               bgColor: "bg-blue-50",
                               iconColor: "text-blue-600"
                             };
-                          case "service_batch":
                           case "service":
                             return {
                               borderColor: "border-l-purple-500",
@@ -3231,9 +3150,6 @@ export default function PatientDetail() {
                                   switch (event.type) {
                                     case "opd_visit":
                                       return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
-                                    case "service_batch":
-                                      const serviceCount = event.data.services.length;
-                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? 's' : ''} (${event.data.receiptNumber})`;
                                     case "service":
                                       return event.data.serviceName || "Service";
                                     case "pathology":
@@ -3255,7 +3171,6 @@ export default function PatientDetail() {
                               <div className="flex items-center gap-3">
                                 {/* Receipt/Print button for applicable events */}
                                 {(event.type === "service" ||
-                                  event.type === "service_batch" ||
                                   event.type === "pathology" ||
                                   event.type === "admission" ||
                                   event.type === "admission_event" ||
@@ -3286,27 +3201,6 @@ export default function PatientDetail() {
                                         <div className="font-medium">Consultation Fee: ₹{event.data.consultationFee || 0}</div>
                                         {event.data.symptoms && <div><span className="font-medium">Symptoms:</span> {event.data.symptoms}</div>}
                                         {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
-                                      </div>
-                                    );
-                                  case "service_batch":
-                                    return (
-                                      <div>
-                                        <div className="font-medium mb-2 text-gray-800">Services in this order:</div>
-                                        <div className="space-y-1 ml-4 bg-white rounded p-2 border">
-                                          {event.data.services.map((service: any, idx: number) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm">
-                                              <span>• {service.serviceName}</span>
-                                              <span className="font-medium">₹{service.calculatedAmount || service.price}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                        <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
-                                          <span>Total Cost:</span>
-                                          <span className="text-lg">₹{event.data.totalCost}</span>
-                                        </div>
-                                        {event.data.doctorName && (
-                                          <div className="mt-2"><span className="font-medium">Doctor:</span> {event.data.doctorName}</div>
-                                        )}
                                       </div>
                                     );
                                   case "service":
