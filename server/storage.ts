@@ -1192,7 +1192,7 @@ export class SqliteStorage implements IStorage {
         .from(schema.patientServices)
         .where(isNotNull(schema.patientServices.orderId))
         .all().length + 1;
-    return `SRV-${year}-${count.toString().padStart(3, "0")}`;
+    return `SER-${year}-${count.toString().padStart(3, "0")}`;
   }
 
   private generateAdmissionId(): string {
@@ -2447,9 +2447,6 @@ export class SqliteStorage implements IStorage {
     userId?: string,
   ): Promise<PatientService[]> {
     try {
-      // Generate a single order ID for all services in this batch
-      const orderId = this.generateServiceOrderId();
-
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import("./smart-costing");
 
@@ -2457,8 +2454,12 @@ export class SqliteStorage implements IStorage {
         const createdServices: PatientService[] = [];
 
         for (const serviceData of servicesData) {
+          // Generate a unique order ID for EACH service to ensure separate cards in timeline
+          const orderId = this.generateServiceOrderId();
+          
           console.log("=== BATCH SERVICE CREATION DEBUG ===");
           console.log("Service Name:", serviceData.serviceName);
+          console.log("Generated unique Order ID:", orderId);
           console.log("Doctor ID from request:", serviceData.doctorId);
           console.log("Doctor ID type:", typeof serviceData.doctorId);
           console.log("Service Type:", serviceData.serviceType);
@@ -2472,6 +2473,7 @@ export class SqliteStorage implements IStorage {
           };
 
           console.log("Final service data before DB insert:", {
+            orderId: finalServiceData.orderId,
             doctorId: finalServiceData.doctorId,
             doctorIdType: typeof finalServiceData.doctorId,
             serviceName: finalServiceData.serviceName,

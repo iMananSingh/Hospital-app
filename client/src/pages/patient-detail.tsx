@@ -829,46 +829,21 @@ export default function PatientDetail() {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Generate receipt number before sending to API with correct format
-      const serviceType = getServiceType("service", data[0]); // Assuming data is an array of services
-      const eventDate = new Date(data[0].scheduledDate)
-        .toISOString()
-        .split("T")[0];
-      const count = await getDailyCountFromAPI("service", eventDate, data[0]);
-
-      // Format: YYMMDD-TYPE-NNNN (correct format)
-      const dateObj = new Date(eventDate);
-      const yymmdd = dateObj
-        .toISOString()
-        .slice(2, 10)
-        .replace(/-/g, "")
-        .slice(0, 6);
-
-      let typeCode = "";
-      if (serviceType === "opd") {
-        typeCode = "OPD";
-      } else {
-        typeCode = "SER";
-      }
-
-      const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, "0")}`;
-
-      // Map services to include the generated receipt number and other details
-      const servicesWithReceipt = data.map((service: any) => ({
+      // Backend now generates unique order IDs for each service
+      // No need to generate receipt numbers on frontend
+      const servicesData = data.map((service: any) => ({
         ...service,
-        receiptNumber: receiptNumber,
-        // Include doctorId for OPD services, otherwise null
-        doctorId: service.serviceType === "opd" ? service.doctorId : null,
+        // Preserve doctorId for all service types
+        doctorId: service.doctorId || null,
       }));
 
       const response = await fetch("/api/patient-services/batch", {
-        // Use batch endpoint
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(servicesWithReceipt),
+        body: JSON.stringify(servicesData),
       });
       if (!response.ok) throw new Error("Failed to create service");
       return response.json();
