@@ -213,7 +213,6 @@ const baseNavigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, roles: ["admin", "doctor", "receptionist", "billing_staff", "super_user"] },
   { name: "Patient Registration", href: "/patients", icon: Users, roles: ["admin", "doctor", "receptionist", "billing_staff", "super_user"] },
   { name: "Pathology Tests", href: "/pathology", icon: TestTube, roles: ["admin", "doctor", "receptionist", "billing_staff", "super_user"] },
-  { name: "In-Patient Management", href: "/admissions", icon: Building2, roles: ["admin", "doctor", "receptionist", "billing_staff", "super_user"] },
   { name: "Doctor Management", href: "/doctors", icon: UserPlus, roles: ["admin", "super_user"] },
   { name: "Service Management", href: "/services", icon: Building2, roles: ["admin", "super_user"] },
   { name: "Revenue & Payments", href: "/revenue", icon: FileText, roles: ["admin", "billing_staff", "super_user"] },
