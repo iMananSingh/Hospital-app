@@ -1832,173 +1832,175 @@ export default function PatientDetail() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={() => {
-                  console.log("OPD button clicked");
-                  const now = new Date();
-                  // Use current local time for OPD appointment scheduling
-                  const currentDate = now.getFullYear() + "-" +
-                    String(now.getMonth() + 1).padStart(2, "0") + "-" +
-                    String(now.getDate()).padStart(2, "0");
-                  const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
+        {/* Quick Actions - Hidden for billing staff */}
+        {!isBillingStaff && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => {
+                    console.log("OPD button clicked");
+                    const now = new Date();
+                    // Use current local time for OPD appointment scheduling
+                    const currentDate = now.getFullYear() + "-" +
+                      String(now.getMonth() + 1).padStart(2, "0") + "-" +
+                      String(now.getDate()).padStart(2, "0");
+                    const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
 
-                  setIsOpdVisitDialogOpen(true);
-                  opdVisitForm.reset({
-                    patientId: patientId || "",
-                    doctorId: "",
-                    scheduledDate: currentDate,
-                    scheduledTime: currentTime,
-                    consultationFee: 0, // Added for OPD consultation fee
-                    symptoms: "",
-                  });
+                    setIsOpdVisitDialogOpen(true);
+                    opdVisitForm.reset({
+                      patientId: patientId || "",
+                      doctorId: "",
+                      scheduledDate: currentDate,
+                      scheduledTime: currentTime,
+                      consultationFee: 0, // Added for OPD consultation fee
+                      symptoms: "",
+                    });
 
-                  console.log(
-                    `Set current date/time: ${currentDate} ${currentTime}`,
+                    console.log(
+                      `Set current date/time: ${currentDate} ${currentTime}`,
+                    );
+                  }}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  data-testid="button-schedule-opd"
+                >
+                  <Stethoscope className="h-4 w-4" />
+                  Schedule OPD
+                </Button>
+
+                <Button
+                  onClick={() =>
+                    navigate(
+                      `/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || "")}`,
+                    )
+                  }
+                  className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
+                  data-testid="button-pathology-tests"
+                >
+                  <TestTube className="h-4 w-4" />
+                  Order Pathology Tests
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    // Set current LOCAL date and time when opening service dialog
+                    const now = new Date();
+                    const currentDate =
+                      now.getFullYear() +
+                      "-" +
+                      String(now.getMonth() + 1).padStart(2, "0") +
+                      "-" +
+                      String(now.getDate()).padStart(2, "0");
+                    const currentTime =
+                      String(now.getHours()).padStart(2, "0") +
+                      ":" +
+                      String(now.getMinutes()).padStart(2, "0");
+
+                    // Reset service type and category for general service
+                    setSelectedServiceType("");
+                    setSelectedServiceCategory("");
+                    setSelectedCatalogService(null); // Reset selected service
+                    setBillingPreview(null); // Reset billing preview
+                    // Reset form completely first
+                    serviceForm.reset({
+                      patientId: patientId || "",
+                      serviceType: "",
+                      serviceName: "",
+                      scheduledDate: currentDate,
+                      scheduledTime: currentTime,
+                      doctorId: "",
+                      notes: "",
+                      price: 0,
+                      quantity: 1,
+                      hours: 1,
+                      distance: 0,
+                    });
+
+                    setIsServiceDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+                  data-testid="button-add-medical-service"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Service
+                </Button>
+
+                {/* Admission/Discharge Button */}
+                {(() => {
+                  const currentAdmission = admissions?.find(
+                    (adm: any) => adm.status === "admitted",
                   );
-                }}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                data-testid="button-schedule-opd"
-              >
-                <Stethoscope className="h-4 w-4" />
-                Schedule OPD
-              </Button>
 
-              <Button
-                onClick={() =>
-                  navigate(
-                    `/pathology?patientId=${patientId}&patientName=${encodeURIComponent(patient?.name || "")}`,
-                  )
-                }
-                className="flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white"
-                data-testid="button-pathology-tests"
-              >
-                <TestTube className="h-4 w-4" />
-                Order Pathology Tests
-              </Button>
+                  if (currentAdmission) {
+                    // Patient is admitted - show discharge button
+                    return (
+                      <Button
+                        onClick={() => {
+                          // Set current LOCAL date and time when opening discharge dialog
+                          const now = new Date();
+                          const currentDateTime =
+                            now.getFullYear() +
+                            "-" +
+                            String(now.getMonth() + 1).padStart(2, "0") +
+                            "-" +
+                            String(now.getDate()).padStart(2, "0") +
+                            "T" +
+                            String(now.getHours()).padStart(2, "0") +
+                            ":" +
+                            String(now.getMinutes()).padStart(2, "0");
 
-              <Button
-                onClick={() => {
-                  // Set current LOCAL date and time when opening service dialog
-                  const now = new Date();
-                  const currentDate =
-                    now.getFullYear() +
-                    "-" +
-                    String(now.getMonth() + 1).padStart(2, "0") +
-                    "-" +
-                    String(now.getDate()).padStart(2, "0");
-                  const currentTime =
-                    String(now.getHours()).padStart(2, "0") +
-                    ":" +
-                    String(now.getMinutes()).padStart(2, "0");
+                          setDischargeDateTime(currentDateTime);
+                          setIsDischargeDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                        data-testid="button-discharge-patient"
+                      >
+                        <Bed className="h-4 w-4" />
+                        Discharge Patient
+                      </Button>
+                    );
+                  } else {
+                    // Patient is not admitted - show admit button
+                    return (
+                      <Button
+                        onClick={() => {
+                          // Set current LOCAL date and time when opening admission dialog
+                          const now = new Date();
+                          const currentDateTime =
+                            now.getFullYear() +
+                            "-" +
+                            String(now.getMonth() + 1).padStart(2, "0") +
+                            "-" +
+                            String(now.getDate()).padStart(2, "0") +
+                            "T" +
+                            String(now.getHours()).padStart(2, "0") +
+                            ":" +
+                            String(now.getMinutes()).padStart(2, "0");
 
-                  // Reset service type and category for general service
-                  setSelectedServiceType("");
-                  setSelectedServiceCategory("");
-                  setSelectedCatalogService(null); // Reset selected service
-                  setBillingPreview(null); // Reset billing preview
-                  // Reset form completely first
-                  serviceForm.reset({
-                    patientId: patientId || "",
-                    serviceType: "",
-                    serviceName: "",
-                    scheduledDate: currentDate,
-                    scheduledTime: currentTime,
-                    doctorId: "",
-                    notes: "",
-                    price: 0,
-                    quantity: 1,
-                    hours: 1,
-                    distance: 0,
-                  });
+                          admissionForm.setValue(
+                            "admissionDate",
+                            currentDateTime,
+                          );
+                          setIsAdmissionDialogOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                        data-testid="button-admit-patient"
+                      >
+                        <Bed className="h-4 w-4" />
+                        Admit Patient
+                      </Button>
+                    );
+                  }
+                })()}
 
-                  setIsServiceDialogOpen(true);
-                }}
-                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white"
-                data-testid="button-add-medical-service"
-              >
-                <Plus className="h-4 w-4" />
-                Add Service
-              </Button>
-
-              {/* Admission/Discharge Button */}
-              {(() => {
-                const currentAdmission = admissions?.find(
-                  (adm: any) => adm.status === "admitted",
-                );
-
-                if (currentAdmission) {
-                  // Patient is admitted - show discharge button
-                  return (
-                    <Button
-                      onClick={() => {
-                        // Set current LOCAL date and time when opening discharge dialog
-                        const now = new Date();
-                        const currentDateTime =
-                          now.getFullYear() +
-                          "-" +
-                          String(now.getMonth() + 1).padStart(2, "0") +
-                          "-" +
-                          String(now.getDate()).padStart(2, "0") +
-                          "T" +
-                          String(now.getHours()).padStart(2, "0") +
-                          ":" +
-                          String(now.getMinutes()).padStart(2, "0");
-
-                        setDischargeDateTime(currentDateTime);
-                        setIsDischargeDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
-                      data-testid="button-discharge-patient"
-                    >
-                      <Bed className="h-4 w-4" />
-                      Discharge Patient
-                    </Button>
-                  );
-                } else {
-                  // Patient is not admitted - show admit button
-                  return (
-                    <Button
-                      onClick={() => {
-                        // Set current LOCAL date and time when opening admission dialog
-                        const now = new Date();
-                        const currentDateTime =
-                          now.getFullYear() +
-                          "-" +
-                          String(now.getMonth() + 1).padStart(2, "0") +
-                          "-" +
-                          String(now.getDate()).padStart(2, "0") +
-                          "T" +
-                          String(now.getHours()).padStart(2, "0") +
-                          ":" +
-                          String(now.getMinutes()).padStart(2, "0");
-
-                        admissionForm.setValue(
-                          "admissionDate",
-                          currentDateTime,
-                        );
-                        setIsAdmissionDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                      data-testid="button-admit-patient"
-                    >
-                      <Bed className="h-4 w-4" />
-                      Admit Patient
-                    </Button>
-                  );
-                }
-              })()}
-
-              {/* Smart Billing Button is removed as its functionality is integrated into "Add Service" */}
-            </div>
-          </CardContent>
-        </Card>
+                {/* Smart Billing Button is removed as its functionality is integrated into "Add Service" */}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Financial Monitoring */}
         <Card className="mb-6">
