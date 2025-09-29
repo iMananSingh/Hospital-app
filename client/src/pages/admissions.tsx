@@ -28,23 +28,9 @@ export default function InPatientManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { user } = useAuth();
   
-  // Check if user has appropriate role for admissions operations
+  // Check if user has appropriate role for admission creation
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
   const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
-  
-  if (isBillingStaff) {
-    return (
-      <div className="space-y-6">
-        <TopBar title="In-Patient Management" />
-        <div className="p-6">
-          <AccessRestricted 
-            title="Access Restricted"
-            description="Billing staff cannot access patient admission management. Please contact an administrator."
-          />
-        </div>
-      </div>
-    );
-  }
 
   // Fetch all admissions
   const { data: admissions = [] } = useQuery<Admission[]>({
@@ -312,11 +298,13 @@ export default function InPatientManagement() {
                 <p className="text-muted-foreground">
                   {searchQuery ? "No admissions match your search criteria." : "No patient admissions found."}
                 </p>
-                <Link href="/patients">
-                  <Button className="mt-4">
-                    Admit New Patient
-                  </Button>
-                </Link>
+                {!isBillingStaff && (
+                  <Link href="/patients">
+                    <Button className="mt-4">
+                      Admit New Patient
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </CardContent>

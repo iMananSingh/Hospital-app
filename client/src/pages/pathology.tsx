@@ -255,23 +255,9 @@ export default function Pathology() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Check if user has appropriate role for pathology operations
+  // Check if user has appropriate role for pathology creation
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
   const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
-
-  if (isBillingStaff) {
-    return (
-      <div className="space-y-6">
-        <TopBar title="Pathology Tests" />
-        <div className="p-6">
-          <AccessRestricted
-            title="Access Restricted"
-            description="Billing staff cannot access pathology test management. Please contact an administrator."
-          />
-        </div>
-      </div>
-    );
-  }
 
   const { data: pathologyOrders = [], isLoading } = useQuery({
     queryKey: ["/api/pathology"],
@@ -494,8 +480,8 @@ export default function Pathology() {
         title="Pathology Tests"
         searchPlaceholder="Search tests by name or ID..."
         onSearch={setSearchQuery}
-        onNewAction={() => setIsNewTestOpen(true)}
-        newActionLabel="Order Test"
+        onNewAction={isBillingStaff ? undefined : () => setIsNewTestOpen(true)}
+        newActionLabel={isBillingStaff ? undefined : "Order Test"}
       />
 
       <div className="p-6">
