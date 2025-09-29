@@ -4,7 +4,7 @@ export interface User {
   username: string;
   fullName: string;
   role?: string; // For backward compatibility
-  roles?: string[]; // New multiple roles support
+  roles?: string[]; // Array of roles from server
 }
 
 interface LoginResponse {

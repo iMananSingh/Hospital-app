@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/hooks/use-auth";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,7 @@ export default function PatientDetail() {
   const params = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const patientId = params.id;
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -2001,30 +2003,41 @@ export default function PatientDetail() {
                 Financial Summary
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setDiscountAmount("");
-                    setDiscountReason("");
-                    setIsDiscountDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <Minus className="h-4 w-4" />
-                  Add Discount
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setPaymentAmount("");
-                    setSelectedAdmissionForPayment("");
-                    setIsPaymentDialogOpen(true);
-                  }}
-                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Payment
-                </Button>
+                {/* Hide payment and discount buttons for receptionist users */}
+                {(() => {
+                  // Get user roles with fallback to single role for backward compatibility
+                  const userRoles = user?.roles || (user?.role ? [user.role] : []);
+                  return !userRoles.includes('receptionist');
+                })() && (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setDiscountAmount("");
+                        setDiscountReason("");
+                        setIsDiscountDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      data-testid="button-add-discount"
+                    >
+                      <Minus className="h-4 w-4" />
+                      Add Discount
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setPaymentAmount("");
+                        setSelectedAdmissionForPayment("");
+                        setIsPaymentDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      data-testid="button-add-payment"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Payment
+                    </Button>
+                  </>
+                )}
               </div>
             </CardTitle>
           </CardHeader>
