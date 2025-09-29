@@ -41,20 +41,17 @@ export default function Doctors() {
   const isBillingStaff = currentUserRoles.includes('billing_staff');
   const isSuperUser = currentUserRoles.includes('super_user');
 
-  if (!isAdmin && !isBillingStaff && !isSuperUser) {
+  const hasAccess = isAdmin || isBillingStaff || isSuperUser;
+
+  if (!hasAccess) {
     return (
       <div className="space-y-6">
         <TopBar title="Doctor Management" />
         <div className="p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only administrators and billing staff can access doctor management.
-              </p>
-            </CardContent>
-          </Card>
+          <AccessRestricted 
+            title="Access Restricted"
+            description="Only administrators, billing staff, and super users can access doctor management."
+          />
         </div>
       </div>
     );
@@ -701,10 +698,10 @@ export default function Doctors() {
     <div className="space-y-6">
       <TopBar 
         title="Doctor Management"
-        searchPlaceholder={isAdmin || isSuperUser ? "Search doctors by name or specialization..." : undefined}
-        onSearch={isAdmin || isSuperUser ? setSearchQuery : undefined}
-        onNewAction={isAdmin || isSuperUser ? () => setIsNewDoctorOpen(true) : undefined}
-        newActionLabel={isAdmin || isSuperUser ? "Add Doctor" : undefined}
+        searchPlaceholder={hasAccess ? "Search doctors by name or specialization..." : undefined}
+        onSearch={hasAccess ? setSearchQuery : undefined}
+        onNewAction={hasAccess ? () => setIsNewDoctorOpen(true) : undefined}
+        newActionLabel={hasAccess ? "Add Doctor" : undefined}
       />
 
       <div className="p-6">
@@ -945,7 +942,7 @@ export default function Doctors() {
           </TabsContent>
           )}
 
-          {(isAdmin || isSuperUser) && (
+          {(isAdmin || isBillingStaff || isSuperUser) && (
           <TabsContent value="manage-salary">
             <Card>
               <CardHeader>

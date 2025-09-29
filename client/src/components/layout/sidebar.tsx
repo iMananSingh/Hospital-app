@@ -236,12 +236,8 @@ export default function Sidebar() {
     return location === href || (href !== "/" && location.startsWith(href));
   };
 
-  // Filter navigation items based on user roles
-  const navigation = baseNavigation.filter(item => {
-    // Get user roles with fallback to single role for backward compatibility
-    const userRoles = user?.roles || (user?.role ? [user.role] : []);
-    return userRoles.some((role: string) => item.roles.includes(role));
-  });
+  // Show all navigation items regardless of role
+  const navigation = baseNavigation;
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">

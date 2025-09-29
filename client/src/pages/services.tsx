@@ -37,26 +37,22 @@ import AccessRestricted from "@/components/access-restricted";
 export default function ServiceManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Tab management state
   const [activeTab, setActiveTab] = useState("rooms");
 
-  // Only show service management if user has admin or super_user role
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  if (!currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user')) {
+  const userRoles = user?.roles || [user?.role]; // Backward compatibility
+  const hasAccess = userRoles.includes('admin') || userRoles.includes('super_user');
+
+  if (!hasAccess) {
     return (
       <div className="space-y-6">
         <TopBar title="Service Management" />
         <div className="p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only administrators can access service management.
-              </p>
-            </CardContent>
-          </Card>
+          <AccessRestricted 
+            title="Access Restricted"
+            description="Only administrators and super users can access service management."
+          />
         </div>
       </div>
     );

@@ -627,15 +627,10 @@ export default function Settings() {
       <div className="space-y-6">
         <TopBar title="System Settings" />
         <div className="p-6">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
-              <p className="text-muted-foreground">
-                Only administrators and super users can access system settings.
-              </p>
-            </CardContent>
-          </Card>
+          <AccessRestricted 
+            title="Access Restricted"
+            description="Only administrators and super users can access system settings."
+          />
         </div>
       </div>
     );
