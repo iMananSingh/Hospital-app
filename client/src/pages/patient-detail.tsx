@@ -829,21 +829,46 @@ export default function PatientDetail() {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Backend now generates unique order IDs for each service
-      // No need to generate receipt numbers on frontend
-      const servicesData = data.map((service: any) => ({
+      // Generate receipt number before sending to API with correct format
+      const serviceType = getServiceType("service", data[0]); // Assuming data is an array of services
+      const eventDate = new Date(data[0].scheduledDate)
+        .toISOString()
+        .split("T")[0];
+      const count = await getDailyCountFromAPI("service", eventDate, data[0]);
+
+      // Format: YYMMDD-TYPE-NNNN (correct format)
+      const dateObj = new Date(eventDate);
+      const yymmdd = dateObj
+        .toISOString()
+        .slice(2, 10)
+        .replace(/-/g, "")
+        .slice(0, 6);
+
+      let typeCode = "";
+      if (serviceType === "opd") {
+        typeCode = "OPD";
+      } else {
+        typeCode = "SER";
+      }
+
+      const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, "0")}`;
+
+      // Map services to include the generated receipt number and other details
+      const servicesWithReceipt = data.map((service: any) => ({
         ...service,
-        // Preserve doctorId for all service types
-        doctorId: service.doctorId || null,
+        receiptNumber: receiptNumber,
+        // Include doctorId for OPD services, otherwise null
+        doctorId: service.serviceType === "opd" ? service.doctorId : null,
       }));
 
       const response = await fetch("/api/patient-services/batch", {
+        // Use batch endpoint
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(servicesData),
+        body: JSON.stringify(servicesWithReceipt),
       });
       if (!response.ok) throw new Error("Failed to create service");
       return response.json();
@@ -2332,19 +2357,19 @@ export default function PatientDetail() {
               <CardContent>
                 {services && services.length > 0 ? (
                   (() => {
-                    // Group services by orderId - each service gets its own card with unique order ID
+                    // Group services by receipt number for batch display
                     const serviceGroups = services.reduce((groups: any, service: any) => {
-                      const orderId = service.orderId || `INDIVIDUAL-${service.id}`;
-                      if (!groups[orderId]) {
-                        groups[orderId] = [];
+                      const receiptNumber = service.receiptNumber || `INDIVIDUAL-${service.id}`;
+                      if (!groups[receiptNumber]) {
+                        groups[receiptNumber] = [];
                       }
-                      groups[orderId].push(service);
+                      groups[receiptNumber].push(service);
                       return groups;
                     }, {});
 
                     return (
                       <div className="space-y-4">
-                        {Object.entries(serviceGroups).map(([orderId, groupServices]: [string, any]) => {
+                        {Object.entries(serviceGroups).map(([receiptNumber, groupServices]: [string, any]) => {
                           const firstService = groupServices[0];
                           const totalCost = groupServices.reduce((sum: number, service: any) => {
                             return sum + (service.calculatedAmount || service.price || 0);
@@ -2362,13 +2387,13 @@ export default function PatientDetail() {
                           }
 
                           return (
-                            <Card key={orderId} className="border border-gray-200">
+                            <Card key={receiptNumber} className="border border-gray-200">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                   <CardTitle className="text-lg">
                                     Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
                                   </CardTitle>
-                                  <Badge variant="outline">{orderId}</Badge>
+                                  <Badge variant="outline">{receiptNumber}</Badge>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                   <span>Doctor: {doctorName}</span>
