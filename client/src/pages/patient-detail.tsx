@@ -353,7 +353,30 @@ export default function PatientDetail() {
       return "No Doctor Assigned";
     };
 
-    
+    // Handle service batch specially
+    if (eventType === "service_batch") {
+      const firstService = event.services[0];
+
+      return {
+        type: "service" as const,
+        id: event.receiptNumber,
+        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? 's' : ''}`,
+        date: firstService.sortTimestamp,
+        amount: event.totalCost,
+        description: event.services.map((s: any) => s.serviceName).join(", "),
+        patientName: patient?.name || "Unknown Patient",
+        patientId: patient?.patientId || "Unknown ID",
+        details: {
+          ...firstService,
+          services: event.services,
+          totalCost: event.totalCost,
+          patientAge: patient?.age,
+          patientGender: patient?.gender,
+          doctorName: event.doctorName || getDoctorName(),
+          receiptNumber: event.receiptNumber,
+        },
+      };
+    }
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
@@ -422,15 +445,14 @@ export default function PatientDetail() {
 
     // Base receipt data structure
     const baseReceiptData = {
-      type: (eventType === "opd_visit" ? "service" : (eventType === "service_group" ? "service" : eventType)) as
+      type: (eventType === "opd_visit" ? "service" : eventType) as
         | "service"
         | "pathology"
         | "admission"
         | "payment"
         | "discount",
-      id: event.id || event.receiptNumber || `group-${Date.now()}`,
-      title: eventType === "opd_visit" ? "OPD Consultation" : 
-             eventType === "service_group" ? "Multiple Services" : (
+      id: event.id,
+      title: eventType === "opd_visit" ? "OPD Consultation" : (
         event.title ||
         event.serviceName ||
         event.testName ||
@@ -438,11 +460,9 @@ export default function PatientDetail() {
         "Service"
       ),
       date: event.sortTimestamp,
-      amount: eventType === "service_group" ? event.totalAmount : eventAmount,
+      amount: eventAmount,
       description: eventType === "opd_visit" ? 
-        `OPD Consultation - ${getDoctorName()}` : 
-        eventType === "service_group" ? 
-        `${event.services.length} services ordered together` : (
+        `OPD Consultation - ${getDoctorName()}` : (
         event.description || event.serviceName || event.testName || ""
       ),
       patientName: patient?.name || "Unknown Patient",
@@ -454,11 +474,6 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
-        // For service groups, include the services array for detailed receipt
-        ...(eventType === "service_group" ? {
-          services: event.services,
-          isServiceGroup: true
-        } : {}),
         // For OPD visits, add explicit identifiers for receipt title detection
         ...(eventType === "opd_visit" ? {
           serviceType: "opd",
@@ -2341,58 +2356,94 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {services && services.length > 0 ? (
-                  <div className="space-y-4">
-                    {services.map((service: any) => {
-                      // Determine doctor name with robust logic
-                      let doctorName = "No Doctor Assigned";
-                      if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
-                        if (service.doctorName && service.doctorName.trim() !== "") {
-                          doctorName = service.doctorName;
-                        } else {
-                          const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
-                          doctorName = doctor ? doctor.name : "Unknown Doctor";
-                        }
+                  (() => {
+                    // Group services by receipt number for batch display
+                    const serviceGroups = services.reduce((groups: any, service: any) => {
+                      const receiptNumber = service.receiptNumber || `INDIVIDUAL-${service.id}`;
+                      if (!groups[receiptNumber]) {
+                        groups[receiptNumber] = [];
                       }
+                      groups[receiptNumber].push(service);
+                      return groups;
+                    }, {});
 
-                      return (
-                        <Card key={service.id} className="border border-gray-200">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">
-                                {service.serviceName}
-                              </CardTitle>
-                              <Badge className={getStatusColor(service.status)}>
-                                {service.status}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span>Doctor: {doctorName}</span>
-                              <span>Date: {formatDate(service.scheduledDate)}</span>
-                              {service.scheduledTime && (
-                                <span>
-                                  Time: {(() => {
-                                    const [hours, minutes] = service.scheduledTime.split(":");
-                                    const hour = parseInt(hours, 10);
-                                    const ampm = hour >= 12 ? "PM" : "AM";
-                                    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                                    return `${displayHour}:${minutes} ${ampm}`;
-                                  })()}
-                                </span>
-                              )}
-                              <span className="font-medium">Cost: ₹{service.calculatedAmount || service.price || 0}</span>
-                            </div>
-                          </CardHeader>
-                          {service.notes && (
-                            <CardContent>
-                              <div className="text-sm text-muted-foreground">
-                                <span className="font-medium">Notes:</span> {service.notes}
-                              </div>
-                            </CardContent>
-                          )}
-                        </Card>
-                      );
-                    })}
-                  </div>
+                    return (
+                      <div className="space-y-4">
+                        {Object.entries(serviceGroups).map(([receiptNumber, groupServices]: [string, any]) => {
+                          const firstService = groupServices[0];
+                          const totalCost = groupServices.reduce((sum: number, service: any) => {
+                            return sum + (service.calculatedAmount || service.price || 0);
+                          }, 0);
+
+                          // Determine doctor name with robust logic
+                          let doctorName = "No Doctor Assigned";
+                          if (firstService.doctorId && firstService.doctorId !== "" && firstService.doctorId !== "none") {
+                            if (firstService.doctorName && firstService.doctorName.trim() !== "") {
+                              doctorName = firstService.doctorName;
+                            } else {
+                              const doctor = doctors?.find((d: Doctor) => d.id === firstService.doctorId);
+                              doctorName = doctor ? doctor.name : "Unknown Doctor";
+                            }
+                          }
+
+                          return (
+                            <Card key={receiptNumber} className="border border-gray-200">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="text-lg">
+                                    Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
+                                  </CardTitle>
+                                  <Badge variant="outline">{receiptNumber}</Badge>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <span>Doctor: {doctorName}</span>
+                                  <span>Date: {formatDate(firstService.scheduledDate)}</span>
+                                  {firstService.scheduledTime && (
+                                    <span>
+                                      Time: {(() => {
+                                        const [hours, minutes] = firstService.scheduledTime.split(":");
+                                        const hour = parseInt(hours, 10);
+                                        const ampm = hour >= 12 ? "PM" : "AM";
+                                        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                                        return `${displayHour}:${minutes} ${ampm}`;
+                                      })()}
+                                    </span>
+                                  )}
+                                  <span className="font-medium">Total: ₹{totalCost}</span>
+                                </div>
+                              </CardHeader>
+                              <CardContent>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Service Name</TableHead>
+                                      <TableHead>Quantity</TableHead>
+                                      <TableHead className="text-right">Cost</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {groupServices.map((service: any) => (
+                                      <TableRow key={service.id}>
+                                        <TableCell className="font-medium">
+                                          {service.serviceName}
+                                        </TableCell>
+                                        <TableCell>
+                                          {service.billingQuantity || 1}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          ₹{service.calculatedAmount || service.price || 0}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-sm text-muted-foreground">
@@ -2964,79 +3015,49 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Group services by receipt number and timestamp to combine related services
+                    // Group patient services by receipt number (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
                       const nonAdmissionServices = services.filter((service: any) => 
                         service.serviceType !== "admission"
                       );
 
-                      // Group services by receipt number and scheduled date/time
-                      const serviceGroups = new Map();
-                      
-                      nonAdmissionServices.forEach((service: any) => {
+                      const serviceGroups = nonAdmissionServices.reduce((groups: any, service: any) => {
+                        const receiptNumber = service.receiptNumber || `BATCH-${service.id}`;
+                        if (!groups[receiptNumber]) {
+                          groups[receiptNumber] = [];
+                        }
+                        groups[receiptNumber].push(service);
+                        return groups;
+                      }, {});
+
+                      // Add each service group as a single event
+                      Object.entries(serviceGroups).forEach(([receiptNumber, groupServices]: [string, any]) => {
+                        const firstService = groupServices[0];
                         const serviceDateTime = new Date(
-                          `${service.scheduledDate}T${service.scheduledTime}:00`
+                          `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
                         );
-                        
-                        // Create a unique key for grouping services together
-                        // Use receipt number if available, otherwise use date/time + patient ID
-                        const groupKey = service.receiptNumber 
-                          ? service.receiptNumber 
-                          : `${service.patientId}-${service.scheduledDate}-${service.scheduledTime}`;
 
-                        if (!serviceGroups.has(groupKey)) {
-                          serviceGroups.set(groupKey, {
-                            services: [],
-                            timestamp: serviceDateTime,
+                        // Calculate total cost for the batch
+                        const totalCost = groupServices.reduce((sum: number, service: any) => {
+                          return sum + (service.calculatedAmount || service.price || 0);
+                        }, 0);
+
+                        allEvents.push({
+                          type: "service_batch",
+                          data: {
+                            receiptNumber,
+                            services: groupServices,
+                            totalCost,
+                            scheduledDate: firstService.scheduledDate,
+                            scheduledTime: firstService.scheduledTime,
+                            doctorId: firstService.doctorId,
+                            doctorName: firstService.doctorName,
                             sortTimestamp: serviceDateTime.getTime(),
-                            receiptNumber: service.receiptNumber,
-                            scheduledDate: service.scheduledDate,
-                            scheduledTime: service.scheduledTime,
-                            patientId: service.patientId
-                          });
-                        }
-
-                        serviceGroups.get(groupKey).services.push(service);
-                      });
-
-                      // Convert groups to timeline events
-                      serviceGroups.forEach((group) => {
-                        if (group.services.length === 1) {
-                          // Single service - add as individual event
-                          const service = group.services[0];
-                          allEvents.push({
-                            type: "service",
-                            data: {
-                              ...service,
-                              sortTimestamp: group.sortTimestamp,
-                            },
-                            timestamp: group.timestamp,
-                            sortTimestamp: group.sortTimestamp,
-                          });
-                        } else {
-                          // Multiple services - add as grouped event
-                          allEvents.push({
-                            type: "service_group",
-                            data: {
-                              services: group.services,
-                              receiptNumber: group.receiptNumber,
-                              scheduledDate: group.scheduledDate,
-                              scheduledTime: group.scheduledTime,
-                              patientId: group.patientId,
-                              sortTimestamp: group.sortTimestamp,
-                              // Calculate total amount for the group
-                              totalAmount: group.services.reduce((total: number, service: any) => 
-                                total + (service.calculatedAmount || service.price || 0), 0
-                              ),
-                              // Get the first service's doctor for display
-                              doctorId: group.services.find((s: any) => s.doctorId)?.doctorId || null,
-                              doctorName: group.services.find((s: any) => s.doctorName)?.doctorName || null,
-                            },
-                            timestamp: group.timestamp,
-                            sortTimestamp: group.sortTimestamp,
-                          });
-                        }
+                          },
+                          timestamp: serviceDateTime,
+                          sortTimestamp: serviceDateTime.getTime(),
+                        });
                       });
                     }
 
@@ -3146,13 +3167,8 @@ export default function PatientDetail() {
                               bgColor: "bg-blue-50",
                               iconColor: "text-blue-600"
                             };
+                          case "service_batch":
                           case "service":
-                            return {
-                              borderColor: "border-l-purple-500",
-                              bgColor: "bg-purple-50",
-                              iconColor: "text-purple-600"
-                            };
-                          case "service_group":
                             return {
                               borderColor: "border-l-purple-500",
                               bgColor: "bg-purple-50",
@@ -3215,10 +3231,11 @@ export default function PatientDetail() {
                                   switch (event.type) {
                                     case "opd_visit":
                                       return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
+                                    case "service_batch":
+                                      const serviceCount = event.data.services.length;
+                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? 's' : ''} (${event.data.receiptNumber})`;
                                     case "service":
                                       return event.data.serviceName || "Service";
-                                    case "service_group":
-                                      return `Multiple Services (${event.data.services.length} services)`;
                                     case "pathology":
                                       return `Pathology Tests - Order ${event.data.orderId}`;
                                     case "admission":
@@ -3238,7 +3255,7 @@ export default function PatientDetail() {
                               <div className="flex items-center gap-3">
                                 {/* Receipt/Print button for applicable events */}
                                 {(event.type === "service" ||
-                                  event.type === "service_group" ||
+                                  event.type === "service_batch" ||
                                   event.type === "pathology" ||
                                   event.type === "admission" ||
                                   event.type === "admission_event" ||
@@ -3271,14 +3288,7 @@ export default function PatientDetail() {
                                         {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
                                       </div>
                                     );
-                                  case "service":
-                                    return (
-                                      <div className="space-y-1">
-                                        <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
-                                        {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
-                                      </div>
-                                    );
-                                  case "service_group":
+                                  case "service_batch":
                                     return (
                                       <div>
                                         <div className="font-medium mb-2 text-gray-800">Services in this order:</div>
@@ -3286,24 +3296,24 @@ export default function PatientDetail() {
                                           {event.data.services.map((service: any, idx: number) => (
                                             <div key={idx} className="flex justify-between items-center text-sm">
                                               <span>• {service.serviceName}</span>
-                                              <span className="font-medium">₹{(service.calculatedAmount || service.price || 0).toLocaleString()}</span>
+                                              <span className="font-medium">₹{service.calculatedAmount || service.price}</span>
                                             </div>
                                           ))}
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
-                                          <span className="text-lg">₹{event.data.totalAmount.toLocaleString()}</span>
+                                          <span className="text-lg">₹{event.data.totalCost}</span>
                                         </div>
-                                        {event.data.services.some((s: any) => s.notes) && (
-                                          <div className="mt-2">
-                                            <span className="font-medium">Notes:</span>
-                                            <div className="ml-2 text-gray-600">
-                                              {event.data.services.filter((s: any) => s.notes).map((s: any, idx: number) => (
-                                                <div key={idx}>• {s.notes}</div>
-                                              ))}
-                                            </div>
-                                          </div>
+                                        {event.data.doctorName && (
+                                          <div className="mt-2"><span className="font-medium">Doctor:</span> {event.data.doctorName}</div>
                                         )}
+                                      </div>
+                                    );
+                                  case "service":
+                                    return (
+                                      <div className="space-y-1">
+                                        <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
+                                        {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
                                       </div>
                                     );
                                   case "pathology":
@@ -3385,9 +3395,9 @@ export default function PatientDetail() {
                               })()}
                             </div>
 
-                            {/* Doctor information outside details section for admission events and service groups */}
-                            {(event.type === "admission" || event.type === "service_group") && (() => {
-                              // Get doctor name from the admission or service group
+                            {/* Doctor information outside details section for admission events */}
+                            {event.type === "admission" && (() => {
+                              // Get doctor name from the admission
                               let doctorName = null;
 
                               // Try to get doctor ID from the event data
@@ -3398,11 +3408,6 @@ export default function PatientDetail() {
                                 if (doctor) {
                                   doctorName = doctor.name;
                                 }
-                              }
-
-                              // For service groups, try to get from doctorName field too
-                              if (!doctorName && event.type === "service_group" && event.data.doctorName) {
-                                doctorName = event.data.doctorName;
                               }
 
                               return doctorName ? (
