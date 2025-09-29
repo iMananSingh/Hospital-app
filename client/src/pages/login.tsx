@@ -20,22 +20,23 @@ export default function Login() {
     return null;
   }
 
-  // Handle redirect after successful login for non-admin-only users
-  React.useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      setLocation("/");
-    }
-  }, [isAuthenticated, isLoading, setLocation]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
 
     setIsLoading(true);
     try {
-      await login(username, password);
-      // Don't redirect here - let the login function handle the redirect
-      // for admin-only users, others will go to dashboard via useEffect below
+      const userData = await login(username, password);
+      
+      // Check if user has only admin role (not super_user) and redirect to settings
+      const userRoles = userData.roles || [userData.role];
+      const hasAdminOnly = userRoles.includes('admin') && !userRoles.includes('super_user');
+
+      if (hasAdminOnly) {
+        setLocation('/settings');
+      } else {
+        setLocation('/');
+      }
     } catch (error) {
       // Error handling is done in the login function
     } finally {

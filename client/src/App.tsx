@@ -28,7 +28,7 @@ import Sidebar from "@/components/layout/sidebar";
 import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -43,6 +43,25 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
   if (!isAuthenticated) {
     return <Login />;
+  }
+
+  // Check if admin-only user is trying to access non-settings page
+  if (user) {
+    const userRoles = user.roles || [user.role];
+    const hasAdminOnly = userRoles.includes('admin') && !userRoles.includes('super_user');
+    const currentPath = window.location.pathname;
+    
+    if (hasAdminOnly && currentPath !== '/settings') {
+      window.location.href = '/settings';
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-muted/30">
+          <div className="text-center space-y-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Redirecting...</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   return (
