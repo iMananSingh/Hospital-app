@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authApi, tokenStorage, type User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Welcome back!",
         description: `Logged in as ${userData.fullName}`,
       });
+
+      // Check if user has only admin role (not super_user) and redirect to settings
+      const userRoles = userData.roles || [userData.role];
+      const hasAdminOnly = userRoles.includes('admin') && !userRoles.includes('super_user');
+
+      if (hasAdminOnly) {
+        // Use setTimeout to ensure the redirect happens after login completion
+        setTimeout(() => {
+          window.location.href = '/settings';
+        }, 100);
+      }
     } catch (error) {
       toast({
         title: "Login failed",
