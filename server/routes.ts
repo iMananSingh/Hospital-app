@@ -1533,7 +1533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate receipt number
       const dateObj = new Date(eventDate);
       const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, "").slice(0, 6);
-      const typeCode = serviceType === "opd" ? "OPD" : "SER";
+      const typeCode = serviceType === "opd" ? "OPD" : "SRV";
       const receiptNumber = `${yymmdd}-${typeCode}-${String(count).padStart(4, "0")}`;
 
       console.log("Generated receipt number:", receiptNumber);
