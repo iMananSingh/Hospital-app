@@ -3418,48 +3418,40 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
-      // Use local system time for dashboard statistics
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
-      const today =
-        now.getFullYear() +
-        "-" +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(now.getDate()).padStart(2, "0");
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' + 
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(indianTime.getDate()).padStart(2, '0');
 
-      console.log("Dashboard stats - Today date (local time):", today);
-      console.log("Dashboard stats - Current time:", now);
+      console.log(`Dashboard stats - Using today date: ${today}`);
 
-      // Get ALL OPD services first to debug
-      const allOpdServices = db
+      // Get today's OPD services - those scheduled for today
+      const todayOpdServices = db
         .select()
         .from(schema.patientServices)
-        .where(eq(schema.patientServices.serviceType, "opd"))
+        .where(
+          and(
+            eq(schema.patientServices.serviceType, "opd"),
+            eq(schema.patientServices.scheduledDate, today)
+          )
+        )
         .all();
 
-      console.log("All OPD services found:", allOpdServices.length);
-      console.log(
-        "All OPD services details:",
-        allOpdServices.map((s) => ({
-          id: s.id,
-          scheduledDate: s.scheduledDate,
+      console.log(`Today OPD services count: ${todayOpdServices.length}`);
+      if (todayOpdServices.length > 0) {
+        console.log(`Sample OPD services:`, todayOpdServices.slice(0, 3).map(s => ({ 
+          id: s.id, 
+          scheduledDate: s.scheduledDate, 
           serviceType: s.serviceType,
-          createdAt: s.createdAt,
-        })),
-      );
+          patientId: s.patientId,
+          serviceName: s.serviceName
+        })));
+      }
 
-      // Get OPD patient count for today using same filter logic as OPD List
-      const todayOpdServices = allOpdServices.filter((service) => {
-        const matches = service.scheduledDate === today;
-        console.log(
-          `Service ${service.id}: scheduledDate="${service.scheduledDate}" vs today="${today}" => matches: ${matches}`,
-        );
-        return matches;
-      });
-
-      console.log("Today OPD services filtered:", todayOpdServices.length);
-      console.log("Today OPD services details:", todayOpdServices);
-      console.log("Dashboard OPD count for today:", todayOpdServices.length);
+      const opdPatients = todayOpdServices.length;
+      console.log(`Dashboard OPD count for today: ${opdPatients}`);
 
       // Get inpatients count (currently admitted)
       const inpatients = db
@@ -3500,7 +3492,7 @@ export class SqliteStorage implements IStorage {
       const diagnostics = diagnosticServices.length;
 
       return {
-        opdPatients: todayOpdServices.length,
+        opdPatients,
         inpatients,
         labTests,
         diagnostics,
