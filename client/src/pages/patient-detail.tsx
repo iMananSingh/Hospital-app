@@ -2356,99 +2356,110 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {services && services.length > 0 ? (
-                  (() => {
-                    // Group services by order ID for batch display
-                    const serviceGroups = services.reduce((groups: any, service: any) => {
-                      const orderId = service.orderId || `INDIVIDUAL-${service.id}`;
-                      if (!groups[orderId]) {
-                        groups[orderId] = [];
-                      }
-                      groups[orderId].push(service);
-                      return groups;
-                    }, {});
-
-                    return (
-                      <div className="space-y-4">
-                        {Object.entries(serviceGroups).map(([orderId, groupServices]: [string, any]) => {
-                          const firstService = groupServices[0];
-                          const totalCost = groupServices.reduce((sum: number, service: any) => {
-                            return sum + (service.calculatedAmount || service.price || 0);
-                          }, 0);
-
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Service Name</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Receipt No.</TableHead>
+                        <TableHead className="text-right">Cost</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {services
+                        .sort((a: any, b: any) => {
+                          // Sort by scheduled date descending (latest first)
+                          const dateA = new Date(a.scheduledDate || a.createdAt);
+                          const dateB = new Date(b.scheduledDate || b.createdAt);
+                          return dateB.getTime() - dateA.getTime();
+                        })
+                        .map((service: any) => {
                           // Determine doctor name with robust logic
                           let doctorName = "No Doctor Assigned";
-                          if (firstService.doctorId && firstService.doctorId !== "" && firstService.doctorId !== "none") {
-                            if (firstService.doctorName && firstService.doctorName.trim() !== "") {
-                              doctorName = firstService.doctorName;
+                          if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                            if (service.doctorName && service.doctorName.trim() !== "") {
+                              doctorName = service.doctorName;
                             } else {
-                              const doctor = doctors?.find((d: Doctor) => d.id === firstService.doctorId);
+                              const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
                               doctorName = doctor ? doctor.name : "Unknown Doctor";
                             }
                           }
 
                           return (
-                            <Card key={orderId} className="border border-gray-200">
-                              <CardHeader className="pb-3">
-                                <div className="flex items-center justify-between">
-                                  <CardTitle className="text-lg">
-                                    Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
-                                  </CardTitle>
-                                  <Badge variant="outline">{orderId}</Badge>
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  Receipt: {firstService.receiptNumber}
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>Doctor: {doctorName}</span>
-                                  <span>Date: {formatDate(firstService.scheduledDate)}</span>
-                                  {firstService.scheduledTime && (
-                                    <span>
-                                      Time: {(() => {
-                                        const [hours, minutes] = firstService.scheduledTime.split(":");
-                                        const hour = parseInt(hours, 10);
-                                        const ampm = hour >= 12 ? "PM" : "AM";
-                                        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-                                        return `${displayHour}:${minutes} ${ampm}`;
-                                      })()}
-                                    </span>
-                                  )}
-                                  <span className="font-medium">Total: ₹{totalCost}</span>
-                                </div>
-                              </CardHeader>
-                              <CardContent>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Service Name</TableHead>
-                                      <TableHead>Quantity</TableHead>
-                                      <TableHead className="text-right">Cost</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {groupServices.map((service: any) => (
-                                      <TableRow key={service.id}>
-                                        <TableCell className="font-medium">
-                                          {service.serviceName}
-                                        </TableCell>
-                                        <TableCell>
-                                          {service.billingQuantity || 1}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          ₹{service.calculatedAmount || service.price || 0}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </CardContent>
-                            </Card>
+                            <TableRow key={service.id}>
+                              <TableCell className="font-medium">
+                                {service.serviceName}
+                                {service.notes && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {service.notes}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>{doctorName}</TableCell>
+                              <TableCell>
+                                {(() => {
+                                  if (!service.scheduledDate) return "N/A";
+
+                                  let displayDateTime;
+                                  if (service.scheduledTime) {
+                                    // Combine date and time to create a complete datetime
+                                    const datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00`;
+                                    displayDateTime = new Date(datetimeString);
+                                  } else {
+                                    displayDateTime = new Date(service.scheduledDate);
+                                  }
+
+                                  // Format the date part
+                                  const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric"
+                                  });
+
+                                  if (!service.scheduledTime) {
+                                    return dateDisplay;
+                                  }
+
+                                  // Format the time part
+                                  const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true
+                                  });
+
+                                  return (
+                                    <>
+                                      {dateDisplay}
+                                      <span className="text-muted-foreground ml-2">
+                                        at {timeDisplay}
+                                      </span>
+                                    </>
+                                  );
+                                })()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={getStatusColor(service.status || "scheduled")}>
+                                  {service.status || "scheduled"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm text-muted-foreground">
+                                  {service.receiptNumber || "N/A"}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                ₹{service.calculatedAmount || service.price || 0}
+                              </TableCell>
+                            </TableRow>
                           );
                         })}
-                      </div>
-                    );
-                  })()
+                    </TableBody>
+                  </Table>
                 ) : (
                   <div className="text-center py-8">
+                    <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
                       No services scheduled
                     </p>
