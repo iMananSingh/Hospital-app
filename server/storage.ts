@@ -1186,13 +1186,19 @@ export class SqliteStorage implements IStorage {
 
   private generateServiceOrderId(): string {
     const year = new Date().getFullYear();
-    const count =
-      db
-        .select()
-        .from(schema.patientServices)
-        .where(isNotNull(schema.patientServices.orderId))
-        .all().length + 1;
-    return `SRV-${year}-${count.toString().padStart(3, "0")}`;
+    // Count DISTINCT orderIds instead of all services to get correct sequential number
+    const existingOrderIds = db
+      .select({ orderId: schema.patientServices.orderId })
+      .from(schema.patientServices)
+      .where(isNotNull(schema.patientServices.orderId))
+      .all();
+    
+    // Get unique orderIds
+    const uniqueOrderIds = new Set(existingOrderIds.map(row => row.orderId));
+    const count = uniqueOrderIds.size + 1;
+    
+    // Use SER prefix and flexible padding (3 digits minimum, grows as needed)
+    return `SER-${year}-${count.toString().padStart(3, "0")}`;
   }
 
   private generateAdmissionId(): string {

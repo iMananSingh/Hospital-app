@@ -2357,19 +2357,19 @@ export default function PatientDetail() {
               <CardContent>
                 {services && services.length > 0 ? (
                   (() => {
-                    // Group services by receipt number for batch display
+                    // Group services by order ID for batch display
                     const serviceGroups = services.reduce((groups: any, service: any) => {
-                      const receiptNumber = service.receiptNumber || `INDIVIDUAL-${service.id}`;
-                      if (!groups[receiptNumber]) {
-                        groups[receiptNumber] = [];
+                      const orderId = service.orderId || `INDIVIDUAL-${service.id}`;
+                      if (!groups[orderId]) {
+                        groups[orderId] = [];
                       }
-                      groups[receiptNumber].push(service);
+                      groups[orderId].push(service);
                       return groups;
                     }, {});
 
                     return (
                       <div className="space-y-4">
-                        {Object.entries(serviceGroups).map(([receiptNumber, groupServices]: [string, any]) => {
+                        {Object.entries(serviceGroups).map(([orderId, groupServices]: [string, any]) => {
                           const firstService = groupServices[0];
                           const totalCost = groupServices.reduce((sum: number, service: any) => {
                             return sum + (service.calculatedAmount || service.price || 0);
@@ -2387,13 +2387,16 @@ export default function PatientDetail() {
                           }
 
                           return (
-                            <Card key={receiptNumber} className="border border-gray-200">
+                            <Card key={orderId} className="border border-gray-200">
                               <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">
                                   <CardTitle className="text-lg">
                                     Service Order - {groupServices.length} service{groupServices.length > 1 ? 's' : ''}
                                   </CardTitle>
-                                  <Badge variant="outline">{receiptNumber}</Badge>
+                                  <Badge variant="outline">{orderId}</Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Receipt: {firstService.receiptNumber}
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                   <span>Doctor: {doctorName}</span>
@@ -3015,7 +3018,7 @@ export default function PatientDetail() {
                       });
                     }
 
-                    // Group patient services by receipt number (batch)
+                    // Group patient services by order ID (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
                       const nonAdmissionServices = services.filter((service: any) => 
@@ -3023,16 +3026,16 @@ export default function PatientDetail() {
                       );
 
                       const serviceGroups = nonAdmissionServices.reduce((groups: any, service: any) => {
-                        const receiptNumber = service.receiptNumber || `BATCH-${service.id}`;
-                        if (!groups[receiptNumber]) {
-                          groups[receiptNumber] = [];
+                        const orderId = service.orderId || `BATCH-${service.id}`;
+                        if (!groups[orderId]) {
+                          groups[orderId] = [];
                         }
-                        groups[receiptNumber].push(service);
+                        groups[orderId].push(service);
                         return groups;
                       }, {});
 
                       // Add each service group as a single event
-                      Object.entries(serviceGroups).forEach(([receiptNumber, groupServices]: [string, any]) => {
+                      Object.entries(serviceGroups).forEach(([orderId, groupServices]: [string, any]) => {
                         const firstService = groupServices[0];
                         const serviceDateTime = new Date(
                           `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
@@ -3046,7 +3049,8 @@ export default function PatientDetail() {
                         allEvents.push({
                           type: "service_batch",
                           data: {
-                            receiptNumber,
+                            orderId,
+                            receiptNumber: firstService.receiptNumber,
                             services: groupServices,
                             totalCost,
                             scheduledDate: firstService.scheduledDate,
@@ -3233,7 +3237,7 @@ export default function PatientDetail() {
                                       return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
                                     case "service_batch":
                                       const serviceCount = event.data.services.length;
-                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? 's' : ''} (${event.data.receiptNumber})`;
+                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? 's' : ''} (${event.data.orderId})`;
                                     case "service":
                                       return event.data.serviceName || "Service";
                                     case "pathology":
