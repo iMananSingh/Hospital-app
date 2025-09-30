@@ -2363,7 +2363,7 @@ export default function PatientDetail() {
                         <TableHead>Doctor</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Receipt No.</TableHead>
+                        <TableHead>Order No.</TableHead>
                         <TableHead className="text-right">Cost</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -2446,7 +2446,7 @@ export default function PatientDetail() {
                               </TableCell>
                               <TableCell>
                                 <span className="text-sm text-muted-foreground">
-                                  {service.receiptNumber || "N/A"}
+                                  {service.orderId || "N/A"}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
