@@ -2708,9 +2708,9 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<any[]> {
+  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]> {
     try {
-      console.log("Building patient services query with doctor join...");
+      console.log("Storage: getPatientServicesWithFilters called with filters:", filters);
 
       // Build WHERE conditions based on filters
       const whereConditions: any[] = [];
@@ -2740,15 +2740,17 @@ export class SqliteStorage implements IStorage {
       }
 
       if (filters.serviceName) {
-        whereConditions.push(like(schema.patientServices.serviceName, `%${filters.serviceName}%`));
+        whereConditions.push(eq(schema.patientServices.serviceName, filters.serviceName));
       }
 
       if (filters.status) {
         whereConditions.push(eq(schema.patientServices.status, filters.status));
       }
 
-      // Build the query with doctor and patient joins - use conditional selection for doctor fields
-      const query = db
+      console.log("Storage: Built where conditions:", whereConditions.length);
+
+      // Execute query with joins to get patient and doctor details
+      const result = db
         .select({
           // Patient service fields
           id: schema.patientServices.id,
@@ -2772,38 +2774,32 @@ export class SqliteStorage implements IStorage {
           receiptNumber: schema.patientServices.receiptNumber,
           createdAt: schema.patientServices.createdAt,
           updatedAt: schema.patientServices.updatedAt,
-          // Patient information
+          // Patient details
           patientName: schema.patients.name,
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Doctor information - use conditional selection to handle null doctorId
-          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
-          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
-          patientAge: schema.patients.age,
-          patientGender: schema.patients.gender,
-          // Doctor information - use conditional selection to handle null doctorId
-          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
-          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
+          // Doctor details - properly join and return doctor name
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
         .innerJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
         .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt));
+        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .all();
 
-      const results = query.all();
-
-      // Debug: Log sample results to verify doctor information
-      const sampleResults = results.slice(0, 3).map(r => ({
-        serviceName: r.serviceName,
-        doctorId: r.doctorId,
-        doctorName: r.doctorName,
-        serviceType: r.serviceType
+      // Log a sample of results to debug doctor name resolution
+      const sampleResults = result.slice(0, 3).map(service => ({
+        serviceName: service.serviceName,
+        doctorId: service.doctorId,
+        doctorName: service.doctorName,
+        serviceType: service.serviceType
       }));
       console.log("Sample patient services with doctor info:", sampleResults);
 
-      return results;
+      return result;
     } catch (error) {
       console.error("Error fetching patient services with filters:", error);
       throw error;

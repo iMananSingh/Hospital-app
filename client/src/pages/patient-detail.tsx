@@ -1912,7 +1912,7 @@ export default function PatientDetail() {
                       ":" +
                       String(now.getMinutes()).padStart(2, "0");
 
-                    // Reset form completely first
+                    // Reset form completely
                     serviceForm.reset({
                       patientId: patientId || "",
                       serviceType: "",
