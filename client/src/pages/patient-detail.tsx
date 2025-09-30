@@ -2378,15 +2378,14 @@ export default function PatientDetail() {
                         .map((service: any) => {
                           // Determine doctor name with robust logic
                           let doctorName = "No Doctor Assigned";
-                          if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
-                            // First try to use the doctorName field if it exists
-                            if (service.doctorName && service.doctorName.trim() !== "") {
-                              doctorName = service.doctorName;
-                            } else {
-                              // Fallback to finding doctor in the doctors array
-                              const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
-                              doctorName = doctor ? doctor.name : "Unknown Doctor";
-                            }
+                          
+                          // Check if doctorName is directly available from the joined query
+                          if (service.doctorName && service.doctorName.trim() !== "") {
+                            doctorName = service.doctorName;
+                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                            // Fallback to finding doctor in the doctors array
+                            const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
+                            doctorName = doctor ? doctor.name : "Unknown Doctor";
                           }
 
                           return (
