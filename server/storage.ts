@@ -1192,11 +1192,11 @@ export class SqliteStorage implements IStorage {
       .from(schema.patientServices)
       .where(isNotNull(schema.patientServices.orderId))
       .all();
-    
+
     // Get unique orderIds
     const uniqueOrderIds = new Set(existingOrderIds.map(row => row.orderId));
     const count = uniqueOrderIds.size + 1;
-    
+
     // Use SER prefix and flexible padding (3 digits minimum, grows as needed)
     return `SER-${year}-${count.toString().padStart(3, "0")}`;
   }
@@ -2669,18 +2669,43 @@ export class SqliteStorage implements IStorage {
 
   async getPatientServices(patientId?: string): Promise<PatientService[]> {
     if (patientId) {
+      // Use Drizzle ORM to join with doctors table
+      const results = db
+        .select({
+          // Select all fields from patient_services
+          ...schema.patientServices,
+          // Select doctor name if available
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+        })
+        .from(schema.patientServices)
+        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .where(and(
+          eq(schema.patientServices.patientId, patientId),
+          isNotNull(schema.patientServices.doctorId) // Only include services with a doctor assigned
+        ))
+        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .all();
+
+      console.log('Retrieved services with doctor info:', results.map(s => ({
+        id: s.id,
+        serviceName: s.serviceName,
+        doctorId: s.doctorId,
+        doctorName: s.doctorName,
+        serviceType: s.serviceType
+      })));
+
+      // Manually cast the results to PatientService type, including doctorName and doctorSpecialization
+      // This is a bit of a workaround because Drizzle's type inference might not perfectly handle the selected fields from the join.
+      return results as unknown as PatientService[];
+    } else {
+      // If no patientId is provided, fetch all active services without doctor join
       return db
         .select()
         .from(schema.patientServices)
-        .where(eq(schema.patientServices.patientId, patientId))
         .orderBy(desc(schema.patientServices.createdAt))
         .all();
     }
-    return db
-      .select()
-      .from(schema.patientServices)
-      .orderBy(desc(schema.patientServices.createdAt))
-      .all();
   }
 
   async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<any[]> {
