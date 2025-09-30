@@ -2376,14 +2376,32 @@ export default function PatientDetail() {
                           // Determine doctor name with robust logic
                           let doctorName = "No Doctor Assigned";
 
+                          console.log(`=== SERVICE DISPLAY DEBUG ===`);
+                          console.log(`Service: ${service.serviceName}`);
+                          console.log(`Service doctorId: ${service.doctorId}`);
+                          console.log(`Service doctorName: ${service.doctorName}`);
+                          console.log(`Doctors array length: ${doctors?.length || 0}`);
+
                           // Check if doctorName is directly available from the joined query
                           if (service.doctorName && service.doctorName.trim() !== "") {
                             doctorName = service.doctorName;
-                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                            console.log(`Using service.doctorName: ${doctorName}`);
+                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none" && service.doctorId !== null) {
                             // Fallback to finding doctor in the doctors array
                             const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
-                            doctorName = doctor ? doctor.name : "Unknown Doctor";
+                            if (doctor) {
+                              doctorName = doctor.name;
+                              console.log(`Found doctor in array: ${doctorName}`);
+                            } else {
+                              doctorName = "Unknown Doctor";
+                              console.log(`Doctor not found in array for ID: ${service.doctorId}`);
+                            }
+                          } else {
+                            console.log(`No valid doctor ID found, using default: ${doctorName}`);
                           }
+
+                          console.log(`Final doctor name: ${doctorName}`);
+                          console.log(`=== END SERVICE DISPLAY DEBUG ===`);
 
                           return (
                             <TableRow key={service.id}>
