@@ -1054,10 +1054,7 @@ export default function PatientDetail() {
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
               status: "scheduled",
-              doctorId:
-                actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
-                  ? actualDoctorId
-                  : null,
+              doctorId: actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== "" ? actualDoctorId : null,
               billingType: "per_instance",
               calculatedAmount: Number(data.price),
             };
@@ -1893,7 +1890,7 @@ export default function PatientDetail() {
 
                 <Button
                   onClick={() => {
-                    // Close first then clear all service-related state
+                    // Clear all service-related state first and close dialog to reset
                     setIsServiceDialogOpen(false);
                     setSelectedServices([]);
                     setSelectedServiceType("");
@@ -1915,7 +1912,7 @@ export default function PatientDetail() {
                       ":" +
                       String(now.getMinutes()).padStart(2, "0");
 
-                    // Reset form completely first
+                    // Reset form completely
                     serviceForm.reset({
                       patientId: patientId || "",
                       serviceType: "",
@@ -2378,14 +2375,18 @@ export default function PatientDetail() {
                         .map((service: any) => {
                           // Determine doctor name with robust logic
                           let doctorName = "No Doctor Assigned";
-                          
+
                           // Check if doctorName is directly available from the joined query
                           if (service.doctorName && service.doctorName.trim() !== "") {
                             doctorName = service.doctorName;
-                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none" && service.doctorId !== null) {
                             // Fallback to finding doctor in the doctors array
                             const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
-                            doctorName = doctor ? doctor.name : "Unknown Doctor";
+                            if (doctor) {
+                              doctorName = doctor.name;
+                            } else {
+                              doctorName = "Unknown Doctor";
+                            }
                           }
 
                           return (
@@ -3323,7 +3324,7 @@ export default function PatientDetail() {
                                         {(() => {
                                           // Get doctor name for service batch
                                           let doctorName = null;
-                                          
+
                                           // Try to get doctor name from the event data
                                           if (event.data.doctorName && event.data.doctorName.trim() !== "") {
                                             doctorName = event.data.doctorName;

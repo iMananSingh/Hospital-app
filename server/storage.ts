@@ -1192,11 +1192,11 @@ export class SqliteStorage implements IStorage {
       .from(schema.patientServices)
       .where(isNotNull(schema.patientServices.orderId))
       .all();
-    
+
     // Get unique orderIds
     const uniqueOrderIds = new Set(existingOrderIds.map(row => row.orderId));
     const count = uniqueOrderIds.size + 1;
-    
+
     // Use SER prefix and flexible padding (3 digits minimum, grows as needed)
     return `SER-${year}-${count.toString().padStart(3, "0")}`;
   }
@@ -2669,23 +2669,48 @@ export class SqliteStorage implements IStorage {
 
   async getPatientServices(patientId?: string): Promise<PatientService[]> {
     if (patientId) {
+      // Use Drizzle ORM to join with doctors table
+      const results = db
+        .select({
+          // Select all fields from patient_services
+          ...schema.patientServices,
+          // Select doctor name if available
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+        })
+        .from(schema.patientServices)
+        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .where(and(
+          eq(schema.patientServices.patientId, patientId),
+          isNotNull(schema.patientServices.doctorId) // Only include services with a doctor assigned
+        ))
+        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .all();
+
+      console.log('Retrieved services with doctor info:', results.map(s => ({
+        id: s.id,
+        serviceName: s.serviceName,
+        doctorId: s.doctorId,
+        doctorName: s.doctorName,
+        serviceType: s.serviceType
+      })));
+
+      // Manually cast the results to PatientService type, including doctorName and doctorSpecialization
+      // This is a bit of a workaround because Drizzle's type inference might not perfectly handle the selected fields from the join.
+      return results as unknown as PatientService[];
+    } else {
+      // If no patientId is provided, fetch all active services without doctor join
       return db
         .select()
         .from(schema.patientServices)
-        .where(eq(schema.patientServices.patientId, patientId))
         .orderBy(desc(schema.patientServices.createdAt))
         .all();
     }
-    return db
-      .select()
-      .from(schema.patientServices)
-      .orderBy(desc(schema.patientServices.createdAt))
-      .all();
   }
 
-  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<any[]> {
+  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]> {
     try {
-      console.log("Building patient services query with doctor join...");
+      console.log("Storage: getPatientServicesWithFilters called with filters:", filters);
 
       // Build WHERE conditions based on filters
       const whereConditions: any[] = [];
@@ -2715,15 +2740,17 @@ export class SqliteStorage implements IStorage {
       }
 
       if (filters.serviceName) {
-        whereConditions.push(like(schema.patientServices.serviceName, `%${filters.serviceName}%`));
+        whereConditions.push(eq(schema.patientServices.serviceName, filters.serviceName));
       }
 
       if (filters.status) {
         whereConditions.push(eq(schema.patientServices.status, filters.status));
       }
 
-      // Build the query with doctor and patient joins - use conditional selection for doctor fields
-      const query = db
+      console.log("Storage: Built where conditions:", whereConditions.length);
+
+      // Execute query with joins to get patient and doctor details
+      const result = db
         .select({
           // Patient service fields
           id: schema.patientServices.id,
@@ -2747,38 +2774,32 @@ export class SqliteStorage implements IStorage {
           receiptNumber: schema.patientServices.receiptNumber,
           createdAt: schema.patientServices.createdAt,
           updatedAt: schema.patientServices.updatedAt,
-          // Patient information
+          // Patient details
           patientName: schema.patients.name,
           patientPhone: schema.patients.phone,
           patientAge: schema.patients.age,
           patientGender: schema.patients.gender,
-          // Doctor information - use conditional selection to handle null doctorId
-          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
-          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
-          patientAge: schema.patients.age,
-          patientGender: schema.patients.gender,
-          // Doctor information - use conditional selection to handle null doctorId
-          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
-          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
+          // Doctor details - properly join and return doctor name
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
         .innerJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
         .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt));
+        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .all();
 
-      const results = query.all();
-
-      // Debug: Log sample results to verify doctor information
-      const sampleResults = results.slice(0, 3).map(r => ({
-        serviceName: r.serviceName,
-        doctorId: r.doctorId,
-        doctorName: r.doctorName,
-        serviceType: r.serviceType
+      // Log a sample of results to debug doctor name resolution
+      const sampleResults = result.slice(0, 3).map(service => ({
+        serviceName: service.serviceName,
+        doctorId: service.doctorId,
+        doctorName: service.doctorName,
+        serviceType: service.serviceType
       }));
       console.log("Sample patient services with doctor info:", sampleResults);
 
-      return results;
+      return result;
     } catch (error) {
       console.error("Error fetching patient services with filters:", error);
       throw error;
@@ -3397,48 +3418,40 @@ export class SqliteStorage implements IStorage {
 
   async getDashboardStats(): Promise<any> {
     try {
-      // Use local system time for dashboard statistics
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
-      const today =
-        now.getFullYear() +
-        "-" +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(now.getDate()).padStart(2, "0");
+      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      const today = indianTime.getFullYear() + '-' + 
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+        String(indianTime.getDate()).padStart(2, '0');
 
-      console.log("Dashboard stats - Today date (local time):", today);
-      console.log("Dashboard stats - Current time:", now);
+      console.log(`Dashboard stats - Using today date: ${today}`);
 
-      // Get ALL OPD services first to debug
-      const allOpdServices = db
+      // Get today's OPD services - those scheduled for today
+      const todayOpdServices = db
         .select()
         .from(schema.patientServices)
-        .where(eq(schema.patientServices.serviceType, "opd"))
+        .where(
+          and(
+            eq(schema.patientServices.serviceType, "opd"),
+            eq(schema.patientServices.scheduledDate, today)
+          )
+        )
         .all();
 
-      console.log("All OPD services found:", allOpdServices.length);
-      console.log(
-        "All OPD services details:",
-        allOpdServices.map((s) => ({
-          id: s.id,
-          scheduledDate: s.scheduledDate,
+      console.log(`Today OPD services count: ${todayOpdServices.length}`);
+      if (todayOpdServices.length > 0) {
+        console.log(`Sample OPD services:`, todayOpdServices.slice(0, 3).map(s => ({ 
+          id: s.id, 
+          scheduledDate: s.scheduledDate, 
           serviceType: s.serviceType,
-          createdAt: s.createdAt,
-        })),
-      );
+          patientId: s.patientId,
+          serviceName: s.serviceName
+        })));
+      }
 
-      // Get OPD patient count for today using same filter logic as OPD List
-      const todayOpdServices = allOpdServices.filter((service) => {
-        const matches = service.scheduledDate === today;
-        console.log(
-          `Service ${service.id}: scheduledDate="${service.scheduledDate}" vs today="${today}" => matches: ${matches}`,
-        );
-        return matches;
-      });
-
-      console.log("Today OPD services filtered:", todayOpdServices.length);
-      console.log("Today OPD services details:", todayOpdServices);
-      console.log("Dashboard OPD count for today:", todayOpdServices.length);
+      const opdPatients = todayOpdServices.length;
+      console.log(`Dashboard OPD count for today: ${opdPatients}`);
 
       // Get inpatients count (currently admitted)
       const inpatients = db
@@ -3479,7 +3492,7 @@ export class SqliteStorage implements IStorage {
       const diagnostics = diagnosticServices.length;
 
       return {
-        opdPatients: todayOpdServices.length,
+        opdPatients,
         inpatients,
         labTests,
         diagnostics,
