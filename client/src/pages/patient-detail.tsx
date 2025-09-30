@@ -298,7 +298,7 @@ export default function PatientDetail() {
     // Helper function to get doctor name from doctor ID
     const getDoctorName = () => {
       // First try to get doctor name from event directly
-      if (event.doctorName) {
+      if (event.doctorName && event.doctorName.trim() !== "") {
         return event.doctorName;
       }
 
@@ -308,7 +308,7 @@ export default function PatientDetail() {
       }
 
       // Try to resolve doctor ID from the doctors array
-      if (event.doctorId && doctors && doctors.length > 0) {
+      if (event.doctorId && event.doctorId !== "" && event.doctorId !== "none" && doctors && doctors.length > 0) {
         const doctor = doctors.find((d: Doctor) => d.id === event.doctorId);
         if (doctor) {
           return doctor.name;
@@ -2379,9 +2379,11 @@ export default function PatientDetail() {
                           // Determine doctor name with robust logic
                           let doctorName = "No Doctor Assigned";
                           if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none") {
+                            // First try to use the doctorName field if it exists
                             if (service.doctorName && service.doctorName.trim() !== "") {
                               doctorName = service.doctorName;
                             } else {
+                              // Fallback to finding doctor in the doctors array
                               const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
                               doctorName = doctor ? doctor.name : "Unknown Doctor";
                             }
@@ -3319,9 +3321,24 @@ export default function PatientDetail() {
                                           <span>Total Cost:</span>
                                           <span className="text-lg">₹{event.data.totalCost}</span>
                                         </div>
-                                        {event.data.doctorName && (
-                                          <div className="mt-2"><span className="font-medium">Doctor:</span> {event.data.doctorName}</div>
-                                        )}
+                                        {(() => {
+                                          // Get doctor name for service batch
+                                          let doctorName = null;
+                                          
+                                          // Try to get doctor name from the event data
+                                          if (event.data.doctorName && event.data.doctorName.trim() !== "") {
+                                            doctorName = event.data.doctorName;
+                                          } else if (event.data.doctorId && event.data.doctorId !== "" && event.data.doctorId !== "none") {
+                                            const doctor = doctors?.find((d: Doctor) => d.id === event.data.doctorId);
+                                            if (doctor) {
+                                              doctorName = doctor.name;
+                                            }
+                                          }
+
+                                          return doctorName ? (
+                                            <div className="mt-2"><span className="font-medium">Doctor:</span> {doctorName}</div>
+                                          ) : null;
+                                        })()}
                                       </div>
                                     );
                                   case "service":

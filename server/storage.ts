@@ -2755,6 +2755,11 @@ export class SqliteStorage implements IStorage {
           // Doctor information - use conditional selection to handle null doctorId
           doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
           doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
+          patientAge: schema.patients.age,
+          patientGender: schema.patients.gender,
+          // Doctor information - use conditional selection to handle null doctorId
+          doctorName: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.name} END`,
+          doctorSpecialization: sql`CASE WHEN ${schema.patientServices.doctorId} IS NULL THEN NULL ELSE ${schema.doctors.specialization} END`,
         })
         .from(schema.patientServices)
         .innerJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
