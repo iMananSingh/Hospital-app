@@ -250,12 +250,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!isEditingSelf && targetIsSuperUser) {
           return res.status(403).json({ message: "Admins cannot edit super user accounts" });
         }
-
+        
         // Role restrictions for admin users
         if (isEditingSelf && userData.roles) {
           return res.status(403).json({ message: "Cannot modify your own roles" });
         }
-
+        
         // Prevent admin from granting admin or super_user roles to others
         if (!isEditingSelf && userData.roles) {
           if (userData.roles.includes('admin') || userData.roles.includes('super_user')) {
@@ -267,12 +267,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!isEditingSelf && (targetIsAdmin || targetIsSuperUser)) {
           return res.status(403).json({ message: "Cannot edit administrator or super user accounts" });
         }
-
+        
         // Role restrictions for non-admin users
         if (isEditingSelf && userData.roles) {
           return res.status(403).json({ message: "Cannot modify your own roles" });
         }
-
+        
         // Prevent non-admin from granting admin or super_user roles to others
         if (!isEditingSelf && userData.roles) {
           if (userData.roles.includes('admin') || userData.roles.includes('super_user')) {
@@ -396,7 +396,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create patients." });
       }
@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot update patient information." });
       }
@@ -768,7 +768,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create services." });
       }
@@ -1193,7 +1193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/bills", authenticateToken, async (req, res) => {
+  app.post("/api/bills", authenticateToken, async (req: any, res) => {
     try {
       const { bill, items } = req.body;
 
@@ -1269,7 +1269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create pathology orders." });
       }
@@ -1419,7 +1419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create patient services." });
       }
@@ -1488,7 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create patient services." });
       }
@@ -1567,22 +1567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Create services via batch endpoint
-      console.log('Batch service creation - incoming data:', req.body.map((s: any) => ({
-        serviceName: s.serviceName,
-        doctorId: s.doctorId
-      })));
-
-      const services = await Promise.all(
-        req.body.map((serviceData: any) => storage.createPatientService(serviceData))
-      );
-
-      console.log('Batch service creation - created services:', services.map((s: any) => ({
-        id: s.id,
-        serviceName: s.serviceName,
-        doctorId: s.doctorId
-      })));
-
+      const services = await storage.createPatientServicesBatch(servicesWithMetadata, req.user.id);
       console.log("=== BATCH SERVICE CREATION RESULT ===");
       console.log("Created services count:", services.length);
 
@@ -1633,7 +1618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create admissions." });
       }
@@ -1804,7 +1789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
       const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-
+      
       if (isBillingStaff) {
         return res.status(403).json({ message: "Access denied. Billing staff cannot create OPD visits." });
       }
