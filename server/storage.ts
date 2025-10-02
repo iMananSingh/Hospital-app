@@ -913,33 +913,14 @@ async function createDemoData() {
   }
 }
 
-// Timezone utility function to apply configured timezone offset to timestamps
-export function applyTimezone(date: Date = new Date()): string {
-  try {
-    // Get system settings to retrieve timezone offset
-    const settings = db.select().from(schema.systemSettings).get();
-    const offset = settings?.timezoneOffset || '+00:00';
-    
-    // Parse offset (e.g., "+05:30" or "-05:00")
-    const match = offset.match(/([+-])(\d{2}):(\d{2})/);
-    if (!match) {
-      return date.toISOString();
-    }
-    
-    const sign = match[1] === '+' ? 1 : -1;
-    const hours = parseInt(match[2]);
-    const minutes = parseInt(match[3]);
-    
-    // Apply offset to the date
-    const offsetMs = sign * (hours * 60 + minutes) * 60 * 1000;
-    const adjustedDate = new Date(date.getTime() + offsetMs);
-    
-    return adjustedDate.toISOString();
-  } catch (error) {
-    console.error('Error applying timezone:', error);
-    return date.toISOString();
-  }
-}
+// IMPORTANT: All timestamps in the database are stored in UTC.
+// The server should NOT format timestamps for display - that's the frontend's job.
+// The frontend uses Intl.DateTimeFormat with the configured IANA timezone to
+// correctly handle timezone conversion including DST.
+//
+// This file intentionally does NOT include a server-side formatting function
+// to prevent double-offset issues. If you need to format timestamps on the server
+// (e.g., for exports), use a proper library like date-fns-tz or Luxon.
 
 // Initialize the database
 initializeDatabase().then(() => {

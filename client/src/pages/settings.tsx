@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { Service, User } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
+import { clearTimezoneCache } from "@/lib/timezone";
 
 export default function Settings() {
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
@@ -511,7 +512,7 @@ export default function Settings() {
     });
   };
 
-  const handleSystemSettingChange = (field: string, value: boolean) => {
+  const handleSystemSettingChange = (field: string, value: boolean | string) => {
     if (field === 'autoBackup' && value) {
       // Show configuration dialog when enabling auto backup
       setAutoBackupSettings({
@@ -528,6 +529,11 @@ export default function Settings() {
     };
 
     saveSystemSettingsMutation.mutate(updatedSettings);
+    
+    // Clear timezone cache when timezone settings are updated
+    if (field === 'timezone' || field === 'timezoneOffset') {
+      clearTimezoneCache();
+    }
   };
 
   const handleAutoBackupConfigSave = () => {

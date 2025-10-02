@@ -63,7 +63,12 @@ Key features include:
 - Doctor management with salary tracking and individual payment processing
 - OPD management with dynamic consultation fees and doctor-segregated listings
 - Secure self-profile editing for all users
-- Role-based access control for different user types.
+- Role-based access control for different user types
+- **Configurable Timezone Support**: System timezone can be configured in settings for international deployment
+  - All database timestamps are stored in UTC for consistency and reliability
+  - Frontend utilities format timestamps for display in the configured timezone
+  - Supports major global timezones with DST handling via Intl.DateTimeFormat
+  - Timezone cache invalidation ensures immediate propagation of timezone changes
 
 ## External Dependencies
 
