@@ -2,175 +2,65 @@
 
 ## Overview
 
-MedCare Pro is a comprehensive hospital management system built as a full-stack web application. The system provides functionality for patient registration, billing and invoicing, pathology test management, doctor management, and system administration. It serves as a complete solution for healthcare facilities to manage their day-to-day operations efficiently.
-
-The application features a modern, responsive user interface built with React and TypeScript, backed by a robust Express.js API server with SQLite database storage. The system supports role-based authentication and provides different access levels for administrators, doctors, receptionists, and billing staff.
+MedCare Pro is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning MedCare Pro as a leading solution in the healthcare IT market.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-
-### Fresh GitHub Clone Import - COMPLETED (October 2, 2025)
-- **Project Import**: Successfully imported fresh GitHub clone of MedCare Pro hospital management system
-- **Code Fix**: Fixed critical syntax error in server/storage.ts (duplicate incomplete createPatientServicesBatch function)
-- **Environment Setup**: Verified Node.js 20 and all npm dependencies are properly installed
-- **Workflow Configuration**: Configured "Start application" workflow on port 5000 with webview output type
-- **Server Configuration**: Verified server binds to 0.0.0.0:5000 with proper Vite configuration (allowedHosts: true)
-- **Database Verification**: Confirmed existing hospital.db with demo data is functional
-- **Application Testing**: Successfully tested application startup, login page renders correctly
-- **Deployment Configuration**: Autoscale deployment already configured with npm run build and npm run start
-- **Known Issues**: TypeScript type errors in storage.ts (42 diagnostics) - non-blocking, doesn't affect runtime
-- **Final Status**: ✅ COMPLETE - Hospital management system fully operational in Replit environment
-
-### Doctor Salary Management Enhancements - COMPLETED (October 2, 2025)
-- **TypeScript Fixes**: Fixed 24+ TypeScript errors by properly typing services and doctorRates queries, resolving ₹0 display issue in earnings table
-- **UI Cleanup**: Removed conceptually flawed "Recalculate Earnings" and bulk "Process Payments" buttons from salary management interface
-- **Individual Payment Processing**: Implemented individual doctor payment confirmation system with Check icon replacing Wallet icon on payment buttons
-- **Backend API**: Added PUT `/api/doctors/:doctorId/mark-paid` endpoint to update all pending earnings to paid status for a specific doctor
-- **Frontend Integration**: Implemented mark-as-paid mutation with proper error handling, cache invalidation, and success notifications
-- **Service Categorization Fix**: Corrected service categorization to show OPD consultations exclusively under "OPD Consultation" heading
-- **Duplication Prevention**: Excluded pathology/lab services from generic "Services" section to prevent duplicate entries across categories
-- **Security**: All endpoints use JWT authentication and proper validation to ensure authorized access only
-- **Final Status**: ✅ COMPLETE - Doctor salary management feature fully functional with individual payment tracking
-
-### Fresh GitHub Clone Setup - COMPLETED (October 2, 2025)
-- **Project Import**: Successfully imported fresh GitHub clone of MedCare Pro hospital management system
-- **Environment Analysis**: Analyzed codebase structure, confirmed full-stack Express + Vite + React + TypeScript setup with SQLite database
-- **Workflow Configuration**: Configured "Start application" workflow on port 5000 with webview output type for Replit environment
-- **Vite Configuration Verified**: Confirmed existing Vite config has host: "0.0.0.0", port: 5000, and allowedHosts: true (line 26 in server/vite.ts)
-- **Server Configuration Verified**: Confirmed server binds to 0.0.0.0:5000 with proper PORT environment variable handling
-- **Deployment Configuration**: Verified autoscale deployment with npm run build and npm run start commands already configured
-- **Database Status**: Verified existing hospital.db (964KB) with demo data is functional
-- **Build Testing**: Successfully tested production build (dist/index.js + dist/public), confirmed build process works
-- **Application Status**: Server running successfully on port 5000, Vite HMR connected, login page rendering correctly
-- **Known Issues**: TypeScript errors related to unused scheduleEvents feature (doesn't affect functionality or build)
-- **Final Status**: ✅ COMPLETE - Hospital management system fully operational in Replit environment
-
-### GitHub Import to Replit Setup - COMPLETED (September 30, 2025)
-- **Project Import**: Successfully imported fresh clone of MedCare Pro from GitHub repository
-- **Dependencies Fix**: Removed unnecessary cross-env dependency and updated dev script to use native NODE_ENV
-- **Build Configuration**: Fixed production build command to output server file to dist/index.js with proper esbuild flags
-- **Workflow Setup**: Configured development workflow on port 5000 with webview output type for Replit environment
-- **Vite Configuration Verified**: Confirmed existing configuration has host: "0.0.0.0", port: 5000, and allowedHosts: true
-- **Server Configuration Verified**: Confirmed server binds to 0.0.0.0:5000 with proper PORT environment variable handling
-- **Deployment Configuration**: Set up autoscale deployment with npm run build and npm run start commands
-- **SQLite Database**: Verified existing hospital.db (952KB) with demo data is functioning correctly
-- **Application Status**: Server running successfully, responding to HTTP requests, Vite HMR connected
-- **Final Status**: ✅ COMPLETE - Hospital management system fully operational in Replit environment
-
-### Self-Profile Editing Feature - COMPLETED (September 28, 2025)
-- **Security Enhancement**: Implemented secure self-profile editing allowing all users to modify their own username, full name, and password
-- **API Endpoint**: Created `/api/profile` PUT endpoint with JWT authentication and Zod validation preventing cross-user profile editing
-- **UI Integration**: Made sidebar profile section clickable to open profile edit dialog with intuitive user experience
-- **Form Validation**: Added React Hook Form with password confirmation, minimum length requirements, and real-time validation
-- **Error Handling**: Comprehensive error handling with username uniqueness checks, loading states, and success/error toast notifications
-- **Cache Management**: Implemented proper cache invalidation to ensure UI reflects profile changes immediately
-- **Security Audit**: Verified users can only edit their own profiles with no privilege escalation risks
-- **Final Status**: ✅ COMPLETE - All users can now safely edit their own profile information
-
-### Fresh GitHub Import Setup - COMPLETED (September 25, 2025)
-- **Project Import**: Successfully imported MedCare Pro hospital management system from GitHub repository
-- **Dependencies Resolution**: Fixed missing cross-env dependency that was preventing application startup
-- **Workflow Configuration**: Configured development workflow on port 5000 with webview output type for proper frontend display
-- **Host Settings Verification**: Confirmed Vite configuration includes `allowedHosts: true` for Replit proxy compatibility  
-- **Server Configuration**: Verified server binds to 0.0.0.0:5000 as required for Replit environment
-- **Deployment Configuration**: Set up autoscale deployment target with proper build and start commands for production
-- **Application Testing**: Confirmed application starts successfully and server responds to HTTP requests
-- **Database Status**: Verified SQLite database and demo data initialization working correctly
-- **Backup System**: Confirmed backup scheduler initializes and runs automatically
-- **Final Status**: ✅ COMPLETE - Hospital management system fully operational in Replit environment
-
-### OPD Management System Enhancements (August 2025)
-- **Dynamic OPD consultation fees**: Implemented automatic fee calculation based on selected doctor with ₹0 default when no doctor selected
-- **Time-based scheduling**: Added HTML5 time input field with native clock popup interface for precise appointment scheduling  
-- **Doctor-segregated OPD listings**: Created dedicated /opd-list page that groups OPD appointments by doctor with filtering capabilities
-- **Clickable dashboard statistics**: Made OPD patient count on dashboard clickable to navigate to doctor-segregated OPD page
-- **Real-time dashboard updates**: Dashboard OPD count now reflects actual scheduled appointments and updates when new patients are added
-- **Enhanced form validation**: OPD scheduling requires mandatory doctor selection with proper error handling
-- **Database schema improvements**: Added scheduledTime field to patient_services table and initialDeposit to admissions table
-
 ## System Architecture
 
 ### Frontend Architecture
 
-The frontend is built using React with TypeScript and follows a modern component-based architecture:
-
-- **Framework**: React 18 with TypeScript for type safety
-- **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack Query (React Query) for server state management and caching
-- **UI Components**: Radix UI primitives with custom styling using Tailwind CSS
-- **Form Handling**: React Hook Form with Zod for validation
-- **Build Tool**: Vite for fast development and optimized production builds
-
-The frontend implements a protected route system with authentication middleware, ensuring secure access to different application sections based on user roles. The UI uses a sidebar navigation layout with responsive design principles.
+The frontend uses React 18 with TypeScript, Wouter for routing, and TanStack Query for server state management. UI components are built with Radix UI and styled using Tailwind CSS. Form handling is managed by React Hook Form with Zod validation. Vite is used for development and optimized production builds. The frontend incorporates a protected route system with authentication middleware and a responsive sidebar navigation layout.
 
 ### Backend Architecture
 
-The backend follows a RESTful API architecture using Express.js:
-
-- **Framework**: Express.js with TypeScript
-- **Database ORM**: Drizzle ORM for type-safe database operations
-- **Authentication**: JWT-based authentication with bcrypt for password hashing
-- **API Structure**: Route-based organization with middleware for authentication and logging
-- **Error Handling**: Centralized error handling with proper HTTP status codes
-
-The server implements comprehensive logging for API requests and includes middleware for request timing and response capture for debugging purposes.
+The backend is a RESTful API built with Express.js and TypeScript. It utilizes Drizzle ORM for type-safe SQLite database operations. Authentication is JWT-based with bcrypt for password hashing. The API is organized route-wise with middleware for authentication and logging, and features centralized error handling.
 
 ### Data Storage Solutions
 
-The system uses SQLite as the primary database with the following design decisions:
-
-- **Database**: SQLite for simplicity and ease of deployment
-- **ORM**: Drizzle ORM providing type-safe queries and schema management
-- **Schema Design**: Normalized relational design with proper foreign key relationships
-- **Migration System**: Drizzle Kit for database schema migrations
-
-Key database tables include:
-- Users (authentication and roles)
-- Patients (patient information and registration)
-- Doctors (doctor profiles and specializations)
-- Patient Visits (OPD and inpatient tracking)
-- Bills and Bill Items (billing and invoicing)
-- Services (hospital services and pricing)
-- Pathology Tests (lab test management)
-- Audit Logs (system activity tracking)
+SQLite serves as the primary database, managed by Drizzle ORM for type-safe queries and schema management. It employs a normalized relational design with foreign key relationships. Drizzle Kit is used for database schema migrations. Key tables include Users, Patients, Doctors, Patient Visits, Bills, Services, Pathology Tests, and Audit Logs.
 
 ### Authentication and Authorization
 
-The system implements a robust security model:
+The system implements JWT-based authentication with bcrypt for password hashing. It supports role-based access control for administrators, doctors, receptionists, and billing staff. Token-based sessions are used, with both frontend and backend route guards ensuring secure access.
 
-- **Authentication Method**: JWT tokens with configurable expiration
-- **Password Security**: bcrypt hashing with salt rounds
-- **Role-Based Access**: Multiple user roles (admin, doctor, receptionist, billing_staff)
-- **Session Management**: Token-based sessions with client-side storage
-- **Route Protection**: Frontend and backend route guards based on authentication status
+### UI/UX Decisions
 
-### External Dependencies
+The application prioritizes a modern and responsive user interface. Radix UI primitives are used for accessible and customizable components, complemented by Tailwind CSS for a utility-first styling approach. Lucide Icons provide consistent iconography. The design emphasizes intuitive navigation and clear presentation of information, such as dynamic OPD consultation fees and time-based scheduling.
 
-#### Third-Party Services
-- **Neon Database**: PostgreSQL serverless database option (@neondatabase/serverless)
-- **Replit Integration**: Development environment integration with cartographer and runtime error handling
+### Feature Specifications
 
-#### UI and Component Libraries
-- **Radix UI**: Complete set of UI primitives for accessibility and customization
-- **Tailwind CSS**: Utility-first CSS framework for responsive design
-- **Lucide Icons**: Modern icon library for consistent iconography
+Key features include:
+- Patient registration and management
+- Billing and invoicing with automated doctor earnings calculation
+- Pathology test management
+- Doctor management with salary tracking and individual payment processing
+- OPD management with dynamic consultation fees and doctor-segregated listings
+- Secure self-profile editing for all users
+- Role-based access control for different user types.
+
+## External Dependencies
+
+### Third-Party Services
+- **Neon Database**: PostgreSQL serverless database option (used for potential future scaling)
+
+### UI and Component Libraries
+- **Radix UI**: UI primitives
+- **Tailwind CSS**: Utility-first CSS framework
+- **Lucide Icons**: Icon library
 - **TanStack Query**: Server state management and caching
-- **React Hook Form**: Form handling with validation
-- **Zod**: Runtime type validation and schema definition
+- **React Hook Form**: Form handling
+- **Zod**: Runtime type validation
 
-#### Development and Build Tools
+### Development and Build Tools
 - **Vite**: Build tool and development server
 - **TypeScript**: Static type checking
-- **ESBuild**: Fast bundler for production builds
-- **PostCSS**: CSS processing with Tailwind
+- **ESBuild**: Fast bundler
+- **PostCSS**: CSS processing
 - **Drizzle Kit**: Database migration and schema management tools
 
-#### Database and Storage
+### Database and Storage
 - **better-sqlite3**: SQLite database driver
 - **Drizzle ORM**: Type-safe database operations
-- **connect-pg-simple**: PostgreSQL session store option
-
-The architecture prioritizes type safety, developer experience, and maintainability while providing a scalable foundation for healthcare management operations.
