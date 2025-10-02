@@ -2500,7 +2500,7 @@ export class SqliteStorage implements IStorage {
 
 
   // Get doctor earning by patient service ID
-  async getDoctorEarningByPatientServiceId(patientServiceId: string) {
+  async getDoctorEarningByPatientServiceId(patientServiceId: string): Promise<DoctorEarning | undefined> {
     return db
       .select()
       .from(schema.doctorEarnings)
@@ -2508,6 +2508,46 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
+  async createPatientServicesBatch(
+    servicesData: InsertPatientService[],
+    userId?: string,
+  ): Promise<PatientService[]> {
+    try {
+      // Generate a single order ID for all services in this batch
+      const orderId = this.generateServiceOrderId();
+
+      // Import smart costing here to avoid circular dependencies
+      const { SmartCostingEngine } = await import("./smart-costing");
+
+      return db.transaction((tx) => {
+        const createdServices: PatientService[] = [];
+
+        for (const serviceData of servicesData) {
+          console.log("=== BATCH SERVICE CREATION DEBUG ===");
+          console.log("Service Name:", serviceData.serviceName);
+          console.log("Doctor ID from request:", serviceData.doctorId);
+          console.log("Doctor ID type:", typeof serviceData.doctorId);
+          console.log("Service Type:", serviceData.serviceType);
+
+          // Ensure doctor ID is properly preserved for all service types
+          const finalServiceData = {
+            ...serviceData,
+            orderId: orderId,
+            // Always preserve the doctor ID exactly as sent from frontend
+            doctorId: serviceData.doctorId,
+          };
+
+          console.log("Final service data before DB insert:", {
+            doctorId: finalServiceData.doctorId,
+            doctorIdType: typeof finalServiceData.doctorId,
+            serviceName: finalServiceData.serviceName,
+            serviceType: finalServiceData.serviceType,
+          });
+
+          const created = tx
+            .insert(schema.patientServices)
+            .values(finalServiceData)
+            .returning()
             .get();
 
           console.log("Created service in DB:", {
