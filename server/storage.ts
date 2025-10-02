@@ -1848,11 +1848,15 @@ export class SqliteStorage implements IStorage {
     const patientCount = await this.getDailyPatientCount();
     const patientId = `PAT-${year}-${String(patientCount + 1).padStart(3, "0")}`;
 
+    // Don't set createdAt or updatedAt - let the database default handle it in UTC
     const patient = db
       .insert(schema.patients)
       .values({
         ...patientData,
         patientId,
+        // Explicitly omit timestamp fields to use database defaults
+        createdAt: undefined,
+        updatedAt: undefined,
       })
       .returning()
       .get();
