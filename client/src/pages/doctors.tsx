@@ -588,6 +588,17 @@ export default function Doctors() {
       });
     }
 
+    // Add a placeholder for OPD Consultation if no services are found or to ensure it's always present
+    if (!categories.opd.some(s => s.id === 'opd_consultation_placeholder')) {
+      categories.opd.unshift({
+        id: 'opd_consultation_placeholder',
+        name: 'OPD Consultation',
+        category: 'opd',
+        price: 0 // Default price, will be overridden by user input
+      });
+    }
+
+
     return categories;
   };
 
@@ -689,12 +700,26 @@ export default function Doctors() {
     };
 
     // Add rates from all categories
-    addServiceToRates(categorizedServices.opd, 'opd');
+    addServiceToRates(categorizedServices.opd.filter(s => s.id !== 'opd_consultation_placeholder'), 'opd'); // Exclude placeholder for actual services
     addServiceToRates(categorizedServices.labTests, 'pathology');
     addServiceToRates(categorizedServices.diagnostic, 'diagnostic');
     addServiceToRates(categorizedServices.operations, 'operations');
     addServiceToRates(categorizedServices.admissions, 'admissions');
     addServiceToRates(categorizedServices.services, 'services');
+
+    // Handle OPD consultation placeholder separately
+    const opdSelection = serviceSelections['opd_consultation_placeholder'];
+    if (opdSelection?.isSelected && opdSelection.salaryBasis && (opdSelection.amount > 0 || opdSelection.percentage > 0)) {
+      rates.push({
+        serviceId: 'opd_consultation_placeholder',
+        serviceName: 'OPD Consultation',
+        serviceCategory: 'opd',
+        salaryBasis: opdSelection.salaryBasis,
+        amount: opdSelection.amount,
+        percentage: opdSelection.percentage,
+        isSelected: true,
+      });
+    }
 
     return rates;
   };
@@ -974,7 +999,7 @@ export default function Doctors() {
           </TabsContent>
           )}
 
-          {(isAdmin || isBillingStaff || isSuperUser) && (
+          {(isAdmin || isSuperUser) && (
           <TabsContent value="manage-salary">
             <Card>
               <CardHeader>
