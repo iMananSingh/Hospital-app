@@ -1871,7 +1871,7 @@ export default function Doctors() {
                   data-testid="input-edit-consultation-fee"
                 />
                 {editForm.formState.errors.consultationFee && (
-                  <p className="text-sm text-destructive">{form.formState.errors.consultationFee.message}</p>
+                  <p className="text-sm text-destructive">{editForm.formState.errors.consultationFee.message}</p>
                 )}
               </div>
             </div>
