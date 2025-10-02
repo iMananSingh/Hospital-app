@@ -5616,7 +5616,7 @@ export class SqliteStorage implements IStorage {
       // Calculate summary
       const totalCharges = billItems
         .filter((item) => item.amount > 0)
-        .reduce((sum, item) => sum + item.amount, 0);
+        .reduce((sum+ item.amount, 0);
 
       const totalPayments = Math.abs(
         billItems
@@ -5839,26 +5839,33 @@ export class SqliteStorage implements IStorage {
 
   // Get doctor earnings by doctor ID and optional status filter
   async getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]> {
-    console.log(`Fetching doctor earnings - doctorId: ${doctorId}, status: ${status}`);
+    try {
+      console.log(`Fetching doctor earnings - doctorId: ${doctorId}, status: ${status}`);
 
-    let query = db.select().from(schema.doctorEarnings);
+      const whereConditions: any[] = [];
 
-    const conditions = [];
-    if (doctorId) {
-      conditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
+      if (doctorId) {
+        whereConditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
+      }
+
+      if (status && status !== 'all') {
+        whereConditions.push(eq(schema.doctorEarnings.status, status));
+      }
+
+      const query = whereConditions.length > 0
+        ? db.select().from(schema.doctorEarnings).where(and(...whereConditions))
+        : db.select().from(schema.doctorEarnings);
+
+      const earnings = query
+        .orderBy(desc(schema.doctorEarnings.serviceDate))
+        .all();
+
+      console.log(`Found ${earnings.length} earnings for doctor ${doctorId}`);
+      return earnings;
+    } catch (error) {
+      console.error('Error fetching doctor earnings:', error);
+      return [];
     }
-    if (status) {
-      conditions.push(eq(schema.doctorEarnings.status, status));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const results = query.orderBy(desc(schema.doctorEarnings.serviceDate)).all();
-    console.log(`Found ${results.length} earnings for doctor ${doctorId}`);
-
-    return results;
   }
 
   // Create a new doctor earning record

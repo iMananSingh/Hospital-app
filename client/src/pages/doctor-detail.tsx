@@ -60,15 +60,6 @@ export default function DoctorDetail() {
   // Fetch doctor earnings - fetch all statuses to see the complete picture
   const { data: earnings = [], isLoading: isEarningsLoading, refetch: refetchEarnings } = useQuery({
     queryKey: ["/api/doctors", doctorId, "earnings"],
-    queryFn: async () => {
-      const response = await fetch(`/api/doctors/${doctorId}/earnings`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch earnings");
-      return response.json();
-    },
     enabled: !!doctorId,
   });
 
