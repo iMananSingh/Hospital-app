@@ -1592,13 +1592,14 @@ export default function Doctors() {
                                           size="sm" 
                                           onClick={() => handleMarkAsPaid(doctorData.doctorId)}
                                           disabled={markAsPaidMutation.isPending || doctorData.totalPending === 0}
+                                          className={doctorData.totalPending > 0 ? "hover:bg-green-50 hover:text-green-600" : "opacity-50 cursor-not-allowed"}
                                           data-testid={`button-pay-doctor-${doctorData.doctorId}`}
                                         >
                                           <Check className="w-4 h-4" />
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Mark as Paid</p>
+                                        <p>{doctorData.totalPending > 0 ? "Mark as Paid" : "No pending earnings"}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
