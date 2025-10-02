@@ -2506,7 +2506,7 @@ export class SqliteStorage implements IStorage {
       .from(schema.doctorEarnings)
       .where(eq(schema.doctorEarnings.patientServiceId, patientServiceId))
       .get();
-  },
+  }
 
   // Create doctor earning from a completed patient service
   async createDoctorEarningFromService(patientService: any) {
@@ -2581,7 +2581,7 @@ export class SqliteStorage implements IStorage {
     };
 
     return db.insert(schema.doctorEarnings).values(earningData).returning().get();
-  },
+  }
 
             .get();
 
