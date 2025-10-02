@@ -79,12 +79,95 @@ export default function Settings() {
     queryKey: ["/api/settings/system"],
   });
 
-  const allTimezones = useMemo(() => {
-    try {
-      return Intl.supportedValuesOf('timeZone').sort();
-    } catch (error) {
-      return ['UTC'];
-    }
+  const popularTimezones = useMemo(() => {
+    const timezoneList = [
+      { value: 'UTC', label: 'UTC - Coordinated Universal Time' },
+      { value: 'Africa/Cairo', label: 'Egypt - Cairo' },
+      { value: 'Africa/Johannesburg', label: 'South Africa - Johannesburg' },
+      { value: 'Africa/Lagos', label: 'Nigeria - Lagos' },
+      { value: 'Africa/Nairobi', label: 'Kenya - Nairobi' },
+      { value: 'America/Anchorage', label: 'USA - Alaska' },
+      { value: 'America/Argentina/Buenos_Aires', label: 'Argentina - Buenos Aires' },
+      { value: 'America/Bogota', label: 'Colombia - Bogota' },
+      { value: 'America/Caracas', label: 'Venezuela - Caracas' },
+      { value: 'America/Chicago', label: 'USA - Central Time' },
+      { value: 'America/Denver', label: 'USA - Mountain Time' },
+      { value: 'America/Detroit', label: 'USA - Detroit' },
+      { value: 'America/Halifax', label: 'Canada - Halifax' },
+      { value: 'America/Los_Angeles', label: 'USA - Pacific Time' },
+      { value: 'America/Mexico_City', label: 'Mexico - Mexico City' },
+      { value: 'America/New_York', label: 'USA - Eastern Time' },
+      { value: 'America/Phoenix', label: 'USA - Arizona' },
+      { value: 'America/Santiago', label: 'Chile - Santiago' },
+      { value: 'America/Sao_Paulo', label: 'Brazil - Sao Paulo' },
+      { value: 'America/Toronto', label: 'Canada - Toronto' },
+      { value: 'America/Vancouver', label: 'Canada - Vancouver' },
+      { value: 'Asia/Baghdad', label: 'Iraq - Baghdad' },
+      { value: 'Asia/Bangkok', label: 'Thailand - Bangkok' },
+      { value: 'Asia/Beirut', label: 'Lebanon - Beirut' },
+      { value: 'Asia/Colombo', label: 'Sri Lanka - Colombo' },
+      { value: 'Asia/Dhaka', label: 'Bangladesh - Dhaka' },
+      { value: 'Asia/Dubai', label: 'UAE - Dubai' },
+      { value: 'Asia/Hong_Kong', label: 'Hong Kong' },
+      { value: 'Asia/Jakarta', label: 'Indonesia - Jakarta' },
+      { value: 'Asia/Jerusalem', label: 'Israel - Jerusalem' },
+      { value: 'Asia/Kabul', label: 'Afghanistan - Kabul' },
+      { value: 'Asia/Karachi', label: 'Pakistan - Karachi' },
+      { value: 'Asia/Kathmandu', label: 'Nepal - Kathmandu' },
+      { value: 'Asia/Kolkata', label: 'India - New Delhi' },
+      { value: 'Asia/Kuala_Lumpur', label: 'Malaysia - Kuala Lumpur' },
+      { value: 'Asia/Kuwait', label: 'Kuwait' },
+      { value: 'Asia/Manila', label: 'Philippines - Manila' },
+      { value: 'Asia/Muscat', label: 'Oman - Muscat' },
+      { value: 'Asia/Riyadh', label: 'Saudi Arabia - Riyadh' },
+      { value: 'Asia/Seoul', label: 'South Korea - Seoul' },
+      { value: 'Asia/Shanghai', label: 'China - Shanghai' },
+      { value: 'Asia/Singapore', label: 'Singapore' },
+      { value: 'Asia/Taipei', label: 'Taiwan - Taipei' },
+      { value: 'Asia/Tehran', label: 'Iran - Tehran' },
+      { value: 'Asia/Tokyo', label: 'Japan - Tokyo' },
+      { value: 'Atlantic/Azores', label: 'Portugal - Azores' },
+      { value: 'Atlantic/Cape_Verde', label: 'Cape Verde' },
+      { value: 'Atlantic/Reykjavik', label: 'Iceland - Reykjavik' },
+      { value: 'Australia/Adelaide', label: 'Australia - Adelaide' },
+      { value: 'Australia/Brisbane', label: 'Australia - Brisbane' },
+      { value: 'Australia/Darwin', label: 'Australia - Darwin' },
+      { value: 'Australia/Melbourne', label: 'Australia - Melbourne' },
+      { value: 'Australia/Perth', label: 'Australia - Perth' },
+      { value: 'Australia/Sydney', label: 'Australia - Sydney' },
+      { value: 'Europe/Amsterdam', label: 'Netherlands - Amsterdam' },
+      { value: 'Europe/Athens', label: 'Greece - Athens' },
+      { value: 'Europe/Belgrade', label: 'Serbia - Belgrade' },
+      { value: 'Europe/Berlin', label: 'Germany - Berlin' },
+      { value: 'Europe/Brussels', label: 'Belgium - Brussels' },
+      { value: 'Europe/Bucharest', label: 'Romania - Bucharest' },
+      { value: 'Europe/Budapest', label: 'Hungary - Budapest' },
+      { value: 'Europe/Copenhagen', label: 'Denmark - Copenhagen' },
+      { value: 'Europe/Dublin', label: 'Ireland - Dublin' },
+      { value: 'Europe/Helsinki', label: 'Finland - Helsinki' },
+      { value: 'Europe/Istanbul', label: 'Turkey - Istanbul' },
+      { value: 'Europe/Kiev', label: 'Ukraine - Kiev' },
+      { value: 'Europe/Lisbon', label: 'Portugal - Lisbon' },
+      { value: 'Europe/London', label: 'UK - London' },
+      { value: 'Europe/Madrid', label: 'Spain - Madrid' },
+      { value: 'Europe/Moscow', label: 'Russia - Moscow' },
+      { value: 'Europe/Oslo', label: 'Norway - Oslo' },
+      { value: 'Europe/Paris', label: 'France - Paris' },
+      { value: 'Europe/Prague', label: 'Czech Republic - Prague' },
+      { value: 'Europe/Rome', label: 'Italy - Rome' },
+      { value: 'Europe/Stockholm', label: 'Sweden - Stockholm' },
+      { value: 'Europe/Vienna', label: 'Austria - Vienna' },
+      { value: 'Europe/Warsaw', label: 'Poland - Warsaw' },
+      { value: 'Europe/Zurich', label: 'Switzerland - Zurich' },
+      { value: 'Pacific/Auckland', label: 'New Zealand - Auckland' },
+      { value: 'Pacific/Fiji', label: 'Fiji' },
+      { value: 'Pacific/Guam', label: 'Guam' },
+      { value: 'Pacific/Honolulu', label: 'USA - Hawaii' },
+      { value: 'Pacific/Midway', label: 'Midway Island' },
+      { value: 'Pacific/Port_Moresby', label: 'Papua New Guinea' },
+      { value: 'Pacific/Tongatapu', label: 'Tonga' },
+    ];
+    return timezoneList;
   }, []);
 
   const getTimezoneOffset = (timezone: string): string => {
@@ -585,15 +668,18 @@ export default function Settings() {
     }
   };
 
-  const handleTimezoneChange = (timezone: string) => {
-    const offset = getTimezoneOffset(timezone);
-    const updatedSettings = {
-      ...pendingSystemSettings,
-      timezone: timezone,
-      timezoneOffset: offset,
-    };
-    setPendingSystemSettings(updatedSettings);
-    setTimezoneOpen(false);
+  const handleTimezoneChange = (timezoneValue: string) => {
+    const selectedTimezone = popularTimezones.find(tz => tz.value === timezoneValue);
+    if (selectedTimezone) {
+      const dynamicOffset = getTimezoneOffset(selectedTimezone.value);
+      const updatedSettings = {
+        ...pendingSystemSettings,
+        timezone: selectedTimezone.value,
+        timezoneOffset: dynamicOffset,
+      };
+      setPendingSystemSettings(updatedSettings);
+      setTimezoneOpen(false);
+    }
   };
 
   const handleAutoBackupConfigSave = () => {
@@ -943,7 +1029,9 @@ export default function Settings() {
                               className="w-full justify-between"
                               data-testid="button-timezone-selector"
                             >
-                              {pendingSystemSettings?.timezone || 'Select timezone...'}
+                              {pendingSystemSettings?.timezone 
+                                ? popularTimezones.find(tz => tz.value === pendingSystemSettings.timezone)?.label || pendingSystemSettings.timezone
+                                : 'Select timezone...'}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -953,20 +1041,20 @@ export default function Settings() {
                               <CommandList>
                                 <CommandEmpty>No timezone found.</CommandEmpty>
                                 <CommandGroup>
-                                  {allTimezones.map((timezone) => (
+                                  {popularTimezones.map((timezone) => (
                                     <CommandItem
-                                      key={timezone}
-                                      value={timezone}
-                                      onSelect={() => handleTimezoneChange(timezone)}
-                                      data-testid={`timezone-option-${timezone}`}
+                                      key={timezone.value}
+                                      value={timezone.label}
+                                      onSelect={() => handleTimezoneChange(timezone.value)}
+                                      data-testid={`timezone-option-${timezone.value}`}
                                     >
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          pendingSystemSettings?.timezone === timezone ? "opacity-100" : "opacity-0"
+                                          pendingSystemSettings?.timezone === timezone.value ? "opacity-100" : "opacity-0"
                                         )}
                                       />
-                                      {timezone}
+                                      {timezone.label}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
