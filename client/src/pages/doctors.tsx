@@ -514,7 +514,7 @@ export default function Doctors() {
         service.name?.toLowerCase().includes('consultation')
       );
 
-      // Always use real service IDs - no more placeholders
+      // Use real service IDs
       categories.opd.push(...opdServices.map(service => ({
         id: service.id,
         name: service.name,
@@ -588,9 +588,9 @@ export default function Doctors() {
       });
     }
 
-    // Add a placeholder for OPD Consultation if no services are found or to ensure it's always present
-    if (!categories.opd.some(s => s.id === 'opd_consultation_placeholder')) {
-      categories.opd.unshift({
+    // Only add placeholder if no real OPD services were found
+    if (categories.opd.length === 0) {
+      categories.opd.push({
         id: 'opd_consultation_placeholder',
         name: 'OPD Consultation',
         category: 'opd',
