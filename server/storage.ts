@@ -4396,43 +4396,33 @@ export class SqliteStorage implements IStorage {
 
       db.insert(schema.backupLogs).values(restoreLog).run();
 
-      // Split SQL content into individual statements outside of transaction
+      // Execute statements directly using the SQLite client
       const statements = backupContent
-        .split("\n")
-        .filter(
-          (line) =>
-            line.trim() &&
-            !line.trim().startsWith("--") &&
-            !line.trim().startsWith("/*"),
-        )
-        .join("\n")
         .split(";")
-        .filter((stmt) => stmt.trim());
+        .map(stmt => stmt.trim())
+        .filter(stmt => stmt);
 
       let executedStatements = 0;
 
-      // Execute statements directly using the SQLite client
       for (const statement of statements) {
-        const trimmedStmt = statement.trim();
-        if (trimmedStmt) {
-          try {
-            db.$client.exec(trimmedStmt + ";");
-            executedStatements++;
-          } catch (stmtError) {
-            console.warn(
-              `Warning: Failed to execute statement: ${trimmedStmt.substring(0, 100)}...`,
-              stmtError,
-            );
-          }
+        try {
+          db.$client.exec(statement + ";");
+          executedStatements++;
+        } catch (stmtError) {
+          console.warn(`Warning: Failed to execute statement: ${statement.substring(0, 100)}...`, stmtError);
+          // Optionally, you might want to stop the restore process here or log the error more severely.
+          // For now, we continue and update the log with partial success/failure info.
         }
       }
 
-      // Update restore log with success
+      // Update restore log with success or partial success
+      const finalStatus = executedStatements === statements.length ? "completed" : "partially_completed";
       db.update(schema.backupLogs)
         .set({
-          status: "completed",
+          status: finalStatus,
           endTime: new Date().toISOString(),
           recordCount: executedStatements,
+          errorMessage: executedStatements < statements.length ? "Some statements failed during restore." : null,
         })
         .where(eq(schema.backupLogs.backupId, restoreId))
         .run();
@@ -4440,23 +4430,40 @@ export class SqliteStorage implements IStorage {
       return {
         restoreId,
         executedStatements,
-        status: "completed",
+        status: finalStatus,
       };
     } catch (error) {
       console.error("Backup restore error:", error);
 
-      // Update restore log with failure if possible
+      // Attempt to update restore log with failure if the restoreId was generated
       try {
-        const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE");
-        db.update(schema.backupLogs)
-          .set({
+        const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE"); // Re-generate or retrieve if available
+        // Check if a log entry with this ID exists to avoid errors if it wasn't created
+        const existingLog = db.select().from(schema.backupLogs).where(eq(schema.backupLogs.backupId, restoreId)).get();
+        if(existingLog) {
+          db.update(schema.backupLogs)
+            .set({
+              status: "failed",
+              endTime: new Date().toISOString(),
+              errorMessage:
+                error instanceof Error ? error.message : "Unknown error during restore",
+            })
+            .where(eq(schema.backupLogs.backupId, restoreId))
+            .run();
+        } else {
+          // If log entry wasn't created, create a new failed one
+          const failedLog = {
+            backupId: restoreId,
             status: "failed",
+            backupType: "restore",
+            filePath: backupFilePath, // Store path for context
+            startTime,
             endTime: new Date().toISOString(),
-            errorMessage:
-              error instanceof Error ? error.message : "Unknown error",
-          })
-          .where(eq(schema.backupLogs.backupId, restoreId))
-          .run();
+            errorMessage: error instanceof Error ? error.message : "Unknown error during restore",
+            createdAt: startTime,
+          };
+          db.insert(schema.backupLogs).values(failedLog).run();
+        }
       } catch (logError) {
         console.error("Failed to update restore log:", logError);
       }
@@ -5323,6 +5330,22 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.admissions.admissionDate))
         .all();
 
+      // Get admission doctors for context
+      const admissionDoctorIds = patientAdmissions
+        .map((a) => a.doctorId)
+        .filter(Boolean) as string[];
+      const admissionDoctors = new Map<string, string>();
+      if (admissionDoctorIds.length > 0) {
+        const doctors = db
+          .select()
+          .from(schema.doctors)
+          .where(inArray(schema.doctors.id, admissionDoctorIds))
+          .all();
+        doctors.forEach((doctor) => {
+          admissionDoctors.set(doctor.id, doctor.name);
+        });
+      }
+
       // Add OPD visits as bill items
       opdVisits.forEach(visit => {
         const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
@@ -5474,29 +5497,6 @@ export class SqliteStorage implements IStorage {
       });
 
       // 4. Admissions and associated events
-      const patientAdmissions = db
-        .select()
-        .from(schema.admissions)
-        .where(eq(schema.admissions.patientId, patientId))
-        .orderBy(desc(schema.admissions.admissionDate))
-        .all();
-
-      // Get admission doctors for context
-      const admissionDoctorIds = patientAdmissions
-        .map((a) => a.doctorId)
-        .filter(Boolean) as string[];
-      const admissionDoctors = new Map<string, string>();
-      if (admissionDoctorIds.length > 0) {
-        const doctors = db
-          .select()
-          .from(schema.doctors)
-          .where(inArray(schema.doctors.id, admissionDoctorIds))
-          .all();
-        doctors.forEach((doctor) => {
-          admissionDoctors.set(doctor.id, doctor.name);
-        });
-      }
-
       patientAdmissions.forEach((admission) => {
         // Discharge entries removed from comprehensive bill as they have no monetary value
         // (bed charges and other admission services are now handled by patient services)
@@ -5839,30 +5839,26 @@ export class SqliteStorage implements IStorage {
 
   // Get doctor earnings by doctor ID and optional status filter
   async getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]> {
-    try {
-      const conditions: any[] = [];
+    console.log(`Fetching doctor earnings - doctorId: ${doctorId}, status: ${status}`);
 
-      if (doctorId) {
-        conditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
-      }
+    let query = db.select().from(schema.doctorEarnings);
 
-      if (status) {
-        conditions.push(eq(schema.doctorEarnings.status, status));
-      }
-
-      let query = db
-        .select()
-        .from(schema.doctorEarnings);
-
-      if (conditions.length > 0) {
-        query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-      }
-
-      return query.all();
-    } catch (error) {
-      console.error('Error fetching doctor earnings:', error);
-      throw error;
+    const conditions = [];
+    if (doctorId) {
+      conditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
     }
+    if (status) {
+      conditions.push(eq(schema.doctorEarnings.status, status));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const results = query.orderBy(desc(schema.doctorEarnings.serviceDate)).all();
+    console.log(`Found ${results.length} earnings for doctor ${doctorId}`);
+
+    return results;
   }
 
   // Create a new doctor earning record

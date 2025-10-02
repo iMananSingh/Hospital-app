@@ -2436,11 +2436,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { doctorId } = req.params;
       const { status } = req.query;
-      const earnings = await storage.getDoctorEarnings(doctorId, status as string);
+      console.log(`GET /api/doctors/${doctorId}/earnings - status filter: ${status || 'all'}`);
+      const earnings = await storage.getDoctorEarnings(doctorId, status as string | undefined);
+      console.log(`Returning ${earnings.length} earnings for doctor ${doctorId}`);
       res.json(earnings);
     } catch (error) {
       console.error("Error fetching doctor earnings:", error);
-      res.status(500).json({ message: "Failed to get doctor earnings" });
+      res.status(500).json({ message: "Failed to fetch doctor earnings" });
     }
   });
 

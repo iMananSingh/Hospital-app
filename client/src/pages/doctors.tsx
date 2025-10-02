@@ -840,11 +840,11 @@ export default function Doctors() {
                               variant="ghost" 
                               size="sm"
                               className="flex-1"
-                              onClick={() => setSelectedDoctor(doctor)}
-                              data-testid={`button-view-${doctor.id}`}
+                              onClick={() => setLocation(`/doctors/${doctor.id}`)}
+                              data-testid={`button-view-doctor-${doctor.id}`}
                             >
                               <Eye className="w-4 h-4 mr-1" />
-                              View
+                              View Doctor
                             </Button>
                             <Button 
                               variant="ghost" 

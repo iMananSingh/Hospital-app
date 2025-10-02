@@ -57,9 +57,18 @@ export default function DoctorDetail() {
     enabled: !!doctorId,
   });
 
-  // Fetch doctor earnings
-  const { data: earnings = [], isLoading: isEarningsLoading } = useQuery({
+  // Fetch doctor earnings - fetch all statuses to see the complete picture
+  const { data: earnings = [], isLoading: isEarningsLoading, refetch: refetchEarnings } = useQuery({
     queryKey: ["/api/doctors", doctorId, "earnings"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/earnings`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch earnings");
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
@@ -193,7 +202,15 @@ export default function DoctorDetail() {
     );
   }
 
-  const totalPendingEarnings = earnings.filter((e: DoctorEarning) => e.status === 'pending').reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0);
+  // Debug logging to see what we're getting
+  console.log("Doctor earnings data:", earnings);
+  console.log("Number of earnings:", earnings.length);
+  
+  const pendingEarnings = earnings.filter((e: DoctorEarning) => e.status === 'pending');
+  console.log("Pending earnings:", pendingEarnings);
+  
+  const totalPendingEarnings = pendingEarnings.reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0);
+  console.log("Total pending amount:", totalPendingEarnings);
 
   return (
     <div className="space-y-6">
