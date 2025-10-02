@@ -12,6 +12,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Doctor Salary Management Enhancements - COMPLETED (October 2, 2025)
+- **TypeScript Fixes**: Fixed 24+ TypeScript errors by properly typing services and doctorRates queries, resolving ₹0 display issue in earnings table
+- **UI Cleanup**: Removed conceptually flawed "Recalculate Earnings" and bulk "Process Payments" buttons from salary management interface
+- **Individual Payment Processing**: Implemented individual doctor payment confirmation system with Check icon replacing Wallet icon on payment buttons
+- **Backend API**: Added PUT `/api/doctors/:doctorId/mark-paid` endpoint to update all pending earnings to paid status for a specific doctor
+- **Frontend Integration**: Implemented mark-as-paid mutation with proper error handling, cache invalidation, and success notifications
+- **Service Categorization Fix**: Corrected service categorization to show OPD consultations exclusively under "OPD Consultation" heading
+- **Duplication Prevention**: Excluded pathology/lab services from generic "Services" section to prevent duplicate entries across categories
+- **Security**: All endpoints use JWT authentication and proper validation to ensure authorized access only
+- **Final Status**: ✅ COMPLETE - Doctor salary management feature fully functional with individual payment tracking
+
 ### Fresh GitHub Clone Setup - COMPLETED (October 2, 2025)
 - **Project Import**: Successfully imported fresh GitHub clone of MedCare Pro hospital management system
 - **Environment Analysis**: Analyzed codebase structure, confirmed full-stack Express + Vite + React + TypeScript setup with SQLite database
