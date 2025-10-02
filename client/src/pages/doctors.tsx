@@ -659,7 +659,7 @@ export default function Doctors() {
         newSelections[serviceId] = {
           isSelected: true,
           salaryBasis: rate.rateType === 'percentage' ? 'percentage' : 'amount',
-          amount: rate.rateType === 'per_instance' ? rate.rateAmount : 0,
+          amount: rate.rateType === 'amount' ? rate.rateAmount : 0,
           percentage: rate.rateType === 'percentage' ? rate.rateAmount : 0,
         };
       });
