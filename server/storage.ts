@@ -1269,6 +1269,7 @@ export class SqliteStorage implements IStorage {
   private async calculateDoctorEarning(patientService: PatientService, service: Service): Promise<void> {
     try {
       console.log(`Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`);
+      console.log(`Service details - ID: ${service.id}, Name: ${service.name}, Category: ${service.category}`);
 
       // Check if earning already exists for this patient service to prevent duplicates
       const existingEarning = db
@@ -1282,8 +1283,8 @@ export class SqliteStorage implements IStorage {
         return;
       }
 
-      // Find doctor service rate for this doctor and service
-      const doctorRate = db
+      // Try to find doctor service rate - First by exact serviceId match
+      let doctorRate = db
         .select()
         .from(schema.doctorServiceRates)
         .where(
@@ -1295,13 +1296,29 @@ export class SqliteStorage implements IStorage {
         )
         .get();
 
+      // If not found by serviceId, try matching by service name and category
       if (!doctorRate) {
-        console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
+        console.log(`No exact serviceId match, trying name+category match for ${service.name} in ${service.category}`);
+        doctorRate = db
+          .select()
+          .from(schema.doctorServiceRates)
+          .where(
+            and(
+              eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+              eq(schema.doctorServiceRates.serviceName, service.name),
+              eq(schema.doctorServiceRates.serviceCategory, service.category),
+              eq(schema.doctorServiceRates.isActive, true)
+            )
+          )
+          .get();
+      }
+
+      if (!doctorRate) {
+        console.log(`No salary rate found for doctor ${patientService.doctorId}, service ${service.name} (${service.category})`);
         return;
       }
 
       console.log(`Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`);
-
 
       // Calculate earning amount based on rate type
       let earnedAmount = 0;
@@ -1314,6 +1331,8 @@ export class SqliteStorage implements IStorage {
       } else if (doctorRate.rateType === 'fixed_daily') {
         earnedAmount = doctorRate.rateAmount;
       }
+
+      console.log(`Calculated earning: ₹${earnedAmount} (${doctorRate.rateType} of ₹${servicePrice})`);
 
       // Create doctor earning record using the storage interface method
       await this.createDoctorEarning({
@@ -1332,9 +1351,86 @@ export class SqliteStorage implements IStorage {
         notes: `Automatic calculation for ${service.name}`,
       });
 
-      console.log(`Created doctor earning for doctor ${patientService.doctorId} amount ${earnedAmount}`);
+      console.log(`✓ Created doctor earning for doctor ${patientService.doctorId} amount ₹${earnedAmount}`);
     } catch (error) {
       console.error('Error calculating doctor earning:', error);
+    }
+  }
+
+  // Calculate and create doctor earning for OPD consultation from patient_visits
+  private async calculateOpdEarning(patientVisit: PatientVisit): Promise<void> {
+    try {
+      if (!patientVisit.doctorId || !patientVisit.consultationFee || patientVisit.consultationFee === 0) {
+        console.log(`Skipping OPD earning - no doctor or zero fee for visit ${patientVisit.visitId}`);
+        return;
+      }
+
+      console.log(`Starting OPD earnings calculation for doctor ${patientVisit.doctorId}, visit ${patientVisit.visitId}`);
+
+      // Check if earning already exists for this visit to prevent duplicates
+      const existingEarning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(eq(schema.doctorEarnings.notes, `OPD consultation - Visit ${patientVisit.visitId}`))
+        .get();
+
+      if (existingEarning) {
+        console.log(`Earning already exists for visit ${patientVisit.visitId}, skipping creation`);
+        return;
+      }
+
+      // Find doctor OPD consultation rate
+      const opdRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, patientVisit.doctorId),
+            eq(schema.doctorServiceRates.serviceCategory, 'opd'),
+            eq(schema.doctorServiceRates.isActive, true)
+          )
+        )
+        .get();
+
+      if (!opdRate) {
+        console.log(`No OPD consultation rate found for doctor ${patientVisit.doctorId}`);
+        return;
+      }
+
+      console.log(`Found OPD rate: ${opdRate.rateType} = ${opdRate.rateAmount}`);
+
+      // Calculate earning amount based on rate type
+      let earnedAmount = 0;
+      const consultationFee = patientVisit.consultationFee;
+
+      if (opdRate.rateType === 'percentage') {
+        earnedAmount = (consultationFee * opdRate.rateAmount) / 100;
+      } else if (opdRate.rateType === 'per_instance') {
+        earnedAmount = opdRate.rateAmount;
+      }
+
+      console.log(`Calculated OPD earning: ₹${earnedAmount} (${opdRate.rateType} of ₹${consultationFee})`);
+
+      // Create doctor earning record
+      await this.createDoctorEarning({
+        doctorId: patientVisit.doctorId,
+        patientId: patientVisit.patientId,
+        serviceId: 'opd-consultation',
+        patientServiceId: null,
+        serviceName: 'OPD Consultation',
+        serviceCategory: 'opd',
+        serviceDate: patientVisit.scheduledDate || patientVisit.visitDate,
+        rateType: opdRate.rateType,
+        rateAmount: opdRate.rateAmount,
+        servicePrice: consultationFee,
+        earnedAmount,
+        status: 'pending',
+        notes: `OPD consultation - Visit ${patientVisit.visitId}`,
+      });
+
+      console.log(`✓ Created OPD earning for doctor ${patientVisit.doctorId} amount ₹${earnedAmount}`);
+    } catch (error) {
+      console.error('Error calculating OPD earning:', error);
     }
   }
 
@@ -1864,6 +1960,12 @@ export class SqliteStorage implements IStorage {
         status: 'scheduled',
         consultationFee: data.consultationFee || 0, // Store consultation fee
       }).returning().get();
+
+      // Calculate doctor earning for this OPD visit
+      if (result.doctorId && result.consultationFee && result.consultationFee > 0) {
+        await this.calculateOpdEarning(result);
+      }
+
       return result;
     } catch (error) {
       console.error('Error creating OPD visit:', error);
