@@ -1544,59 +1544,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         receiptNumber: receiptNumber,
       }));
 
-      // Log doctor IDs for each service with more detail
-      servicesWithMetadata.forEach((service: any, index: number) => {
-        console.log(`=== SERVICE ${index + 1} INPUT ANALYSIS ===`);
-        console.log(`Doctor ID:`, service.doctorId);
-        console.log(`Doctor ID type:`, typeof service.doctorId);
-        console.log(`Service Name:`, service.serviceName);
-        console.log(`Service Type:`, service.serviceType);
-        console.log(`Patient ID:`, service.patientId);
-        console.log(`Receipt Number:`, service.receiptNumber);
-        console.log(`Order ID:`, service.orderId);
+      console.log(`Creating batch of ${servicesWithMetadata.length} services with receipt number: ${receiptNumber}`);
 
-        // Check if doctorId is actually null vs undefined vs empty string
-        if (service.doctorId === null) {
-          console.log(`Service ${index + 1}: Doctor ID is explicitly null`);
-        } else if (service.doctorId === undefined) {
-          console.log(`Service ${index + 1}: Doctor ID is undefined`);
-        } else if (service.doctorId === "") {
-          console.log(`Service ${index + 1}: Doctor ID is empty string`);
-        } else {
-          console.log(`Service ${index + 1}: Doctor ID has value:`, service.doctorId);
-        }
-      });
+      // Use the batch creation method to ensure all services get the same orderId
+      const services = await storage.createPatientServicesBatch(servicesWithMetadata);
 
-      // Create services via batch endpoint
-      console.log('Batch service creation - incoming data:', req.body.map((s: any) => ({
-        serviceName: s.serviceName,
-        doctorId: s.doctorId
-      })));
-
-      const services = await Promise.all(
-        req.body.map((serviceData: any) => storage.createPatientService(serviceData))
-      );
-
-      console.log('Batch service creation - created services:', services.map((s: any) => ({
-        id: s.id,
-        serviceName: s.serviceName,
-        doctorId: s.doctorId
-      })));
-
-      console.log("=== BATCH SERVICE CREATION RESULT ===");
-      console.log("Created services count:", services.length);
-
-      // Log the created services to verify doctor IDs were saved
-      services.forEach((service: any, index: number) => {
-        console.log(`=== CREATED SERVICE ${index + 1} RESULT ===`);
-        console.log(`ID:`, service.id);
-        console.log(`Doctor ID:`, service.doctorId);
-        console.log(`Doctor ID type:`, typeof service.doctorId);
-        console.log(`Service Name:`, service.serviceName);
-        console.log(`Service Type:`, service.serviceType);
-        console.log(`Receipt Number:`, service.receiptNumber);
-        console.log(`Order ID:`, service.orderId);
-      });
+      console.log(`Successfully created ${services.length} services with shared orderId: ${services[0]?.orderId}`);
 
       res.json(services);
     } catch (error: any) {
