@@ -14,6 +14,10 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 40997
+externalPort = 3000
+
 [workflows]
 runButton = "Project"
 
@@ -44,7 +48,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npx tsx server/index.ts"
+args = "npm run dev"
 waitForPort = 5000
 
 [agent]
