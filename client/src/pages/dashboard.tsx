@@ -687,7 +687,11 @@ export default function Dashboard() {
                   </div>
                 </button>
                 
-                <button className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" data-testid="quick-view-pending">
+                <button 
+                  onClick={() => navigate("/pending-bills")}
+                  className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" 
+                  data-testid="quick-view-pending"
+                >
                   <div className="text-center">
                     <div className="text-lg font-semibold">Pending</div>
                     <div className="text-sm opacity-90">View bills</div>

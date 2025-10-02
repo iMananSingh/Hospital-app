@@ -1,4 +1,3 @@
-
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -22,6 +21,7 @@ import CurrentlyAdmitted from "@/pages/currently-admitted";
 import AdmittedToday from "@/pages/admitted-today";
 import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
+import PendingBills from "@/pages/pending-bills";
 import Diagnostics from "@/pages/diagnostics";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
@@ -75,6 +75,7 @@ function AppRoutes() {
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/pending-bills" component={() => <ProtectedRoute component={PendingBills} />} />
       <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route component={NotFound} />
     </Switch>
