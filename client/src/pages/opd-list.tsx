@@ -299,7 +299,7 @@ export default function OpdList() {
                           
                           <div className="text-right">
                             <div className="font-medium">
-                              ₹{visit.consultationFee || 0}
+                              ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               Consultation Fee

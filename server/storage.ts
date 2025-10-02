@@ -1903,7 +1903,7 @@ export class SqliteStorage implements IStorage {
     }
 
     // Join with patients and doctors to get their details
-    return db
+    const results = db
       .select({
         id: schema.patientVisits.id,
         visitId: schema.patientVisits.visitId,
@@ -1917,7 +1917,7 @@ export class SqliteStorage implements IStorage {
         diagnosis: schema.patientVisits.diagnosis,
         prescription: schema.patientVisits.prescription,
         status: schema.patientVisits.status,
-        consultationFee: schema.patientVisits.consultationFee, // Include consultation fee
+        consultationFee: schema.patientVisits.consultationFee,
         createdAt: schema.patientVisits.createdAt,
         updatedAt: schema.patientVisits.updatedAt,
         // Patient details
@@ -1929,7 +1929,7 @@ export class SqliteStorage implements IStorage {
         // Doctor details
         doctorName: schema.doctors.name,
         doctorSpecialization: schema.doctors.specialization,
-        doctorConsultationFee: schema.doctors.consultationFee, // Doctor's default fee
+        doctorConsultationFee: schema.doctors.consultationFee,
       })
       .from(schema.patientVisits)
       .leftJoin(schema.patients, eq(schema.patientVisits.patientId, schema.patients.id))
@@ -1937,6 +1937,12 @@ export class SqliteStorage implements IStorage {
       .where(and(...whereConditions))
       .orderBy(desc(schema.patientVisits.scheduledDate), desc(schema.patientVisits.scheduledTime))
       .all();
+
+    // Ensure consultationFee is properly set - use stored fee or fallback to doctor's default
+    return results.map(visit => ({
+      ...visit,
+      consultationFee: visit.consultationFee || visit.doctorConsultationFee || 0
+    }));
   }
 
   async updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined> {
