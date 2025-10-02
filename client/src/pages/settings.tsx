@@ -1029,9 +1029,15 @@ export default function Settings() {
                               className="w-full justify-between"
                               data-testid="button-timezone-selector"
                             >
-                              {pendingSystemSettings?.timezone 
-                                ? popularTimezones.find(tz => tz.value === pendingSystemSettings.timezone)?.label || pendingSystemSettings.timezone
-                                : 'Select timezone...'}
+                              <span className="flex-1 text-left truncate">
+                                {pendingSystemSettings?.timezone 
+                                  ? (() => {
+                                      const tz = popularTimezones.find(tz => tz.value === pendingSystemSettings.timezone);
+                                      const offset = pendingSystemSettings.timezoneOffset || getTimezoneOffset(pendingSystemSettings.timezone);
+                                      return tz ? `${tz.label}   UTC${offset}` : pendingSystemSettings.timezone;
+                                    })()
+                                  : 'Select timezone...'}
+                              </span>
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1041,22 +1047,26 @@ export default function Settings() {
                               <CommandList>
                                 <CommandEmpty>No timezone found.</CommandEmpty>
                                 <CommandGroup>
-                                  {popularTimezones.map((timezone) => (
-                                    <CommandItem
-                                      key={timezone.value}
-                                      value={timezone.label}
-                                      onSelect={() => handleTimezoneChange(timezone.value)}
-                                      data-testid={`timezone-option-${timezone.value}`}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          pendingSystemSettings?.timezone === timezone.value ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      {timezone.label}
-                                    </CommandItem>
-                                  ))}
+                                  {popularTimezones.map((timezone) => {
+                                    const offset = getTimezoneOffset(timezone.value);
+                                    return (
+                                      <CommandItem
+                                        key={timezone.value}
+                                        value={timezone.label}
+                                        onSelect={() => handleTimezoneChange(timezone.value)}
+                                        data-testid={`timezone-option-${timezone.value}`}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            pendingSystemSettings?.timezone === timezone.value ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <span className="flex-1">{timezone.label}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">UTC{offset}</span>
+                                      </CommandItem>
+                                    );
+                                  })}
                                 </CommandGroup>
                               </CommandList>
                             </Command>
