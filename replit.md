@@ -4,6 +4,30 @@
 
 MedCare Pro is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning MedCare Pro as a leading solution in the healthcare IT market.
 
+## Demo Credentials
+
+The system comes pre-configured with demo users for testing:
+
+- **Root User (Super Admin)**
+  - Username: `root`
+  - Password: `root123`
+  - Roles: Super User
+
+- **Doctor**
+  - Username: `doctor`
+  - Password: `doctor123`
+  - Roles: Doctor, Billing Staff
+
+- **Billing Staff**
+  - Username: `billing`
+  - Password: `billing123`
+  - Roles: Billing Staff
+
+- **Reception Staff**
+  - Username: `reception`
+  - Password: `reception123`
+  - Roles: Receptionist
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
