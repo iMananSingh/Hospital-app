@@ -1970,14 +1970,6 @@ export class SqliteStorage implements IStorage {
       const today = new Date().toISOString().slice(2, 10).replace(/-/g, '');
       const visitId = `VIS-${today}-${orderNumber}`;
 
-      // Set IST timestamps if not provided
-      if (!data.createdAt || !data.updatedAt) {
-        const now = new Date();
-        const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-        data.createdAt = istTime.toISOString().replace('T', ' ').slice(0, 19);
-        data.updatedAt = istTime.toISOString().replace('T', ' ').slice(0, 19);
-      }
-
       const result = await db.insert(schema.patientVisits).values({
         ...data,
         id: this.generateId(),
