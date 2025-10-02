@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useLocation } from "wouter";
@@ -196,10 +195,10 @@ export default function DoctorDetail() {
   // Debug logging to see what we're getting
   console.log("Doctor earnings data:", earnings);
   console.log("Number of earnings:", earnings.length);
-  
+
   const pendingEarnings = earnings.filter((e: DoctorEarning) => e.status === 'pending');
   console.log("Pending earnings:", pendingEarnings);
-  
+
   const totalPendingEarnings = pendingEarnings.reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0);
   console.log("Total pending amount:", totalPendingEarnings);
 
@@ -334,23 +333,43 @@ export default function DoctorDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {salaryRates.map((rate: DoctorRate) => (
-                          <TableRow key={rate.id}>
-                            <TableCell className="font-medium">{rate.serviceName}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{rate.serviceCategory}</Badge>
-                            </TableCell>
-                            <TableCell>{rate.rateType}</TableCell>
-                            <TableCell>
-                              {rate.rateType === 'percentage' ? `${rate.rateAmount}%` : formatCurrency(rate.rateAmount)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={rate.isActive ? "default" : "secondary"}>
-                                {rate.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {salaryRates.map((rate: DoctorRate) => {
+                          // Convert rate type to display label
+                          const getRateTypeLabel = (rateType: string) => {
+                            switch(rateType) {
+                              case 'per_instance':
+                                return 'Amount';
+                              case 'percentage':
+                                return 'Percentage';
+                              case 'fixed_daily':
+                                return 'Fixed Daily';
+                              default:
+                                return rateType;
+                            }
+                          };
+
+                          return (
+                            <TableRow key={rate.id}>
+                              <TableCell className="font-medium">{rate.serviceName}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{rate.serviceCategory}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary">{getRateTypeLabel(rate.rateType)}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                {rate.rateType === 'percentage' 
+                                  ? `${rate.rateAmount}%` 
+                                  : `₹${rate.rateAmount.toFixed(2)}`}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={rate.isActive ? 'default' : 'secondary'}>
+                                  {rate.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
