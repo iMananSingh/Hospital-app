@@ -5616,7 +5616,7 @@ export class SqliteStorage implements IStorage {
       // Calculate summary
       const totalCharges = billItems
         .filter((item) => item.amount > 0)
-        .reduce((sum+ item.amount, 0);
+        .reduce((sum, item) => sum + item.amount, 0);
 
       const totalPayments = Math.abs(
         billItems
