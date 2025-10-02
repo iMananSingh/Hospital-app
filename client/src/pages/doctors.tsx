@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import type { Doctor, Service, DoctorServiceRate } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function Doctors() {
   const [isNewDoctorOpen, setIsNewDoctorOpen] = useState(false);
@@ -1583,15 +1584,24 @@ export default function Doctors() {
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleMarkAsPaid(doctorData.doctorId)}
-                                    disabled={markAsPaidMutation.isPending || doctorData.totalPending === 0}
-                                    data-testid={`button-pay-doctor-${doctorData.doctorId}`}
-                                  >
-                                    <Check className="w-4 h-4" />
-                                  </Button>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          onClick={() => handleMarkAsPaid(doctorData.doctorId)}
+                                          disabled={markAsPaidMutation.isPending || doctorData.totalPending === 0}
+                                          data-testid={`button-pay-doctor-${doctorData.doctorId}`}
+                                        >
+                                          <Check className="w-4 h-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Mark as Paid</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -1861,7 +1871,7 @@ export default function Doctors() {
                   data-testid="input-edit-consultation-fee"
                 />
                 {editForm.formState.errors.consultationFee && (
-                  <p className="text-sm text-destructive">{editForm.formState.errors.consultationFee.message}</p>
+                  <p className="text-sm text-destructive">{form.formState.errors.consultationFee.message}</p>
                 )}
               </div>
             </div>
