@@ -334,20 +334,6 @@ export default function DoctorDetail() {
                       </TableHeader>
                       <TableBody>
                         {salaryRates.map((rate: DoctorRate) => {
-                          // Convert rate type to display label
-                          const getRateTypeLabel = (rateType: string) => {
-                            switch(rateType) {
-                              case 'per_instance':
-                                return 'Amount';
-                              case 'percentage':
-                                return 'Percentage';
-                              case 'fixed_daily':
-                                return 'Fixed Daily';
-                              default:
-                                return rateType;
-                            }
-                          };
-
                           return (
                             <TableRow key={rate.id}>
                               <TableCell className="font-medium">{rate.serviceName}</TableCell>
@@ -355,7 +341,12 @@ export default function DoctorDetail() {
                                 <Badge variant="outline">{rate.serviceCategory}</Badge>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="secondary">{getRateTypeLabel(rate.rateType)}</Badge>
+                                <Badge variant="secondary">
+                                  {rate.rateType === 'per_instance' ? 'Amount' : 
+                                   rate.rateType === 'percentage' ? 'Percentage' : 
+                                   rate.rateType === 'fixed_daily' ? 'Fixed Daily' : 
+                                   rate.rateType}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 {rate.rateType === 'percentage' 
