@@ -506,7 +506,7 @@ export default function Doctors() {
       services: []
     };
 
-    // Add OPD consultation services from actual services - always use real IDs
+    // Add OPD consultation services from actual services
     if (services && services.length > 0) {
       const opdServices = services.filter(service => 
         service.category?.toLowerCase() === 'consultation' || 
@@ -514,13 +514,31 @@ export default function Doctors() {
         service.name?.toLowerCase().includes('consultation')
       );
 
-      // Use real service IDs
-      categories.opd.push(...opdServices.map(service => ({
-        id: service.id,
-        name: service.name,
+      // Only add real OPD services if they exist
+      if (opdServices.length > 0) {
+        categories.opd.push(...opdServices.map(service => ({
+          id: service.id,
+          name: service.name,
+          category: 'opd',
+          price: service.price || 0
+        })));
+      } else {
+        // Add placeholder only if no real OPD services exist
+        categories.opd.push({
+          id: 'opd_consultation_placeholder',
+          name: 'OPD Consultation',
+          category: 'opd',
+          price: 0
+        });
+      }
+    } else {
+      // Add placeholder if services array is empty
+      categories.opd.push({
+        id: 'opd_consultation_placeholder',
+        name: 'OPD Consultation',
         category: 'opd',
-        price: service.price || 0
-      })));
+        price: 0
+      });
     }
 
     // Add pathology services as individual entries using real service IDs
@@ -532,7 +550,6 @@ export default function Doctors() {
         service.name?.toLowerCase().includes('test')
       );
 
-      // Use real service IDs for pathology/lab services
       categories.labTests.push(...pathologyServices.map(service => ({
         id: service.id,
         name: service.name,
@@ -585,16 +602,6 @@ export default function Doctors() {
             categories.services.push(serviceItem);
             break;
         }
-      });
-    }
-
-    // Only add placeholder if no real OPD services were found
-    if (categories.opd.length === 0) {
-      categories.opd.push({
-        id: 'opd_consultation_placeholder',
-        name: 'OPD Consultation',
-        category: 'opd',
-        price: 0 // Default price, will be overridden by user input
       });
     }
 
