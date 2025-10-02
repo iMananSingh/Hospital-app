@@ -3433,30 +3433,30 @@ export class SqliteStorage implements IStorage {
 
       console.log(`Dashboard stats - Using today date: ${today}`);
 
-      // Get today's OPD services - those scheduled for today
-      const todayOpdServices = db
+      // Get today's OPD visits - those scheduled for today from patient_visits table
+      const todayOpdVisits = db
         .select()
-        .from(schema.patientServices)
+        .from(schema.patientVisits)
         .where(
           and(
-            eq(schema.patientServices.serviceType, "opd"),
-            eq(schema.patientServices.scheduledDate, today)
+            eq(schema.patientVisits.visitType, "opd"),
+            eq(schema.patientVisits.scheduledDate, today)
           )
         )
         .all();
 
-      console.log(`Today OPD services count: ${todayOpdServices.length}`);
-      if (todayOpdServices.length > 0) {
-        console.log(`Sample OPD services:`, todayOpdServices.slice(0, 3).map(s => ({ 
-          id: s.id, 
-          scheduledDate: s.scheduledDate, 
-          serviceType: s.serviceType,
-          patientId: s.patientId,
-          serviceName: s.serviceName
+      console.log(`Today OPD visits count: ${todayOpdVisits.length}`);
+      if (todayOpdVisits.length > 0) {
+        console.log(`Sample OPD visits:`, todayOpdVisits.slice(0, 3).map(v => ({ 
+          id: v.id, 
+          scheduledDate: v.scheduledDate, 
+          visitType: v.visitType,
+          patientId: v.patientId,
+          doctorId: v.doctorId
         })));
       }
 
-      const opdPatients = todayOpdServices.length;
+      const opdPatients = todayOpdVisits.length;
       console.log(`Dashboard OPD count for today: ${opdPatients}`);
 
       // Get inpatients count (currently admitted)
