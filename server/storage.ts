@@ -1326,7 +1326,7 @@ export class SqliteStorage implements IStorage {
 
       if (doctorRate.rateType === 'percentage') {
         earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
-      } else if (doctorRate.rateType === 'per_instance') {
+      } else if (doctorRate.rateType === 'amount') {
         earnedAmount = doctorRate.rateAmount;
       } else if (doctorRate.rateType === 'fixed_daily') {
         earnedAmount = doctorRate.rateAmount;
@@ -5807,7 +5807,7 @@ export class SqliteStorage implements IStorage {
 
         if (doctorRate.rateType === 'percentage') {
           earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
-        } else if (doctorRate.rateType === 'per_instance') {
+        } else if (doctorRate.rateType === 'amount') {
           earnedAmount = doctorRate.rateAmount;
         } else if (doctorRate.rateType === 'fixed_daily') {
           earnedAmount = doctorRate.rateAmount;

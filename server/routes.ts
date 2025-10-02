@@ -705,7 +705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             serviceId: actualServiceId,
             serviceName: actualServiceName,
             serviceCategory: rate.serviceCategory,
-            rateType: rate.salaryBasis === 'percentage' ? 'percentage' : 'per_instance',
+            rateType: rate.salaryBasis === 'percentage' ? 'percentage' : 'amount',
             rateAmount: rate.salaryBasis === 'percentage' ? rate.percentage : rate.amount,
             isActive: true,
             notes: null,

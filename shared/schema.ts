@@ -649,9 +649,9 @@ export const insertDoctorServiceRateSchema = createInsertSchema(doctorServiceRat
   serviceCategory: z.enum(["opd", "diagnostics", "lab_tests", "admission", "pathology"], {
     errorMap: () => ({ message: "Service category must be opd, diagnostics, lab_tests, admission, or pathology" })
   }),
-  rateType: z.enum(["per_instance", "percentage", "fixed_daily"], {
-    errorMap: () => ({ message: "Rate type must be per_instance, percentage, or fixed_daily" })
-  }).default("per_instance"),
+  rateType: z.enum(["amount", "percentage", "fixed_daily"], {
+    errorMap: () => ({ message: "Rate type must be amount, percentage, or fixed_daily" })
+  }).default("amount"),
   rateAmount: z.number().min(0, "Rate amount must be non-negative"),
   createdBy: z.string().min(1, "Created by user ID is required"),
 });
@@ -668,7 +668,7 @@ export const insertDoctorEarningSchema = createInsertSchema(doctorEarnings).omit
   serviceName: z.string().min(1, "Service name is required"),
   serviceCategory: z.string().min(1, "Service category is required"),
   serviceDate: z.string().min(1, "Service date is required"),
-  rateType: z.enum(["per_instance", "percentage", "fixed_daily"]),
+  rateType: z.enum(["amount", "percentage", "fixed_daily"]),
   rateAmount: z.number().min(0, "Rate amount must be non-negative"),
   servicePrice: z.number().min(0, "Service price must be non-negative"),
   earnedAmount: z.number().min(0, "Earned amount must be non-negative"),

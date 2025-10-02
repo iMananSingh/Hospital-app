@@ -342,7 +342,7 @@ export default function DoctorDetail() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="secondary">
-                                  {rate.rateType === 'per_instance' ? 'Amount' : 
+                                  {rate.rateType === 'amount' ? 'Amount' : 
                                    rate.rateType === 'percentage' ? 'Percentage' : 
                                    rate.rateType === 'fixed_daily' ? 'Fixed Daily' : 
                                    rate.rateType}
