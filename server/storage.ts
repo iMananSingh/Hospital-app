@@ -2573,14 +2573,15 @@ export class SqliteStorage implements IStorage {
     userId?: string,
   ): Promise<PatientService[]> {
     try {
-      // Generate a single order ID for all services in this batch
-      const orderId = this.generateServiceOrderId();
-
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import("./smart-costing");
 
+      // Generate a single order ID for all services in this batch
+      const orderId = this.generateServiceOrderId();
+
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
+        const earningsToProcess: Array<{ patientService: PatientService, service: Service }> = [];
 
         for (const serviceData of servicesData) {
           console.log("=== BATCH SERVICE CREATION DEBUG ===");
@@ -2674,22 +2675,29 @@ export class SqliteStorage implements IStorage {
 
             console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`);
             if (serviceForEarnings) {
-              console.log(`Triggering batch earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`);
-              // Calculate earnings immediately after transaction completes
-              const serviceRef = serviceForEarnings;
-              const createdRef = created;
-              Promise.resolve().then(async () => {
-                try {
-                  await this.calculateDoctorEarning(createdRef, serviceRef);
-                } catch (error) {
-                  console.error(`❌ Error in batch earnings calculation:`, error);
-                }
+              console.log(`Queueing earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`);
+              // Queue for processing after transaction
+              earningsToProcess.push({
+                patientService: created,
+                service: serviceForEarnings
               });
             } else {
               console.log(`⚠️ No service found for serviceId: ${serviceData.serviceId} in batch, cannot calculate earnings`);
             }
           }
         }
+
+        // Process earnings calculations after transaction completes
+        setImmediate(async () => {
+          for (const { patientService, service } of earningsToProcess) {
+            try {
+              console.log(`Processing queued earnings calculation for service ${patientService.id}`);
+              await this.calculateDoctorEarning(patientService, service);
+            } catch (error) {
+              console.error(`❌ Error calculating earnings for service ${patientService.id}:`, error);
+            }
+          }
+        });
 
         return createdServices;
       });
@@ -5333,7 +5341,7 @@ export class SqliteStorage implements IStorage {
         .all();
 
       // Get admission doctors for context
-      const admissionDoctorIds = patientAdmissions
+      const admissionDoctorIds = admissions
         .map((a) => a.doctorId)
         .filter(Boolean) as string[];
       const admissionDoctors = new Map<string, string>();
