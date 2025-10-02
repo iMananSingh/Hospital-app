@@ -1824,6 +1824,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Scheduled date is required" });
       }
 
+      // Ensure consultation fee is a valid number
+      const consultationFee = typeof visitData.consultationFee === 'number' && visitData.consultationFee >= 0 
+        ? visitData.consultationFee 
+        : 0;
+
       // Convert scheduled date/time to IST
       const visitDateTime = new Date(`${visitData.scheduledDate}T${visitData.scheduledTime || "09:00"}:00`);
       const istDateTime = new Date(visitDateTime.getTime() + (5.5 * 60 * 60 * 1000));
@@ -1838,7 +1843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         symptoms: visitData.symptoms || null,
         diagnosis: visitData.diagnosis || null,
         prescription: visitData.prescription || null,
-        consultationFee: visitData.consultationFee || 0,
+        consultationFee: consultationFee,
         status: "scheduled",
         createdAt: istDateTime.toISOString(),
         updatedAt: istDateTime.toISOString()
