@@ -2388,6 +2388,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk pending bills endpoint - optimized for performance
+  app.get("/api/patients/pending-bills/bulk", authenticateToken, async (req, res) => {
+    try {
+      const pendingBills = await storage.getAllPatientsPendingBills();
+      res.json(pendingBills);
+    } catch (error) {
+      console.error("Error fetching pending bills:", error);
+      res.status(500).json({ message: "Failed to fetch pending bills" });
+    }
+  });
+
   // Service Categories Routes
   app.get("/api/service-categories", authenticateToken, async (req, res) => {
     try {

@@ -1153,6 +1153,9 @@ export interface IStorage {
   updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined>;
   getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]>;
   recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }>;
+
+  // New function for bulk pending bills
+  getAllPatientsPendingBills(): Promise<any[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -5746,6 +5749,72 @@ export class SqliteStorage implements IStorage {
       return updated;
     } catch (error) {
       console.error('Error updating doctor earning status:', error);
+      throw error;
+    }
+  }
+
+  // New function to get all pending bills for all patients in bulk
+  async getAllPatientsPendingBills(): Promise<any[]> {
+    try {
+      // Get all patients
+      const allPatients = db.select().from(schema.patients).all();
+
+      // Get all services, payments, and discounts in bulk
+      // Assuming patientAdmissions is not directly used for pending bills but admission charges might be
+      // If admission charges are calculated differently, this part needs adjustment.
+      // For now, we'll rely on patientServices and direct patient financial data.
+      const allServices = db.select().from(schema.patientServices).all();
+      const allPayments = db.select().from(schema.patientPayments).all();
+      const allDiscounts = db.select().from(schema.patientDiscounts).all();
+      
+      // We also need to consider bills that are not fully paid
+      const allBills = db.select().from(schema.bills).all();
+
+      // Process each patient
+      const patientsWithPending = allPatients
+        .map(patient => {
+          // Calculate total charges for this patient from services and bills
+          let totalCharges = 0;
+
+          // Add charges from patient_services
+          const patientServices = allServices.filter(s => s.patientId === patient.id);
+          patientServices.forEach(service => {
+            // Use calculatedAmount if available, otherwise fallback to price
+            totalCharges += service.calculatedAmount || service.price || 0;
+          });
+
+          // Add charges from unpaid bills
+          const patientBills = allBills.filter(b => b.patientId === patient.id && b.paymentStatus !== 'paid');
+          patientBills.forEach(bill => {
+            totalCharges += bill.totalAmount;
+          });
+          
+          // Calculate total payments for this patient
+          const patientPayments = allPayments.filter(p => p.patientId === patient.id);
+          const totalPaid = patientPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
+          // Calculate total discounts for this patient
+          const patientDiscounts = allDiscounts.filter(d => d.patientId === patient.id);
+          const totalDiscounts = patientDiscounts.reduce((sum, discount) => sum + discount.amount, 0);
+
+          // Calculate balance: total charges (from services + unpaid bills) - total paid - total discounts
+          const balance = totalCharges - totalPaid - totalDiscounts;
+
+          // Only include if balance is positive
+          if (balance > 0) {
+            return {
+              ...patient,
+              pendingAmount: balance
+            };
+          }
+          return null;
+        })
+        .filter(patient => patient !== null) // Filter out nulls
+        .sort((a, b) => b!.pendingAmount - a!.pendingAmount); // Sort by pending amount descending
+
+      return patientsWithPending;
+    } catch (error) {
+      console.error("Error getting bulk pending bills:", error);
       throw error;
     }
   }

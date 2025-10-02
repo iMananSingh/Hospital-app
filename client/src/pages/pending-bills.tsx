@@ -18,46 +18,9 @@ export default function PendingBills() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch all patients
-  const { data: patients = [], isLoading } = useQuery<Patient[]>({
-    queryKey: ["/api/patients"],
-  });
-
-  // Fetch financial summary for each patient and filter those with pending amounts
-  const { data: patientsWithPending = [], isLoading: isLoadingBalances } = useQuery<PatientWithBalance[]>({
-    queryKey: ["/api/patients/pending-bills"],
-    queryFn: async () => {
-      const results: PatientWithBalance[] = [];
-      
-      for (const patient of patients) {
-        try {
-          const response = await fetch(`/api/patients/${patient.id}/financial-summary`, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-            },
-          });
-          
-          if (response.ok) {
-            const summary = await response.json();
-            const pending = summary.balance || 0;
-            
-            // Only include patients with positive pending amounts
-            if (pending > 0) {
-              results.push({
-                ...patient,
-                pendingAmount: pending,
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`Error fetching financial summary for patient ${patient.id}:`, error);
-        }
-      }
-      
-      // Sort by pending amount (highest first)
-      return results.sort((a, b) => b.pendingAmount - a.pendingAmount);
-    },
-    enabled: patients.length > 0,
+  // Fetch patients with pending bills using optimized bulk endpoint
+  const { data: patientsWithPending = [], isLoading } = useQuery<PatientWithBalance[]>({
+    queryKey: ["/api/patients/pending-bills/bulk"],
     staleTime: 0,
     refetchOnMount: true,
   });
@@ -70,7 +33,7 @@ export default function PendingBills() {
 
   const totalPending = filteredPatients.reduce((sum, patient) => sum + patient.pendingAmount, 0);
 
-  if (isLoading || isLoadingBalances) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <TopBar title="Pending Bills" />
