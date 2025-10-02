@@ -2471,7 +2471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Mark all pending earnings as paid
       for (const earning of pendingEarnings) {
-        await storage.updateDoctorEarning(earning.id, { status: 'paid' });
+        await storage.updateDoctorEarningStatus(earning.id, 'paid');
       }
       
       res.json({ 
