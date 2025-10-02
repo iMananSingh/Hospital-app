@@ -2664,7 +2664,7 @@ export class SqliteStorage implements IStorage {
                   )
                 )
                 .get();
-              
+
               if (serviceForEarnings) {
                 console.log(`✓ Batch fallback service match found: ${serviceForEarnings.id} - ${serviceForEarnings.name}`);
               } else {
@@ -2734,7 +2734,7 @@ export class SqliteStorage implements IStorage {
               )
             )
             .get();
-          
+
           if (service) {
             console.log(`✓ Fallback service match found: ${service.id} - ${service.name}`);
           } else {
