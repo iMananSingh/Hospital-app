@@ -2645,11 +2645,32 @@ export class SqliteStorage implements IStorage {
           // Calculate doctor earnings if doctor is assigned and service exists
           if (serviceData.doctorId && serviceData.serviceId) {
             // Get service details for earnings calculation
-            const serviceForEarnings = tx
+            let serviceForEarnings = tx
               .select()
               .from(schema.services)
               .where(eq(schema.services.id, serviceData.serviceId))
               .get();
+
+            // If service not found by ID, try fallback match by name and category
+            if (!serviceForEarnings && serviceData.serviceName && serviceData.serviceType) {
+              console.log(`Batch: Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+              serviceForEarnings = tx
+                .select()
+                .from(schema.services)
+                .where(
+                  and(
+                    eq(schema.services.name, serviceData.serviceName),
+                    eq(schema.services.category, serviceData.serviceType)
+                  )
+                )
+                .get();
+              
+              if (serviceForEarnings) {
+                console.log(`✓ Batch fallback service match found: ${serviceForEarnings.id} - ${serviceForEarnings.name}`);
+              } else {
+                console.log(`Batch: No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+              }
+            }
 
             console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`);
             if (serviceForEarnings) {
@@ -2699,6 +2720,27 @@ export class SqliteStorage implements IStorage {
           .from(schema.services)
           .where(eq(schema.services.id, serviceData.serviceId))
           .get();
+
+        // If service not found by ID, try fallback match by name and category
+        if (!service && serviceData.serviceName && serviceData.serviceType) {
+          console.log(`Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+          service = db
+            .select()
+            .from(schema.services)
+            .where(
+              and(
+                eq(schema.services.name, serviceData.serviceName),
+                eq(schema.services.category, serviceData.serviceType)
+              )
+            )
+            .get();
+          
+          if (service) {
+            console.log(`✓ Fallback service match found: ${service.id} - ${service.name}`);
+          } else {
+            console.log(`No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+          }
+        }
 
         if (service) {
           // Calculate billing using smart costing
