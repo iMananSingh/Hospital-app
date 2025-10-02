@@ -186,7 +186,7 @@ export default function Billing() {
   };
 
   const calculateOpdTotal = (data: any[]) => {
-    return data.reduce((sum, item) => sum + (item.calculatedAmount || item.price || 0), 0);
+    return data.reduce((sum, item) => sum + (item.consultationFee ?? item.doctorConsultationFee ?? 0), 0);
   };
 
   const calculateLabTotal = (data: any[]) => {
@@ -341,7 +341,7 @@ export default function Billing() {
                                     <td className="p-3">{formatGenderAge({ name: item.patientName, age: item.patientAge, gender: item.patientGender })}</td>
                                     <td className="p-3">{item.doctorName || getDoctorName(item.doctorId)}</td>
                                     <td className="p-3 text-right" data-testid={`opd-fee-${index}`}>
-                                      {formatCurrency(item.calculatedAmount || item.price || 0)}
+                                      {formatCurrency(item.consultationFee ?? item.doctorConsultationFee ?? 0)}
                                     </td>
                                   </tr>
                                 ))
