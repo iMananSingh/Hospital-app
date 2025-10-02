@@ -238,6 +238,8 @@ export const systemSettings = sqliteTable("system_settings", {
   backupTime: text("backup_time").notNull().default("02:00"), // HH:MM format
   lastBackupDate: text("last_backup_date"),
   backupRetentionDays: integer("backup_retention_days").notNull().default(30),
+  timezone: text("timezone").notNull().default("UTC"), // Timezone for all timestamps (e.g., "Asia/Kolkata", "America/New_York")
+  timezoneOffset: text("timezone_offset").notNull().default("+00:00"), // Offset in ±HH:MM format
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });

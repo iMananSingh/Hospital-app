@@ -730,6 +730,24 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
+    // Add timezone columns to system_settings table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN timezone TEXT DEFAULT 'UTC';
+      `);
+      console.log("Added timezone column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN timezone_offset TEXT DEFAULT '+00:00';
+      `);
+      console.log("Added timezone_offset column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
 
     // Always ensure demo users and data exist on every restart
     await createDemoData();
@@ -4085,6 +4103,8 @@ export class SqliteStorage implements IStorage {
           backupTime: "02:00",
           lastBackupDate: null,
           backupRetentionDays: 30,
+          timezone: "UTC",
+          timezoneOffset: "+00:00",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
