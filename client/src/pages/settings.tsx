@@ -864,6 +864,51 @@ export default function Settings() {
                           data-testid="switch-audit-logging" 
                         />
                       </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-base">System Timezone</Label>
+                        <p className="text-sm text-muted-foreground">All timestamps will be stored in this timezone</p>
+                        <Select
+                          value={systemSettings?.timezone || 'UTC'}
+                          onValueChange={(value) => {
+                            const timezoneMap: Record<string, string> = {
+                              'UTC': '+00:00',
+                              'Asia/Kolkata': '+05:30',
+                              'America/New_York': '-05:00',
+                              'America/Chicago': '-06:00',
+                              'America/Denver': '-07:00',
+                              'America/Los_Angeles': '-08:00',
+                              'Europe/London': '+00:00',
+                              'Europe/Paris': '+01:00',
+                              'Asia/Dubai': '+04:00',
+                              'Asia/Singapore': '+08:00',
+                              'Asia/Tokyo': '+09:00',
+                              'Australia/Sydney': '+11:00',
+                            };
+                            handleSystemSettingChange('timezone', value);
+                            handleSystemSettingChange('timezoneOffset', timezoneMap[value] || '+00:00');
+                          }}
+                          data-testid="select-timezone"
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
+                            <SelectItem value="Asia/Kolkata">India (IST, UTC+5:30)</SelectItem>
+                            <SelectItem value="America/New_York">USA - Eastern (EST, UTC-5)</SelectItem>
+                            <SelectItem value="America/Chicago">USA - Central (CST, UTC-6)</SelectItem>
+                            <SelectItem value="America/Denver">USA - Mountain (MST, UTC-7)</SelectItem>
+                            <SelectItem value="America/Los_Angeles">USA - Pacific (PST, UTC-8)</SelectItem>
+                            <SelectItem value="Europe/London">UK (GMT, UTC+0)</SelectItem>
+                            <SelectItem value="Europe/Paris">Europe - Central (CET, UTC+1)</SelectItem>
+                            <SelectItem value="Asia/Dubai">UAE (GST, UTC+4)</SelectItem>
+                            <SelectItem value="Asia/Singapore">Singapore (SGT, UTC+8)</SelectItem>
+                            <SelectItem value="Asia/Tokyo">Japan (JST, UTC+9)</SelectItem>
+                            <SelectItem value="Australia/Sydney">Australia - Sydney (AEDT, UTC+11)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </>
                   )}
                 </CardContent>

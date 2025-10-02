@@ -913,6 +913,34 @@ async function createDemoData() {
   }
 }
 
+// Timezone utility function to apply configured timezone offset to timestamps
+export function applyTimezone(date: Date = new Date()): string {
+  try {
+    // Get system settings to retrieve timezone offset
+    const settings = db.select().from(schema.systemSettings).get();
+    const offset = settings?.timezoneOffset || '+00:00';
+    
+    // Parse offset (e.g., "+05:30" or "-05:00")
+    const match = offset.match(/([+-])(\d{2}):(\d{2})/);
+    if (!match) {
+      return date.toISOString();
+    }
+    
+    const sign = match[1] === '+' ? 1 : -1;
+    const hours = parseInt(match[2]);
+    const minutes = parseInt(match[3]);
+    
+    // Apply offset to the date
+    const offsetMs = sign * (hours * 60 + minutes) * 60 * 1000;
+    const adjustedDate = new Date(date.getTime() + offsetMs);
+    
+    return adjustedDate.toISOString();
+  } catch (error) {
+    console.error('Error applying timezone:', error);
+    return date.toISOString();
+  }
+}
+
 // Initialize the database
 initializeDatabase().then(() => {
   createDemoData();
