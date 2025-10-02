@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Settings as SettingsIcon, 
   Users, 
@@ -25,7 +27,9 @@ import {
   Edit,
   Trash2,
   UserPlus,
-  RotateCcw
+  RotateCcw,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
 import { insertServiceSchema, insertUserSchema, insertSystemSettingsSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -34,6 +38,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Service, User } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
 import { clearTimezoneCache } from "@/lib/timezone";
+import { cn } from "@/lib/utils";
 
 export default function Settings() {
   const [isNewServiceOpen, setIsNewServiceOpen] = useState(false);
@@ -55,6 +60,8 @@ export default function Settings() {
     frequency: 'daily',
     time: '02:00'
   });
+  const [pendingSystemSettings, setPendingSystemSettings] = useState<any>(null);
+  const [timezoneOpen, setTimezoneOpen] = useState(false);
 
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
@@ -71,6 +78,43 @@ export default function Settings() {
   const { data: systemSettings, isLoading: systemSettingsLoading } = useQuery({
     queryKey: ["/api/settings/system"],
   });
+
+  const allTimezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf('timeZone').sort();
+    } catch (error) {
+      return ['UTC'];
+    }
+  }, []);
+
+  const getTimezoneOffset = (timezone: string): string => {
+    try {
+      const date = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        timeZoneName: 'longOffset'
+      });
+      const parts = formatter.formatToParts(date);
+      const offsetPart = parts.find(part => part.type === 'timeZoneName');
+      if (offsetPart && offsetPart.value.includes('GMT')) {
+        const match = offsetPart.value.match(/GMT([+-]\d{1,2}):?(\d{2})?/);
+        if (match) {
+          const hours = match[1];
+          const minutes = match[2] || '00';
+          return `${hours.padStart(3, '0')}:${minutes}`;
+        }
+      }
+      return '+00:00';
+    } catch (error) {
+      return '+00:00';
+    }
+  };
+
+  React.useEffect(() => {
+    if (systemSettings && !pendingSystemSettings) {
+      setPendingSystemSettings(systemSettings);
+    }
+  }, [systemSettings]);
 
   const { data: backupHistory = [], isLoading: backupHistoryLoading, refetch: refetchBackupHistory } = useQuery({
     queryKey: ["/api/backup/history"],
@@ -516,35 +560,51 @@ export default function Settings() {
     if (field === 'autoBackup' && value) {
       // Show configuration dialog when enabling auto backup
       setAutoBackupSettings({
-        frequency: systemSettings?.backupFrequency || 'daily',
-        time: systemSettings?.backupTime || '02:00'
+        frequency: pendingSystemSettings?.backupFrequency || 'daily',
+        time: pendingSystemSettings?.backupTime || '02:00'
       });
       setShowAutoBackupConfig(true);
       return;
     }
 
     const updatedSettings = {
-      ...systemSettings,
+      ...pendingSystemSettings,
       [field]: value,
     };
 
-    saveSystemSettingsMutation.mutate(updatedSettings);
+    setPendingSystemSettings(updatedSettings);
+  };
+
+  const handleSaveSystemSettings = () => {
+    saveSystemSettingsMutation.mutate(pendingSystemSettings);
     
     // Clear timezone cache when timezone settings are updated
-    if (field === 'timezone' || field === 'timezoneOffset') {
+    if ((pendingSystemSettings as any)?.timezone !== (systemSettings as any)?.timezone || 
+        (pendingSystemSettings as any)?.timezoneOffset !== (systemSettings as any)?.timezoneOffset) {
       clearTimezoneCache();
     }
   };
 
+  const handleTimezoneChange = (timezone: string) => {
+    const offset = getTimezoneOffset(timezone);
+    const updatedSettings = {
+      ...pendingSystemSettings,
+      timezone: timezone,
+      timezoneOffset: offset,
+    };
+    setPendingSystemSettings(updatedSettings);
+    setTimezoneOpen(false);
+  };
+
   const handleAutoBackupConfigSave = () => {
     const updatedSettings = {
-      ...systemSettings,
+      ...pendingSystemSettings,
       autoBackup: true,
       backupFrequency: autoBackupSettings.frequency,
       backupTime: autoBackupSettings.time
     };
 
-    saveSystemSettingsMutation.mutate(updatedSettings);
+    setPendingSystemSettings(updatedSettings);
     setShowAutoBackupConfig(false);
   };
 
@@ -824,7 +884,7 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">Send email alerts for important events</p>
                         </div>
                         <Switch 
-                          checked={systemSettings?.emailNotifications || false}
+                          checked={pendingSystemSettings?.emailNotifications || false}
                           onCheckedChange={(checked) => handleSystemSettingChange('emailNotifications', checked)}
                           data-testid="switch-email-notifications" 
                         />
@@ -836,7 +896,7 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">Send SMS alerts to patients</p>
                         </div>
                         <Switch 
-                          checked={systemSettings?.smsNotifications || false}
+                          checked={pendingSystemSettings?.smsNotifications || false}
                           onCheckedChange={(checked) => handleSystemSettingChange('smsNotifications', checked)}
                           data-testid="switch-sms-notifications" 
                         />
@@ -846,14 +906,14 @@ export default function Settings() {
                         <div>
                           <Label className="text-base">Auto Backup</Label>
                           <p className="text-sm text-muted-foreground">
-                            {systemSettings?.autoBackup 
-                              ? `Automatically backup data ${systemSettings.backupFrequency || 'daily'} at ${systemSettings.backupTime || '02:00'}`
+                            {pendingSystemSettings?.autoBackup 
+                              ? `Automatically backup data ${pendingSystemSettings.backupFrequency || 'daily'} at ${pendingSystemSettings.backupTime || '02:00'}`
                               : 'Automatically backup data at scheduled intervals'
                             }
                           </p>
                         </div>
                         <Switch 
-                          checked={systemSettings?.autoBackup || false}
+                          checked={pendingSystemSettings?.autoBackup || false}
                           onCheckedChange={(checked) => handleSystemSettingChange('autoBackup', checked)}
                           data-testid="switch-auto-backup" 
                         />
@@ -865,7 +925,7 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">Track all user actions</p>
                         </div>
                         <Switch 
-                          checked={systemSettings?.auditLogging || false}
+                          checked={pendingSystemSettings?.auditLogging || false}
                           onCheckedChange={(checked) => handleSystemSettingChange('auditLogging', checked)}
                           data-testid="switch-audit-logging" 
                         />
@@ -873,48 +933,57 @@ export default function Settings() {
 
                       <div className="space-y-2">
                         <Label className="text-base">System Timezone</Label>
-                        <p className="text-sm text-muted-foreground">All timestamps will be stored in this timezone</p>
-                        <Select
-                          value={systemSettings?.timezone || 'UTC'}
-                          onValueChange={(value) => {
-                            const timezoneMap: Record<string, string> = {
-                              'UTC': '+00:00',
-                              'Asia/Kolkata': '+05:30',
-                              'America/New_York': '-05:00',
-                              'America/Chicago': '-06:00',
-                              'America/Denver': '-07:00',
-                              'America/Los_Angeles': '-08:00',
-                              'Europe/London': '+00:00',
-                              'Europe/Paris': '+01:00',
-                              'Asia/Dubai': '+04:00',
-                              'Asia/Singapore': '+08:00',
-                              'Asia/Tokyo': '+09:00',
-                              'Australia/Sydney': '+11:00',
-                            };
-                            handleSystemSettingChange('timezone', value);
-                            handleSystemSettingChange('timezoneOffset', timezoneMap[value] || '+00:00');
-                          }}
-                          data-testid="select-timezone"
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select timezone" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
-                            <SelectItem value="Asia/Kolkata">India (IST, UTC+5:30)</SelectItem>
-                            <SelectItem value="America/New_York">USA - Eastern (EST, UTC-5)</SelectItem>
-                            <SelectItem value="America/Chicago">USA - Central (CST, UTC-6)</SelectItem>
-                            <SelectItem value="America/Denver">USA - Mountain (MST, UTC-7)</SelectItem>
-                            <SelectItem value="America/Los_Angeles">USA - Pacific (PST, UTC-8)</SelectItem>
-                            <SelectItem value="Europe/London">UK (GMT, UTC+0)</SelectItem>
-                            <SelectItem value="Europe/Paris">Europe - Central (CET, UTC+1)</SelectItem>
-                            <SelectItem value="Asia/Dubai">UAE (GST, UTC+4)</SelectItem>
-                            <SelectItem value="Asia/Singapore">Singapore (SGT, UTC+8)</SelectItem>
-                            <SelectItem value="Asia/Tokyo">Japan (JST, UTC+9)</SelectItem>
-                            <SelectItem value="Australia/Sydney">Australia - Sydney (AEDT, UTC+11)</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <p className="text-sm text-muted-foreground">All timestamps will be displayed in this timezone</p>
+                        <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={timezoneOpen}
+                              className="w-full justify-between"
+                              data-testid="button-timezone-selector"
+                            >
+                              {pendingSystemSettings?.timezone || 'Select timezone...'}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput placeholder="Search timezone..." data-testid="input-timezone-search" />
+                              <CommandList>
+                                <CommandEmpty>No timezone found.</CommandEmpty>
+                                <CommandGroup>
+                                  {allTimezones.map((timezone) => (
+                                    <CommandItem
+                                      key={timezone}
+                                      value={timezone}
+                                      onSelect={() => handleTimezoneChange(timezone)}
+                                      data-testid={`timezone-option-${timezone}`}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          pendingSystemSettings?.timezone === timezone ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {timezone}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
+
+                      <Button 
+                        onClick={handleSaveSystemSettings}
+                        className="w-full bg-medical-blue hover:bg-medical-blue/90"
+                        disabled={saveSystemSettingsMutation.isPending}
+                        data-testid="button-save-system-settings"
+                      >
+                        {saveSystemSettingsMutation.isPending ? "Saving..." : "Save System Configuration"}
+                      </Button>
                     </>
                   )}
                 </CardContent>
