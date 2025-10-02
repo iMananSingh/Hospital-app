@@ -2509,7 +2509,7 @@ export class SqliteStorage implements IStorage {
   }
 
   // Create doctor earning from a completed patient service
-  async createDoctorEarningFromService(patientService: any) {
+  async createDoctorEarningFromService(patientService: any): Promise<DoctorEarning | null> {
     // Get service details
     const service = await this.getServiceById(patientService.serviceId);
     if (!service) {
