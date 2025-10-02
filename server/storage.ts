@@ -3430,8 +3430,8 @@ export class SqliteStorage implements IStorage {
       // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
       const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' + 
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
+      const today = indianTime.getFullYear() + '-' +
+        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
         String(indianTime.getDate()).padStart(2, '0');
 
       console.log(`Dashboard stats - Using today date: ${today}`);
@@ -3450,9 +3450,9 @@ export class SqliteStorage implements IStorage {
 
       console.log(`Today OPD visits count: ${todayOpdVisits.length}`);
       if (todayOpdVisits.length > 0) {
-        console.log(`Sample OPD visits:`, todayOpdVisits.slice(0, 3).map(v => ({ 
-          id: v.id, 
-          scheduledDate: v.scheduledDate, 
+        console.log(`Sample OPD visits:`, todayOpdVisits.slice(0, 3).map(v => ({
+          id: v.id,
+          scheduledDate: v.scheduledDate,
           visitType: v.visitType,
           patientId: v.patientId,
           doctorId: v.doctorId
@@ -5753,69 +5753,47 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  // New function to get all pending bills for all patients in bulk
+  // New function for bulk pending bills
   async getAllPatientsPendingBills(): Promise<any[]> {
     try {
-      // Get all patients
-      const allPatients = db.select().from(schema.patients).all();
+      console.log('Fetching all patients with pending bills...');
 
-      // Get all services, payments, and discounts in bulk
-      // Assuming patientAdmissions is not directly used for pending bills but admission charges might be
-      // If admission charges are calculated differently, this part needs adjustment.
-      // For now, we'll rely on patientServices and direct patient financial data.
-      const allServices = db.select().from(schema.patientServices).all();
-      const allPayments = db.select().from(schema.patientPayments).all();
-      const allDiscounts = db.select().from(schema.patientDiscounts).all();
-      
-      // We also need to consider bills that are not fully paid
-      const allBills = db.select().from(schema.bills).all();
+      // Get all active patients
+      const allPatients = db
+        .select()
+        .from(schema.patients)
+        .where(eq(schema.patients.isActive, true))
+        .all();
 
-      // Process each patient
-      const patientsWithPending = allPatients
-        .map(patient => {
-          // Calculate total charges for this patient from services and bills
-          let totalCharges = 0;
+      console.log(`Found ${allPatients.length} active patients`);
 
-          // Add charges from patient_services
-          const patientServices = allServices.filter(s => s.patientId === patient.id);
-          patientServices.forEach(service => {
-            // Use calculatedAmount if available, otherwise fallback to price
-            totalCharges += service.calculatedAmount || service.price || 0;
-          });
+      // For each patient, use the same calculation as getPatientFinancialSummary
+      const patientsWithPending = [];
 
-          // Add charges from unpaid bills
-          const patientBills = allBills.filter(b => b.patientId === patient.id && b.paymentStatus !== 'paid');
-          patientBills.forEach(bill => {
-            totalCharges += bill.totalAmount;
-          });
-          
-          // Calculate total payments for this patient
-          const patientPayments = allPayments.filter(p => p.patientId === patient.id);
-          const totalPaid = patientPayments.reduce((sum, payment) => sum + payment.amount, 0);
+      for (const patient of allPatients) {
+        try {
+          // Use the existing financial summary method for consistency
+          const summary = await this.getPatientFinancialSummary(patient.id);
 
-          // Calculate total discounts for this patient
-          const patientDiscounts = allDiscounts.filter(d => d.patientId === patient.id);
-          const totalDiscounts = patientDiscounts.reduce((sum, discount) => sum + discount.amount, 0);
-
-          // Calculate balance: total charges (from services + unpaid bills) - total paid - total discounts
-          const balance = totalCharges - totalPaid - totalDiscounts;
-
-          // Only include if balance is positive
-          if (balance > 0) {
-            return {
+          // Only include patients with positive balance
+          if (summary.balance > 0) {
+            patientsWithPending.push({
               ...patient,
-              pendingAmount: balance
-            };
+              pendingAmount: summary.balance
+            });
           }
-          return null;
-        })
-        .filter(patient => patient !== null) // Filter out nulls
-        .sort((a, b) => b!.pendingAmount - a!.pendingAmount); // Sort by pending amount descending
+        } catch (error) {
+          console.error(`Error calculating pending bills for patient ${patient.id}:`, error);
+          // Skip this patient if there's an error
+          continue;
+        }
+      }
 
+      console.log(`Found ${patientsWithPending.length} patients with pending bills`);
       return patientsWithPending;
     } catch (error) {
-      console.error("Error getting bulk pending bills:", error);
-      throw error;
+      console.error('Error fetching patients with pending bills:', error);
+      return [];
     }
   }
 }
