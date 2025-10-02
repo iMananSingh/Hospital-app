@@ -204,6 +204,40 @@ export default function Doctors() {
     },
   });
 
+  // Mutate to recalculate doctor earnings
+  const recalculateEarningsMutation = useMutation({
+    mutationFn: async (doctorId: string) => {
+      const response = await fetch(`/api/doctors/${doctorId}/recalculate-earnings`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to recalculate earnings");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, doctorId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      toast({
+        title: "Earnings Recalculated",
+        description: `Successfully recalculated earnings for ${data.doctorName}. ${data.updatedCount} records updated.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to recalculate earnings",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createDoctorMutation = useMutation({
     mutationFn: async (doctorData: any) => {
       const response = await fetch("/api/doctors", {
@@ -1575,20 +1609,31 @@ export default function Doctors() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <div className="flex space-x-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
-                                    data-testid={`button-view-earnings-${doctorData.doctorId}`}
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
+                                <div className="flex gap-2">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => recalculateEarningsMutation.mutate(doctorData.doctorId)}
+                                          disabled={recalculateEarningsMutation.isPending}
+                                          className="hover:bg-blue-50 hover:text-blue-600"
+                                          data-testid={`button-recalculate-${doctorData.doctorId}`}
+                                        >
+                                          <Calculator className="w-4 h-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Recalculate Earnings</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button 
-                                          variant="ghost" 
+                                          variant="outline" 
                                           size="sm" 
                                           onClick={() => handleMarkAsPaid(doctorData.doctorId)}
                                           disabled={markAsPaidMutation.isPending || doctorData.totalPending === 0}

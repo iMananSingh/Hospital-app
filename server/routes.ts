@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/users", authenticateToken, async (req: any, res) => {
+  app.get("/api/users", authenticateToken, async (req, res) => {
     try {
       // Check if user has admin or super_user role
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
       const userData = req.body;
@@ -298,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/users/:id", authenticateToken, async (req: any, res) => {
+  app.delete("/api/users/:id", authenticateToken, async (req, res) => {
     try {
       // Check if user has admin or super_user role
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
@@ -1778,8 +1778,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Ensure consultation fee is a valid number
-      const consultationFee = typeof visitData.consultationFee === 'number' && visitData.consultationFee >= 0 
-        ? visitData.consultationFee 
+      const consultationFee = typeof visitData.consultationFee === 'number' && visitData.consultationFee >= 0
+        ? visitData.consultationFee
         : 0;
 
       // Convert scheduled date/time to IST
@@ -2461,22 +2461,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req, res) => {
     try {
       const { doctorId } = req.params;
-      
+
       // Get all pending earnings for this doctor
       const pendingEarnings = await storage.getDoctorEarnings(doctorId, 'pending');
-      
+
       if (pendingEarnings.length === 0) {
         return res.status(400).json({ message: "No pending earnings found for this doctor" });
       }
-      
+
       // Mark all pending earnings as paid
       for (const earning of pendingEarnings) {
         await storage.updateDoctorEarningStatus(earning.id, 'paid');
       }
-      
-      res.json({ 
+
+      res.json({
         message: `Successfully marked ${pendingEarnings.length} earnings as paid`,
-        count: pendingEarnings.length 
+        count: pendingEarnings.length
       });
     } catch (error) {
       console.error("Error marking earnings as paid:", error);

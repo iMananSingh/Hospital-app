@@ -2497,6 +2497,92 @@ export class SqliteStorage implements IStorage {
             .insert(schema.patientServices)
             .values(finalServiceData)
             .returning()
+
+
+  // Get doctor earning by patient service ID
+  async getDoctorEarningByPatientServiceId(patientServiceId: string) {
+    return db
+      .select()
+      .from(schema.doctorEarnings)
+      .where(eq(schema.doctorEarnings.patientServiceId, patientServiceId))
+      .get();
+  },
+
+  // Create doctor earning from a completed patient service
+  async createDoctorEarningFromService(patientService: any) {
+    // Get service details
+    const service = await this.getServiceById(patientService.serviceId);
+    if (!service) {
+      throw new Error(`Service not found: ${patientService.serviceId}`);
+    }
+
+    // Find doctor service rate
+    let doctorRate = db
+      .select()
+      .from(schema.doctorServiceRates)
+      .where(
+        and(
+          eq(schema.doctorServiceRates.doctorId, patientService.doctorId),
+          eq(schema.doctorServiceRates.serviceId, service.id),
+          eq(schema.doctorServiceRates.isActive, true)
+        )
+      )
+      .get();
+
+    // Try matching by service name if no rate found
+    if (!doctorRate) {
+      doctorRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, patientService.doctorId),
+            eq(schema.doctorServiceRates.serviceName, service.name),
+            eq(schema.doctorServiceRates.isActive, true)
+          )
+        )
+        .get();
+    }
+
+    if (!doctorRate) {
+      console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
+      return null;
+    }
+
+    // Calculate earning amount
+    let earnedAmount = 0;
+    const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+
+    if (doctorRate.rateType === 'percentage') {
+      earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
+    } else if (doctorRate.rateType === 'per_instance') {
+      earnedAmount = doctorRate.rateAmount;
+    } else if (doctorRate.rateType === 'fixed_daily') {
+      earnedAmount = doctorRate.rateAmount;
+    }
+
+    // Create earning record
+    const earningId = `EARN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const earningData = {
+      earningId,
+      doctorId: patientService.doctorId,
+      patientId: patientService.patientId,
+      serviceId: service.id,
+      patientServiceId: patientService.id,
+      serviceName: service.name,
+      serviceCategory: service.category,
+      serviceDate: patientService.scheduledDate,
+      rateType: doctorRate.rateType,
+      rateAmount: doctorRate.rateAmount,
+      servicePrice,
+      earnedAmount,
+      status: 'pending',
+      notes: null
+    };
+
+    return db.insert(schema.doctorEarnings).values(earningData).returning().get();
+  },
+
             .get();
 
           console.log("Created service in DB:", {
@@ -5605,8 +5691,8 @@ export class SqliteStorage implements IStorage {
           continue;
         }
 
-        // Find doctor service rate
-        const doctorRate = db
+        // Find doctor service rate - check by service ID or by service name for flexible matching
+        let doctorRate = db
           .select()
           .from(schema.doctorServiceRates)
           .where(
@@ -5614,11 +5700,27 @@ export class SqliteStorage implements IStorage {
               eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
               eq(schema.doctorServiceRates.serviceId, service.id),
               eq(schema.doctorServiceRates.isActive, true)
-            )          )
+            )
+          )
           .get();
 
+        // If no rate found by service ID, try matching by service name (for flexible matching)
         if (!doctorRate) {
-          console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id}`);
+          doctorRate = db
+            .select()
+            .from(schema.doctorServiceRates)
+            .where(
+              and(
+                eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+                eq(schema.doctorServiceRates.serviceName, service.name),
+                eq(schema.doctorServiceRates.isActive, true)
+              )
+            )
+            .get();
+        }
+
+        if (!doctorRate) {
+          console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id} (${service.name})`);
           continue;
         }
 
