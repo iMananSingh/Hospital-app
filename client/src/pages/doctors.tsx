@@ -15,12 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet, Settings, Shield } from "lucide-react";
+import { UserPlus, Eye, Edit, Trash2, Stethoscope, IndianRupee, Calculator, Wallet, Settings, Shield, Check } from "lucide-react";
 import { insertDoctorSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import type { Doctor } from "@shared/schema";
+import type { Doctor, Service, DoctorServiceRate } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
 
 export default function Doctors() {
@@ -71,16 +71,16 @@ export default function Doctors() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: doctors = [], isLoading } = useQuery({
+  const { data: doctors = [], isLoading } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
   });
 
-  const { data: deletedDoctors = [], isLoading: isLoadingDeleted } = useQuery({
+  const { data: deletedDoctors = [], isLoading: isLoadingDeleted } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors/deleted"],
   });
 
   // Fetch services for salary management
-  const { data: services = [] } = useQuery({
+  const { data: services = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
@@ -90,7 +90,7 @@ export default function Doctors() {
   });
 
   // Fetch doctor salary rates when doctor is selected
-  const { data: doctorRates = [], refetch: refetchDoctorRates } = useQuery({
+  const { data: doctorRates = [], refetch: refetchDoctorRates } = useQuery<DoctorServiceRate[]>({
     queryKey: ["/api/doctors", selectedDoctorId, "salary-rates"],
     enabled: !!selectedDoctorId,
   });
@@ -134,36 +134,6 @@ export default function Doctors() {
     enabled: filteredDoctors.length > 0,
   });
 
-  // Mutation to recalculate earnings for all doctors
-  const recalculateEarningsMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch("/api/doctors/recalculate-earnings", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to recalculate doctor earnings");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
-      toast({
-        title: "Success",
-        description: "Doctor earnings recalculated successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to recalculate doctor earnings",
-        variant: "destructive",
-      });
-    },
-  });
 
   // Save doctor salary rates mutation
   const saveDoctorRatesMutation = useMutation({
@@ -194,6 +164,40 @@ export default function Doctors() {
       toast({
         title: "Error",
         description: error.message || "Failed to save doctor salary rates",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mark doctor earnings as paid mutation
+  const markAsPaidMutation = useMutation({
+    mutationFn: async (doctorId: string) => {
+      const response = await fetch(`/api/doctors/${doctorId}/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to mark earnings as paid");
+      }
+
+      return response.json();
+    },
+    onSuccess: (data, doctorId) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      toast({
+        title: "Payment Confirmed",
+        description: `Successfully marked ${data.count} earnings as paid`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark earnings as paid",
         variant: "destructive",
       });
     },
@@ -404,8 +408,8 @@ export default function Doctors() {
       specialization: doctor.specialization,
       qualification: doctor.qualification,
       consultationFee: doctor.consultationFee,
-      userId: doctor.userId || undefined,
-    });
+      userId: undefined,
+    } as any);
     setIsEditDoctorOpen(true);
   };
 
@@ -478,7 +482,21 @@ export default function Doctors() {
 
   // Utility function to categorize services
   const categorizeServices = () => {
-    const categories = {
+    type CategorizedService = {
+      id: string;
+      name: string;
+      category: string;
+      price: number;
+    };
+
+    const categories: {
+      opd: CategorizedService[];
+      labTests: CategorizedService[];
+      diagnostic: CategorizedService[];
+      operations: CategorizedService[];
+      admissions: CategorizedService[];
+      services: CategorizedService[];
+    } = {
       opd: [],
       labTests: [],
       diagnostic: [],
@@ -522,9 +540,20 @@ export default function Doctors() {
       })));
     }
 
-    // Categorize services based on their category field
+    // Categorize remaining services based on their category field
+    // Exclude services that are already categorized as OPD or pathology
     if (services && services.length > 0) {
+      const alreadyCategorizedIds = new Set([
+        ...categories.opd.map(s => s.id),
+        ...categories.labTests.map(s => s.id)
+      ]);
+
       services.forEach((service: any) => {
+        // Skip if already categorized as OPD or pathology
+        if (alreadyCategorizedIds.has(service.id)) {
+          return;
+        }
+
         const serviceItem = {
           id: service.id,
           name: service.name,
@@ -684,9 +713,9 @@ export default function Doctors() {
     saveDoctorRatesMutation.mutate(rates);
   };
 
-  // Handler for recalculating earnings
-  const handleRecalculateEarnings = () => {
-    recalculateEarningsMutation.mutate();
+  // Handle mark as paid
+  const handleMarkAsPaid = (doctorId: string) => {
+    markAsPaidMutation.mutate(doctorId);
   };
 
   const getSpecializationIcon = (specialization: string) => {
@@ -989,7 +1018,7 @@ export default function Doctors() {
                       {/* OPD Services */}
                       {categorizedServices.opd.length > 0 && (
                         <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">OPD</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">OPD Consultation</h3>
                           <div className="space-y-3">
                             {categorizedServices.opd.map((service: any) => (
                               <div key={service.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg" data-testid={`service-row-${service.id}`}>
@@ -1495,21 +1524,6 @@ export default function Doctors() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-medium">Doctor Earnings</h3>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline"
-                          onClick={handleRecalculateEarnings}
-                          disabled={recalculateEarningsMutation.isPending}
-                          data-testid="button-recalculate-earnings"
-                        >
-                          <Calculator className="w-4 h-4 mr-1" />
-                          {recalculateEarningsMutation.isPending ? "Recalculating..." : "Recalculate Earnings"}
-                        </Button>
-                        <Button data-testid="button-process-payments">
-                          <Wallet className="w-4 h-4 mr-1" />
-                          Process Payments
-                        </Button>
-                      </div>
                     </div>
 
                     <div className="border rounded-lg">
@@ -1569,8 +1583,14 @@ export default function Doctors() {
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>
-                                  <Button variant="ghost" size="sm" data-testid={`button-pay-doctor-${doctorData.doctorId}`}>
-                                    <Wallet className="w-4 h-4" />
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => handleMarkAsPaid(doctorData.doctorId)}
+                                    disabled={markAsPaidMutation.isPending || doctorData.totalPending === 0}
+                                    data-testid={`button-pay-doctor-${doctorData.doctorId}`}
+                                  >
+                                    <Check className="w-4 h-4" />
                                   </Button>
                                 </div>
                               </TableCell>

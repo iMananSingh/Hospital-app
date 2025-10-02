@@ -2505,6 +2505,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      
+      // Get all pending earnings for this doctor
+      const pendingEarnings = await storage.getDoctorEarnings(doctorId, 'pending');
+      
+      if (pendingEarnings.length === 0) {
+        return res.status(400).json({ message: "No pending earnings found for this doctor" });
+      }
+      
+      // Mark all pending earnings as paid
+      for (const earning of pendingEarnings) {
+        await storage.updateDoctorEarning(earning.id, { status: 'paid' });
+      }
+      
+      res.json({ 
+        message: `Successfully marked ${pendingEarnings.length} earnings as paid`,
+        count: pendingEarnings.length 
+      });
+    } catch (error) {
+      console.error("Error marking earnings as paid:", error);
+      res.status(500).json({ message: "Failed to mark earnings as paid" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
