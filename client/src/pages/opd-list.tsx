@@ -298,7 +298,7 @@ export default function OpdList() {
                           </Badge>
                           
                           <div className="text-right">
-                            <div className="font-medium">₹{visit.price}</div>
+                            <div className="font-medium">₹{visit.consultationFee || visit.calculatedAmount || 0}</div>
                             <div className="text-xs text-muted-foreground">
                               Consultation Fee
                             </div>
