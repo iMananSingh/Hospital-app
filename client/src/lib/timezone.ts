@@ -20,7 +20,11 @@ async function getSystemSettings(): Promise<SystemSettings> {
   const now = Date.now();
   if (!cachedSettings || (now - lastCacheTime) > CACHE_DURATION_MS) {
     try {
-      const response = await fetch('/api/settings/system');
+      const response = await fetch('/api/settings/system', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
       if (response.ok) {
         cachedSettings = await response.json();
         lastCacheTime = now;
