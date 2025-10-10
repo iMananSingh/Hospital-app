@@ -705,6 +705,42 @@ export default function PatientDetail() {
     },
   });
 
+  // Fetch system settings for timezone
+  const { data: systemSettings } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Update OPD form date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isOpdVisitDialogOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+      
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      
+      const currentDate = `${year}-${month}-${day}`;
+      const currentTime = `${hour}:${minute}`;
+      
+      opdVisitForm.setValue('scheduledDate', currentDate);
+      opdVisitForm.setValue('scheduledTime', currentTime);
+    }
+  }, [systemSettings?.timezone, isOpdVisitDialogOpen]);
+
   const watchedServiceValues = serviceForm.watch();
 
   // Sync form fields with component state
@@ -1847,26 +1883,15 @@ export default function PatientDetail() {
                 <Button
                   onClick={() => {
                     console.log("OPD button clicked");
-                    const now = new Date();
-                    // Use current local time for OPD appointment scheduling
-                    const currentDate = now.getFullYear() + "-" +
-                      String(now.getMonth() + 1).padStart(2, "0") + "-" +
-                      String(now.getDate()).padStart(2, "0");
-                    const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
-
                     setIsOpdVisitDialogOpen(true);
                     opdVisitForm.reset({
                       patientId: patientId || "",
                       doctorId: "",
-                      scheduledDate: currentDate,
-                      scheduledTime: currentTime,
-                      consultationFee: 0, // Added for OPD consultation fee
+                      scheduledDate: "",
+                      scheduledTime: "",
+                      consultationFee: 0,
                       symptoms: "",
                     });
-
-                    console.log(
-                      `Set current date/time: ${currentDate} ${currentTime}`,
-                    );
                   }}
                   className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                   data-testid="button-schedule-opd"
@@ -2140,18 +2165,13 @@ export default function PatientDetail() {
                 <CardTitle>OPD Consultation History</CardTitle>
                 <Button
                   onClick={() => {
-                    const now = new Date();
-                    // Use current local time for OPD appointment scheduling
-                    const currentDate = now.toISOString().split("T")[0];
-                    const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
-
                     setIsOpdVisitDialogOpen(true);
                     opdVisitForm.reset({
                       patientId: patientId || "",
                       doctorId: "",
-                      scheduledDate: currentDate,
-                      scheduledTime: currentTime,
-                      consultationFee: 0, // Added for OPD consultation fee
+                      scheduledDate: "",
+                      scheduledTime: "",
+                      consultationFee: 0,
                       symptoms: "",
                     });
                   }}
@@ -2268,18 +2288,13 @@ export default function PatientDetail() {
                     </p>
                     <Button
                       onClick={() => {
-                        const now = new Date();
-                        // Use current local time for OPD appointment scheduling
-                        const currentDate = now.toISOString().split("T")[0];
-                        const currentTime = now.toTimeString().split(" ")[0].slice(0, 5);
-
                         setIsOpdVisitDialogOpen(true);
                         opdVisitForm.reset({
                           patientId: patientId || "",
                           doctorId: "",
-                          scheduledDate: currentDate,
-                          scheduledTime: currentTime,
-                          consultationFee: 0, // Added for OPD consultation fee
+                          scheduledDate: "",
+                          scheduledTime: "",
+                          consultationFee: 0,
                           symptoms: "",
                         });
                       }}
