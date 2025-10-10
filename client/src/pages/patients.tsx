@@ -22,6 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template";
 import AccessRestricted from "@/components/access-restricted";
 import type { Patient } from "@shared/schema";
+import { formatDateTimeDisplay } from "@/lib/timezone";
 
 export default function Patients() {
   const [, navigate] = useLocation();
@@ -296,23 +297,19 @@ export default function Patients() {
     patient.phone.includes(searchQuery)
   );
 
-  const formatDate = (dateString: string) => {
-    // Parse the ISO string and apply the same correction as patient detail timeline
-    const date = new Date(dateString);
-    // Subtract 5.5 hours to correct the timezone display (same as patient detail)
-    const correctedTimestamp = date.getTime() - (5.5 * 60 * 60 * 1000);
-    const correctedDate = new Date(correctedTimestamp);
-    
-    // Format without timezone to avoid double conversion
-    return correctedDate.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+  // Use timezone utilities for consistent display
+  const [formattedDates, setFormattedDates] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    const formatDates = async () => {
+      const formatted: Record<string, string> = {};
+      for (const patient of filteredPatients) {
+        formatted[patient.id] = await formatDateTimeDisplay(patient.createdAt);
+      }
+      setFormattedDates(formatted);
+    };
+    formatDates();
+  }, [filteredPatients]);
 
   return (
     <div className="space-y-6">
@@ -380,7 +377,7 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formatDate(patient.createdAt)}
+                        {formattedDates[patient.id] || 'Loading...'}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 
