@@ -305,8 +305,18 @@ export default function Patients() {
   // Format dates with proper timezone handling
   const formatPatientDate = (dateString: string) => {
     try {
-      // Parse the UTC timestamp from database
-      const utcDate = new Date(dateString);
+      // The dateString from database is in ISO format (UTC)
+      // For example: "2025-10-02T16:10:00.000Z"
+      // We need to ensure it's parsed as UTC and then formatted in the configured timezone
+      
+      // Parse as UTC by ensuring the string has Z suffix
+      let utcDateString = dateString;
+      if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+        // If no timezone indicator, treat as UTC
+        utcDateString = dateString.replace(/\.\d{3}$/, '') + 'Z';
+      }
+      
+      const utcDate = new Date(utcDateString);
       
       // Validate the date
       if (isNaN(utcDate.getTime())) {
