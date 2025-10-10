@@ -298,18 +298,27 @@ export default function Patients() {
   );
 
   // Get system settings for timezone
-  const { data: systemSettings } = useQuery({
+  const { data: systemSettings, isLoading: isSystemSettingsLoading } = useQuery({
     queryKey: ["/api/settings/system"],
   });
 
   // Format dates with proper timezone handling
   const formatPatientDate = (dateString: string) => {
     try {
+      // Parse the UTC timestamp from database
       const utcDate = new Date(dateString);
+      
+      // Validate the date
+      if (isNaN(utcDate.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      
       const timezone = systemSettings?.timezone || 'UTC';
       
       // Use Intl.DateTimeFormat with the configured timezone
-      return new Intl.DateTimeFormat('en-US', {
+      // This automatically converts UTC to the specified timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         month: 'short',
         day: 'numeric',
@@ -317,9 +326,11 @@ export default function Patients() {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
-      }).format(utcDate);
+      });
+      
+      return formatter.format(utcDate);
     } catch (error) {
-      console.error('Error formatting date with timezone:', error);
+      console.error('Error formatting date with timezone:', error, 'for date:', dateString);
       // Fallback to UTC display
       return new Date(dateString).toLocaleString('en-US', {
         month: 'short',
@@ -398,7 +409,11 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formatPatientDate(patient.createdAt)}
+                        {isSystemSettingsLoading ? (
+                          <span className="text-muted-foreground">Loading...</span>
+                        ) : (
+                          formatPatientDate(patient.createdAt)
+                        )}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 
