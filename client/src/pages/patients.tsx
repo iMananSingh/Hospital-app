@@ -304,6 +304,7 @@ export default function Patients() {
     const formatDates = async () => {
       const formatted: Record<string, string> = {};
       for (const patient of filteredPatients) {
+        // Format the UTC timestamp from database with timezone conversion
         formatted[patient.id] = await formatDateTimeDisplay(patient.createdAt);
       }
       setFormattedDates(formatted);
@@ -377,7 +378,14 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formattedDates[patient.id] || 'Loading...'}
+                        {formattedDates[patient.id] || new Date(patient.createdAt).toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 
