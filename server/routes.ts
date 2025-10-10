@@ -1782,11 +1782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? visitData.consultationFee
         : 0;
 
-      // Convert scheduled date/time to IST
-      const visitDateTime = new Date(`${visitData.scheduledDate}T${visitData.scheduledTime || "09:00"}:00`);
-      const istDateTime = new Date(visitDateTime.getTime() + (5.5 * 60 * 60 * 1000));
-
-      // Create the OPD visit with IST timestamps
+      // Create the OPD visit - storage will handle timestamps correctly
       const opdVisit = await storage.createOpdVisit({
         patientId: visitData.patientId,
         doctorId: visitData.doctorId,
@@ -1797,9 +1793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         diagnosis: visitData.diagnosis || null,
         prescription: visitData.prescription || null,
         consultationFee: consultationFee,
-        status: "scheduled",
-        createdAt: istDateTime.toISOString(),
-        updatedAt: istDateTime.toISOString()
+        status: "scheduled"
       });
 
       res.status(201).json(opdVisit);
