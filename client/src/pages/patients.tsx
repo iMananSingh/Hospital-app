@@ -297,16 +297,39 @@ export default function Patients() {
     patient.phone.includes(searchQuery)
   );
 
+  // Get system settings for timezone
+  const { data: systemSettings } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
   // Format dates with proper timezone handling
   const formatPatientDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    try {
+      const utcDate = new Date(dateString);
+      const timezone = systemSettings?.timezone || 'UTC';
+      
+      // Use Intl.DateTimeFormat with the configured timezone
+      return new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).format(utcDate);
+    } catch (error) {
+      console.error('Error formatting date with timezone:', error);
+      // Fallback to UTC display
+      return new Date(dateString).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
   };
 
   return (
