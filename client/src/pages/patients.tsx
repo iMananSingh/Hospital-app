@@ -297,20 +297,17 @@ export default function Patients() {
     patient.phone.includes(searchQuery)
   );
 
-  // Use timezone utilities for consistent display
-  const [formattedDates, setFormattedDates] = React.useState<Record<string, string>>({});
-
-  React.useEffect(() => {
-    const formatDates = async () => {
-      const formatted: Record<string, string> = {};
-      for (const patient of filteredPatients) {
-        // Format the UTC timestamp from database with timezone conversion
-        formatted[patient.id] = await formatDateTimeDisplay(patient.createdAt);
-      }
-      setFormattedDates(formatted);
-    };
-    formatDates();
-  }, [filteredPatients]);
+  // Format dates with proper timezone handling
+  const formatPatientDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -378,14 +375,7 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formattedDates[patient.id] || new Date(patient.createdAt).toLocaleString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
+                        {formatPatientDate(patient.createdAt)}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 

@@ -20,14 +20,23 @@ async function getSystemSettings(): Promise<SystemSettings> {
   const now = Date.now();
   if (!cachedSettings || (now - lastCacheTime) > CACHE_DURATION_MS) {
     try {
+      const token = localStorage.getItem("hospital_token");
+      if (!token) {
+        console.warn('No auth token found for system settings');
+        return {};
+      }
+      
       const response = await fetch('/api/settings/system', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${token}`,
         },
       });
+      
       if (response.ok) {
         cachedSettings = await response.json();
         lastCacheTime = now;
+      } else {
+        console.error('Failed to fetch system settings:', response.status);
       }
     } catch (error) {
       console.error('Error fetching system settings:', error);
