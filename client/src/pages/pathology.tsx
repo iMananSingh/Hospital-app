@@ -1,4 +1,5 @@
 import { useState } from "react";
+import React from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -371,16 +372,38 @@ export default function Pathology() {
     defaultValues: {
       patientId: preSelectedPatientId || "",
       doctorId: "",
-      orderedDate: (() => {
-        // Use local timezone for pathology order date
-        const now = new Date();
-        return now.getFullYear() + '-' +
-          String(now.getMonth() + 1).padStart(2, '0') + '-' +
-          String(now.getDate()).padStart(2, '0');
-      })(),
+      orderedDate: new Date().toISOString().split('T')[0], // Temporary, will be updated by useEffect
       remarks: "",
     },
   });
+
+  // Set default date based on configured timezone
+  const { data: systemSettings } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Update ordered date when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+      
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const currentDate = `${year}-${month}-${day}`;
+      
+      form.setValue('orderedDate', currentDate);
+    }
+  }, [systemSettings?.timezone]);
 
   const onSubmit = (data: any) => {
     if (selectedCatalogTests.length === 0) {
