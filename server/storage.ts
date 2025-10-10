@@ -1974,6 +1974,7 @@ export class SqliteStorage implements IStorage {
       const today = new Date().toISOString().slice(2, 10).replace(/-/g, '');
       const visitId = `VIS-${today}-${orderNumber}`;
 
+      // Store the data as-is without any timezone conversion
       const result = await db.insert(schema.patientVisits).values({
         ...data,
         id: this.generateId(),
@@ -1981,7 +1982,8 @@ export class SqliteStorage implements IStorage {
         visitType: "opd",
         visitDate: data.scheduledDate || data.visitDate,
         status: 'scheduled',
-        consultationFee: data.consultationFee || 0, // Store consultation fee
+        consultationFee: data.consultationFee || 0,
+        // Database defaults will handle createdAt/updatedAt in UTC
       }).returning().get();
 
       // Calculate doctor earning for this OPD visit
