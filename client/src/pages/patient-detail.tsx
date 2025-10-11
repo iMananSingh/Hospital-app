@@ -3014,12 +3014,30 @@ export default function PatientDetail() {
                               {(() => {
                                 if (test.orderDate) {
                                   try {
+                                    // Get timezone from system settings
+                                    const timezone = systemSettings?.timezone || 'UTC';
+                                    
                                     let displayDate;
 
                                     // Handle different date formats
                                     if (typeof test.orderDate === 'string') {
+                                      // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
+                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                        const parts = test.orderDate.split("T");
+                                        const dateParts = parts[0].split("-");
+                                        const timeParts = parts[1].split(":");
+
+                                        // Create date object in local timezone (matching the input format)
+                                        displayDate = new Date(
+                                          parseInt(dateParts[0]), // year
+                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                          parseInt(dateParts[2]), // day
+                                          parseInt(timeParts[0]), // hour
+                                          parseInt(timeParts[1]), // minute
+                                        );
+                                      }
                                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                      else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                         displayDate = new Date(test.orderDate.replace(' ', 'T'));
                                       }
                                       // Handle ISO format or other string formats
@@ -3036,19 +3054,15 @@ export default function PatientDetail() {
                                       return "Invalid Date";
                                     }
 
-                                    // Get timezone from system settings
-                                    const timezone = systemSettings?.timezone || 'UTC';
-
-                                    // Return formatted date with time using configured timezone
-                                    return new Intl.DateTimeFormat("en-US", {
-                                      timeZone: timezone,
+                                    // Return formatted date with time - display the local time as-is
+                                    return displayDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
                                       hour: "2-digit",
                                       minute: "2-digit",
                                       hour12: true,
-                                    }).format(displayDate);
+                                    });
                                   } catch (error) {
                                     console.error('Error parsing pathology date:', test.orderDate, error);
                                     return "Date Parse Error";
