@@ -4720,7 +4720,7 @@ export default function PatientDetail() {
                 (adm: any) => adm.status === "admitted",
               );
               if (currentAdmission) {
-                // Format admission date with time
+                // Format admission date with time using timezone adjustment
                 const formatAdmissionDateTime = (dateStr: string) => {
                   if (!dateStr) return "N/A";
 
@@ -4772,15 +4772,19 @@ export default function PatientDetail() {
                   // Check if date is valid
                   if (isNaN(displayDate.getTime())) return "N/A";
 
-                  // Return formatted date with time
-                  return displayDate.toLocaleString("en-US", {
+                  // Get timezone from system settings
+                  const timezone = systemSettings?.timezone || 'UTC';
+
+                  // Return formatted date with time using configured timezone
+                  return new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
                     year: "numeric",
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
                     hour12: true,
-                  });
+                  }).format(displayDate);
                 };
 
                 return (
