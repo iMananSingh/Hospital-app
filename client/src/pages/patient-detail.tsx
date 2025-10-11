@@ -2404,7 +2404,7 @@ export default function PatientDetail() {
                       <TableRow>
                         <TableHead>Service Name</TableHead>
                         <TableHead>Doctor</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>Scheduled Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Order No.</TableHead>
                         <TableHead className="text-right">Cost</TableHead>
