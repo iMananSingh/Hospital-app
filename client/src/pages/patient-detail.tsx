@@ -4720,6 +4720,69 @@ export default function PatientDetail() {
                 (adm: any) => adm.status === "admitted",
               );
               if (currentAdmission) {
+                // Format admission date with time
+                const formatAdmissionDateTime = (dateStr: string) => {
+                  if (!dateStr) return "N/A";
+
+                  let displayDate;
+                  
+                  // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
+                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                    const parts = dateStr.split("T");
+                    const dateParts = parts[0].split("-");
+                    const timeParts = parts[1].split(":");
+
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                      parseInt(timeParts[0]), // hour
+                      parseInt(timeParts[1]), // minute
+                    );
+                  }
+                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+                  else if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                    const parts = dateStr.split(" ");
+                    const dateParts = parts[0].split("-");
+                    const timeParts = parts[1].split(":");
+
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                      parseInt(timeParts[0]), // hour
+                      parseInt(timeParts[1]), // minute
+                      parseInt(timeParts[2]), // second
+                    );
+                  }
+                  // Handle date only format: "YYYY-MM-DD"
+                  else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const dateParts = dateStr.split("-");
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                    );
+                  }
+                  // Fallback for other formats
+                  else {
+                    displayDate = new Date(dateStr);
+                  }
+
+                  // Check if date is valid
+                  if (isNaN(displayDate.getTime())) return "N/A";
+
+                  // Return formatted date with time
+                  return displayDate.toLocaleString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  });
+                };
+
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <p className="text-sm">
@@ -4731,8 +4794,8 @@ export default function PatientDetail() {
                       {currentAdmission.currentWardType}
                     </p>
                     <p className="text-sm">
-                      <strong>Admission Date:</strong>{" "}
-                      {formatDate(currentAdmission.admissionDate)}
+                      <strong>Admission Date & Time:</strong>{" "}
+                      {formatAdmissionDateTime(currentAdmission.admissionDate)}
                     </p>
                   </div>
                 );
