@@ -772,6 +772,35 @@ export default function PatientDetail() {
     }
   }, [systemSettings?.timezone, isServiceDialogOpen]);
 
+  // Update admission form date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isAdmissionDialogOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+      
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      
+      const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
+      
+      admissionForm.setValue('admissionDate', currentDateTime);
+    }
+  }, [systemSettings?.timezone, isAdmissionDialogOpen]);
+
   const watchedServiceValues = serviceForm.watch();
 
   // Sync form fields with component state
