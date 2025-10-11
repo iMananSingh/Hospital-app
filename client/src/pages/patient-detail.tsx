@@ -715,7 +715,7 @@ export default function PatientDetail() {
     if (systemSettings?.timezone && isOpdVisitDialogOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -725,17 +725,17 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDate = `${year}-${month}-${day}`;
       const currentTime = `${hour}:${minute}`;
-      
+
       opdVisitForm.setValue('scheduledDate', currentDate);
       opdVisitForm.setValue('scheduledTime', currentTime);
     }
@@ -746,7 +746,7 @@ export default function PatientDetail() {
     if (systemSettings?.timezone && isServiceDialogOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -756,17 +756,17 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDate = `${year}-${month}-${day}`;
       const currentTime = `${hour}:${minute}`;
-      
+
       serviceForm.setValue('scheduledDate', currentDate);
       serviceForm.setValue('scheduledTime', currentTime);
     }
@@ -777,7 +777,7 @@ export default function PatientDetail() {
     if (systemSettings?.timezone && isAdmissionDialogOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -787,16 +787,16 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
+
       admissionForm.setValue('admissionDate', currentDateTime);
     }
   }, [systemSettings?.timezone, isAdmissionDialogOpen]);
@@ -806,7 +806,7 @@ export default function PatientDetail() {
     if (systemSettings?.timezone && isDischargeDialogOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -816,16 +816,16 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
+
       setDischargeDateTime(currentDateTime);
     }
   }, [systemSettings?.timezone, isDischargeDialogOpen]);
@@ -3013,10 +3013,9 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Parse the timestamp with better error handling
-                                  let displayDate;
-
                                   try {
+                                    let displayDate;
+
                                     // Handle different date formats
                                     if (typeof test.orderDate === 'string') {
                                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
@@ -3031,38 +3030,25 @@ export default function PatientDetail() {
                                       displayDate = new Date(test.orderDate);
                                     }
 
-                                    // Check if date is valid before adjusting
+                                    // Check if date is valid
                                     if (isNaN(displayDate.getTime())) {
                                       console.warn('Invalid date for pathology order:', test.orderDate);
                                       return "Invalid Date";
                                     }
 
-                                    // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
-                                    displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
+                                    // Get timezone from system settings
+                                    const timezone = systemSettings?.timezone || 'UTC';
 
-                                    const formattedDate = displayDate.toLocaleString("en-US", {
+                                    // Return formatted date with time using configured timezone
+                                    return new Intl.DateTimeFormat("en-US", {
+                                      timeZone: timezone,
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
                                       hour: "2-digit",
                                       minute: "2-digit",
                                       hour12: true,
-                                    });
-
-                                    // Split the display to add styling
-                                    const parts = formattedDate.split(" at ");
-                                    if (parts.length === 2) {
-                                      return (
-                                        <>
-                                          {parts[0]}
-                                          <span className="text-muted-foreground ml-2">
-                                            at {parts[1]}
-                                          </span>
-                                        </>
-                                      );
-                                    }
-
-                                    return formattedDate;
+                                    }).format(displayDate);
                                   } catch (error) {
                                     console.error('Error parsing pathology date:', test.orderDate, error);
                                     return "Date Parse Error";
@@ -4368,7 +4354,8 @@ export default function PatientDetail() {
                     <SelectContent>
                       {roomTypes.map((roomType: any) => (
                         <SelectItem key={roomType.id} value={roomType.name}>
-                          {roomType.name}
+                          {roomType.name} ({roomType.category}) - ₹
+                          {roomType.dailyCost}/day
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -4725,7 +4712,7 @@ export default function PatientDetail() {
                   if (!dateStr) return "N/A";
 
                   let displayDate;
-                  
+
                   // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
                   if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
                     const parts = dateStr.split("T");
