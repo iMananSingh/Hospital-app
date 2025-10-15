@@ -87,6 +87,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { useTimezone } from "@/hooks/use-timezone";
 
 // Define Service interface with quantity
 interface Service {
@@ -107,6 +108,7 @@ export default function PatientDetail() {
   const { toast } = useToast();
   const { user } = useAuth();
   const patientId = params.id;
+  const { formatDateTime, formatDate, formatTime } = useTimezone();
 
   // State for dialogs and selections
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -1635,52 +1637,6 @@ export default function PatientDetail() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-
-    // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
-    if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-      const parts = dateString.split("T");
-      const dateParts = parts[0].split("-");
-      const timeParts = parts[1].split(":");
-
-      // Create date object in local timezone
-      const localDate = new Date(
-        parseInt(dateParts[0]), // year
-        parseInt(dateParts[1]) - 1, // month (0-indexed)
-        parseInt(dateParts[2]), // day
-        parseInt(timeParts[0]), // hour
-        parseInt(timeParts[1]), // minute
-      );
-
-      // Check if date is valid
-      if (isNaN(localDate.getTime())) return "N/A";
-
-      return localDate.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      });
-    }
-
-    // Handle different date formats and ensure local timezone
-    const date = new Date(dateString);
-
-    // Check if date is valid
-    if (isNaN(date.getTime())) return "N/A";
-
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    });
-  };
-
   // Service categories mapping (matching service management)
   const serviceCategories = [
     { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
@@ -2312,38 +2268,24 @@ export default function PatientDetail() {
                             </TableCell>
                             <TableCell>
                               {(() => {
-                                // Format date and time to match the dialog display (local time)
+                                // Format date and time using configured timezone
                                 if (!visit.scheduledDate) return "N/A";
 
-                                // Create a proper date object for the scheduled date and time
-                                let displayDateTime;
+                                // Create a proper UTC datetime string for scheduled date and time
+                                let datetimeString;
                                 if (visit.scheduledTime) {
-                                  // Combine date and time to create a complete datetime
-                                  const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
-                                  displayDateTime = new Date(datetimeString);
-
-                                  // Use local time without adjustment to match the dialog
+                                  // Combine date and time to create a complete datetime in UTC
+                                  datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00Z`;
                                 } else {
-                                  displayDateTime = new Date(visit.scheduledDate);
+                                  datetimeString = `${visit.scheduledDate}T00:00:00Z`;
                                 }
-
-                                // Format the date part
-                                const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric"
-                                });
 
                                 if (!visit.scheduledTime) {
-                                  return dateDisplay;
+                                  return formatDate(datetimeString);
                                 }
 
-                                // Format the time part
-                                const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true
-                                });
+                                const dateDisplay = formatDate(datetimeString);
+                                const timeDisplay = formatTime(datetimeString);
 
                                 return (
                                   <>
@@ -2506,34 +2448,24 @@ export default function PatientDetail() {
                               <TableCell>{doctorName}</TableCell>
                               <TableCell>
                                 {(() => {
+                                  // Format date and time using configured timezone
                                   if (!service.scheduledDate) return "N/A";
 
-                                  let displayDateTime;
+                                  // Create a proper UTC datetime string for scheduled date and time
+                                  let datetimeString;
                                   if (service.scheduledTime) {
-                                    // Combine date and time to create a complete datetime
-                                    const datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00`;
-                                    displayDateTime = new Date(datetimeString);
+                                    // Combine date and time to create a complete datetime in UTC
+                                    datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00Z`;
                                   } else {
-                                    displayDateTime = new Date(service.scheduledDate);
+                                    datetimeString = `${service.scheduledDate}T00:00:00Z`;
                                   }
-
-                                  // Format the date part
-                                  const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric"
-                                  });
 
                                   if (!service.scheduledTime) {
-                                    return dateDisplay;
+                                    return formatDate(datetimeString);
                                   }
 
-                                  // Format the time part
-                                  const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true
-                                  });
+                                  const dateDisplay = formatDate(datetimeString);
+                                  const timeDisplay = formatTime(datetimeString);
 
                                   return (
                                     <>
@@ -2711,109 +2643,7 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {(() => {
-                                  let admissionDateStr = admission.admissionDate;
-
-                                  // Handle different date formats and correct IST display
-                                  if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
-                                    )
-                                  ) {
-                                    // Datetime-local format: "YYYY-MM-DDTHH:MM"
-                                    const parts = admissionDateStr.split("T");
-                                    const dateParts = parts[0].split("-");
-                                    const timeParts = parts[1].split(":");
-
-                                    // Create date object and subtract 5.5 hours to correct IST display
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]), // minute
-                                    );
-
-                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
-                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } else if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-                                    )
-                                  ) {
-                                    // Full datetime format: "YYYY-MM-DD HH:MM:SS"
-                                    const parts = admissionDateStr.split(" ");
-                                    const dateParts = parts[0].split("-");
-                                    const timeParts = parts[1].split(":");
-
-                                    // Create date object and subtract 5.5 hours to correct IST display
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]), // minute
-                                      parseInt(timeParts[2]), // second
-                                    );
-
-                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
-                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } else if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2}$/,
-                                    )
-                                  ) {
-                                    // Date only format: "YYYY-MM-DD"
-                                    const dateParts = admissionDateStr.split("-");
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                    );
-
-                                    return localDate.toLocaleDateString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                    });
-                                  }
-
-                                  // Fallback for other formats (including ISO strings)
-                                  const date = new Date(admissionDateStr);
-                                  if (!isNaN(date.getTime())) {
-                                    // For ISO strings, also subtract 5.5 hours to correct IST display
-                                    const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  }
-
-                                  return admissionDateStr; // Return as-is if parsing fails
-                                })()}
+                                {formatDateTime(admission.admissionDate)}
                               </div>
                             </div>
                             <div>
@@ -2824,56 +2654,7 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? (() => {
-                                      // Handle SQLite datetime format as local time (no timezone conversion)
-                                      let dischargeDateStr =
-                                        admission.dischargeDate;
-                                      if (
-                                        dischargeDateStr.match(
-                                          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-                                        )
-                                      ) {
-                                        // Parse as local time without adding 'Z' or timezone info
-                                        const parts =
-                                          dischargeDateStr.split(" ");
-                                        const dateParts = parts[0].split("-");
-                                        const timeParts = parts[1].split(":");
-
-                                        // Create date object in local timezone
-                                        const localDate = new Date(
-                                          parseInt(dateParts[0]), // year
-                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                          parseInt(dateParts[2]), // day
-                                          parseInt(timeParts[0]), // hour
-                                          parseInt(timeParts[1]), // minute
-                                          parseInt(timeParts[2]), // second
-                                        );
-
-                                        return localDate.toLocaleString(
-                                          "en-US",
-                                          {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          },
-                                        );
-                                      }
-
-                                      // Fallback for other formats
-                                      return new Date(
-                                        dischargeDateStr,
-                                      ).toLocaleString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      });
-                                    })()
+                                  ? formatDateTime(admission.dischargeDate)
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
@@ -2909,15 +2690,7 @@ export default function PatientDetail() {
                                             ` - ${event.wardType} (${event.roomNumber})`}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
-                                          {new Date(
-                                            event.eventTime,
-                                          ).toLocaleString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          })}
+                                          {formatDateTime(event.eventTime)}
                                         </span>
                                       </div>
                                       {event.notes && (
@@ -3011,65 +2784,7 @@ export default function PatientDetail() {
                               {test.orderId}
                             </TableCell>
                             <TableCell>
-                              {(() => {
-                                if (test.orderDate) {
-                                  try {
-                                    // Get timezone from system settings
-                                    const timezone = systemSettings?.timezone || 'UTC';
-                                    
-                                    let displayDate;
-
-                                    // Handle different date formats
-                                    if (typeof test.orderDate === 'string') {
-                                      // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
-                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                        const parts = test.orderDate.split("T");
-                                        const dateParts = parts[0].split("-");
-                                        const timeParts = parts[1].split(":");
-
-                                        // Create date object in local timezone (matching the input format)
-                                        displayDate = new Date(
-                                          parseInt(dateParts[0]), // year
-                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                          parseInt(dateParts[2]), // day
-                                          parseInt(timeParts[0]), // hour
-                                          parseInt(timeParts[1]), // minute
-                                        );
-                                      }
-                                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                      else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                        displayDate = new Date(test.orderDate.replace(' ', 'T'));
-                                      }
-                                      // Handle ISO format or other string formats
-                                      else {
-                                        displayDate = new Date(test.orderDate);
-                                      }
-                                    } else {
-                                      displayDate = new Date(test.orderDate);
-                                    }
-
-                                    // Check if date is valid
-                                    if (isNaN(displayDate.getTime())) {
-                                      console.warn('Invalid date for pathology order:', test.orderDate);
-                                      return "Invalid Date";
-                                    }
-
-                                    // Return formatted date with time - display the local time as-is
-                                    return displayDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } catch (error) {
-                                    console.error('Error parsing pathology date:', test.orderDate, error);
-                                    return "Date Parse Error";
-                                  }
-                                }
-                                return "N/A";
-                              })()}
+                              {formatDateTime(test.orderDate)}
                             </TableCell>
                             <TableCell>
                               <Button
