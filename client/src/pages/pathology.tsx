@@ -372,7 +372,7 @@ export default function Pathology() {
     defaultValues: {
       patientId: preSelectedPatientId || "",
       doctorId: "",
-      orderedDate: "", // Will be set by useEffect
+      orderedDate: new Date().toISOString().split('T')[0], // Temporary, will be updated by useEffect
       remarks: "",
     },
   });
@@ -382,9 +382,9 @@ export default function Pathology() {
     queryKey: ["/api/settings/system"],
   });
 
-  // Update ordered date and time when system settings load or timezone changes
+  // Update ordered date when system settings load or timezone changes
   React.useEffect(() => {
-    if (systemSettings?.timezone && isNewTestOpen) {
+    if (systemSettings?.timezone) {
       const timezone = systemSettings.timezone;
       const now = new Date();
       
@@ -392,24 +392,18 @@ export default function Pathology() {
         timeZone: timezone,
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        day: '2-digit'
       });
       
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
+      const currentDate = `${year}-${month}-${day}`;
       
-      const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
-      form.setValue('orderedDate', currentDateTime);
+      form.setValue('orderedDate', currentDate);
     }
-  }, [systemSettings?.timezone, isNewTestOpen]);
+  }, [systemSettings?.timezone]);
 
   const onSubmit = (data: any) => {
     if (selectedCatalogTests.length === 0) {
@@ -628,7 +622,7 @@ export default function Pathology() {
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
                 <PatientSearchCombobox
@@ -659,15 +653,6 @@ export default function Pathology() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="orderedDate">Order Date & Time *</Label>
-                <Input
-                  type="datetime-local"
-                  {...form.register("orderedDate")}
-                  data-testid="input-ordered-datetime"
-                />
               </div>
             </div>
 
