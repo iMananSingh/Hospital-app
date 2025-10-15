@@ -661,10 +661,12 @@ export default function Settings() {
   const handleSaveSystemSettings = () => {
     saveSystemSettingsMutation.mutate(pendingSystemSettings);
     
-    // Clear timezone cache when timezone settings are updated
+    // Clear timezone cache and invalidate queries when timezone settings are updated
     if ((pendingSystemSettings as any)?.timezone !== (systemSettings as any)?.timezone || 
         (pendingSystemSettings as any)?.timezoneOffset !== (systemSettings as any)?.timezoneOffset) {
       clearTimezoneCache();
+      // Force all components to re-fetch system settings to get the new timezone
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/system"] });
     }
   };
 

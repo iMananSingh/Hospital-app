@@ -87,6 +87,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { useTimezone } from "@/hooks/use-timezone";
 
 // Define Service interface with quantity
 interface Service {
@@ -101,45 +102,13 @@ interface Service {
   quantity?: number; // Added quantity property
 }
 
-// Helper function to format dates with timezone adjustment
-const formatTimezoneDate = (dateString: string, includeTime: boolean = false) => {
-  try {
-    const timezone = localStorage.getItem("hospital_timezone") || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-    let date = new Date(dateString);
-
-    // If the date string is invalid, return an error
-    if (isNaN(date.getTime())) {
-      console.warn('Invalid date string provided:', dateString);
-      return "Invalid Date";
-    }
-
-    // Use Intl.DateTimeFormat to format the date according to the specified timezone
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: timezone,
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    };
-
-    if (includeTime) {
-      options.hour = '2-digit';
-      options.minute = '2-digit';
-      options.hour12 = true; // Use 12-hour format with AM/PM
-    }
-
-    return new Intl.DateTimeFormat('en-US', options).format(date);
-  } catch (error) {
-    console.error('Error formatting date with timezone:', error);
-    return "Formatting Error";
-  }
-};
-
 export default function PatientDetail() {
   const params = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const patientId = params.id;
+  const { formatDateTime, formatDate, formatTime } = useTimezone();
 
   // State for dialogs and selections
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -467,10 +436,10 @@ export default function PatientDetail() {
 
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
-      eventAmount = event.consultationFee ||
-                   event.amount ||
+      eventAmount = event.consultationFee || 
+                   event.amount || 
                    (event.rawData?.visit?.consultationFee) ||
-                   (event.rawData?.doctor?.consultationFee) ||
+                   (event.rawData?.doctor?.consultationFee) || 
                    0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
@@ -494,7 +463,7 @@ export default function PatientDetail() {
       ),
       date: event.sortTimestamp,
       amount: eventAmount,
-      description: eventType === "opd_visit" ?
+      description: eventType === "opd_visit" ? 
         `OPD Consultation - ${getDoctorName()}` : (
         event.description || event.serviceName || event.testName || ""
       ),
@@ -1668,52 +1637,6 @@ export default function PatientDetail() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
-
-    // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
-    if (dateString.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-      const parts = dateString.split("T");
-      const dateParts = parts[0].split("-");
-      const timeParts = parts[1].split(":");
-
-      // Create date object in local timezone
-      const localDate = new Date(
-        parseInt(dateParts[0]), // year
-        parseInt(dateParts[1]) - 1, // month (0-indexed)
-        parseInt(dateParts[2]), // day
-        parseInt(timeParts[0]), // hour
-        parseInt(timeParts[1]), // minute
-      );
-
-      // Check if date is valid
-      if (isNaN(localDate.getTime())) return "N/A";
-
-      return localDate.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      });
-    }
-
-    // Handle different date formats and ensure local timezone
-    const date = new Date(dateString);
-
-    // Check if date is valid
-    if (isNaN(date.getTime())) return "N/A";
-
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    });
-  };
-
   // Service categories mapping (matching service management)
   const serviceCategories = [
     { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
@@ -2345,38 +2268,24 @@ export default function PatientDetail() {
                             </TableCell>
                             <TableCell>
                               {(() => {
-                                // Format date and time to match the dialog display (local time)
+                                // Format date and time using configured timezone
                                 if (!visit.scheduledDate) return "N/A";
 
-                                // Create a proper date object for the scheduled date and time
-                                let displayDateTime;
+                                // Create a proper UTC datetime string for scheduled date and time
+                                let datetimeString;
                                 if (visit.scheduledTime) {
-                                  // Combine date and time to create a complete datetime
-                                  const datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00`;
-                                  displayDateTime = new Date(datetimeString);
-
-                                  // Use local time without adjustment to match the dialog
+                                  // Combine date and time to create a complete datetime in UTC
+                                  datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00Z`;
                                 } else {
-                                  displayDateTime = new Date(visit.scheduledDate);
+                                  datetimeString = `${visit.scheduledDate}T00:00:00Z`;
                                 }
-
-                                // Format the date part
-                                const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric"
-                                });
 
                                 if (!visit.scheduledTime) {
-                                  return dateDisplay;
+                                  return formatDate(datetimeString);
                                 }
 
-                                // Format the time part
-                                const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true
-                                });
+                                const dateDisplay = formatDate(datetimeString);
+                                const timeDisplay = formatTime(datetimeString);
 
                                 return (
                                   <>
@@ -2539,34 +2448,24 @@ export default function PatientDetail() {
                               <TableCell>{doctorName}</TableCell>
                               <TableCell>
                                 {(() => {
+                                  // Format date and time using configured timezone
                                   if (!service.scheduledDate) return "N/A";
 
-                                  let displayDateTime;
+                                  // Create a proper UTC datetime string for scheduled date and time
+                                  let datetimeString;
                                   if (service.scheduledTime) {
-                                    // Combine date and time to create a complete datetime
-                                    const datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00`;
-                                    displayDateTime = new Date(datetimeString);
+                                    // Combine date and time to create a complete datetime in UTC
+                                    datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00Z`;
                                   } else {
-                                    displayDateTime = new Date(service.scheduledDate);
+                                    datetimeString = `${service.scheduledDate}T00:00:00Z`;
                                   }
-
-                                  // Format the date part
-                                  const dateDisplay = displayDateTime.toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "short",
-                                    day: "numeric"
-                                  });
 
                                   if (!service.scheduledTime) {
-                                    return dateDisplay;
+                                    return formatDate(datetimeString);
                                   }
 
-                                  // Format the time part
-                                  const timeDisplay = displayDateTime.toLocaleTimeString("en-US", {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                    hour12: true
-                                  });
+                                  const dateDisplay = formatDate(datetimeString);
+                                  const timeDisplay = formatTime(datetimeString);
 
                                   return (
                                     <>
@@ -2744,109 +2643,7 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {(() => {
-                                  let admissionDateStr = admission.admissionDate;
-
-                                  // Handle different date formats and correct IST display
-                                  if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
-                                    )
-                                  ) {
-                                    // Datetime-local format: "YYYY-MM-DDTHH:MM"
-                                    const parts = admissionDateStr.split("T");
-                                    const dateParts = parts[0].split("-");
-                                    const timeParts = parts[1].split(":");
-
-                                    // Create date object and subtract 5.5 hours to correct IST display
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]), // minute
-                                    );
-
-                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
-                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } else if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-                                    )
-                                  ) {
-                                    // Full datetime format: "YYYY-MM-DD HH:MM:SS"
-                                    const parts = admissionDateStr.split(" ");
-                                    const dateParts = parts[0].split("-");
-                                    const timeParts = parts[1].split(":");
-
-                                    // Create date object and subtract 5.5 hours to correct IST display
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                      parseInt(timeParts[0]), // hour
-                                      parseInt(timeParts[1]), // minute
-                                      parseInt(timeParts[2]), // second
-                                    );
-
-                                    // Subtract 5.5 hours (19800000 ms) to correct IST display
-                                    const correctedDate = new Date(localDate.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  } else if (
-                                    admissionDateStr.match(
-                                      /^\d{4}-\d{2}-\d{2}$/,
-                                    )
-                                  ) {
-                                    // Date only format: "YYYY-MM-DD"
-                                    const dateParts = admissionDateStr.split("-");
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]), // year
-                                      parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                      parseInt(dateParts[2]), // day
-                                    );
-
-                                    return localDate.toLocaleDateString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                    });
-                                  }
-
-                                  // Fallback for other formats (including ISO strings)
-                                  const date = new Date(admissionDateStr);
-                                  if (!isNaN(date.getTime())) {
-                                    // For ISO strings, also subtract 5.5 hours to correct IST display
-                                    const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000));
-
-                                    return correctedDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
-                                  }
-
-                                  return admissionDateStr; // Return as-is if parsing fails
-                                })()}
+                                {formatDateTime(admission.admissionDate)}
                               </div>
                             </div>
                             <div>
@@ -2857,56 +2654,7 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? (() => {
-                                      // Handle SQLite datetime format as local time (no timezone conversion)
-                                      let dischargeDateStr =
-                                        admission.dischargeDate;
-                                      if (
-                                        dischargeDateStr.match(
-                                          /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
-                                        )
-                                      ) {
-                                        // Parse as local time without adding 'Z' or timezone info
-                                        const parts =
-                                          dischargeDateStr.split(" ");
-                                        const dateParts = parts[0].split("-");
-                                        const timeParts = parts[1].split(":");
-
-                                        // Create date object in local timezone
-                                        const localDate = new Date(
-                                          parseInt(dateParts[0]), // year
-                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                          parseInt(dateParts[2]), // day
-                                          parseInt(timeParts[0]), // hour
-                                          parseInt(timeParts[1]), // minute
-                                          parseInt(timeParts[2]), // second
-                                        );
-
-                                        return localDate.toLocaleString(
-                                          "en-US",
-                                          {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          },
-                                        );
-                                      }
-
-                                      // Fallback for other formats
-                                      return new Date(
-                                        dischargeDateStr,
-                                      ).toLocaleString("en-US", {
-                                        year: "numeric",
-                                        month: "short",
-                                        day: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      });
-                                    })()
+                                  ? formatDateTime(admission.dischargeDate)
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
@@ -2942,15 +2690,7 @@ export default function PatientDetail() {
                                             ` - ${event.wardType} (${event.roomNumber})`}
                                         </span>
                                         <span className="text-muted-foreground text-xs">
-                                          {new Date(
-                                            event.eventTime,
-                                          ).toLocaleString("en-US", {
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
-                                          })}
+                                          {formatDateTime(event.eventTime)}
                                         </span>
                                       </div>
                                       {event.notes && (
@@ -3044,38 +2784,7 @@ export default function PatientDetail() {
                               {test.orderId}
                             </TableCell>
                             <TableCell>
-                              {(() => {
-                                if (test.orderDate) {
-                                  try {
-                                    let dateString = test.orderDate;
-
-                                    // Check if the dateString is not already in ISO format with Z
-                                    if (typeof dateString === 'string') {
-                                      // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
-                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                        dateString = test.orderDate + ':00Z'; // Append seconds and Z for ISO format
-                                      }
-                                      // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                      else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                        dateString = test.orderDate.replace(' ', 'T') + 'Z';
-                                      }
-                                      // Handle ISO format or other string formats
-                                      else if (!test.orderDate.endsWith('Z')) {
-                                        dateString = test.orderDate + 'Z';
-                                      }
-                                    } else {
-                                      dateString = new Date(test.orderDate).toISOString();
-                                    }
-
-                                    // Use timezone-adjusted formatter
-                                    return formatTimezoneDate(dateString, true);
-                                  } catch (error) {
-                                    console.error('Error parsing pathology date:', test.orderDate, error);
-                                    return "Date Parse Error";
-                                  }
-                                }
-                                return "N/A";
-                              })()}
+                              {formatDateTime(test.orderDate)}
                             </TableCell>
                             <TableCell>
                               <Button
@@ -3144,7 +2853,7 @@ export default function PatientDetail() {
                     // Group patient services by order ID (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
-                      const nonAdmissionServices = services.filter((service: any) =>
+                      const nonAdmissionServices = services.filter((service: any) => 
                         service.serviceType !== "admission"
                       );
 
@@ -3337,8 +3046,8 @@ export default function PatientDetail() {
                       const eventColors = getEventColor(event.type);
 
                       return (
-                        <div
-                          key={`${event.type}-${index}`}
+                        <div 
+                          key={`${event.type}-${index}`} 
                           className={`relative mb-6 border-2 border-gray-200 rounded-lg ${eventColors.bgColor} ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
                         >
                           {/* Timeline connector line */}
@@ -3423,7 +3132,7 @@ export default function PatientDetail() {
                                           {event.data.services.map((service: any, idx: number) => (
                                             <div key={idx} className="flex justify-between items-center text-sm">
                                               <span>• {service.serviceName}</span>
-                                              <span className="font-medium">₹{service.price}</span>
+                                              <span className="font-medium">₹{service.calculatedAmount || service.price}</span>
                                             </div>
                                           ))}
                                         </div>
@@ -3454,7 +3163,7 @@ export default function PatientDetail() {
                                   case "service":
                                     return (
                                       <div className="space-y-1">
-                                        <div className="font-medium">Cost: ₹{event.data.price}</div>
+                                        <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
                                         {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
                                       </div>
                                     );
@@ -3486,7 +3195,7 @@ export default function PatientDetail() {
                                           let doctorName = null;
 
                                           // Try to get doctor ID from the event data
-                                          const doctorId = event.data.doctorId ||
+                                          const doctorId = event.data.doctorId || 
                                                          (event.data.rawData?.order?.doctorId) ||
                                                          (event.data.order?.doctorId);
 
@@ -3505,7 +3214,7 @@ export default function PatientDetail() {
                                       </div>
                                     );
                                   case "admission":
-                                    return (
+                                    const admissionContent = (
                                       <div className="space-y-1">
                                         <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
                                         {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
@@ -3514,6 +3223,7 @@ export default function PatientDetail() {
                                         {event.data.initialDeposit > 0 && <div><span className="font-medium">Initial Deposit:</span> ₹{event.data.initialDeposit}</div>}
                                       </div>
                                     );
+                                    return admissionContent;
                                   case "admission_event":
                                     return (
                                       <div className="space-y-1">
@@ -4533,7 +4243,7 @@ export default function PatientDetail() {
                     <TableBody>
                       {(() => {
                         // Filter admission services
-                        const admissionServices = allServices?.filter((service) =>
+                        const admissionServices = allServices?.filter((service) => 
                           service.category === "admissions" && service.isActive
                         ) || [];
 
@@ -4541,7 +4251,7 @@ export default function PatientDetail() {
                         const filteredServices = selectedServiceSearchQuery.trim()
                           ? admissionServices.filter(service =>
                               service.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
-                              (service.description &&
+                              (service.description && 
                                service.description.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
                             )
                           : admissionServices;
