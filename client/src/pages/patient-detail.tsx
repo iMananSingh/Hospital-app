@@ -715,7 +715,7 @@ export default function PatientDetail() {
     if (systemSettings?.timezone && isOpdVisitDialogOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -725,21 +725,110 @@ export default function PatientDetail() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDate = `${year}-${month}-${day}`;
       const currentTime = `${hour}:${minute}`;
-      
+
       opdVisitForm.setValue('scheduledDate', currentDate);
       opdVisitForm.setValue('scheduledTime', currentTime);
     }
   }, [systemSettings?.timezone, isOpdVisitDialogOpen]);
+
+  // Update service form date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isServiceDialogOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+
+      const currentDate = `${year}-${month}-${day}`;
+      const currentTime = `${hour}:${minute}`;
+
+      serviceForm.setValue('scheduledDate', currentDate);
+      serviceForm.setValue('scheduledTime', currentTime);
+    }
+  }, [systemSettings?.timezone, isServiceDialogOpen]);
+
+  // Update admission form date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isAdmissionDialogOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+
+      const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
+
+      admissionForm.setValue('admissionDate', currentDateTime);
+    }
+  }, [systemSettings?.timezone, isAdmissionDialogOpen]);
+
+  // Update discharge date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isDischargeDialogOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+
+      const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
+
+      setDischargeDateTime(currentDateTime);
+    }
+  }, [systemSettings?.timezone, isDischargeDialogOpen]);
 
   const watchedServiceValues = serviceForm.watch();
 
@@ -2373,7 +2462,7 @@ export default function PatientDetail() {
                       <TableRow>
                         <TableHead>Service Name</TableHead>
                         <TableHead>Doctor</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>Scheduled Date</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Order No.</TableHead>
                         <TableHead className="text-right">Cost</TableHead>
@@ -2924,14 +3013,31 @@ export default function PatientDetail() {
                             <TableCell>
                               {(() => {
                                 if (test.orderDate) {
-                                  // Parse the timestamp with better error handling
-                                  let displayDate;
-
                                   try {
+                                    // Get timezone from system settings
+                                    const timezone = systemSettings?.timezone || 'UTC';
+                                    
+                                    let displayDate;
+
                                     // Handle different date formats
                                     if (typeof test.orderDate === 'string') {
+                                      // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
+                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                        const parts = test.orderDate.split("T");
+                                        const dateParts = parts[0].split("-");
+                                        const timeParts = parts[1].split(":");
+
+                                        // Create date object in local timezone (matching the input format)
+                                        displayDate = new Date(
+                                          parseInt(dateParts[0]), // year
+                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
+                                          parseInt(dateParts[2]), // day
+                                          parseInt(timeParts[0]), // hour
+                                          parseInt(timeParts[1]), // minute
+                                        );
+                                      }
                                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                                      if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                                      else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
                                         displayDate = new Date(test.orderDate.replace(' ', 'T'));
                                       }
                                       // Handle ISO format or other string formats
@@ -2942,16 +3048,14 @@ export default function PatientDetail() {
                                       displayDate = new Date(test.orderDate);
                                     }
 
-                                    // Check if date is valid before adjusting
+                                    // Check if date is valid
                                     if (isNaN(displayDate.getTime())) {
                                       console.warn('Invalid date for pathology order:', test.orderDate);
                                       return "Invalid Date";
                                     }
 
-                                    // Pathology orders are 5.5 hours behind - add 5.5 hours to match timeline display
-                                    displayDate = new Date(displayDate.getTime() + (5.5 * 60 * 60 * 1000));
-
-                                    const formattedDate = displayDate.toLocaleString("en-US", {
+                                    // Return formatted date with time - display the local time as-is
+                                    return displayDate.toLocaleString("en-US", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
@@ -2959,21 +3063,6 @@ export default function PatientDetail() {
                                       minute: "2-digit",
                                       hour12: true,
                                     });
-
-                                    // Split the display to add styling
-                                    const parts = formattedDate.split(" at ");
-                                    if (parts.length === 2) {
-                                      return (
-                                        <>
-                                          {parts[0]}
-                                          <span className="text-muted-foreground ml-2">
-                                            at {parts[1]}
-                                          </span>
-                                        </>
-                                      );
-                                    }
-
-                                    return formattedDate;
                                   } catch (error) {
                                     console.error('Error parsing pathology date:', test.orderDate, error);
                                     return "Date Parse Error";
@@ -4279,7 +4368,8 @@ export default function PatientDetail() {
                     <SelectContent>
                       {roomTypes.map((roomType: any) => (
                         <SelectItem key={roomType.id} value={roomType.name}>
-                          {roomType.name}
+                          {roomType.name} ({roomType.category}) - ₹
+                          {roomType.dailyCost}/day
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -4631,6 +4721,73 @@ export default function PatientDetail() {
                 (adm: any) => adm.status === "admitted",
               );
               if (currentAdmission) {
+                // Format admission date with time using timezone adjustment
+                const formatAdmissionDateTime = (dateStr: string) => {
+                  if (!dateStr) return "N/A";
+
+                  let displayDate;
+
+                  // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
+                  if (dateStr.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                    const parts = dateStr.split("T");
+                    const dateParts = parts[0].split("-");
+                    const timeParts = parts[1].split(":");
+
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                      parseInt(timeParts[0]), // hour
+                      parseInt(timeParts[1]), // minute
+                    );
+                  }
+                  // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+                  else if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                    const parts = dateStr.split(" ");
+                    const dateParts = parts[0].split("-");
+                    const timeParts = parts[1].split(":");
+
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                      parseInt(timeParts[0]), // hour
+                      parseInt(timeParts[1]), // minute
+                      parseInt(timeParts[2]), // second
+                    );
+                  }
+                  // Handle date only format: "YYYY-MM-DD"
+                  else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const dateParts = dateStr.split("-");
+                    displayDate = new Date(
+                      parseInt(dateParts[0]), // year
+                      parseInt(dateParts[1]) - 1, // month (0-indexed)
+                      parseInt(dateParts[2]), // day
+                    );
+                  }
+                  // Fallback for other formats
+                  else {
+                    displayDate = new Date(dateStr);
+                  }
+
+                  // Check if date is valid
+                  if (isNaN(displayDate.getTime())) return "N/A";
+
+                  // Get timezone from system settings
+                  const timezone = systemSettings?.timezone || 'UTC';
+
+                  // Return formatted date with time using configured timezone
+                  return new Intl.DateTimeFormat("en-US", {
+                    timeZone: timezone,
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  }).format(displayDate);
+                };
+
                 return (
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <p className="text-sm">
@@ -4642,8 +4799,8 @@ export default function PatientDetail() {
                       {currentAdmission.currentWardType}
                     </p>
                     <p className="text-sm">
-                      <strong>Admission Date:</strong>{" "}
-                      {formatDate(currentAdmission.admissionDate)}
+                      <strong>Admission Date & Time:</strong>{" "}
+                      {formatAdmissionDateTime(currentAdmission.admissionDate)}
                     </p>
                   </div>
                 );
