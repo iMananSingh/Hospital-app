@@ -297,64 +297,61 @@ export default function Patients() {
     patient.phone.includes(searchQuery)
   );
 
-  // Get system settings for timezone with refetch to ensure updates
+  // Get system settings for timezone
   const { data: systemSettings, isLoading: isSystemSettingsLoading } = useQuery({
     queryKey: ["/api/settings/system"],
-    refetchInterval: 5000, // Refetch every 5 seconds to pick up timezone changes
   });
 
-  // Format dates with proper timezone handling - memoized to update when timezone changes
-  const formatPatientDate = React.useMemo(() => {
-    return (dateString: string) => {
-      try {
-        // The dateString from database is in ISO format (UTC)
-        // For example: "2025-10-02T16:10:00.000Z"
-        // We need to ensure it's parsed as UTC and then formatted in the configured timezone
-        
-        // Parse as UTC by ensuring the string has Z suffix
-        let utcDateString = dateString;
-        if (!dateString.endsWith('Z') && !dateString.includes('+')) {
-          // If no timezone indicator, treat as UTC
-          utcDateString = dateString.replace(/\.\d{3}$/, '') + 'Z';
-        }
-        
-        const utcDate = new Date(utcDateString);
-        
-        // Validate the date
-        if (isNaN(utcDate.getTime())) {
-          console.error('Invalid date string:', dateString);
-          return 'Invalid Date';
-        }
-        
-        const timezone = systemSettings?.timezone || 'UTC';
-        
-        // Use Intl.DateTimeFormat with the configured timezone
-        // This automatically converts UTC to the specified timezone
-        const formatter = new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        return formatter.format(utcDate);
-      } catch (error) {
-        console.error('Error formatting date with timezone:', error, 'for date:', dateString);
-        // Fallback to UTC display
-        return new Date(dateString).toLocaleString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true
-        });
+  // Format dates with proper timezone handling
+  const formatPatientDate = (dateString: string) => {
+    try {
+      // The dateString from database is in ISO format (UTC)
+      // For example: "2025-10-02T16:10:00.000Z"
+      // We need to ensure it's parsed as UTC and then formatted in the configured timezone
+      
+      // Parse as UTC by ensuring the string has Z suffix
+      let utcDateString = dateString;
+      if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+        // If no timezone indicator, treat as UTC
+        utcDateString = dateString.replace(/\.\d{3}$/, '') + 'Z';
       }
-    };
-  }, [systemSettings?.timezone]);
+      
+      const utcDate = new Date(utcDateString);
+      
+      // Validate the date
+      if (isNaN(utcDate.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      
+      const timezone = systemSettings?.timezone || 'UTC';
+      
+      // Use Intl.DateTimeFormat with the configured timezone
+      // This automatically converts UTC to the specified timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      return formatter.format(utcDate);
+    } catch (error) {
+      console.error('Error formatting date with timezone:', error, 'for date:', dateString);
+      // Fallback to UTC display
+      return new Date(dateString).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
