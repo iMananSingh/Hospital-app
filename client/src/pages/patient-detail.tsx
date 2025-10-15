@@ -101,6 +101,39 @@ interface Service {
   quantity?: number; // Added quantity property
 }
 
+// Helper function to format dates with timezone adjustment
+const formatTimezoneDate = (dateString: string, includeTime: boolean = false) => {
+  try {
+    const timezone = localStorage.getItem("hospital_timezone") || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    let date = new Date(dateString);
+
+    // If the date string is invalid, return an error
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date string provided:', dateString);
+      return "Invalid Date";
+    }
+
+    // Use Intl.DateTimeFormat to format the date according to the specified timezone
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: timezone,
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    };
+
+    if (includeTime) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
+      options.hour12 = true; // Use 12-hour format with AM/PM
+    }
+
+    return new Intl.DateTimeFormat('en-US', options).format(date);
+  } catch (error) {
+    console.error('Error formatting date with timezone:', error);
+    return "Formatting Error";
+  }
+};
+
 export default function PatientDetail() {
   const params = useParams();
   const [, navigate] = useLocation();
@@ -434,10 +467,10 @@ export default function PatientDetail() {
 
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
-      eventAmount = event.consultationFee || 
-                   event.amount || 
+      eventAmount = event.consultationFee ||
+                   event.amount ||
                    (event.rawData?.visit?.consultationFee) ||
-                   (event.rawData?.doctor?.consultationFee) || 
+                   (event.rawData?.doctor?.consultationFee) ||
                    0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
@@ -461,7 +494,7 @@ export default function PatientDetail() {
       ),
       date: event.sortTimestamp,
       amount: eventAmount,
-      description: eventType === "opd_visit" ? 
+      description: eventType === "opd_visit" ?
         `OPD Consultation - ${getDoctorName()}` : (
         event.description || event.serviceName || event.testName || ""
       ),
@@ -3014,55 +3047,28 @@ export default function PatientDetail() {
                               {(() => {
                                 if (test.orderDate) {
                                   try {
-                                    // Get timezone from system settings
-                                    const timezone = systemSettings?.timezone || 'UTC';
-                                    
-                                    let displayDate;
+                                    let dateString = test.orderDate;
 
-                                    // Handle different date formats
-                                    if (typeof test.orderDate === 'string') {
+                                    // Check if the dateString is not already in ISO format with Z
+                                    if (typeof dateString === 'string') {
                                       // Handle datetime-local format: "YYYY-MM-DDTHH:MM"
                                       if (test.orderDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                        const parts = test.orderDate.split("T");
-                                        const dateParts = parts[0].split("-");
-                                        const timeParts = parts[1].split(":");
-
-                                        // Create date object in local timezone (matching the input format)
-                                        displayDate = new Date(
-                                          parseInt(dateParts[0]), // year
-                                          parseInt(dateParts[1]) - 1, // month (0-indexed)
-                                          parseInt(dateParts[2]), // day
-                                          parseInt(timeParts[0]), // hour
-                                          parseInt(timeParts[1]), // minute
-                                        );
+                                        dateString = test.orderDate + ':00Z'; // Append seconds and Z for ISO format
                                       }
                                       // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
                                       else if (test.orderDate.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                        displayDate = new Date(test.orderDate.replace(' ', 'T'));
+                                        dateString = test.orderDate.replace(' ', 'T') + 'Z';
                                       }
                                       // Handle ISO format or other string formats
-                                      else {
-                                        displayDate = new Date(test.orderDate);
+                                      else if (!test.orderDate.endsWith('Z')) {
+                                        dateString = test.orderDate + 'Z';
                                       }
                                     } else {
-                                      displayDate = new Date(test.orderDate);
+                                      dateString = new Date(test.orderDate).toISOString();
                                     }
 
-                                    // Check if date is valid
-                                    if (isNaN(displayDate.getTime())) {
-                                      console.warn('Invalid date for pathology order:', test.orderDate);
-                                      return "Invalid Date";
-                                    }
-
-                                    // Return formatted date with time - display the local time as-is
-                                    return displayDate.toLocaleString("en-US", {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    });
+                                    // Use timezone-adjusted formatter
+                                    return formatTimezoneDate(dateString, true);
                                   } catch (error) {
                                     console.error('Error parsing pathology date:', test.orderDate, error);
                                     return "Date Parse Error";
@@ -3138,7 +3144,7 @@ export default function PatientDetail() {
                     // Group patient services by order ID (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
-                      const nonAdmissionServices = services.filter((service: any) => 
+                      const nonAdmissionServices = services.filter((service: any) =>
                         service.serviceType !== "admission"
                       );
 
@@ -3331,8 +3337,8 @@ export default function PatientDetail() {
                       const eventColors = getEventColor(event.type);
 
                       return (
-                        <div 
-                          key={`${event.type}-${index}`} 
+                        <div
+                          key={`${event.type}-${index}`}
                           className={`relative mb-6 border-2 border-gray-200 rounded-lg ${eventColors.bgColor} ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
                         >
                           {/* Timeline connector line */}
@@ -3417,7 +3423,7 @@ export default function PatientDetail() {
                                           {event.data.services.map((service: any, idx: number) => (
                                             <div key={idx} className="flex justify-between items-center text-sm">
                                               <span>• {service.serviceName}</span>
-                                              <span className="font-medium">₹{service.calculatedAmount || service.price}</span>
+                                              <span className="font-medium">₹{service.price}</span>
                                             </div>
                                           ))}
                                         </div>
@@ -3448,7 +3454,7 @@ export default function PatientDetail() {
                                   case "service":
                                     return (
                                       <div className="space-y-1">
-                                        <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
+                                        <div className="font-medium">Cost: ₹{event.data.price}</div>
                                         {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
                                       </div>
                                     );
@@ -3480,7 +3486,7 @@ export default function PatientDetail() {
                                           let doctorName = null;
 
                                           // Try to get doctor ID from the event data
-                                          const doctorId = event.data.doctorId || 
+                                          const doctorId = event.data.doctorId ||
                                                          (event.data.rawData?.order?.doctorId) ||
                                                          (event.data.order?.doctorId);
 
@@ -3499,7 +3505,7 @@ export default function PatientDetail() {
                                       </div>
                                     );
                                   case "admission":
-                                    const admissionContent = (
+                                    return (
                                       <div className="space-y-1">
                                         <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
                                         {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
@@ -3508,7 +3514,6 @@ export default function PatientDetail() {
                                         {event.data.initialDeposit > 0 && <div><span className="font-medium">Initial Deposit:</span> ₹{event.data.initialDeposit}</div>}
                                       </div>
                                     );
-                                    return admissionContent;
                                   case "admission_event":
                                     return (
                                       <div className="space-y-1">
@@ -4528,7 +4533,7 @@ export default function PatientDetail() {
                     <TableBody>
                       {(() => {
                         // Filter admission services
-                        const admissionServices = allServices?.filter((service) => 
+                        const admissionServices = allServices?.filter((service) =>
                           service.category === "admissions" && service.isActive
                         ) || [];
 
@@ -4536,7 +4541,7 @@ export default function PatientDetail() {
                         const filteredServices = selectedServiceSearchQuery.trim()
                           ? admissionServices.filter(service =>
                               service.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
-                              (service.description && 
+                              (service.description &&
                                service.description.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
                             )
                           : admissionServices;
