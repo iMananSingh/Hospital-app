@@ -22,7 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ComprehensiveBillTemplate } from "@/components/comprehensive-bill-template";
 import AccessRestricted from "@/components/access-restricted";
 import type { Patient } from "@shared/schema";
-import { useTimezone } from "@/hooks/use-timezone";
+import { formatDateTimeDisplay } from "@/lib/timezone";
 
 export default function Patients() {
   const [, navigate] = useLocation();
@@ -34,7 +34,6 @@ export default function Patients() {
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { formatDateTime } = useTimezone();
 
   // Fetch hospital settings for bills
   const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
@@ -298,6 +297,61 @@ export default function Patients() {
     patient.phone.includes(searchQuery)
   );
 
+  // Get system settings for timezone
+  const { data: systemSettings, isLoading: isSystemSettingsLoading } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Format dates with proper timezone handling
+  const formatPatientDate = (dateString: string) => {
+    try {
+      // The dateString from database is in ISO format (UTC)
+      // For example: "2025-10-02T16:10:00.000Z"
+      // We need to ensure it's parsed as UTC and then formatted in the configured timezone
+      
+      // Parse as UTC by ensuring the string has Z suffix
+      let utcDateString = dateString;
+      if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+        // If no timezone indicator, treat as UTC
+        utcDateString = dateString.replace(/\.\d{3}$/, '') + 'Z';
+      }
+      
+      const utcDate = new Date(utcDateString);
+      
+      // Validate the date
+      if (isNaN(utcDate.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      
+      const timezone = systemSettings?.timezone || 'UTC';
+      
+      // Use Intl.DateTimeFormat with the configured timezone
+      // This automatically converts UTC to the specified timezone
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      
+      return formatter.format(utcDate);
+    } catch (error) {
+      console.error('Error formatting date with timezone:', error, 'for date:', dateString);
+      // Fallback to UTC display
+      return new Date(dateString).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -365,7 +419,11 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formatDateTime(patient.createdAt)}
+                        {isSystemSettingsLoading ? (
+                          <span className="text-muted-foreground">Loading...</span>
+                        ) : (
+                          formatPatientDate(patient.createdAt)
+                        )}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 

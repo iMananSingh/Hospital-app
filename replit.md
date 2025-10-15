@@ -34,14 +34,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**October 15, 2025** - Timezone Display Enhancement
-- Implemented centralized timezone-aware date/time formatting across the application
-- Created useTimezone hook with formatDateTime, formatDate, and formatTime utilities
-- Updated all patient-related pages (patients list, patient details, OPD, pathology, services, admission) to use timezone-aware formatting
-- Removed hardcoded timezone conversions (IST corrections) in favor of configurable timezone support
-- Enhanced settings page to invalidate React Query cache when timezone changes, ensuring immediate UI updates
-- All timestamps now dynamically adjust based on the configured hospital timezone setting
-
 **October 2, 2025** - Replit Environment Setup Completed
 - Successfully imported GitHub repository into Replit environment
 - Verified all dependencies and configurations are working correctly
