@@ -1994,19 +1994,28 @@ export class SqliteStorage implements IStorage {
         .get();
 
       if (patient) {
-        this.logActivity(
-          "system",
-          "opd_scheduled",
-          "OPD appointment scheduled",
-          `${patient.name} - ${visitId}`,
-          result.id,
-          "opd_visit",
-          {
-            visitId,
-            patientName: patient.name,
-            scheduledDate: data.scheduledDate,
-          }
-        );
+        // Get the first user as fallback for system activities
+        const systemUser = db
+          .select()
+          .from(schema.users)
+          .limit(1)
+          .get();
+
+        if (systemUser) {
+          this.logActivity(
+            systemUser.id,
+            "opd_scheduled",
+            "OPD appointment scheduled",
+            `${patient.name} - ${visitId}`,
+            result.id,
+            "opd_visit",
+            {
+              visitId,
+              patientName: patient.name,
+              scheduledDate: data.scheduledDate,
+            }
+          );
+        }
       }
 
       // Calculate doctor earning for this OPD visit
