@@ -2361,14 +2361,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patients/:patientId/payments", authenticateToken, async (req: any, res) => {
     try {
       const { patientId } = req.params;
-      const paymentData = insertPatientPaymentSchema.parse({
-        ...req.body,
-        patientId,
-        paymentDate: req.body.paymentDate || new Date().toISOString().split('T')[0],
-        processedBy: req.user.id, // Use authenticated user ID
-      });
+      const { amount, paymentMethod, reason, paymentDate } = req.body;
 
-      const payment = await storage.createPatientPayment(paymentData);
+      const payment = await storage.createPatientPayment({
+        patientId,
+        amount,
+        paymentMethod,
+        reason: reason || "Payment",
+        paymentDate: paymentDate || new Date().toISOString(),
+        processedBy: req.user.id, // Add the authenticated user's ID
+      });
 
       // Log activity for payment
       const patient = await storage.getPatientById(patientId);
@@ -2377,13 +2379,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id,
         activityType: "payment_collected",
         title: "Payment Collected",
-        description: `₹${paymentData.amount} collected from ${patient?.name || 'Patient'} via ${paymentData.paymentMethod}`,
+        description: `₹${payment.amount} collected from ${patient?.name || 'Patient'} via ${payment.paymentMethod}`,
         entityId: payment.id,
         entityType: "patient_payment",
         metadata: JSON.stringify({
           patientId,
-          amount: paymentData.amount,
-          paymentMethod: paymentData.paymentMethod,
+          amount: payment.amount,
+          paymentMethod: payment.paymentMethod,
           paymentId: payment.paymentId,
         }),
       });
@@ -2444,14 +2446,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/patients/:patientId/discounts", authenticateToken, async (req: any, res) => {
     try {
       const { patientId } = req.params;
-      const discountData = insertPatientDiscountSchema.parse({
-        ...req.body,
-        patientId,
-        discountDate: req.body.discountDate || new Date().toISOString().split('T')[0],
-        approvedBy: req.user.id, // Use authenticated user ID
-      });
+      const { amount, reason, discountType, discountDate } = req.body;
 
-      const discount = await storage.createPatientDiscount(discountData);
+      const discount = await storage.createPatientDiscount({
+        patientId,
+        amount,
+        reason,
+        discountType: discountType || "manual",
+        discountDate: discountDate || new Date().toISOString(),
+        approvedBy: req.user.id, // Add the authenticated user's ID
+      });
 
       // Log activity for discount
       const patient = await storage.getPatientById(patientId);
@@ -2460,14 +2464,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id,
         activityType: "discount_applied",
         title: "Discount Applied",
-        description: `₹${discountData.amount} discount applied to ${patient?.name || 'Patient'} - ${discountData.reason}`,
+        description: `₹${discount.amount} discount applied to ${patient?.name || 'Patient'} - ${discount.reason}`,
         entityId: discount.id,
         entityType: "patient_discount",
         metadata: JSON.stringify({
           patientId,
-          amount: discountData.amount,
-          discountType: discountData.discountType,
-          reason: discountData.reason,
+          amount: discount.amount,
+          discountType: discount.discountType,
+          reason: discount.reason,
         }),
       });
       res.json(discount);
