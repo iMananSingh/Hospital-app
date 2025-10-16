@@ -564,11 +564,12 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3 pr-4">
-                    {recentActivities.map((activity) => {
-                      const getActivityIcon = (type: string) => {
-                      switch (type) {
+                <div className="relative">
+                  <ScrollArea className="h-[400px] w-full">
+                    <div className="space-y-3 pr-4">
+                      {recentActivities.map((activity) => {
+                        const getActivityIcon = (type: string) => {
+                        switch (type) {
                         case 'bill_created':
                           return { icon: 'B', color: 'bg-medical-blue' };
                         case 'patient_registered':
@@ -627,8 +628,9 @@ export default function Dashboard() {
                       </div>
                       );
                     })}
-                  </div>
-                </ScrollArea>
+                    </div>
+                  </ScrollArea>
+                </div>
               )}
             </CardContent>
           </Card>
