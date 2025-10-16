@@ -436,10 +436,10 @@ export default function PatientDetail() {
 
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
-      eventAmount = event.consultationFee ||
-                   event.amount ||
+      eventAmount = event.consultationFee || 
+                   event.amount || 
                    (event.rawData?.visit?.consultationFee) ||
-                   (event.rawData?.doctor?.consultationFee) ||
+                   (event.rawData?.doctor?.consultationFee) || 
                    0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
@@ -463,7 +463,7 @@ export default function PatientDetail() {
       ),
       date: event.sortTimestamp,
       amount: eventAmount,
-      description: eventType === "opd_visit" ?
+      description: eventType === "opd_visit" ? 
         `OPD Consultation - ${getDoctorName()}` : (
         event.description || event.serviceName || event.testName || ""
       ),
@@ -2631,36 +2631,7 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {(() => {
-                                  if (!admission.admissionDate) return "N/A";
-
-                                  // Handle datetime-local format without timezone shift
-                                  if (admission.admissionDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                    const parts = admission.admissionDate.split('T');
-                                    const dateParts = parts[0].split('-');
-                                    const timeParts = parts[1].split(':');
-
-                                    const localDate = new Date(
-                                      parseInt(dateParts[0]),
-                                      parseInt(dateParts[1]) - 1,
-                                      parseInt(dateParts[2]),
-                                      parseInt(timeParts[0]),
-                                      parseInt(timeParts[1])
-                                    );
-
-                                    return localDate.toLocaleString('en-US', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                      hour: 'numeric',
-                                      minute: '2-digit',
-                                      hour12: true
-                                    });
-                                  }
-
-                                  // For other formats, use timezone formatter
-                                  return formatDateTime(admission.admissionDate);
-                                })()}
+                                {formatDateTime(admission.admissionDate)}
                               </div>
                             </div>
                             <div>
@@ -2671,34 +2642,7 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? (() => {
-                                      // Handle datetime-local format without timezone shift
-                                      if (admission.dischargeDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-                                        const parts = admission.dischargeDate.split('T');
-                                        const dateParts = parts[0].split('-');
-                                        const timeParts = parts[1].split(':');
-
-                                        const localDate = new Date(
-                                          parseInt(dateParts[0]),
-                                          parseInt(dateParts[1]) - 1,
-                                          parseInt(dateParts[2]),
-                                          parseInt(timeParts[0]),
-                                          parseInt(timeParts[1])
-                                        );
-
-                                        return localDate.toLocaleString('en-US', {
-                                          month: 'short',
-                                          day: 'numeric',
-                                          year: 'numeric',
-                                          hour: 'numeric',
-                                          minute: '2-digit',
-                                          hour12: true
-                                        });
-                                      }
-
-                                      // For other formats, use timezone formatter
-                                      return formatDateTime(admission.dischargeDate);
-                                    })()
+                                  ? formatDateTime(admission.dischargeDate)
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
@@ -2897,7 +2841,7 @@ export default function PatientDetail() {
                     // Group patient services by order ID (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
-                      const nonAdmissionServices = services.filter((service: any) =>
+                      const nonAdmissionServices = services.filter((service: any) => 
                         service.serviceType !== "admission"
                       );
 
@@ -3090,8 +3034,8 @@ export default function PatientDetail() {
                       const eventColors = getEventColor(event.type);
 
                       return (
-                        <div
-                          key={`${event.type}-${index}`}
+                        <div 
+                          key={`${event.type}-${index}`} 
                           className={`relative mb-6 border-2 border-gray-200 rounded-lg ${eventColors.bgColor} ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
                         >
                           {/* Timeline connector line */}
@@ -3152,21 +3096,7 @@ export default function PatientDetail() {
                                   />
                                 )}
                                 <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
-                                  {(() => {
-                                    // For admission and discharge events, use local time without timezone conversion
-                                    if (event.type === "admission" || event.type === "discharge") {
-                                      return event.timestamp.toLocaleString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric',
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      });
-                                    }
-                                    // For other events, use timezone-aware formatting
-                                    return formatDate(event.timestamp.toISOString());
-                                  })()}
+                                  {formatDate(event.timestamp.toISOString())}
                                 </div>
                               </div>
                             </div>
@@ -3253,7 +3183,7 @@ export default function PatientDetail() {
                                           let doctorName = null;
 
                                           // Try to get doctor ID from the event data
-                                          const doctorId = event.data.doctorId ||
+                                          const doctorId = event.data.doctorId || 
                                                          (event.data.rawData?.order?.doctorId) ||
                                                          (event.data.order?.doctorId);
 
@@ -4301,7 +4231,7 @@ export default function PatientDetail() {
                     <TableBody>
                       {(() => {
                         // Filter admission services
-                        const admissionServices = allServices?.filter((service) =>
+                        const admissionServices = allServices?.filter((service) => 
                           service.category === "admissions" && service.isActive
                         ) || [];
 
@@ -4309,7 +4239,7 @@ export default function PatientDetail() {
                         const filteredServices = selectedServiceSearchQuery.trim()
                           ? admissionServices.filter(service =>
                               service.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
-                              (service.description &&
+                              (service.description && 
                                service.description.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
                             )
                           : admissionServices;
