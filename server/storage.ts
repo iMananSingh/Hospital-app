@@ -3853,73 +3853,64 @@ export class SqliteStorage implements IStorage {
     dischargeDateTime?: string,
   ): Promise<Admission | undefined> {
     return db.transaction((tx) => {
-      // Get current admission
-      const currentAdmission = tx
+      const admission = tx
         .select()
         .from(schema.admissions)
         .where(eq(schema.admissions.id, admissionId))
         .get();
 
-      if (!currentAdmission) {
+      if (!admission) {
         throw new Error("Admission not found");
       }
 
-      if (currentAdmission.status === "discharged") {
+      if (admission.status === "discharged") {
         throw new Error("Patient is already discharged");
       }
 
-      // Use provided discharge date/time or current time
+      // Parse and validate discharge date/time
       let dischargeDate: Date;
-      let dischargeDateString: string;
-
       if (dischargeDateTime) {
-        // Handle datetime-local format "YYYY-MM-DDTHH:MM" as local time
-        if (dischargeDateTime.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
-          const parts = dischargeDateTime.split("T");
-          const dateParts = parts[0].split("-");
-          const timeParts = parts[1].split(":");
-
-          // Create date in local timezone (don't add Z)
-          dischargeDate = new Date(
-            parseInt(dateParts[0]), // year
-            parseInt(dateParts[1]) - 1, // month (0-indexed)
-            parseInt(dateParts[2]), // day
-            parseInt(timeParts[0]), // hour
-            parseInt(timeParts[1]), // minute
-          );
-
-          // Store as local datetime string for SQLite
-          dischargeDateString =
-            dischargeDate.getFullYear() +
-            "-" +
-            String(dischargeDate.getMonth() + 1).padStart(2, "0") +
-            "-" +
-            String(dischargeDate.getDate()).padStart(2, "0") +
-            " " +
-            String(dischargeDate.getHours()).padStart(2, "0") +
-            ":" +
-            String(dischargeDate.getMinutes()).padStart(2, "0") +
-            ":" +
-            String(dischargeDate.getSeconds()).padStart(2, "0");
+        // Handle datetime-local format (YYYY-MM-DDTHH:MM)
+        const parsedDate = new Date(dischargeDateTime);
+        if (isNaN(parsedDate.getTime())) {
+          // If invalid, use current time
+          console.error(`Invalid discharge datetime: ${dischargeDateTime}, using current time`);
+          dischargeDate = new Date();
         } else {
-          // Fallback for other formats
-          dischargeDate = new Date(dischargeDateTime);
-          dischargeDateString = dischargeDate.toISOString();
+          dischargeDate = parsedDate;
         }
       } else {
-        // Default to current time
         dischargeDate = new Date();
-        dischargeDateString = dischargeDate.toISOString();
       }
 
+      // Calculate total cost based on stay duration and daily cost
+      const admissionDate = new Date(admission.admissionDate);
+      const stayDays = calculateStayDays(admissionDate, dischargeDate);
+      const totalCost =
+        stayDays * admission.dailyCost +
+        (admission.additionalPayments || 0) -
+        (admission.totalDiscount || 0);
+
+      // Update the admission with discharge information
+      const updatedAdmission = tx
+        .update(schema.admissions)
+        .set({
+          status: "discharged",
+          dischargeDate: dischargeDate.toISOString(),
+          totalCost,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.admissions.id, admissionId))
+        .returning()
+        .get();
+
+      // Create discharge event with receipt number
       const eventDate =
         dischargeDate.getFullYear() +
         "-" +
         String(dischargeDate.getMonth() + 1).padStart(2, "0") +
         "-" +
         String(dischargeDate.getDate()).padStart(2, "0");
-
-      // Generate receipt number for discharge
       const dischargeCount = this.getDailyReceiptCountSync(
         "discharge",
         eventDate,
@@ -3932,24 +3923,11 @@ export class SqliteStorage implements IStorage {
         .slice(0, 6);
       const receiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
 
-      // Update admission status with provided discharge date/time
-      const updated = tx
-        .update(schema.admissions)
-        .set({
-          status: "discharged",
-          dischargeDate: dischargeDateString,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(schema.admissions.id, admissionId))
-        .returning()
-        .get();
-
-      // Create discharge event with receipt number
       tx.insert(schema.admissionEvents)
         .values({
           admissionId: admissionId,
           eventType: "discharge",
-          eventTime: dischargeDateString,
+          eventTime: dischargeDate.toISOString(),
           notes: `Patient discharged`,
           createdBy: userId,
           receiptNumber: receiptNumber,
@@ -3957,11 +3935,11 @@ export class SqliteStorage implements IStorage {
         .run();
 
       // Decrement occupied beds
-      if (currentAdmission.currentWardType) {
+      if (admission.currentWardType) {
         const roomType = tx
           .select()
           .from(schema.roomTypes)
-          .where(eq(schema.roomTypes.name, currentAdmission.currentWardType))
+          .where(eq(schema.roomTypes.name, admission.currentWardType))
           .get();
 
         if (roomType && roomType.occupiedBeds > 0) {
@@ -3980,25 +3958,25 @@ export class SqliteStorage implements IStorage {
         const patient = db
           .select()
           .from(schema.patients)
-          .where(eq(schema.patients.id, currentAdmission.patientId))
+          .where(eq(schema.patients.id, admission.patientId))
           .get();
         if (patient) {
           this.logActivity(
             userId,
             "patient_discharged",
             "Patient discharged",
-            `${patient.name} - ${currentAdmission.admissionId}`,
+            `${patient.name} - ${admission.admissionId}`,
             admissionId,
             "admission",
             {
-              admissionId: currentAdmission.admissionId,
+              admissionId: admission.admissionId,
               patientName: patient.name,
             },
           );
         }
       });
 
-      return updated;
+      return updatedAdmission;
     });
   }
 
