@@ -544,7 +544,7 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-h-[450px] overflow-y-auto">
               {activitiesLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -563,7 +563,7 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3">
                   {recentActivities.map((activity) => {
                     const getActivityIcon = (type: string) => {
                       switch (type) {
