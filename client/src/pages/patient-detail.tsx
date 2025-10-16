@@ -3096,7 +3096,7 @@ export default function PatientDetail() {
                                   />
                                 )}
                                 <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
-                                  {formatDate(event.timestamp.toISOString())}
+                                  {formatDateTime(event.timestamp.toISOString())}
                                 </div>
                               </div>
                             </div>
