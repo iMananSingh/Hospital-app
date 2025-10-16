@@ -3526,27 +3526,7 @@ export class SqliteStorage implements IStorage {
         totalCharges += charge;
       });
 
-      // 5. Admission events charges
-      const admissionEvents = db
-        .select({
-          id: schema.admissionEvents.id,
-          eventType: schema.admissionEvents.eventType,
-          admissionId: schema.admissionEvents.admissionId,
-        })
-        .from(schema.admissionEvents)
-        .innerJoin(
-          schema.admissions,
-          eq(schema.admissionEvents.admissionId, schema.admissions.id)
-        )
-        .where(eq(schema.admissions.patientId, patientId))
-        .all();
-
-      // Admission event charges are handled through total_cost in admissions table which is updated via admission_events
-      // This part might need revision if specific event charges need to be itemized.
-      // For now, relying on total_cost from admissions which is updated during createAdmission.
-      // If admission.totalCost is not being updated correctly, this section might be inaccurate.
-
-      // 6. Get all payments for this patient
+      // 5. Get all payments for this patient
       const payments = db
         .select({
           amount: schema.patientPayments.amount,
@@ -3559,7 +3539,7 @@ export class SqliteStorage implements IStorage {
         totalPaid += payment.amount || 0;
       });
 
-      // 7. Include initial deposits and additional payments from admissions
+      // 6. Include initial deposits and additional payments from admissions
       const admissionDepositsAndPayments = db
         .select({
           initialDeposit: schema.admissions.initialDeposit,
@@ -3575,7 +3555,7 @@ export class SqliteStorage implements IStorage {
       });
 
 
-      // 8. Get all discounts for this patient
+      // 7. Get all discounts for this patient
       const discounts = db
         .select({
           amount: schema.patientDiscounts.amount,
@@ -3867,25 +3847,31 @@ export class SqliteStorage implements IStorage {
         throw new Error("Patient is already discharged");
       }
 
-      // Parse and validate discharge date/time
-      let dischargeDate: Date;
-      if (dischargeDateTime) {
-        // Handle datetime-local format (YYYY-MM-DDTHH:MM)
-        const parsedDate = new Date(dischargeDateTime);
-        if (isNaN(parsedDate.getTime())) {
-          // If invalid, use current time
-          console.error(`Invalid discharge datetime: ${dischargeDateTime}, using current time`);
-          dischargeDate = new Date();
-        } else {
-          dischargeDate = parsedDate;
+      // Validate and use the provided dischargeDateTime, or default to current time
+      let validDischargeDateTime: string;
+
+      if (dischargeDateTime && typeof dischargeDateTime === 'string' && dischargeDateTime.length > 0) {
+        try {
+          // Try to parse as ISO string
+          const parsedDate = new Date(dischargeDateTime);
+          if (isNaN(parsedDate.getTime())) {
+            console.error(`Invalid discharge datetime: ${dischargeDateTime}, using current time`);
+            validDischargeDateTime = new Date().toISOString();
+          } else {
+            validDischargeDateTime = parsedDate.toISOString();
+          }
+        } catch (error) {
+          console.error(`Error parsing discharge datetime: ${dischargeDateTime}`, error);
+          validDischargeDateTime = new Date().toISOString();
         }
       } else {
-        dischargeDate = new Date();
+        console.log(`No discharge datetime provided, using current time`);
+        validDischargeDateTime = new Date().toISOString();
       }
 
       // Calculate total cost based on stay duration and daily cost
       const admissionDate = new Date(admission.admissionDate);
-      const stayDays = calculateStayDays(admissionDate, dischargeDate);
+      const stayDays = calculateStayDays(admissionDate, validDischargeDateTime);
       const totalCost =
         stayDays * admission.dailyCost +
         (admission.additionalPayments || 0) -
@@ -3896,7 +3882,7 @@ export class SqliteStorage implements IStorage {
         .update(schema.admissions)
         .set({
           status: "discharged",
-          dischargeDate: dischargeDate.toISOString(),
+          dischargeDate: validDischargeDateTime,
           totalCost,
           updatedAt: new Date().toISOString(),
         })
@@ -3906,11 +3892,7 @@ export class SqliteStorage implements IStorage {
 
       // Create discharge event with receipt number
       const eventDate =
-        dischargeDate.getFullYear() +
-        "-" +
-        String(dischargeDate.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(dischargeDate.getDate()).padStart(2, "0");
+        validDischargeDateTime.split("T")[0];
       const dischargeCount = this.getDailyReceiptCountSync(
         "discharge",
         eventDate,
@@ -3923,13 +3905,14 @@ export class SqliteStorage implements IStorage {
         .slice(0, 6);
       const receiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
 
+      // Create discharge event with receipt number
       tx.insert(schema.admissionEvents)
         .values({
-          admissionId: admissionId,
+          admissionId: admission.id,
           eventType: "discharge",
-          eventTime: dischargeDate.toISOString(),
-          notes: `Patient discharged`,
-          createdBy: userId,
+          eventTime: validDischargeDateTime,
+          notes: "Patient discharged",
+          createdBy: userId || null,
           receiptNumber: receiptNumber,
         })
         .run();
