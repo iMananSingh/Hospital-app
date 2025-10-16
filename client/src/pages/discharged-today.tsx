@@ -167,7 +167,7 @@ export default function DischargedTodayPage() {
                           <div className="font-medium text-sm">{admission.admissionId}</div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(admission.admissionDate).toLocaleDateString('en-IN')} - {admission.dischargeDate ? new Date(admission.dischargeDate).toLocaleDateString('en-IN') : 'N/A'}
+                            {formatDate(admission.createdAt)} - {formatDate(admission.updatedAt)}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
