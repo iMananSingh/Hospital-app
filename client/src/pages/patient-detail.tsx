@@ -2631,7 +2631,22 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {admission.admissionDate ? formatDate(admission.admissionDate) : "N/A"}
+                                {(() => {
+                                  if (!admission.admissionDate) return "N/A";
+                                  
+                                  // If it's a date-only format (YYYY-MM-DD), display as-is
+                                  if (admission.admissionDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                    const [year, month, day] = admission.admissionDate.split('-');
+                                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    });
+                                  }
+                                  
+                                  // For datetime formats, use the timezone formatter
+                                  return formatDateTime(admission.admissionDate);
+                                })()}
                               </div>
                             </div>
                             <div>
@@ -2642,7 +2657,20 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? formatDate(admission.dischargeDate)
+                                  ? (() => {
+                                      // If it's a date-only format (YYYY-MM-DD), display as-is
+                                      if (admission.dischargeDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                        const [year, month, day] = admission.dischargeDate.split('-');
+                                        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric'
+                                        });
+                                      }
+                                      
+                                      // For datetime formats, use the timezone formatter
+                                      return formatDateTime(admission.dischargeDate);
+                                    })()
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
