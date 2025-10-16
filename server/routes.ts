@@ -2380,20 +2380,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity for payment
       const patient = await storage.getPatientById(patientId);
 
-      await storage.createActivity({
-        userId: req.user.id,
-        activityType: "payment_collected",
-        title: "Payment Collected",
-        description: `₹${payment.amount} collected from ${patient?.name || 'Patient'} via ${payment.paymentMethod}`,
-        entityId: payment.id,
-        entityType: "patient_payment",
-        metadata: JSON.stringify({
-          patientId,
-          amount: payment.amount,
-          paymentMethod: payment.paymentMethod,
-          paymentId: payment.paymentId,
-        }),
-      });
       res.json(payment);
     } catch (error: any) {
       console.error("Error creating patient payment:", error);
@@ -2470,20 +2456,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity for discount
       const patient = await storage.getPatientById(patientId);
 
-      await storage.createActivity({
-        userId: req.user.id,
-        activityType: "discount_applied",
-        title: "Discount Applied",
-        description: `₹${discount.amount} discount applied to ${patient?.name || 'Patient'} - ${discount.reason}`,
-        entityId: discount.id,
-        entityType: "patient_discount",
-        metadata: JSON.stringify({
-          patientId,
-          amount: discount.amount,
-          discountType: discount.discountType,
-          reason: discount.reason,
-        }),
-      });
       res.json(discount);
     } catch (error: any) {
       console.error("Error creating patient discount:", error);
