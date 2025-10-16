@@ -2631,7 +2631,36 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {formatDateTime(admission.admissionDate)}
+                                {(() => {
+                                  if (!admission.admissionDate) return "N/A";
+                                  
+                                  // Handle datetime-local format without timezone shift
+                                  if (admission.admissionDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                    const parts = admission.admissionDate.split('T');
+                                    const dateParts = parts[0].split('-');
+                                    const timeParts = parts[1].split(':');
+                                    
+                                    const localDate = new Date(
+                                      parseInt(dateParts[0]),
+                                      parseInt(dateParts[1]) - 1,
+                                      parseInt(dateParts[2]),
+                                      parseInt(timeParts[0]),
+                                      parseInt(timeParts[1])
+                                    );
+                                    
+                                    return localDate.toLocaleString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                      hour: 'numeric',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    });
+                                  }
+                                  
+                                  // For other formats, use timezone formatter
+                                  return formatDateTime(admission.admissionDate);
+                                })()}
                               </div>
                             </div>
                             <div>
@@ -2642,7 +2671,34 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? formatDateTime(admission.dischargeDate)
+                                  ? (() => {
+                                      // Handle datetime-local format without timezone shift
+                                      if (admission.dischargeDate.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                                        const parts = admission.dischargeDate.split('T');
+                                        const dateParts = parts[0].split('-');
+                                        const timeParts = parts[1].split(':');
+                                        
+                                        const localDate = new Date(
+                                          parseInt(dateParts[0]),
+                                          parseInt(dateParts[1]) - 1,
+                                          parseInt(dateParts[2]),
+                                          parseInt(timeParts[0]),
+                                          parseInt(timeParts[1])
+                                        );
+                                        
+                                        return localDate.toLocaleString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                          hour: 'numeric',
+                                          minute: '2-digit',
+                                          hour12: true
+                                        });
+                                      }
+                                      
+                                      // For other formats, use timezone formatter
+                                      return formatDateTime(admission.dischargeDate);
+                                    })()
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
