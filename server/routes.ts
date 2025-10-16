@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema, insertDoctorServiceRateSchema, insertDoctorEarningSchema, insertDoctorPaymentSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertDoctorSchema, insertServiceSchema, insertBillSchema, insertBillItemSchema, insertPathologyTestSchema, insertSystemSettingsSchema, insertPathologyCategorySchema, insertDynamicPathologyTestSchema, insertPatientPaymentSchema, insertPatientDiscountSchema, insertServiceCategorySchema, insertDoctorServiceRateSchema, insertDoctorEarningSchema, insertDoctorPaymentSchema, insertAdmissionSchema, insertPatientVisitSchema, insertPatientServiceSchema } from "@shared/schema";
 import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByName, getCategories, addCategoryToFile, addTestToFile, deleteCategoryFromFile, deleteTestFromFile } from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
@@ -1472,6 +1472,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Doctor ID in service data:', serviceData.doctorId);
       const service = await storage.createPatientService(serviceData, req.user.id);
       console.log('Created patient service:', JSON.stringify(service, null, 2));
+
+      // Log activity for service scheduling
+      const patient = await storage.getPatientById(serviceData.patientId);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "service_scheduled",
+        title: "Service Scheduled",
+        description: `${serviceData.serviceName} scheduled for ${patient?.name || 'Patient'}`,
+        entityId: service.id,
+        entityType: "patient_service",
+        metadata: JSON.stringify({
+          patientId: serviceData.patientId,
+          serviceType: serviceData.serviceType,
+          serviceName: serviceData.serviceName,
+          scheduledDate: serviceData.scheduledDate,
+          scheduledTime: serviceData.scheduledTime,
+        }),
+      });
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
@@ -1547,7 +1566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Creating batch of ${servicesWithMetadata.length} services with receipt number: ${receiptNumber}`);
 
       // Use the batch creation method to ensure all services get the same orderId
-      const services = await storage.createPatientServicesBatch(servicesWithMetadata);
+      const services = await storage.createPatientServicesBatch(servicesWithMetadata, req.user.id);
 
       console.log(`Successfully created ${services.length} services with shared orderId: ${services[0]?.orderId}`);
 
@@ -1561,7 +1580,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/patient-services/:id", authenticateToken, async (req, res) => {
     try {
-      const service = await storage.updatePatientService(req.params.id, req.body);
+      const service = await storage.updatePatientService(req.params.id, req.body, req.user.id);
+
+      // Log activity if service is being completed
+      if (req.body.status === "completed") {
+        const patient = await storage.getPatientById(service.patientId);
+
+        await storage.createActivity({
+          userId: req.user.id,
+          activityType: "service_completed",
+          title: "Service Completed",
+          description: `${service.serviceName} completed for ${patient?.name || 'Patient'}`,
+          entityId: service.id,
+          entityType: "patient_service",
+          metadata: JSON.stringify({
+            patientId: service.patientId,
+            serviceName: service.serviceName,
+            serviceType: service.serviceType,
+          }),
+        });
+      }
       res.json(service);
     } catch (error) {
       console.error("Error updating patient service:", error);
@@ -1608,7 +1646,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.createAdmission(requestBody);
+      const admission = await storage.createAdmission(requestBody, req.user.id);
+
+      // Log activity for admission
+      const patient = await storage.getPatientById(admission.patientId);
+      const doctor = await storage.getDoctorById(admission.doctorId);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "patient_admitted",
+        title: "Patient Admitted",
+        description: `${patient?.name || 'Patient'} admitted under ${doctor?.name || 'Doctor'} - ${admission.currentWardType}`,
+        entityId: admission.id,
+        entityType: "admission",
+        metadata: JSON.stringify({
+          patientId: admission.patientId,
+          doctorId: admission.doctorId,
+          wardType: admission.currentWardType,
+          admissionDate: admission.admissionDate,
+        }),
+      });
+
       res.json(admission);
     } catch (error) {
       console.error("Error creating admission:", error);
@@ -1635,7 +1693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.updateAdmission(req.params.id, requestBody);
+      const admission = await storage.updateAdmission(req.params.id, requestBody, req.user.id);
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
@@ -1662,7 +1720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.updateAdmission(req.params.id, requestBody);
+      const admission = await storage.updateAdmission(req.params.id, requestBody, req.user.id);
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
@@ -1794,6 +1852,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         prescription: visitData.prescription || null,
         consultationFee: consultationFee,
         status: "scheduled"
+      }, req.user.id);
+
+      // Log activity for OPD scheduling
+      const patient = await storage.getPatientById(visitData.patientId);
+      const doctor = await storage.getDoctorById(visitData.doctorId);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "opd_scheduled",
+        title: "OPD Appointment Scheduled",
+        description: `${patient?.name || 'Patient'} scheduled for consultation with ${doctor?.name || 'Doctor'}`,
+        entityId: opdVisit.id,
+        entityType: "patient_visit",
+        metadata: JSON.stringify({
+          patientId: visitData.patientId,
+          doctorId: visitData.doctorId,
+          scheduledDate: visitData.scheduledDate,
+          scheduledTime: visitData.scheduledTime,
+        }),
       });
 
       res.status(201).json(opdVisit);
@@ -1813,7 +1890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Status is required" });
       }
 
-      const updated = await storage.updateOpdVisitStatus(id, status);
+      const updated = await storage.updateOpdVisitStatus(id, status, req.user.id);
 
       if (!updated) {
         return res.status(404).json({ error: "OPD visit not found" });
@@ -1927,7 +2004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/rooms/:id/occupancy", authenticateToken, async (req, res) => {
     try {
       const { isOccupied } = req.body;
-      const updated = await storage.updateRoomOccupancy(req.params.id, isOccupied);
+      const updated = await storage.updateRoomOccupancy(req.params.id, isOccupied, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room not found" });
       }
@@ -1954,7 +2031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/settings/hospital", authenticateToken, async (req, res) => {
     try {
-      const settings = await storage.saveHospitalSettings(req.body);
+      const settings = await storage.saveHospitalSettings(req.body, req.user.id);
       res.json(settings);
     } catch (error) {
       console.error("Error saving hospital settings:", error);
@@ -1965,7 +2042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/settings/upload-logo", authenticateToken, async (req, res) => {
     try {
       const { logo } = req.body;
-      const logoPath = await storage.saveLogo(logo);
+      const logoPath = await storage.saveLogo(logo, req.user.id);
       res.json({ logoPath });
     } catch (error) {
       console.error("Error uploading logo:", error);
@@ -1998,7 +2075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
-      const settings = await storage.saveSystemSettings(req.body);
+      const settings = await storage.saveSystemSettings(req.body, req.user.id);
 
       // Update backup scheduler based on new settings
       if (settings.autoBackup) {
@@ -2026,7 +2103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { backupType = 'manual' } = req.body;
       console.log(`Creating backup with type: ${backupType}`);
 
-      const backup = await storage.createBackup(backupType);
+      const backup = await storage.createBackup(backupType, req.user.id);
       console.log(`Backup created successfully:`, backup);
 
       res.json(backup);
@@ -2078,7 +2155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
-      await storage.cleanOldBackups();
+      await storage.cleanOldBackups(req.user.id);
       res.json({ message: "Old backups cleaned up successfully" });
     } catch (error) {
       console.error("Error cleaning up backups:", error);
@@ -2116,7 +2193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Backup file path is required" });
       }
 
-      const result = await storage.restoreBackup(backupFilePath);
+      const result = await storage.restoreBackup(backupFilePath, req.user.id);
       res.json(result);
     } catch (error) {
       console.error("Error restoring backup:", error);
@@ -2167,10 +2244,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admissions/:id/discharge", authenticateToken, async (req: any, res) => {
     try {
       const { dischargeDateTime } = req.body;
-      const updated = await storage.dischargePatient(req.params.id, req.user.id, dischargeDateTime);
+      const updated = await storage.dischargePatient(req.params.id, dischargeDateTime, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Admission not found" });
       }
+
+      // Log activity for patient discharge
+      const admission = await storage.getAdmissionById(req.params.id);
+      const patient = admission ? await storage.getPatientById(admission.patientId) : null;
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "patient_discharged",
+        title: "Patient Discharged",
+        description: `${patient?.name || 'Patient'} discharged from ${admission?.currentWardType || 'ward'}`,
+        entityId: req.params.id,
+        entityType: "admission",
+        metadata: JSON.stringify({
+          patientId: admission?.patientId,
+          dischargeDate: dischargeDateTime,
+          admissionId: admission?.admissionId,
+        }),
+      });
+
       res.json(updated);
     } catch (error) {
       console.error("Error discharging patient:", error);
@@ -2248,7 +2344,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedBy: req.user.id, // Use authenticated user ID
       });
 
-      const payment = await storage.createPatientPayment(paymentData, req.user.id);
+      const payment = await storage.createPatientPayment(paymentData);
+
+      // Log activity for payment
+      const patient = await storage.getPatientById(patientId);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "payment_collected",
+        title: "Payment Collected",
+        description: `₹${paymentData.amount} collected from ${patient?.name || 'Patient'} via ${paymentData.paymentMethod}`,
+        entityId: payment.id,
+        entityType: "patient_payment",
+        metadata: JSON.stringify({
+          patientId,
+          amount: paymentData.amount,
+          paymentMethod: paymentData.paymentMethod,
+          paymentId: payment.paymentId,
+        }),
+      });
       res.json(payment);
     } catch (error: any) {
       console.error("Error creating patient payment:", error);
@@ -2313,7 +2427,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         approvedBy: req.user.id, // Use authenticated user ID
       });
 
-      const discount = await storage.createPatientDiscount(discountData, req.user.id);
+      const discount = await storage.createPatientDiscount(discountData);
+
+      // Log activity for discount
+      const patient = await storage.getPatientById(patientId);
+
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "discount_applied",
+        title: "Discount Applied",
+        description: `₹${discountData.amount} discount applied to ${patient?.name || 'Patient'} - ${discountData.reason}`,
+        entityId: discount.id,
+        entityType: "patient_discount",
+        metadata: JSON.stringify({
+          patientId,
+          amount: discountData.amount,
+          discountType: discountData.discountType,
+          reason: discountData.reason,
+        }),
+      });
       res.json(discount);
     } catch (error: any) {
       console.error("Error creating patient discount:", error);
@@ -2362,7 +2494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/service-categories", authenticateToken, async (req: any, res) => {
     try {
       const categoryData = insertServiceCategorySchema.parse(req.body);
-      const category = await storage.createServiceCategory(categoryData);
+      const category = await storage.createServiceCategory(categoryData, req.user.id);
       res.json(category);
     } catch (error: any) {
       console.error("Error creating service category:", error);
@@ -2376,7 +2508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
     try {
       const categoryData = insertServiceCategorySchema.partial().parse(req.body);
-      const category = await storage.updateServiceCategory(req.params.id, categoryData);
+      const category = await storage.updateServiceCategory(req.params.id, categoryData, req.user.id);
       if (!category) {
         return res.status(404).json({ message: "Service category not found" });
       }
@@ -2414,7 +2546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const deleted = await storage.deleteServiceCategory(id);
+      const deleted = await storage.deleteServiceCategory(id, req.user.id);
       if (!deleted) {
         return res.status(404).json({ message: "Service category not found" });
       }
@@ -2443,7 +2575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/doctors/recalculate-earnings", authenticateToken, async (req: any, res) => {
     try {
       const { doctorId } = req.body;
-      const result = await storage.recalculateDoctorEarnings(doctorId);
+      const result = await storage.recalculateDoctorEarnings(doctorId, req.user.id);
       res.json({
         message: `Recalculation complete: processed ${result.processed} services, created ${result.created} new earnings`,
         ...result
@@ -2467,7 +2599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Mark all pending earnings as paid
       for (const earning of pendingEarnings) {
-        await storage.updateDoctorEarningStatus(earning.id, 'paid');
+        await storage.updateDoctorEarningStatus(earning.id, 'paid', req.user.id);
       }
 
       res.json({
