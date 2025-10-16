@@ -2271,21 +2271,15 @@ export default function PatientDetail() {
                                 // Format date and time using configured timezone
                                 if (!visit.scheduledDate) return "N/A";
 
-                                // Create a proper UTC datetime string for scheduled date and time
-                                let datetimeString;
-                                if (visit.scheduledTime) {
-                                  // Combine date and time to create a complete datetime in UTC
-                                  datetimeString = `${visit.scheduledDate}T${visit.scheduledTime}:00Z`;
-                                } else {
-                                  datetimeString = `${visit.scheduledDate}T00:00:00Z`;
-                                }
-
+                                // The scheduledDate and scheduledTime are already in UTC from the database
+                                // We just need to display them in the configured timezone
                                 if (!visit.scheduledTime) {
-                                  return formatDate(datetimeString);
+                                  return formatDate(visit.scheduledDate);
                                 }
 
-                                const dateDisplay = formatDate(datetimeString);
-                                const timeDisplay = formatTime(datetimeString);
+                                // Combine date and time for display
+                                const dateDisplay = formatDate(visit.scheduledDate);
+                                const timeDisplay = formatTime(`${visit.scheduledDate}T${visit.scheduledTime}:00`);
 
                                 return (
                                   <>

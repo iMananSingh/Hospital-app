@@ -244,8 +244,6 @@ export default function OpdList() {
               <CardContent>
                 <div className="space-y-3">
                   {(services as any[]).map((visit: any) => {
-                    const scheduledDateTime = new Date(`${visit.scheduledDate}T${visit.scheduledTime || '00:00'}`);
-                    
                     return (
                       <div
                         key={visit.id}
@@ -266,18 +264,15 @@ export default function OpdList() {
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
-                                {scheduledDateTime.toLocaleDateString('en-US', {
+                                {visit.scheduledDate ? new Date(visit.scheduledDate).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric'
-                                })}
+                                }) : 'N/A'}
                               </div>
                               <div className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {scheduledDateTime.toLocaleTimeString('en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
+                                {visit.scheduledTime || 'N/A'}
                               </div>
                               {visit.patientPhone && (
                                 <div className="flex items-center gap-1">
