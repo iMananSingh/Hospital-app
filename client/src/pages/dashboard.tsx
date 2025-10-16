@@ -564,8 +564,8 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[400px] pr-4">
-                  <div className="space-y-3">
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3 pr-4">
                     {recentActivities.map((activity) => {
                       const getActivityIcon = (type: string) => {
                       switch (type) {
