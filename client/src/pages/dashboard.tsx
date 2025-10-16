@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
 import AccessRestricted from "@/components/access-restricted";
 import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema";
@@ -563,9 +564,10 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                  {recentActivities.map((activity) => {
-                    const getActivityIcon = (type: string) => {
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-3">
+                    {recentActivities.map((activity) => {
+                      const getActivityIcon = (type: string) => {
                       switch (type) {
                         case 'bill_created':
                           return { icon: 'B', color: 'bg-medical-blue' };
@@ -623,9 +625,10 @@ export default function Dashboard() {
                         </div>
                         <p className="text-xs text-text-muted">{formatTimeAgo(activity.createdAt)}</p>
                       </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
