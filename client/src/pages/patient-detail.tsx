@@ -2631,7 +2631,7 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {formatDateTime(admission.admissionDate)}
+                                {admission.admissionDate ? formatDateTime(admission.admissionDate) : "N/A"}
                               </div>
                             </div>
                             <div>
