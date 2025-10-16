@@ -571,6 +571,10 @@ export default function Dashboard() {
                           return { icon: 'B', color: 'bg-medical-blue' };
                         case 'patient_registered':
                           return { icon: 'P', color: 'bg-healthcare-green' };
+                        case 'patient_admitted':
+                          return { icon: 'PA', color: 'bg-red-500' };
+                        case 'patient_discharged':
+                          return { icon: 'PD', color: 'bg-green-600' };
                         case 'lab_test_ordered':
                           return { icon: 'L', color: 'bg-purple-500' };
                         case 'lab_test_completed':
@@ -579,6 +583,12 @@ export default function Dashboard() {
                           return { icon: 'O', color: 'bg-blue-500' };
                         case 'service_scheduled':
                           return { icon: 'S', color: 'bg-indigo-500' };
+                        case 'service_completed':
+                          return { icon: 'SC', color: 'bg-emerald-500' };
+                        case 'payment_received':
+                          return { icon: '₹', color: 'bg-green-500' };
+                        case 'discount_applied':
+                          return { icon: 'D', color: 'bg-yellow-500' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
@@ -591,6 +601,9 @@ export default function Dashboard() {
                         case 'service_updated':
                         case 'service_deleted':
                           return { icon: 'SV', color: 'bg-pink-500' };
+                        case 'doctor_created':
+                        case 'doctor_updated':
+                          return { icon: 'DR', color: 'bg-cyan-500' };
                         default:
                           return { icon: 'A', color: 'bg-gray-500' };
                       }
