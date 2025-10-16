@@ -1986,38 +1986,6 @@ export class SqliteStorage implements IStorage {
         // Database defaults will handle createdAt/updatedAt in UTC
       }).returning().get();
 
-      // Log activity for OPD visit creation
-      const patient = db
-        .select()
-        .from(schema.patients)
-        .where(eq(schema.patients.id, data.patientId))
-        .get();
-
-      if (patient) {
-        // Get the first user as fallback for system activities
-        const systemUser = db
-          .select()
-          .from(schema.users)
-          .limit(1)
-          .get();
-
-        if (systemUser) {
-          this.logActivity(
-            systemUser.id,
-            "opd_scheduled",
-            "OPD appointment scheduled",
-            `${patient.name} - ${visitId}`,
-            result.id,
-            "opd_visit",
-            {
-              visitId,
-              patientName: patient.name,
-              scheduledDate: data.scheduledDate,
-            }
-          );
-        }
-      }
-
       // Calculate doctor earning for this OPD visit
       if (result.doctorId && result.consultationFee && result.consultationFee > 0) {
         await this.calculateOpdEarning(result);
@@ -4764,40 +4732,21 @@ export class SqliteStorage implements IStorage {
     metadata?: any,
   ): Promise<void> {
     try {
-      // For system activities, use the first available user or create a fallback
-      let effectiveUserId = userId;
-      
-      if (userId === "system") {
-        // Get the first user as fallback for system activities
-        const systemUser = db
-          .select({ id: schema.users.id })
-          .from(schema.users)
-          .limit(1)
-          .get();
-        
-        if (systemUser) {
-          effectiveUserId = systemUser.id;
-        } else {
-          console.warn(`Skipping activity log - no users found in system`);
-          return;
-        }
-      } else {
-        // Check if user exists before logging activity
-        const userExists = db
-          .select({ id: schema.users.id })
-          .from(schema.users)
-          .where(eq(schema.users.id, userId))
-          .get();
+      // Check if user exists before logging activity
+      const userExists = db
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, userId))
+        .get();
 
-        if (!userExists) {
-          console.warn(`Skipping activity log - user ${userId} not found`);
-          return;
-        }
+      if (!userExists) {
+        console.warn(`Skipping activity log - user ${userId} not found`);
+        return;
       }
 
       db.insert(schema.activities)
         .values({
-          userId: effectiveUserId,
+          userId,
           activityType,
           title,
           description,
