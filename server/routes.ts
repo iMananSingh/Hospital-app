@@ -2363,14 +2363,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { patientId } = req.params;
       const { amount, paymentMethod, reason, paymentDate } = req.body;
 
+      // Verify user ID exists
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
       const payment = await storage.createPatientPayment({
         patientId,
         amount,
         paymentMethod,
         reason: reason || "Payment",
         paymentDate: paymentDate || new Date().toISOString(),
-        processedBy: req.user.id, // Add the authenticated user's ID
-      });
+        processedBy: req.user.id,
+      }, req.user.id);
 
       // Log activity for payment
       const patient = await storage.getPatientById(patientId);
@@ -2448,14 +2453,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { patientId } = req.params;
       const { amount, reason, discountType, discountDate } = req.body;
 
+      // Verify user ID exists
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
       const discount = await storage.createPatientDiscount({
         patientId,
         amount,
         reason,
         discountType: discountType || "manual",
         discountDate: discountDate || new Date().toISOString(),
-        approvedBy: req.user.id, // Add the authenticated user's ID
-      });
+        approvedBy: req.user.id,
+      }, req.user.id);
 
       // Log activity for discount
       const patient = await storage.getPatientById(patientId);
