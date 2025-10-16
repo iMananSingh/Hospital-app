@@ -365,7 +365,7 @@ export default function Patients() {
                         {patient.phone}
                       </TableCell>
                       <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {formatDateTime(patient.createdAt)}
+                        {patient.createdAt ? formatDateTime(patient.createdAt) : 'N/A'}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 

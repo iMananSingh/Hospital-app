@@ -20,7 +20,15 @@ export function useTimezone() {
     if (!utcDateString) return "N/A";
     
     try {
-      const utcDate = new Date(utcDateString);
+      // Ensure the date string is treated as UTC
+      let utcDate: Date;
+      if (utcDateString.endsWith('Z') || utcDateString.includes('+') || utcDateString.includes('T')) {
+        // Already in ISO format with timezone info
+        utcDate = new Date(utcDateString);
+      } else {
+        // Assume UTC if no timezone info (append Z)
+        utcDate = new Date(utcDateString + 'Z');
+      }
       
       if (isNaN(utcDate.getTime())) {
         return "N/A";
@@ -50,7 +58,13 @@ export function useTimezone() {
     if (!utcDateString) return "N/A";
     
     try {
-      const utcDate = new Date(utcDateString);
+      // Ensure the date string is treated as UTC
+      let utcDate: Date;
+      if (utcDateString.endsWith('Z') || utcDateString.includes('+') || utcDateString.includes('T')) {
+        utcDate = new Date(utcDateString);
+      } else {
+        utcDate = new Date(utcDateString + 'Z');
+      }
       
       if (isNaN(utcDate.getTime())) {
         return "N/A";
@@ -77,7 +91,13 @@ export function useTimezone() {
     if (!utcDateString) return "N/A";
     
     try {
-      const utcDate = new Date(utcDateString);
+      // Ensure the date string is treated as UTC
+      let utcDate: Date;
+      if (utcDateString.endsWith('Z') || utcDateString.includes('+') || utcDateString.includes('T')) {
+        utcDate = new Date(utcDateString);
+      } else {
+        utcDate = new Date(utcDateString + 'Z');
+      }
       
       if (isNaN(utcDate.getTime())) {
         return "N/A";
