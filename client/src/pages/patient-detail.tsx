@@ -3195,7 +3195,7 @@ export default function PatientDetail() {
                                           }
 
                                           return doctorName ? (
-                                            <div className="mt-2"><span className="font-medium">Doctor:</span> Dr. {doctorName}</div>
+                                            <div className="mt-2"><span className="font-medium">Doctor:</span> {doctorName}</div>
                                           ) : null;
                                         })()}
                                         {event.data.remarks && <div className="mt-1"><span className="font-medium">Remarks:</span> {event.data.remarks}</div>}
@@ -3251,7 +3251,7 @@ export default function PatientDetail() {
 
                               return doctorName ? (
                                 <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600">
-                                  <span className="font-medium">Doctor:</span> Dr. {doctorName}
+                                  <span className="font-medium">Doctor:</span> {doctorName}
                                 </div>
                               ) : null;
                             })()}
