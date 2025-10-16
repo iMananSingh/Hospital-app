@@ -2631,7 +2631,7 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {admission.admissionDate ? formatDate(admission.admissionDate) : "N/A"}
+                                {formatDateTime(admission.admissionDate)}
                               </div>
                             </div>
                             <div>
@@ -2642,7 +2642,7 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? formatDate(admission.dischargeDate)
+                                  ? formatDateTime(admission.dischargeDate)
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
