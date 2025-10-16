@@ -2445,15 +2445,21 @@ export default function PatientDetail() {
                                   // Format date and time using configured timezone
                                   if (!service.scheduledDate) return "N/A";
 
-                                  // The scheduledDate and scheduledTime are already in the correct format
-                                  // We just need to display them in the configured timezone
-                                  if (!service.scheduledTime) {
-                                    return formatDate(service.scheduledDate);
+                                  // Create a proper UTC datetime string for scheduled date and time
+                                  let datetimeString;
+                                  if (service.scheduledTime) {
+                                    // Combine date and time to create a complete datetime in UTC
+                                    datetimeString = `${service.scheduledDate}T${service.scheduledTime}:00Z`;
+                                  } else {
+                                    datetimeString = `${service.scheduledDate}T00:00:00Z`;
                                   }
 
-                                  // Combine date and time for display (without adding Z to avoid timezone shift)
-                                  const dateDisplay = formatDate(service.scheduledDate);
-                                  const timeDisplay = formatTime(`${service.scheduledDate}T${service.scheduledTime}:00`);
+                                  if (!service.scheduledTime) {
+                                    return formatDate(datetimeString);
+                                  }
+
+                                  const dateDisplay = formatDate(datetimeString);
+                                  const timeDisplay = formatTime(datetimeString);
 
                                   return (
                                     <>
