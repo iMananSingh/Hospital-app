@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
 import AccessRestricted from "@/components/access-restricted";
 import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema";
@@ -544,28 +545,29 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[450px] overflow-y-auto">
-              {activitiesLoading ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                      <Skeleton className="w-8 h-8 rounded-full" />
-                      <div className="flex-1 space-y-1">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-3 w-2/3" />
+            <CardContent className="p-0">
+              <ScrollArea className="h-[400px] px-6">
+                {activitiesLoading ? (
+                  <div className="space-y-3 py-6">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div className="flex-1 space-y-1">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-3 w-2/3" />
+                        </div>
+                        <Skeleton className="h-3 w-16" />
                       </div>
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))}
-                </div>
-              ) : recentActivities.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p>No recent activities</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentActivities.map((activity) => {
-                    const getActivityIcon = (type: string) => {
+                    ))}
+                  </div>
+                ) : recentActivities.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <p>No recent activities</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 py-6">
+                    {recentActivities.map((activity) => {
+                      const getActivityIcon = (type: string) => {
                       switch (type) {
                         case 'bill_created':
                           return { icon: 'B', color: 'bg-medical-blue' };
@@ -594,9 +596,9 @@ export default function Dashboard() {
                         default:
                           return { icon: 'A', color: 'bg-gray-500' };
                       }
-                    };
+                      };
 
-                    const formatTimeAgo = (dateString: string) => {
+                      const formatTimeAgo = (dateString: string) => {
                       const now = new Date();
                       const date = new Date(dateString);
                       const diffInMs = now.getTime() - date.getTime();
@@ -608,25 +610,26 @@ export default function Dashboard() {
                       if (diffInHours > 0) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
                       if (diffInMins > 0) return `${diffInMins} min${diffInMins > 1 ? 's' : ''} ago`;
                       return 'Just now';
-                    };
+                      };
 
-                    const { icon, color } = getActivityIcon(activity.activityType);
+                      const { icon, color } = getActivityIcon(activity.activityType);
 
-                    return (
-                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                        <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
-                          <span className="text-white text-xs">{icon}</span>
+                      return (
+                        <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                          <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
+                            <span className="text-white text-xs">{icon}</span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{activity.title}</p>
+                            <p className="text-xs text-text-muted">{activity.description}</p>
+                          </div>
+                          <p className="text-xs text-text-muted">{formatTimeAgo(activity.createdAt)}</p>
                         </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.title}</p>
-                          <p className="text-xs text-text-muted">{activity.description}</p>
-                        </div>
-                        <p className="text-xs text-text-muted">{formatTimeAgo(activity.createdAt)}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </ScrollArea>
             </CardContent>
           </Card>
           
