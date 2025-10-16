@@ -149,7 +149,7 @@ export default function AdmittedTodayPage() {
                           <div className="font-medium text-sm">{admission.admissionId}</div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {formatDate(admission.createdAt)}
+                            {new Date(admission.admissionDate).toLocaleDateString('en-IN')}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
