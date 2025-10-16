@@ -1986,6 +1986,29 @@ export class SqliteStorage implements IStorage {
         // Database defaults will handle createdAt/updatedAt in UTC
       }).returning().get();
 
+      // Log activity for OPD visit creation
+      const patient = db
+        .select()
+        .from(schema.patients)
+        .where(eq(schema.patients.id, data.patientId))
+        .get();
+
+      if (patient) {
+        this.logActivity(
+          "system",
+          "opd_scheduled",
+          "OPD appointment scheduled",
+          `${patient.name} - ${visitId}`,
+          result.id,
+          "opd_visit",
+          {
+            visitId,
+            patientName: patient.name,
+            scheduledDate: data.scheduledDate,
+          }
+        );
+      }
+
       // Calculate doctor earning for this OPD visit
       if (result.doctorId && result.consultationFee && result.consultationFee > 0) {
         await this.calculateOpdEarning(result);
