@@ -1095,6 +1095,7 @@ export interface IStorage {
     metadata?: any,
   ): Promise<void>;
   getRecentActivities(limit?: number): Promise<any[]>;
+  createActivity(activity: InsertActivity): Promise<Activity>;
 
   // Receipt numbering
   getDailyReceiptCount(serviceType: string, date: string): Promise<number>;
@@ -2049,7 +2050,6 @@ export class SqliteStorage implements IStorage {
         status: schema.patientVisits.status,
         consultationFee: schema.patientVisits.consultationFee,
         createdAt: schema.patientVisits.createdAt,
-        updatedAt: schema.patientVisits.updatedAt,
         // Patient details
         patientName: schema.patients.name,
         patientAge: schema.patients.age,
@@ -4792,6 +4792,11 @@ export class SqliteStorage implements IStorage {
       console.error("Error fetching recent activities:", error);
       return [];
     }
+  }
+
+  async createActivity(activity: InsertActivity): Promise<Activity> {
+    const created = db.insert(schema.activities).values(activity).returning().get();
+    return created;
   }
 
   async getDailyReceiptCount(
