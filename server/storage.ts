@@ -4764,21 +4764,40 @@ export class SqliteStorage implements IStorage {
     metadata?: any,
   ): Promise<void> {
     try {
-      // Check if user exists before logging activity
-      const userExists = db
-        .select({ id: schema.users.id })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .get();
+      // For system activities, use the first available user or create a fallback
+      let effectiveUserId = userId;
+      
+      if (userId === "system") {
+        // Get the first user as fallback for system activities
+        const systemUser = db
+          .select({ id: schema.users.id })
+          .from(schema.users)
+          .limit(1)
+          .get();
+        
+        if (systemUser) {
+          effectiveUserId = systemUser.id;
+        } else {
+          console.warn(`Skipping activity log - no users found in system`);
+          return;
+        }
+      } else {
+        // Check if user exists before logging activity
+        const userExists = db
+          .select({ id: schema.users.id })
+          .from(schema.users)
+          .where(eq(schema.users.id, userId))
+          .get();
 
-      if (!userExists) {
-        console.warn(`Skipping activity log - user ${userId} not found`);
-        return;
+        if (!userExists) {
+          console.warn(`Skipping activity log - user ${userId} not found`);
+          return;
+        }
       }
 
       db.insert(schema.activities)
         .values({
-          userId,
+          userId: effectiveUserId,
           activityType,
           title,
           description,
