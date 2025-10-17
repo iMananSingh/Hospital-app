@@ -2275,24 +2275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Admission not found" });
       }
 
-      // Log activity for patient discharge
-      const admissionRecord = await storage.getAdmissionById(req.params.id); // Fetch admission again to get details for activity log
-      const patient = admissionRecord ? await storage.getPatientById(admissionRecord.patientId) : null;
-
-      await storage.createActivity({
-        userId: req.user.id,
-        activityType: "patient_discharged",
-        title: "Patient Discharged",
-        description: `${patient?.name || 'Patient'} discharged from ${admissionRecord?.currentWardType || 'ward'}`,
-        entityId: req.params.id,
-        entityType: "admission",
-        metadata: JSON.stringify({
-          patientId: admissionRecord?.patientId,
-          dischargeDate: dischargeDateTime,
-          admissionId: admissionRecord?.admissionId,
-        }),
-      });
-
+      // Activity logging is already handled in storage.dischargePatient()
       res.json(admission);
     } catch (error) {
       console.error("Error discharging patient:", error);
