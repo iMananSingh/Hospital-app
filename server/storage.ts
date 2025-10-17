@@ -1711,6 +1711,24 @@ export class SqliteStorage implements IStorage {
         return undefined;
       }
 
+      // Log activity BEFORE deletion to ensure we have the doctor data
+      if (userId) {
+        await this.createActivity({
+          userId,
+          activityType: "doctor_permanently_deleted",
+          title: "Doctor Permanently Deleted",
+          description: `${doctorToDelete.name} - ${doctorToDelete.specialization} was permanently deleted`,
+          entityId: id,
+          entityType: "doctor",
+          metadata: JSON.stringify({
+            doctorName: doctorToDelete.name,
+            specialization: doctorToDelete.specialization,
+            qualification: doctorToDelete.qualification,
+            consultationFee: doctorToDelete.consultationFee,
+          }),
+        });
+      }
+
       // Use transaction to handle foreign key constraints
       const result = db.transaction((tx) => {
         try {
@@ -1747,22 +1765,6 @@ export class SqliteStorage implements IStorage {
           throw transactionError;
         }
       });
-
-      // Log activity for permanent deletion AFTER transaction completes - synchronously
-      if (userId && result) {
-        await this.logActivity(
-          userId,
-          "doctor_permanently_deleted",
-          "Doctor Permanently Deleted",
-          `${doctorToDelete.name} - ${doctorToDelete.specialization}`,
-          id,
-          "doctor",
-          {
-            doctorName: doctorToDelete.name,
-            specialization: doctorToDelete.specialization,
-          }
-        );
-      }
 
       return result;
     } catch (error) {
