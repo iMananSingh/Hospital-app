@@ -572,7 +572,7 @@ export default function Dashboard() {
                         case 'patient_registered':
                           return { icon: 'P', color: 'bg-healthcare-green' };
                         case 'lab_test_ordered':
-                          return { icon: 'lab_ordered', color: 'bg-purple-500' };
+                          return { icon: 'lab_ordered', color: 'bg-pink-500' };
                         case 'lab_test_completed':
                           return { icon: 'T', color: 'bg-orange-500' };
                         case 'opd_scheduled':
@@ -634,8 +634,8 @@ export default function Dashboard() {
                           </div>
                         )}
                         {activity.activityType === 'lab_test_ordered' && (
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <TestTubeDiagonal className="w-5 h-5 text-purple-600" />
+                          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+                            <TestTubeDiagonal className="w-5 h-5 text-pink-600" />
                           </div>
                         )}
                         {activity.activityType === 'service_scheduled' && (
