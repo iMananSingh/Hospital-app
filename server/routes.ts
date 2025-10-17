@@ -543,13 +543,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-      res.json({ message: "Doctor deleted successfully" });
+      // Modified activity log for doctor deactivation
+      await db.insert(activities).values({
+        id: generateId(),
+        activityType: 'doctor_deactivated',
+        title: 'Doctor Deactivated',
+        description: `Dr. ${doctor.name} has been deactivated`,
+        userId: req.user?.id,
+        entityId: id,
+        entityType: "doctor",
+        metadata: JSON.stringify({
+          doctorId: id,
+          deactivatedBy: req.user?.username,
+        }),
+      });
+      res.json({ message: "Doctor deactivated successfully" });
     } catch (error) {
-      console.error("Doctor deletion error:", error);
+      console.error("Doctor deactivation error:", error);
       if (error instanceof Error) {
         return res.status(400).json({ message: error.message });
       }
-      res.status(500).json({ message: "Failed to delete doctor" });
+      res.status(500).json({ message: "Failed to deactivate doctor" });
     }
   });
 
