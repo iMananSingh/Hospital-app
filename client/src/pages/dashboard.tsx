@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -583,6 +583,8 @@ export default function Dashboard() {
                           return { icon: 'U', color: 'bg-green-500' }; // Updated to green
                         case 'user_deleted':
                           return { icon: 'X', color: 'bg-red-500' };
+                        case 'doctor_deleted':
+                          return { icon: 'doctor_deleted', color: 'bg-red-500' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
@@ -643,7 +645,12 @@ export default function Dashboard() {
                             <ClipboardPlus className="w-5 h-5 text-purple-600" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && (
+                        {activity.activityType === 'doctor_deleted' && (
+                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                            <UserMinus className="w-5 h-5 text-red-600" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
