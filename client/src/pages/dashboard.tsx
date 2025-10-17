@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2 } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
 interface DashboardStats {
@@ -582,6 +582,8 @@ export default function Dashboard() {
                           return { icon: 'service_scheduled', color: 'bg-purple-500' };
                         case 'user_created':
                           return { icon: 'U', color: 'bg-green-500' }; // Updated to green
+                        case 'user_updated':
+                          return { icon: 'user_updated', color: 'bg-amber-700' };
                         case 'user_deleted':
                           return { icon: 'X', color: 'bg-red-500' };
                         case 'doctor_created':
@@ -673,7 +675,12 @@ export default function Dashboard() {
                             <Trash2 className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && (
+                        {activity.activityType === 'user_updated' && (
+                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <UserPen className="w-5 h-5 text-amber-700" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
