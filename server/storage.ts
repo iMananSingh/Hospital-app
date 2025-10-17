@@ -1495,16 +1495,7 @@ export class SqliteStorage implements IStorage {
       rolesArray: JSON.parse(user.roles)
     };
 
-    this.logActivity(
-      "system",
-      "user_created",
-      "User created",
-      `New user: ${user.username} (${user.fullName})`,
-      user.id,
-      "user",
-      { username: user.username, roles: userData.roles, primaryRole: user.primaryRole }
-    );
-
+    // Activity logging is handled in the route handler for more detailed information
     return userWithRoles;
   }
 
