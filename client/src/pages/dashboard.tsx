@@ -654,8 +654,8 @@ export default function Dashboard() {
                           </div>
                         )}
                         {activity.activityType === 'doctor_restored' && (
-                          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
-                            <UserCheck className="w-5 h-5 text-green-700" />
+                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <UserCheck className="w-5 h-5 text-green-600" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && (
