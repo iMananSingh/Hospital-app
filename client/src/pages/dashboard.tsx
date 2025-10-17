@@ -578,7 +578,7 @@ export default function Dashboard() {
                         case 'opd_scheduled':
                           return { icon: 'opd', color: 'bg-blue-500' };
                         case 'service_scheduled':
-                          return { icon: 'service_scheduled', color: 'bg-indigo-500' };
+                          return { icon: 'service_scheduled', color: 'bg-purple-500' };
                         case 'user_created':
                           return { icon: 'U', color: 'bg-green-500' }; // Updated to green
                         case 'user_deleted':
@@ -639,8 +639,8 @@ export default function Dashboard() {
                           </div>
                         )}
                         {activity.activityType === 'service_scheduled' && (
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <ClipboardPlus className="w-5 h-5 text-indigo-600" />
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <ClipboardPlus className="w-5 h-5 text-purple-600" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && (
