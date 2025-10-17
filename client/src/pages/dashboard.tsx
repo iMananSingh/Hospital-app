@@ -120,11 +120,11 @@ export default function Dashboard() {
         },
         body: JSON.stringify(patientData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create patient");
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {
@@ -167,13 +167,13 @@ export default function Dashboard() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.text();
         console.error("Order creation failed:", errorData);
         throw new Error(`Failed to create pathology order: ${errorData}`);
       }
-      
+
       return response.json();
     },
     onSuccess: (createdOrder) => {
@@ -186,7 +186,7 @@ export default function Dashboard() {
         title: "Order placed successfully",
         description: "The pathology order has been placed.",
       });
-      
+
       // Automatically open the order details dialog
       setSelectedOrder(createdOrder);
     },
@@ -233,7 +233,7 @@ export default function Dashboard() {
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
-    
+
     // Validate required fields explicitly
     if (!data.name?.trim()) {
       form.setError("name", { message: "Name is required" });
@@ -251,7 +251,7 @@ export default function Dashboard() {
       form.setError("phone", { message: "Phone number is required" });
       return;
     }
-    
+
     createPatientMutation.mutate(data);
   };
 
@@ -408,7 +408,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Order Details - {order.orderId}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
             <div className="space-y-4 px-6 pb-6">
               <div className="grid grid-cols-2 gap-4">
@@ -441,7 +441,7 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">{order.remarks}</p>
                 </div>
               )}
-              
+
               <div className="mt-6">
                 <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
                 <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
@@ -535,10 +535,10 @@ export default function Dashboard() {
         showNotifications={true}
         notificationCount={3}
       />
-      
+
       <div className="p-6 space-y-6">
         <StatsCards stats={stats || { opdPatients: 0, inpatients: 0, labTests: 0, diagnostics: 0 }} />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
@@ -633,7 +633,7 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -650,12 +650,12 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">Create invoice</div>
                   </div>
                 </button>
-                
+
                 <button 
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
                     const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-                    
+
                     if (isBillingStaff) {
                       setIsAccessDeniedPatientOpen(true);
                     } else {
@@ -670,12 +670,12 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">Register new</div>
                   </div>
                 </button>
-                
+
                 <button 
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
                     const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
-                    
+
                     if (isBillingStaff) {
                       setIsAccessDeniedLabTestOpen(true);
                     } else {
@@ -690,7 +690,7 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">Order test</div>
                   </div>
                 </button>
-                
+
                 <button 
                   onClick={() => navigate("/pending-bills")}
                   className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" 
@@ -719,7 +719,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Register New Patient</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -734,7 +734,7 @@ export default function Dashboard() {
                   <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="age">Age *</Label>
                 <Input
@@ -770,7 +770,7 @@ export default function Dashboard() {
                   <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number *</Label>
                 <Input
@@ -845,7 +845,7 @@ export default function Dashboard() {
           <DialogHeader>
             <DialogTitle>Order Pathology Tests</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={pathologyForm.handleSubmit(onPathologySubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
