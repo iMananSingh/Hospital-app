@@ -624,8 +624,8 @@ export default function Dashboard() {
                     return (
                       <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                         {activity.activityType === 'user_created' && (
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <UserPlus className="w-5 h-5 text-green-600" />
+                          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
+                            <UserPlus className="w-5 h-5 text-green-700" />
                           </div>
                         )}
                         {activity.activityType === 'user_deleted' && (
