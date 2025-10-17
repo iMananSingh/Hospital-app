@@ -1713,20 +1713,28 @@ export class SqliteStorage implements IStorage {
 
       // Log activity BEFORE deletion to ensure we have the doctor data
       if (userId) {
-        await this.logActivity(
-          userId,
-          "doctor_permanently_deleted",
-          "Doctor Permanent Deletion",
-          `${doctorToDelete.name} - ${doctorToDelete.specialization} was permanently deleted`,
-          id,
-          "doctor",
-          {
-            doctorName: doctorToDelete.name,
-            specialization: doctorToDelete.specialization,
-            qualification: doctorToDelete.qualification,
-            consultationFee: doctorToDelete.consultationFee,
-          }
-        );
+        console.log(`Logging permanent deletion activity for doctor ${id}, userId: ${userId}`);
+        try {
+          await this.logActivity(
+            userId,
+            "doctor_permanently_deleted",
+            "Doctor Permanent Deletion",
+            `${doctorToDelete.name} - ${doctorToDelete.specialization} was permanently deleted`,
+            id,
+            "doctor",
+            {
+              doctorName: doctorToDelete.name,
+              specialization: doctorToDelete.specialization,
+              qualification: doctorToDelete.qualification,
+              consultationFee: doctorToDelete.consultationFee,
+            }
+          );
+          console.log(`Activity logged successfully for permanent deletion of doctor ${id}`);
+        } catch (activityError) {
+          console.error(`Failed to log activity for doctor permanent deletion:`, activityError);
+        }
+      } else {
+        console.warn(`No userId provided for permanent deletion of doctor ${id}, activity not logged`);
       }
 
       // Use transaction to handle foreign key constraints
