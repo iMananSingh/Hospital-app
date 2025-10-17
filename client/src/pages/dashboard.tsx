@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, UserStar } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -583,6 +583,8 @@ export default function Dashboard() {
                           return { icon: 'U', color: 'bg-green-500' }; // Updated to green
                         case 'user_deleted':
                           return { icon: 'X', color: 'bg-red-500' };
+                        case 'doctor_created':
+                          return { icon: 'doctor_created', color: 'bg-green-800' };
                         case 'doctor_deleted':
                         case 'doctor_deactivated':
                           return { icon: 'doctor_deactivated', color: 'bg-red-500' };
@@ -658,7 +660,12 @@ export default function Dashboard() {
                             <UserCheck className="w-5 h-5 text-green-600" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && (
+                        {activity.activityType === 'doctor_created' && (
+                          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
+                            <UserStar className="w-5 h-5 text-green-800" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
