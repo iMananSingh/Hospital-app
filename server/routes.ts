@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", async (req: any, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
 
@@ -119,6 +119,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const user = await storage.createUser(userDataWithPrimaryRole);
+
+      // Log activity for user creation (use the creator's ID if available, otherwise use the new user's ID)
+      const actorUserId = req.user?.id || user.id;
+      await storage.createActivity({
+        userId: actorUserId,
+        activityType: "user_created",
+        title: "New User Created",
+        description: `User ${user.username} (${user.fullName}) created with role: ${parsedRoles.join(', ')}`,
+        entityId: user.id,
+        entityType: "user",
+        metadata: JSON.stringify({
+          username: user.username,
+          fullName: user.fullName,
+          roles: parsedRoles,
+          createdBy: req.user?.username || 'self-registration'
+        }),
+      });
+
       res.json({
         id: user.id,
         username: user.username,
