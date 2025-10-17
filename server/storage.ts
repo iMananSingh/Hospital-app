@@ -1690,22 +1690,7 @@ export class SqliteStorage implements IStorage {
         .returning()
         .get();
 
-      // Log activity for doctor deletion
-      if (deleted && userId) {
-        this.logActivity(
-          userId,
-          "doctor_deleted",
-          "Doctor Deleted",
-          `${deleted.name} - ${deleted.specialization}`,
-          deleted.id,
-          "doctor",
-          {
-            doctorName: deleted.name,
-            specialization: deleted.specialization,
-          }
-        );
-      }
-
+      // Activity logging is handled in the route handler to avoid duplicates
       return deleted;
     } catch (error) {
       console.error("Error deleting doctor:", error);
