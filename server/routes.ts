@@ -568,6 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
+
       res.json({ message: "Doctor permanently deleted successfully" });
     } catch (error) {
       console.error("Doctor permanent deletion error:", error);

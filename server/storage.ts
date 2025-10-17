@@ -1828,9 +1828,9 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // Log activity for permanent deletion AFTER transaction completes
+      // Log activity for permanent deletion AFTER transaction completes - synchronously
       if (userId && result) {
-        this.logActivity(
+        await this.logActivity(
           userId,
           "doctor_permanently_deleted",
           "Doctor Permanently Deleted",
