@@ -46,6 +46,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      // Check if user account is active
+      if (!user.isActive) {
+        return res.status(401).json({ message: "Account has been deactivated" });
+      }
+
       const isValid = await storage.verifyPassword(password, user.password);
       if (!isValid) {
         return res.status(401).json({ message: "Invalid credentials" });

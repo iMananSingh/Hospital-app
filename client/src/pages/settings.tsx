@@ -660,7 +660,7 @@ export default function Settings() {
 
   const handleSaveSystemSettings = () => {
     saveSystemSettingsMutation.mutate(pendingSystemSettings);
-    
+
     // Clear timezone cache and invalidate queries when timezone settings are updated
     if ((pendingSystemSettings as any)?.timezone !== (systemSettings as any)?.timezone || 
         (pendingSystemSettings as any)?.timezoneOffset !== (systemSettings as any)?.timezoneOffset) {
@@ -894,14 +894,14 @@ export default function Settings() {
                                 const currentUserIsSuperUser = currentUserRoles.includes('super_user');
                                 const targetIsAdmin = targetUserRoles.includes('admin');
                                 const targetIsSuperUser = targetUserRoles.includes('super_user');
-                                
+
                                 // Don't show edit button for root user unless current user is super user
                                 if (tableUser.username === 'root' && !currentUserIsSuperUser) {
                                   return null;
                                 }
-                                
+
                                 let disabled = false;
-                                
+
                                 if (currentUserIsSuperUser) {
                                   // Super users can edit anyone
                                   disabled = false;
@@ -912,7 +912,7 @@ export default function Settings() {
                                   // Non-admin users can edit themselves and other non-admin, non-super users
                                   disabled = !isEditingSelf && (targetIsAdmin || targetIsSuperUser);
                                 }
-                                
+
                                 return (
                                   <Button 
                                     variant="ghost" 
@@ -1585,9 +1585,9 @@ export default function Settings() {
                     const isEditingSelf = selectedUser?.id === user?.id;
                     const currentUserIsAdmin = currentUserRoles.includes('admin');
                     const currentUserIsSuperUser = currentUserRoles.includes('super_user');
-                    
+
                     let isRoleDisabled = false;
-                    
+
                     if (currentUserIsSuperUser) {
                       // Super users can grant any role (no restrictions)
                       isRoleDisabled = false;
@@ -1666,36 +1666,41 @@ export default function Settings() {
 
       {/* Delete User Confirmation Dialog */}
       <Dialog open={isDeleteUserOpen} onOpenChange={setIsDeleteUserOpen}>
-        <DialogContent data-testid="delete-user-dialog">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>Deactivate User Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate {userToDelete?.fullName}? This will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Prevent the user from logging in</li>
+                <li>Free up the username "{userToDelete?.username}" for reuse</li>
+                <li>Keep all historical records intact (bills, activities, etc.)</li>
+                <li>Hide the user from the user management list</li>
+              </ul>
+            </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-4">
-            <p>Are you sure you want to delete user <strong>{userToDelete?.fullName}</strong>?</p>
-            <p className="text-sm text-muted-foreground">
-              This action cannot be undone. The user will no longer be able to access the system.
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
+          <DialogFooter>
             <Button
-              type="button"
               variant="outline"
-              onClick={() => setIsDeleteUserOpen(false)}
-              data-testid="button-cancel-delete-user"
+              onClick={() => {
+                setIsDeleteUserOpen(false);
+                setUserToDelete(null);
+              }}
             >
               Cancel
             </Button>
             <Button
-              onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
+              variant="destructive"
+              onClick={() => {
+                if (userToDelete) {
+                  deleteUserMutation.mutate(userToDelete.id);
+                }
+              }}
               disabled={deleteUserMutation.isPending}
-              className="bg-destructive hover:bg-destructive/90"
-              data-testid="button-confirm-delete-user"
             >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+              {deleteUserMutation.isPending ? "Deactivating..." : "Deactivate Account"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

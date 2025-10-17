@@ -1586,134 +1586,33 @@ export class SqliteStorage implements IStorage {
 
   async deleteUser(id: string): Promise<User | undefined> {
     try {
-      // Use transaction to handle foreign key constraints
-      return db.transaction((tx) => {
-        try {
-          // First, get the user to make sure it exists
-          const userToDelete = tx
-            .select()
-            .from(schema.users)
-            .where(eq(schema.users.id, id))
-            .get();
+      // Soft delete: mark user as inactive and append timestamp to username
+      const userToDelete = db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, id))
+        .get();
 
-          if (!userToDelete) {
-            return undefined;
-          }
+      if (!userToDelete) {
+        return undefined;
+      }
 
-          // Update all references to this user to null before deleting
+      // Append timestamp to username to free it up for reuse
+      const timestamp = Date.now();
+      const newUsername = `${userToDelete.username}_deleted_${timestamp}`;
 
-          // Delete activities created by this user
-          tx.delete(schema.activities)
-            .where(eq(schema.activities.userId, id))
-            .run();
+      const deleted = db
+        .update(schema.users)
+        .set({
+          username: newUsername,
+          isActive: false,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(schema.users.id, id))
+        .returning()
+        .get();
 
-          // Update bills created by this user (createdBy column exists)
-          const billsToUpdate = tx
-            .select()
-            .from(schema.bills)
-            .where(eq(schema.bills.createdBy, id))
-            .all();
-
-          for (const bill of billsToUpdate) {
-            tx.update(schema.bills)
-              .set({ createdBy: sql`NULL` })
-              .where(eq(schema.bills.id, bill.id))
-              .run();
-          }
-
-          // Update admission events created by this user (createdBy column exists)
-          const eventsToUpdate = tx
-            .select()
-            .from(schema.admissionEvents)
-            .where(eq(schema.admissionEvents.createdBy, id))
-            .all();
-
-          for (const event of eventsToUpdate) {
-            tx.update(schema.admissionEvents)
-              .set({ createdBy: sql`NULL` })
-              .where(eq(schema.admissionEvents.id, event.id))
-              .run();
-          }
-
-          // Update patient payments processed by this user
-          const paymentsToUpdate = tx
-            .select()
-            .from(schema.patientPayments)
-            .where(eq(schema.patientPayments.processedBy, id))
-            .all();
-
-          for (const payment of paymentsToUpdate) {
-            tx.update(schema.patientPayments)
-              .set({ processedBy: sql`NULL` })
-              .where(eq(schema.patientPayments.id, payment.id))
-              .run();
-          }
-
-          // Update patient discounts approved by this user
-          const discountsToUpdate = tx
-            .select()
-            .from(schema.patientDiscounts)
-            .where(eq(schema.patientDiscounts.approvedBy, id))
-            .all();
-
-          for (const discount of discountsToUpdate) {
-            tx.update(schema.patientDiscounts)
-              .set({ approvedBy: sql`NULL` })
-              .where(eq(schema.patientDiscounts.id, discount.id))
-              .run();
-          }
-
-          // Check if this user has a doctor profile and delete it first
-          const doctorProfile = tx
-            .select()
-            .from(schema.doctors)
-            .where(eq(schema.doctors.userId, id))
-            .get();
-
-          if (doctorProfile) {
-            // First, update all references to this doctor to null
-            tx.update(schema.patientVisits)
-              .set({ doctorId: null })
-              .where(eq(schema.patientVisits.doctorId, doctorProfile.id))
-              .run();
-
-            tx.update(schema.pathologyOrders)
-              .set({ doctorId: null })
-              .where(eq(schema.pathologyOrders.doctorId, doctorProfile.id))
-              .run();
-
-            tx.update(schema.patientServices)
-              .set({ doctorId: null })
-              .where(eq(schema.patientServices.doctorId, doctorProfile.id))
-              .run();
-
-            tx.update(schema.admissions)
-              .set({ doctorId: null })
-              .where(eq(schema.admissions.doctorId, doctorProfile.id))
-              .run();
-
-            // Now delete the doctor profile
-            tx.delete(schema.doctors)
-              .where(eq(schema.doctors.id, doctorProfile.id))
-              .run();
-          }
-
-          // Now delete the user record
-          const deleted = tx
-            .delete(schema.users)
-            .where(eq(schema.users.id, id))
-            .returning()
-            .get();
-
-          return deleted;
-        } catch (transactionError) {
-          console.error(
-            "Transaction error during user delete:",
-            transactionError,
-          );
-          throw transactionError;
-        }
-      });
+      return deleted;
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;
