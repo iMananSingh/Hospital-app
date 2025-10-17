@@ -24,8 +24,6 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus } from "lucide-react";
-// @ts-ignore - UserStar icon import
-import { UserStar } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -653,12 +651,7 @@ export default function Dashboard() {
                             <UserMinus className="w-5 h-5 text-orange-600" />
                           </div>
                         )}
-                        {activity.activityType === 'doctor_created' && (
-                          <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center">
-                            <UserStar className="w-5 h-5 text-white" />
-                          </div>
-                        )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_created' && (
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
