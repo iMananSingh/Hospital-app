@@ -1597,6 +1597,21 @@ export class SqliteStorage implements IStorage {
         return undefined;
       }
 
+      // Log activity BEFORE deleting (while user still exists)
+      await this.logActivity(
+        "system",
+        "user_deleted",
+        "User Deactivated",
+        `${userToDelete.fullName} (${userToDelete.username}) was deactivated`,
+        userToDelete.id,
+        "user",
+        {
+          username: userToDelete.username,
+          fullName: userToDelete.fullName,
+          roles: JSON.parse(userToDelete.roles),
+        }
+      );
+
       // Append timestamp to username to free it up for reuse
       const timestamp = Date.now();
       const newUsername = `${userToDelete.username}_deleted_${timestamp}`;
@@ -4787,7 +4802,7 @@ export class SqliteStorage implements IStorage {
           a.entity_type as entityType,
           a.metadata,
           a.created_at as createdAt,
-          u.full_name as userName
+          COALESCE(u.full_name, 'Deleted User') as userName
         FROM activities a
         LEFT JOIN users u ON a.user_id = u.id
         ORDER BY a.created_at DESC

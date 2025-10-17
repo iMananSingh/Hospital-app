@@ -581,6 +581,8 @@ export default function Dashboard() {
                           return { icon: 'S', color: 'bg-indigo-500' };
                         case 'user_created':
                           return { icon: 'U', color: 'bg-cyan-500' };
+                        case 'user_deleted':
+                          return { icon: 'X', color: 'bg-red-500' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
