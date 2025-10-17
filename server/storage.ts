@@ -1713,20 +1713,20 @@ export class SqliteStorage implements IStorage {
 
       // Log activity BEFORE deletion to ensure we have the doctor data
       if (userId) {
-        await this.createActivity({
+        await this.logActivity(
           userId,
-          activityType: "doctor_permanently_deleted",
-          title: "Doctor Permanently Deleted",
-          description: `${doctorToDelete.name} - ${doctorToDelete.specialization} was permanently deleted`,
-          entityId: id,
-          entityType: "doctor",
-          metadata: JSON.stringify({
+          "doctor_permanently_deleted",
+          "Doctor Permanent Deletion",
+          `${doctorToDelete.name} - ${doctorToDelete.specialization} was permanently deleted`,
+          id,
+          "doctor",
+          {
             doctorName: doctorToDelete.name,
             specialization: doctorToDelete.specialization,
             qualification: doctorToDelete.qualification,
             consultationFee: doctorToDelete.consultationFee,
-          }),
-        });
+          }
+        );
       }
 
       // Use transaction to handle foreign key constraints
