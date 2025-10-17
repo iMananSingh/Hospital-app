@@ -939,15 +939,15 @@ export interface IStorage {
   hashPassword(password: string): Promise<string>;
 
   // Doctor management
-  createDoctor(doctor: InsertDoctor): Promise<Doctor>;
+  createDoctor(doctor: InsertDoctor, userId?: string): Promise<Doctor>;
   getDoctors(): Promise<Doctor[]>;
   getDoctorById(id: string): Promise<Doctor | undefined>;
   updateDoctor(
     id: string,
     doctor: Partial<InsertDoctor>,
   ): Promise<Doctor | undefined>;
-  deleteDoctor(id: string): Promise<Doctor | undefined>; // Added deleteDoctor
-  restoreDoctor(id: string): Promise<Doctor | undefined>;
+  deleteDoctor(id: string, userId?: string): Promise<Doctor | undefined>; // Added deleteDoctor
+  restoreDoctor(id: string, userId?: string): Promise<Doctor | undefined>;
   permanentlyDeleteDoctor(id: string): Promise<Doctor | undefined>;
 
   // Patient management
@@ -1690,8 +1690,26 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async createDoctor(doctor: InsertDoctor): Promise<Doctor> {
+  async createDoctor(doctor: InsertDoctor, userId?: string): Promise<Doctor> {
     const created = db.insert(schema.doctors).values(doctor).returning().get();
+    
+    // Log activity for doctor creation
+    if (userId) {
+      this.logActivity(
+        userId,
+        "doctor_created",
+        "Doctor Added",
+        `${created.name} - ${created.specialization}`,
+        created.id,
+        "doctor",
+        {
+          doctorName: created.name,
+          specialization: created.specialization,
+          consultationFee: created.consultationFee,
+        }
+      );
+    }
+    
     return created;
   }
 
@@ -1724,7 +1742,7 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async deleteDoctor(id: string): Promise<Doctor | undefined> {
+  async deleteDoctor(id: string, userId?: string): Promise<Doctor | undefined> {
     try {
       // Soft delete by setting isActive to false instead of hard delete
       const deleted = db
@@ -1736,6 +1754,23 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.doctors.id, id))
         .returning()
         .get();
+      
+      // Log activity for doctor deletion
+      if (deleted && userId) {
+        this.logActivity(
+          userId,
+          "doctor_deleted",
+          "Doctor Deleted",
+          `${deleted.name} - ${deleted.specialization}`,
+          deleted.id,
+          "doctor",
+          {
+            doctorName: deleted.name,
+            specialization: deleted.specialization,
+          }
+        );
+      }
+      
       return deleted;
     } catch (error) {
       console.error("Error deleting doctor:", error);
@@ -1751,7 +1786,7 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async restoreDoctor(id: string): Promise<Doctor | undefined> {
+  async restoreDoctor(id: string, userId?: string): Promise<Doctor | undefined> {
     try {
       const restored = db
         .update(schema.doctors)
@@ -1762,6 +1797,23 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.doctors.id, id))
         .returning()
         .get();
+      
+      // Log activity for doctor restoration
+      if (restored && userId) {
+        this.logActivity(
+          userId,
+          "doctor_restored",
+          "Doctor Restored",
+          `${restored.name} - ${restored.specialization}`,
+          restored.id,
+          "doctor",
+          {
+            doctorName: restored.name,
+            specialization: restored.specialization,
+          }
+        );
+      }
+      
       return restored;
     } catch (error) {
       console.error("Error restoring doctor:", error);

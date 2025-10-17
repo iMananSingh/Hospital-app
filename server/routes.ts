@@ -484,10 +484,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/doctors", authenticateToken, async (req, res) => {
+  app.post("/api/doctors", authenticateToken, async (req: any, res) => {
     try {
       const doctorData = insertDoctorSchema.parse(req.body);
-      const doctor = await storage.createDoctor(doctorData);
+      const doctor = await storage.createDoctor(doctorData, req.user?.id);
       res.json(doctor);
     } catch (error) {
       console.error("Doctor creation error:", error);
@@ -513,10 +513,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/doctors/:id", authenticateToken, async (req, res) => {
+  app.delete("/api/doctors/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const deleted = await storage.deleteDoctor(id);
+      const deleted = await storage.deleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
@@ -543,10 +543,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Added restore doctor route
-  app.put("/api/doctors/:id/restore", authenticateToken, async (req, res) => {
+  app.put("/api/doctors/:id/restore", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const restored = await storage.restoreDoctor(id);
+      const restored = await storage.restoreDoctor(id, req.user?.id);
       if (!restored) {
         return res.status(404).json({ message: "Doctor not found" });
       }
