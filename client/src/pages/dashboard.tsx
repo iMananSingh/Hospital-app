@@ -635,7 +635,7 @@ export default function Dashboard() {
                         )}
                         {activity.activityType === 'lab_test_ordered' && (
                           <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <TestTube className="w-5 h-5 text-purple-600" />
+                            <TestTube className="w-5 h-5 text-purple-600 rotate-12" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && (
