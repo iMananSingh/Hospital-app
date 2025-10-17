@@ -51,6 +51,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Account has been deactivated" });
       }
 
+      const isValid = await storage.verifyPassword(password, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
       const rolesArray = JSON.parse(user.roles);
 
       const token = jwt.sign({
@@ -534,18 +539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/doctors/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-
+      
       // Get doctor details before deletion for activity log
       const doctor = await storage.getDoctorById(id);
       if (!doctor) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-
+      
       const deleted = await storage.deleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-
+      
       // Create activity log for doctor deactivation
       await storage.createActivity({
         userId: req.user?.id,
@@ -559,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deactivatedBy: req.user?.username,
         }),
       });
-
+      
       res.json({ message: "Doctor deactivated successfully" });
     } catch (error) {
       console.error("Doctor deactivation error:", error);
@@ -601,22 +606,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Added permanent delete endpoint for doctors
-  app.delete("/api/doctors/:id/permanent", requireAuth, async (req: any, res) => {
+  app.delete("/api/doctors/:id/permanent", authenticateToken, async (req: any, res) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ message: "User authentication required" });
+      const { id } = req.params;
+      const deleted = await storage.permanentlyDeleteDoctor(id, req.user?.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Doctor not found" });
       }
 
-      const deleted = await storage.permanentlyDeleteDoctor(req.params.id, userId);
-      if (deleted) {
-        res.json({ message: "Doctor permanently deleted" });
-      } else {
-        res.status(404).json({ message: "Doctor not found" });
+      res.json({ message: "Doctor permanently deleted successfully" });
+    } catch (error) {
+      console.error("Doctor permanent deletion error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
       }
-    } catch (error: any) {
-      console.error("Error permanently deleting doctor:", error);
-      res.status(500).json({ message: error.message || "Failed to permanently delete doctor" });
+      res.status(500).json({ message: "Failed to permanently delete doctor" });
     }
   });
 
