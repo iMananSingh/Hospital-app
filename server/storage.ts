@@ -1636,7 +1636,7 @@ export class SqliteStorage implements IStorage {
 
   async createDoctor(doctor: InsertDoctor, userId?: string): Promise<Doctor> {
     const created = db.insert(schema.doctors).values(doctor).returning().get();
-    
+
     // Log activity for doctor creation
     if (userId) {
       this.logActivity(
@@ -1653,7 +1653,7 @@ export class SqliteStorage implements IStorage {
         }
       );
     }
-    
+
     return created;
   }
 
@@ -1698,7 +1698,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.doctors.id, id))
         .returning()
         .get();
-      
+
       // Log activity for doctor deletion
       if (deleted && userId) {
         this.logActivity(
@@ -1714,7 +1714,7 @@ export class SqliteStorage implements IStorage {
           }
         );
       }
-      
+
       return deleted;
     } catch (error) {
       console.error("Error deleting doctor:", error);
@@ -1814,7 +1814,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.doctors.id, id))
         .returning()
         .get();
-      
+
       // Log activity for doctor restoration
       if (restored && userId) {
         this.logActivity(
@@ -1830,7 +1830,7 @@ export class SqliteStorage implements IStorage {
           }
         );
       }
-      
+
       return restored;
     } catch (error) {
       console.error("Error restoring doctor:", error);
@@ -4759,8 +4759,23 @@ export class SqliteStorage implements IStorage {
     metadata?: any,
   ): Promise<void> {
     try {
-      // Allow "system" as a special user ID without validation
-      if (userId !== "system") {
+      let validUserId = userId;
+
+      // If userId is "system", try to use root user ID, or skip if not found
+      if (userId === "system") {
+        const rootUser = db
+          .select({ id: schema.users.id })
+          .from(schema.users)
+          .where(eq(schema.users.username, "root"))
+          .get();
+
+        if (rootUser) {
+          validUserId = rootUser.id;
+        } else {
+          console.warn("Skipping activity log - root user not found for system activity");
+          return;
+        }
+      } else {
         // Check if user exists before logging activity
         const userExists = db
           .select({ id: schema.users.id })
@@ -4776,7 +4791,7 @@ export class SqliteStorage implements IStorage {
 
       db.insert(schema.activities)
         .values({
-          userId,
+          userId: validUserId,
           activityType,
           title,
           description,
@@ -4787,7 +4802,6 @@ export class SqliteStorage implements IStorage {
         .run();
     } catch (error) {
       console.error("Failed to log activity:", error);
-      // Don't throw error to avoid breaking the main operation
     }
   }
 
