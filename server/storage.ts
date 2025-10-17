@@ -1602,6 +1602,11 @@ export class SqliteStorage implements IStorage {
 
           // Update all references to this user to null before deleting
 
+          // Delete activities created by this user
+          tx.delete(schema.activities)
+            .where(eq(schema.activities.userId, id))
+            .run();
+
           // Update bills created by this user (createdBy column exists)
           const billsToUpdate = tx
             .select()
@@ -1627,6 +1632,34 @@ export class SqliteStorage implements IStorage {
             tx.update(schema.admissionEvents)
               .set({ createdBy: sql`NULL` })
               .where(eq(schema.admissionEvents.id, event.id))
+              .run();
+          }
+
+          // Update patient payments processed by this user
+          const paymentsToUpdate = tx
+            .select()
+            .from(schema.patientPayments)
+            .where(eq(schema.patientPayments.processedBy, id))
+            .all();
+
+          for (const payment of paymentsToUpdate) {
+            tx.update(schema.patientPayments)
+              .set({ processedBy: sql`NULL` })
+              .where(eq(schema.patientPayments.id, payment.id))
+              .run();
+          }
+
+          // Update patient discounts approved by this user
+          const discountsToUpdate = tx
+            .select()
+            .from(schema.patientDiscounts)
+            .where(eq(schema.patientDiscounts.approvedBy, id))
+            .all();
+
+          for (const discount of discountsToUpdate) {
+            tx.update(schema.patientDiscounts)
+              .set({ approvedBy: sql`NULL` })
+              .where(eq(schema.patientDiscounts.id, discount.id))
               .run();
           }
 
@@ -1664,9 +1697,6 @@ export class SqliteStorage implements IStorage {
               .where(eq(schema.doctors.id, doctorProfile.id))
               .run();
           }
-
-          // Note: pathology_orders, patient_services, and admissions tables
-          // don't have createdBy columns in the schema, so we skip those updates
 
           // Now delete the user record
           const deleted = tx
