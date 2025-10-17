@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTube, Search, Check, ChevronsUpDown, Eye, UserPlus } from "lucide-react";
+import { TestTube, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -625,7 +625,7 @@ export default function Dashboard() {
                         )}
                         {activity.activityType === 'user_deleted' && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                            <UserPlus className="w-5 h-5 text-red-600" />
+                            <UserX className="w-5 h-5 text-red-600" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && (
