@@ -2267,31 +2267,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admissions/:id/discharge", authenticateToken, async (req: any, res) => {
     try {
+      const { id } = req.params;
       const { dischargeDateTime } = req.body;
-      const updated = await storage.dischargePatient(req.params.id, dischargeDateTime, req.user.id);
-      if (!updated) {
+
+      const admission = await storage.dischargePatient(id, req.user.id, dischargeDateTime);
+      if (!admission) {
         return res.status(404).json({ error: "Admission not found" });
       }
 
       // Log activity for patient discharge
-      const admission = await storage.getAdmissionById(req.params.id);
-      const patient = admission ? await storage.getPatientById(admission.patientId) : null;
+      const admissionRecord = await storage.getAdmissionById(req.params.id); // Fetch admission again to get details for activity log
+      const patient = admissionRecord ? await storage.getPatientById(admissionRecord.patientId) : null;
 
       await storage.createActivity({
         userId: req.user.id,
         activityType: "patient_discharged",
         title: "Patient Discharged",
-        description: `${patient?.name || 'Patient'} discharged from ${admission?.currentWardType || 'ward'}`,
+        description: `${patient?.name || 'Patient'} discharged from ${admissionRecord?.currentWardType || 'ward'}`,
         entityId: req.params.id,
         entityType: "admission",
         metadata: JSON.stringify({
-          patientId: admission?.patientId,
+          patientId: admissionRecord?.patientId,
           dischargeDate: dischargeDateTime,
-          admissionId: admission?.admissionId,
+          admissionId: admissionRecord?.admissionId,
         }),
       });
 
-      res.json(updated);
+      res.json(admission);
     } catch (error) {
       console.error("Error discharging patient:", error);
       res.status(500).json({ error: "Internal server error" });

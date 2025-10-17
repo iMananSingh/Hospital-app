@@ -3833,133 +3833,130 @@ export class SqliteStorage implements IStorage {
     dischargeDateTime?: string,
   ): Promise<Admission | undefined> {
     return db.transaction((tx) => {
-      const admission = tx
-        .select()
-        .from(schema.admissions)
-        .where(eq(schema.admissions.id, admissionId))
-        .get();
-
-      if (!admission) {
-        throw new Error("Admission not found");
-      }
-
-      if (admission.status === "discharged") {
-        throw new Error("Patient is already discharged");
-      }
-
-      // Validate and use the provided dischargeDateTime, or default to current time
-      let validDischargeDateTime: string;
-
-      if (dischargeDateTime && typeof dischargeDateTime === 'string' && dischargeDateTime.length > 0) {
-        try {
-          // Try to parse as ISO string
-          const parsedDate = new Date(dischargeDateTime);
-          if (isNaN(parsedDate.getTime())) {
-            console.error(`Invalid discharge datetime: ${dischargeDateTime}, using current time`);
-            validDischargeDateTime = new Date().toISOString();
-          } else {
-            validDischargeDateTime = parsedDate.toISOString();
+      try {
+        // Validate and parse discharge date/time
+        let parsedDischargeDateTime: string;
+        if (!dischargeDateTime || typeof dischargeDateTime !== 'string' || dischargeDateTime.trim() === '') {
+          console.log(`No discharge datetime provided, using current time`);
+          parsedDischargeDateTime = new Date().toISOString();
+        } else {
+          try {
+            parsedDischargeDateTime = new Date(dischargeDateTime).toISOString();
+          } catch (e) {
+            console.log(`Failed to parse discharge datetime: ${dischargeDateTime}, using current time`);
+            parsedDischargeDateTime = new Date().toISOString();
           }
-        } catch (error) {
-          console.error(`Error parsing discharge datetime: ${dischargeDateTime}`, error);
-          validDischargeDateTime = new Date().toISOString();
         }
-      } else {
-        console.log(`No discharge datetime provided, using current time`);
-        validDischargeDateTime = new Date().toISOString();
-      }
 
-      // Calculate total cost based on stay duration and daily cost
-      const admissionDate = new Date(admission.admissionDate);
-      const stayDays = calculateStayDays(admissionDate, validDischargeDateTime);
-      const totalCost =
-        stayDays * admission.dailyCost +
-        (admission.additionalPayments || 0) -
-        (admission.totalDiscount || 0);
+        const admission = tx
+          .select()
+          .from(schema.admissions)
+          .where(eq(schema.admissions.id, admissionId))
+          .get();
 
-      // Update the admission with discharge information
-      const updatedAdmission = tx
-        .update(schema.admissions)
-        .set({
-          status: "discharged",
-          dischargeDate: validDischargeDateTime,
-          totalCost,
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(schema.admissions.id, admissionId))
-        .returning()
-        .get();
+        if (!admission) {
+          throw new Error("Admission not found");
+        }
 
-      // Create discharge event with receipt number
-      const eventDate =
-        validDischargeDateTime.split("T")[0];
-      const dischargeCount = this.getDailyReceiptCountSync(
-        "discharge",
-        eventDate,
-      );
-      const dateObj = new Date(eventDate);
-      const yymmdd = dateObj
-        .toISOString()
-        .slice(2, 10)
-        .replace(/-/g, "")
-        .slice(0, 6);
-      const receiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
+        if (admission.status === "discharged") {
+          throw new Error("Patient is already discharged");
+        }
 
-      // Create discharge event with receipt number
-      tx.insert(schema.admissionEvents)
-        .values({
+        // Calculate total cost based on stay duration and daily cost
+        const admissionDate = new Date(admission.admissionDate);
+        const stayDays = calculateStayDays(admissionDate, parsedDischargeDateTime);
+        const totalCost =
+          stayDays * admission.dailyCost +
+          (admission.additionalPayments || 0) -
+          (admission.totalDiscount || 0);
+
+        // Update the admission with discharge information
+        const updatedAdmission = tx
+          .update(schema.admissions)
+          .set({
+            status: "discharged",
+            dischargeDate: parsedDischargeDateTime,
+            totalCost,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(schema.admissions.id, admissionId))
+          .returning()
+          .get();
+
+        // Create discharge event with receipt number
+        const eventDate =
+          parsedDischargeDateTime.split("T")[0];
+        const dischargeCount = this.getDailyReceiptCountSync(
+          "discharge",
+          eventDate,
+        );
+        const dateObj = new Date(eventDate);
+        const yymmdd = dateObj
+          .toISOString()
+          .slice(2, 10)
+          .replace(/-/g, "")
+          .slice(0, 6);
+        const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
+
+
+        // Create discharge event with proper receipt number
+        const dischargeEvent = tx.insert(schema.admissionEvents).values({
           admissionId: admission.id,
           eventType: "discharge",
-          eventTime: validDischargeDateTime,
+          eventTime: parsedDischargeDateTime,
           notes: "Patient discharged",
-          createdBy: userId || null,
-          receiptNumber: receiptNumber,
-        })
-        .run();
+          receiptNumber: dischargeReceiptNumber,
+          createdBy: userId || null, // Allow null if userId is undefined
+        }).returning().get();
 
-      // Decrement occupied beds
-      if (admission.currentWardType) {
-        const roomType = tx
-          .select()
-          .from(schema.roomTypes)
-          .where(eq(schema.roomTypes.name, admission.currentWardType))
-          .get();
 
-        if (roomType && roomType.occupiedBeds > 0) {
-          tx.update(schema.roomTypes)
-            .set({
-              occupiedBeds: roomType.occupiedBeds - 1,
-              updatedAt: new Date().toISOString(),
-            })
-            .where(eq(schema.roomTypes.id, roomType.id))
-            .run();
+        // Decrement occupied beds
+        if (admission.currentWardType) {
+          const roomType = tx
+            .select()
+            .from(schema.roomTypes)
+            .where(eq(schema.roomTypes.name, admission.currentWardType))
+            .get();
+
+          if (roomType && roomType.occupiedBeds > 0) {
+            tx.update(schema.roomTypes)
+              .set({
+                occupiedBeds: roomType.occupiedBeds - 1,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(schema.roomTypes.id, roomType.id))
+              .run();
+          }
         }
+
+        // Log discharge activity (do this after transaction to avoid issues)
+        setImmediate(() => {
+          const patient = db
+            .select()
+            .from(schema.patients)
+            .where(eq(schema.patients.id, admission.patientId))
+            .get();
+          if (patient) {
+            this.logActivity(
+              userId,
+              "patient_discharged",
+              "Patient discharged",
+              `${patient.name} - ${admission.admissionId}`,
+              admissionId,
+              "admission",
+              {
+                admissionId: admission.admissionId,
+                patientName: patient.name,
+              },
+            );
+          }
+        });
+
+        return updatedAdmission;
+      } catch (transactionError) {
+        console.error('Transaction error during discharge patient:', transactionError);
+        throw transactionError; // Re-throw to rollback the transaction
       }
-
-      // Log discharge activity (do this after transaction to avoid issues)
-      setImmediate(() => {
-        const patient = db
-          .select()
-          .from(schema.patients)
-          .where(eq(schema.patients.id, admission.patientId))
-          .get();
-        if (patient) {
-          this.logActivity(
-            userId,
-            "patient_discharged",
-            "Patient discharged",
-            `${patient.name} - ${admission.admissionId}`,
-            admissionId,
-            "admission",
-            {
-              admissionId: admission.admissionId,
-              patientName: patient.name,
-            },
-          );
-        }
-      });
-
-      return updatedAdmission;
     });
   }
 
@@ -5633,7 +5630,7 @@ export class SqliteStorage implements IStorage {
           .reduce((sum, item) => sum + item.amount, 0),
       );
 
-      const remainingBalance = totalCharges - totalPayments - totalDiscounts;
+      const remainingBalance = totalCharges - totalPaid - totalDiscounts;
 
       const lastPayment = billItems.find((item) => item.type === "payment");
       const lastDiscount = billItems.find((item) => item.type === "discount");
