@@ -572,7 +572,7 @@ export default function Dashboard() {
                         case 'patient_registered':
                           return { icon: 'P', color: 'bg-healthcare-green' };
                         case 'lab_test_ordered':
-                          return { icon: 'L', color: 'bg-purple-500' };
+                          return { icon: 'lab_ordered', color: 'bg-purple-500' };
                         case 'lab_test_completed':
                           return { icon: 'T', color: 'bg-orange-500' };
                         case 'opd_scheduled':
@@ -633,7 +633,12 @@ export default function Dashboard() {
                             <Stethoscope className="w-5 h-5 text-blue-600" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && (
+                        {activity.activityType === 'lab_test_ordered' && (
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <TestTube className="w-5 h-5 text-purple-600" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
