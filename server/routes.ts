@@ -556,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user?.id,
         activityType: 'doctor_deactivated',
         title: 'Doctor Deactivated',
-        description: `Dr. ${doctor.name} has been deactivated`,
+        description: `${doctor.name} has been deactivated`,
         entityId: id,
         entityType: "doctor",
         metadata: JSON.stringify({
