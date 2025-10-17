@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, Calendar } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -570,19 +570,19 @@ export default function Dashboard() {
                         case 'bill_created':
                           return { icon: 'B', color: 'bg-medical-blue' };
                         case 'patient_registered':
-                          return { icon: 'P', color: 'bg-healthcare-green' };
+                          return { icon: 'P', color: 'bg-green-200' }; // Increased saturation
                         case 'lab_test_ordered':
-                          return { icon: 'lab_ordered', color: 'bg-pink-500' };
+                          return { icon: 'lab_ordered', color: 'bg-pink-200' }; // Increased saturation
                         case 'lab_test_completed':
                           return { icon: 'T', color: 'bg-orange-500' };
                         case 'opd_scheduled':
-                          return { icon: 'opd', color: 'bg-blue-500' };
+                          return { icon: 'opd', color: 'bg-blue-200' }; // Increased saturation
                         case 'service_scheduled':
-                          return { icon: 'service_scheduled', color: 'bg-purple-500' };
+                          return { icon: 'service_scheduled', color: 'bg-purple-200' }; // Increased saturation
                         case 'user_created':
-                          return { icon: 'U', color: 'bg-green-500' }; // Updated to green
+                          return { icon: 'U', color: 'bg-green-200' }; // Increased saturation
                         case 'user_deleted':
-                          return { icon: 'X', color: 'bg-red-500' };
+                          return { icon: 'X', color: 'bg-red-200' }; // Increased saturation
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
@@ -619,28 +619,28 @@ export default function Dashboard() {
                     return (
                       <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                         {activity.activityType === 'user_created' && (
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <UserPlus className="w-5 h-5 text-green-600" />
+                          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
+                            <UserPlus className="w-5 h-5 text-green-700" />
                           </div>
                         )}
                         {activity.activityType === 'user_deleted' && (
-                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                            <UserX className="w-5 h-5 text-red-600" />
+                          <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center">
+                            <UserX className="w-5 h-5 text-red-700" />
                           </div>
                         )}
                         {activity.activityType === 'opd_scheduled' && (
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Stethoscope className="w-5 h-5 text-blue-600" />
+                          <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
+                            <Stethoscope className="w-5 h-5 text-blue-700" />
                           </div>
                         )}
                         {activity.activityType === 'lab_test_ordered' && (
-                          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-                            <TestTubeDiagonal className="w-5 h-5 text-pink-600" />
+                          <div className="w-8 h-8 rounded-full bg-pink-200 flex items-center justify-center">
+                            <TestTubeDiagonal className="w-5 h-5 text-pink-700" />
                           </div>
                         )}
                         {activity.activityType === 'service_scheduled' && (
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <ClipboardPlus className="w-5 h-5 text-purple-600" />
+                          <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center">
+                            <ClipboardPlus className="w-5 h-5 text-purple-700" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && (
