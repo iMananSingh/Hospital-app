@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -640,7 +640,7 @@ export default function Dashboard() {
                         )}
                         {activity.activityType === 'service_scheduled' && (
                           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <Activity className="w-5 h-5 text-indigo-600" />
+                            <ClipboardPlus className="w-5 h-5 text-indigo-600" />
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && (
