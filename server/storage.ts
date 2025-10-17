@@ -1792,7 +1792,7 @@ export class SqliteStorage implements IStorage {
       }
 
       // Use transaction to handle foreign key constraints
-      return db.transaction((tx) => {
+      const result = db.transaction((tx) => {
         try {
           // First, set all references to this doctor to null
           tx.update(schema.patientVisits)
@@ -1818,22 +1818,6 @@ export class SqliteStorage implements IStorage {
           // Now delete the doctor record
           tx.delete(schema.doctors).where(eq(schema.doctors.id, id)).run();
 
-          // Log activity for permanent deletion
-          if (userId) {
-            this.logActivity(
-              userId,
-              "doctor_permanently_deleted",
-              "Doctor Permanently Deleted",
-              `${doctorToDelete.name} - ${doctorToDelete.specialization}`,
-              id,
-              "doctor",
-              {
-                doctorName: doctorToDelete.name,
-                specialization: doctorToDelete.specialization,
-              }
-            );
-          }
-
           return doctorToDelete;
         } catch (transactionError) {
           console.error(
@@ -1843,6 +1827,24 @@ export class SqliteStorage implements IStorage {
           throw transactionError;
         }
       });
+
+      // Log activity for permanent deletion AFTER transaction completes
+      if (userId && result) {
+        this.logActivity(
+          userId,
+          "doctor_permanently_deleted",
+          "Doctor Permanently Deleted",
+          `${doctorToDelete.name} - ${doctorToDelete.specialization}`,
+          id,
+          "doctor",
+          {
+            doctorName: doctorToDelete.name,
+            specialization: doctorToDelete.specialization,
+          }
+        );
+      }
+
+      return result;
     } catch (error) {
       console.error("Error permanently deleting doctor:", error);
       throw error;
