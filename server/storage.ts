@@ -4759,16 +4759,19 @@ export class SqliteStorage implements IStorage {
     metadata?: any,
   ): Promise<void> {
     try {
-      // Check if user exists before logging activity
-      const userExists = db
-        .select({ id: schema.users.id })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .get();
+      // Allow "system" as a special user ID without validation
+      if (userId !== "system") {
+        // Check if user exists before logging activity
+        const userExists = db
+          .select({ id: schema.users.id })
+          .from(schema.users)
+          .where(eq(schema.users.id, userId))
+          .get();
 
-      if (!userExists) {
-        console.warn(`Skipping activity log - user ${userId} not found`);
-        return;
+        if (!userExists) {
+          console.warn(`Skipping activity log - user ${userId} not found`);
+          return;
+        }
       }
 
       db.insert(schema.activities)
@@ -4802,7 +4805,10 @@ export class SqliteStorage implements IStorage {
           a.entity_type as entityType,
           a.metadata,
           a.created_at as createdAt,
-          COALESCE(u.full_name, 'Deleted User') as userName
+          CASE 
+            WHEN a.user_id = 'system' THEN 'System'
+            ELSE COALESCE(u.full_name, 'Deleted User')
+          END as userName
         FROM activities a
         LEFT JOIN users u ON a.user_id = u.id
         ORDER BY a.created_at DESC
