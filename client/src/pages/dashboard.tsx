@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2 } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
 interface DashboardStats {
@@ -591,6 +591,8 @@ export default function Dashboard() {
                           return { icon: 'doctor_deactivated', color: 'bg-red-500' };
                         case 'doctor_restored':
                           return { icon: 'doctor_restored', color: 'bg-green-700' };
+                        case 'doctor_permanently_deleted':
+                          return { icon: 'doctor_permanently_deleted', color: 'bg-red-700' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
@@ -666,7 +668,12 @@ export default function Dashboard() {
                             <UserStarIcon className="w-5 h-5 text-green-800" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && (
+                        {activity.activityType === 'doctor_permanently_deleted' && (
+                          <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center">
+                            <Trash2 className="w-5 h-5 text-red-700" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
