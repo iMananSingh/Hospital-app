@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTube, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX } from "lucide-react";
+import { TestTube, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -576,7 +576,7 @@ export default function Dashboard() {
                         case 'lab_test_completed':
                           return { icon: 'T', color: 'bg-orange-500' };
                         case 'opd_scheduled':
-                          return { icon: 'O', color: 'bg-blue-500' };
+                          return { icon: 'opd', color: 'bg-blue-500' };
                         case 'service_scheduled':
                           return { icon: 'S', color: 'bg-indigo-500' };
                         case 'user_created':
@@ -628,7 +628,12 @@ export default function Dashboard() {
                             <UserX className="w-5 h-5 text-red-600" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && (
+                        {activity.activityType === 'opd_scheduled' && (
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Stethoscope className="w-5 h-5 text-blue-600" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
