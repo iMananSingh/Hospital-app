@@ -539,17 +539,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/doctors/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
+      
+      // Get doctor details before deletion for activity log
+      const doctor = await storage.getDoctorById(id);
+      if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+      
       const deleted = await storage.deleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-      res.json({ message: "Doctor deleted successfully" });
+      
+      // Create activity log for doctor deactivation
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: 'doctor_deactivated',
+        title: 'Doctor Deactivated',
+        description: `Dr. ${doctor.name} has been deactivated`,
+        entityId: id,
+        entityType: "doctor",
+        metadata: JSON.stringify({
+          doctorId: id,
+          deactivatedBy: req.user?.username,
+        }),
+      });
+      
+      res.json({ message: "Doctor deactivated successfully" });
     } catch (error) {
-      console.error("Doctor deletion error:", error);
+      console.error("Doctor deactivation error:", error);
       if (error instanceof Error) {
         return res.status(400).json({ message: error.message });
       }
-      res.status(500).json({ message: "Failed to delete doctor" });
+      res.status(500).json({ message: "Failed to deactivate doctor" });
     }
   });
 
