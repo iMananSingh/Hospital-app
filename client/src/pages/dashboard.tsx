@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTube, Search, Check, ChevronsUpDown, Eye, UserPlus } from "lucide-react";
+import { TestTube, Search, Check, ChevronsUpDown, Eye } from "lucide-react";
 
 interface DashboardStats {
   opdPatients: number;
@@ -580,7 +580,7 @@ export default function Dashboard() {
                         case 'service_scheduled':
                           return { icon: 'S', color: 'bg-indigo-500' };
                         case 'user_created':
-                          return { icon: 'U', color: 'bg-green-500' }; // Updated to green
+                          return { icon: 'U', color: 'bg-cyan-500' };
                         case 'user_deleted':
                           return { icon: 'X', color: 'bg-red-500' };
                         case 'room_type_created':
@@ -618,21 +618,9 @@ export default function Dashboard() {
 
                     return (
                       <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                        {activity.activityType === 'user_created' && (
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <UserPlus className="w-5 h-5 text-green-600" />
-                          </div>
-                        )}
-                        {activity.activityType === 'user_deleted' && (
-                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                            <UserPlus className="w-5 h-5 text-red-600" />
-                          </div>
-                        )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_deleted' && (
-                          <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
-                            <span className="text-white text-xs">{icon}</span>
-                          </div>
-                        )}
+                        <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
+                          <span className="text-white text-xs">{icon}</span>
+                        </div>
                         <div className="flex-1">
                           <p className="text-sm font-medium">{activity.title}</p>
                           <p className="text-xs text-text-muted">{activity.description}</p>
