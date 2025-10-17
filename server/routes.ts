@@ -561,10 +561,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Added permanent delete endpoint for doctors
-  app.delete("/api/doctors/:id/permanent", authenticateToken, async (req, res) => {
+  app.delete("/api/doctors/:id/permanent", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const deleted = await storage.permanentlyDeleteDoctor(id);
+      const deleted = await storage.permanentlyDeleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }

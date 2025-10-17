@@ -1778,6 +1778,77 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  async permanentlyDeleteDoctor(id: string, userId?: string): Promise<Doctor | undefined> {
+    try {
+      // First, get the doctor to be deleted for returning and logging
+      const doctorToDelete = db
+        .select()
+        .from(schema.doctors)
+        .where(eq(schema.doctors.id, id))
+        .get();
+
+      if (!doctorToDelete) {
+        return undefined;
+      }
+
+      // Use transaction to handle foreign key constraints
+      return db.transaction((tx) => {
+        try {
+          // First, set all references to this doctor to null
+          tx.update(schema.patientVisits)
+            .set({ doctorId: null })
+            .where(eq(schema.patientVisits.doctorId, id))
+            .run();
+
+          tx.update(schema.pathologyOrders)
+            .set({ doctorId: null })
+            .where(eq(schema.pathologyOrders.doctorId, id))
+            .run();
+
+          tx.update(schema.patientServices)
+            .set({ doctorId: null })
+            .where(eq(schema.patientServices.doctorId, id))
+            .run();
+
+          tx.update(schema.admissions)
+            .set({ doctorId: null })
+            .where(eq(schema.admissions.doctorId, id))
+            .run();
+
+          // Now delete the doctor record
+          tx.delete(schema.doctors).where(eq(schema.doctors.id, id)).run();
+
+          // Log activity for permanent deletion
+          if (userId) {
+            this.logActivity(
+              userId,
+              "doctor_permanently_deleted",
+              "Doctor Permanently Deleted",
+              `${doctorToDelete.name} - ${doctorToDelete.specialization}`,
+              id,
+              "doctor",
+              {
+                doctorName: doctorToDelete.name,
+                specialization: doctorToDelete.specialization,
+              }
+            );
+          }
+
+          return doctorToDelete;
+        } catch (transactionError) {
+          console.error(
+            "Transaction error during permanent delete:",
+            transactionError,
+          );
+          throw transactionError;
+        }
+      });
+    } catch (error) {
+      console.error("Error permanently deleting doctor:", error);
+      throw error;
+    }
+  }
+
   async getDeletedDoctors(): Promise<Doctor[]> {
     return db
       .select()
