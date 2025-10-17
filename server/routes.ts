@@ -609,10 +609,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/doctors/:id/permanent", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
+      
+      // Get doctor details before deletion for activity log
+      const doctor = await storage.getDoctorById(id);
+      if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+      
       const deleted = await storage.permanentlyDeleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
+
+      // Create activity log for permanent deletion
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: 'doctor_permanently_deleted',
+        title: 'Doctor Permanently Deleted',
+        description: `${doctor.name} - ${doctor.specialization} has been permanently deleted`,
+        entityId: id,
+        entityType: "doctor",
+        metadata: JSON.stringify({
+          doctorId: id,
+          doctorName: doctor.name,
+          specialization: doctor.specialization,
+          deletedBy: req.user?.username,
+        }),
+      });
 
       res.json({ message: "Doctor permanently deleted successfully" });
     } catch (error) {

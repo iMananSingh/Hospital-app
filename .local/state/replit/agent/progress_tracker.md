@@ -11,6 +11,19 @@
 - Backup scheduler initialized (daily at 02:00)
 - Migration completed successfully ✓
 
+## Recent Updates
+
+### Doctor Permanent Delete Activity Logging Fix (October 17, 2025 at 7:35 PM)
+[x] Fixed activity logging for permanent doctor deletion
+- **Issue**: Activities were not being created when inactive doctors were permanently deleted
+- **Root Cause**: Activity logging was inside storage function with potential userId validation issues
+- **Solution**: Moved activity creation to route handler following same pattern as soft delete
+- **Files Modified**: 
+  - `server/routes.ts` - Added activity creation in permanent delete route
+  - `server/storage.ts` - Removed duplicate activity logging from storage function
+- **Testing**: Integration test confirmed activity is created with title "Doctor Permanently Deleted"
+- **Verification**: Activity record successfully stored in activities table ✓
+
 ## Final Status
 All migration tasks completed on October 17, 2025 at 6:33 PM
 Project is fully operational and ready for use.

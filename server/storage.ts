@@ -1748,22 +1748,7 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // Log activity for permanent deletion AFTER transaction completes - synchronously
-      if (userId && result) {
-        await this.logActivity(
-          userId,
-          "doctor_permanently_deleted",
-          "Doctor Permanently Deleted",
-          `${doctorToDelete.name} - ${doctorToDelete.specialization}`,
-          id,
-          "doctor",
-          {
-            doctorName: doctorToDelete.name,
-            specialization: doctorToDelete.specialization,
-          }
-        );
-      }
-
+      // Activity logging is handled in the route handler to avoid duplicates
       return result;
     } catch (error) {
       console.error("Error permanently deleting doctor:", error);
