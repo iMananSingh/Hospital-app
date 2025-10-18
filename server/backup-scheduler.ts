@@ -107,6 +107,22 @@ export class BackupScheduler {
       console.log(`Automatic backup completed: ${backup.backupId}`);
       console.log(`Backup details:`, JSON.stringify(backup, null, 2));
 
+      // Log activity for automatic backup creation
+      await storage.createActivity({
+        userId: 'system',
+        activityType: 'backup_created',
+        title: 'Backup Created',
+        description: 'Scheduled Backup Created',
+        entityId: backup.backupId,
+        entityType: 'backup',
+        metadata: JSON.stringify({
+          backupId: backup.backupId,
+          fileName: backup.filePath ? backup.filePath.split('/').pop() : 'unknown',
+          fileSize: backup.fileSize,
+          backupType: 'automatic',
+        }),
+      });
+
       // Clean up old backups
       await storage.cleanOldBackups();
       console.log('Old backups cleanup completed');
