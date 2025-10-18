@@ -968,7 +968,10 @@ export default function Settings() {
                     <>
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="text-base">Email Notifications</Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-base">Email Notifications</Label>
+                            <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">Send email alerts for important events</p>
                         </div>
                         <Switch 
@@ -980,7 +983,10 @@ export default function Settings() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="text-base">SMS Notifications</Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-base">SMS Notifications</Label>
+                            <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                          </div>
                           <p className="text-sm text-muted-foreground">Send SMS alerts to patients</p>
                         </div>
                         <Switch 
