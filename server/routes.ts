@@ -539,18 +539,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/doctors/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       // Get doctor details before deletion for activity log
       const doctor = await storage.getDoctorById(id);
       if (!doctor) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-      
+
       const deleted = await storage.deleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-      
+
       // Create activity log for doctor deactivation
       await storage.createActivity({
         userId: req.user?.id,
@@ -564,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deactivatedBy: req.user?.username,
         }),
       });
-      
+
       res.json({ message: "Doctor deactivated successfully" });
     } catch (error) {
       console.error("Doctor deactivation error:", error);
@@ -609,13 +609,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/doctors/:id/permanent", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
-      
+
       // Get doctor details before deletion for activity log
       const doctor = await storage.getDoctorById(id);
       if (!doctor) {
         return res.status(404).json({ message: "Doctor not found" });
       }
-      
+
       const deleted = await storage.permanentlyDeleteDoctor(id, req.user?.id);
       if (!deleted) {
         return res.status(404).json({ message: "Doctor not found" });
@@ -2122,13 +2122,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/settings/hospital", authenticateToken, async (req, res) => {
+  // Save hospital settings
+  app.post("/api/settings/hospital", requireAuth, async (req, res) => {
     try {
-      const settings = await storage.saveHospitalSettings(req.body, req.user.id);
-      res.json(settings);
-    } catch (error) {
+      const settingsData = req.body;
+      const result = await storage.saveHospitalSettings(settingsData);
+
+      // Log activity for hospital information change
+      await storage.createActivity({
+        userId: req.user!.id,
+        activityType: 'hospital_info_changed',
+        title: 'Hospital Information Changed',
+        description: 'Hospital Information Updated',
+        entityType: 'hospital_settings',
+        entityId: result.id,
+        metadata: JSON.stringify({
+          name: settingsData.name,
+          address: settingsData.address,
+          phone: settingsData.phone,
+          email: settingsData.email,
+          registrationNumber: settingsData.registrationNumber,
+        }),
+      });
+
+      res.json(result);
+    } catch (error: any) {
       console.error("Error saving hospital settings:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: error.message });
     }
   });
 
@@ -2174,23 +2194,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Track what changed
       const changes: string[] = [];
-      
+
       if (currentSettings.emailNotifications !== newSettings.emailNotifications) {
         changes.push(`Email Notifications ${newSettings.emailNotifications ? 'enabled' : 'disabled'}`);
       }
-      
+
       if (currentSettings.smsNotifications !== newSettings.smsNotifications) {
         changes.push(`SMS Notifications ${newSettings.smsNotifications ? 'enabled' : 'disabled'}`);
       }
-      
+
       if (currentSettings.autoBackup !== newSettings.autoBackup) {
         changes.push(`Auto Backup ${newSettings.autoBackup ? 'enabled' : 'disabled'}`);
       }
-      
+
       if (currentSettings.auditLogging !== newSettings.auditLogging) {
         changes.push(`Audit Logging ${newSettings.auditLogging ? 'enabled' : 'disabled'}`);
       }
-      
+
       if (currentSettings.timezone !== newSettings.timezone) {
         changes.push(`System Timezone changed to ${newSettings.timezone}`);
       }
