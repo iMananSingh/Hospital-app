@@ -4194,7 +4194,7 @@ export class SqliteStorage implements IStorage {
             this.logActivity(
               userId,
               "patient_discharged",
-              "Patient discharged",
+              "Patient Discharged",
               `${patient.name} - ${admission.admissionId}`,
               admissionId,
               "admission",
