@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen, IndianRupee, CircleUser, BedSingle, ClipboardX, Settings, Building2, Database, DatabaseZap } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen, IndianRupee, CircleUser, BedSingle, ClipboardX, Settings, Building2, Database } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
 interface DashboardStats {
@@ -730,27 +730,11 @@ export default function Dashboard() {
                             <Settings className="w-5 h-5 text-white" />
                           </div>
                         )}
-                        {activity.activityType === 'backup_created' && (() => {
-                          try {
-                            const metadata = activity.metadata ? JSON.parse(activity.metadata) : {};
-                            const isAutomatic = metadata.backupType === 'automatic';
-                            return (
-                              <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center">
-                                {isAutomatic ? (
-                                  <DatabaseZap className="w-5 h-5 text-white" />
-                                ) : (
-                                  <Database className="w-5 h-5 text-white" />
-                                )}
-                              </div>
-                            );
-                          } catch {
-                            return (
-                              <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center">
-                                <Database className="w-5 h-5 text-white" />
-                              </div>
-                            );
-                          }
-                        })()}
+                        {activity.activityType === 'backup_created' && (
+                          <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center">
+                            <Database className="w-5 h-5 text-white" />
+                          </div>
+                        )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && activity.activityType !== 'hospital_info_changed' && activity.activityType !== 'backup_created' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
