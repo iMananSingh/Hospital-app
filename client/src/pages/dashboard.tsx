@@ -588,6 +588,8 @@ export default function Dashboard() {
                           return { icon: 'X', color: 'bg-red-500' };
                         case 'payment_added':
                           return { icon: 'payment_added', color: 'bg-green-700' };
+                        case 'discount_added':
+                          return { icon: 'discount_added', color: 'bg-red-700' };
                         case 'doctor_created':
                           return { icon: 'doctor_created', color: 'bg-green-800' };
                         case 'doctor_deleted':
@@ -687,7 +689,12 @@ export default function Dashboard() {
                             <IndianRupee className="w-5 h-5 text-green-800" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && (
+                        {activity.activityType === 'discount_added' && (
+                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                            <IndianRupee className="w-5 h-5 text-red-700" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
