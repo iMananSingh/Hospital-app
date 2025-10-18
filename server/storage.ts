@@ -792,7 +792,10 @@ async function ensureRootUserSuperRole() {
     } else {
       // Update existing root user to have super_user role if it doesn't already
       const currentRoles = JSON.parse(rootUser.roles);
-      if (!currentRoles.includes("super_user") || rootUser.primaryRole !== "super_user") {
+      if (
+        !currentRoles.includes("super_user") ||
+        rootUser.primaryRole !== "super_user"
+      ) {
         const updatedRoles = JSON.stringify(["super_user"]);
         db.update(schema.users)
           .set({
@@ -851,7 +854,8 @@ async function createDemoData() {
       if (!existing) {
         // Only create if it's the first time the system is running (no users exist at all)
         const allUsers = db.select().from(schema.users).all();
-        if (allUsers.length <= 1) { // Allow for root user existence
+        if (allUsers.length <= 1) {
+          // Allow for root user existence
           const hashedPassword = await bcrypt.hash(userData.password, 10);
           const rolesJson = JSON.stringify(userData.roles);
           db.insert(schema.users)
@@ -975,7 +979,10 @@ export interface IStorage {
     fromDate?: string;
     toDate?: string;
   }): Promise<any[]>;
-  updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined>;
+  updateOpdVisitStatus(
+    id: string,
+    status: string,
+  ): Promise<PatientVisit | undefined>;
 
   // Services
   createService(service: InsertService, userId?: string): Promise<Service>;
@@ -1031,7 +1038,9 @@ export interface IStorage {
     userId?: string,
   ): Promise<PatientService[]>;
   getPatientServices(patientId?: string): Promise<PatientService[]>;
-  getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]>;
+  getPatientServicesWithFilters(
+    filters: PatientServiceFilters,
+  ): Promise<PatientService[]>;
   getPatientServiceById(id: string): Promise<PatientService | undefined>;
   updatePatientService(
     id: string,
@@ -1040,7 +1049,11 @@ export interface IStorage {
 
   // Patient Admissions
   createAdmission(admission: InsertAdmission): Promise<Admission>;
-  getAdmissions(patientId?: string, fromDate?: string, toDate?: string): Promise<Admission[]>;
+  getAdmissions(
+    patientId?: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<Admission[]>;
   getAdmissionById(id: string): Promise<Admission | undefined>;
   updateAdmission(
     id: string,
@@ -1168,19 +1181,32 @@ export interface IStorage {
   generateComprehensiveBill(patientId: string): Promise<any>;
 
   // Doctor Salary Management
-  createDoctorServiceRate(rate: InsertDoctorServiceRate): Promise<DoctorServiceRate>;
+  createDoctorServiceRate(
+    rate: InsertDoctorServiceRate,
+  ): Promise<DoctorServiceRate>;
   getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]>;
   getDoctorServiceRateById(id: string): Promise<DoctorServiceRate | undefined>;
-  updateDoctorServiceRate(id: string, rate: Partial<InsertDoctorServiceRate>): Promise<DoctorServiceRate | undefined>;
+  updateDoctorServiceRate(
+    id: string,
+    rate: Partial<InsertDoctorServiceRate>,
+  ): Promise<DoctorServiceRate | undefined>;
   deleteDoctorServiceRate(id: string): Promise<boolean>;
 
   // Doctor Earnings Management
   createDoctorEarning(earning: InsertDoctorEarning): Promise<DoctorEarning>;
-  getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]>;
+  getDoctorEarnings(
+    doctorId?: string,
+    status?: string,
+  ): Promise<DoctorEarning[]>;
   getDoctorEarningById(id: string): Promise<DoctorEarning | undefined>;
-  updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined>;
+  updateDoctorEarningStatus(
+    id: string,
+    status: string,
+  ): Promise<DoctorEarning | undefined>;
   getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]>;
-  recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }>;
+  recalculateDoctorEarnings(
+    doctorId?: string,
+  ): Promise<{ processed: number; created: number }>;
 
   // New function for bulk pending bills
   getAllPatientsPendingBills(): Promise<any[]>;
@@ -1225,7 +1251,7 @@ export class SqliteStorage implements IStorage {
       .all();
 
     // Get unique orderIds
-    const uniqueOrderIds = new Set(existingOrderIds.map(row => row.orderId));
+    const uniqueOrderIds = new Set(existingOrderIds.map((row) => row.orderId));
     const count = uniqueOrderIds.size + 1;
 
     // Use SER prefix and flexible padding (3 digits minimum, grows as needed)
@@ -1294,10 +1320,17 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate and create doctor earning record for a patient service
-  private async calculateDoctorEarning(patientService: PatientService, service: Service): Promise<void> {
+  private async calculateDoctorEarning(
+    patientService: PatientService,
+    service: Service,
+  ): Promise<void> {
     try {
-      console.log(`Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`);
-      console.log(`Service details - ID: ${service.id}, Name: ${service.name}, Category: ${service.category}`);
+      console.log(
+        `Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`,
+      );
+      console.log(
+        `Service details - ID: ${service.id}, Name: ${service.name}, Category: ${service.category}`,
+      );
 
       // Check if earning already exists for this patient service to prevent duplicates
       const existingEarning = db
@@ -1307,7 +1340,9 @@ export class SqliteStorage implements IStorage {
         .get();
 
       if (existingEarning) {
-        console.log(`Earning already exists for patient service ${patientService.id}, skipping creation`);
+        console.log(
+          `Earning already exists for patient service ${patientService.id}, skipping creation`,
+        );
         return;
       }
 
@@ -1319,14 +1354,16 @@ export class SqliteStorage implements IStorage {
           and(
             eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
             eq(schema.doctorServiceRates.serviceId, service.id),
-            eq(schema.doctorServiceRates.isActive, true)
-          )
+            eq(schema.doctorServiceRates.isActive, true),
+          ),
         )
         .get();
 
       // If not found by serviceId, try matching by service name and category
       if (!doctorRate) {
-        console.log(`No exact serviceId match, trying name+category match for ${service.name} in ${service.category}`);
+        console.log(
+          `No exact serviceId match, trying name+category match for ${service.name} in ${service.category}`,
+        );
         doctorRate = db
           .select()
           .from(schema.doctorServiceRates)
@@ -1335,32 +1372,41 @@ export class SqliteStorage implements IStorage {
               eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
               eq(schema.doctorServiceRates.serviceName, service.name),
               eq(schema.doctorServiceRates.serviceCategory, service.category),
-              eq(schema.doctorServiceRates.isActive, true)
-            )
+              eq(schema.doctorServiceRates.isActive, true),
+            ),
           )
           .get();
       }
 
       if (!doctorRate) {
-        console.log(`No salary rate found for doctor ${patientService.doctorId}, service ${service.name} (${service.category})`);
+        console.log(
+          `No salary rate found for doctor ${patientService.doctorId}, service ${service.name} (${service.category})`,
+        );
         return;
       }
 
-      console.log(`Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`);
+      console.log(
+        `Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`,
+      );
 
       // Calculate earning amount based on rate type
       let earnedAmount = 0;
-      const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+      const servicePrice =
+        patientService.calculatedAmount ||
+        patientService.price ||
+        service.price;
 
-      if (doctorRate.rateType === 'percentage') {
+      if (doctorRate.rateType === "percentage") {
         earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
-      } else if (doctorRate.rateType === 'amount') {
+      } else if (doctorRate.rateType === "amount") {
         earnedAmount = doctorRate.rateAmount;
-      } else if (doctorRate.rateType === 'fixed_daily') {
+      } else if (doctorRate.rateType === "fixed_daily") {
         earnedAmount = doctorRate.rateAmount;
       }
 
-      console.log(`Calculated earning: ₹${earnedAmount} (${doctorRate.rateType} of ₹${servicePrice})`);
+      console.log(
+        `Calculated earning: ₹${earnedAmount} (${doctorRate.rateType} of ₹${servicePrice})`,
+      );
 
       // Create doctor earning record using the storage interface method
       await this.createDoctorEarning({
@@ -1375,35 +1421,52 @@ export class SqliteStorage implements IStorage {
         rateAmount: doctorRate.rateAmount,
         servicePrice,
         earnedAmount,
-        status: 'pending',
+        status: "pending",
         notes: `Automatic calculation for ${service.name}`,
       });
 
-      console.log(`✓ Created doctor earning for doctor ${patientService.doctorId} amount ₹${earnedAmount}`);
+      console.log(
+        `✓ Created doctor earning for doctor ${patientService.doctorId} amount ₹${earnedAmount}`,
+      );
     } catch (error) {
-      console.error('Error calculating doctor earning:', error);
+      console.error("Error calculating doctor earning:", error);
     }
   }
 
   // Calculate and create doctor earning for OPD consultation from patient_visits
   private async calculateOpdEarning(patientVisit: PatientVisit): Promise<void> {
     try {
-      if (!patientVisit.doctorId || !patientVisit.consultationFee || patientVisit.consultationFee === 0) {
-        console.log(`Skipping OPD earning - no doctor or zero fee for visit ${patientVisit.visitId}`);
+      if (
+        !patientVisit.doctorId ||
+        !patientVisit.consultationFee ||
+        patientVisit.consultationFee === 0
+      ) {
+        console.log(
+          `Skipping OPD earning - no doctor or zero fee for visit ${patientVisit.visitId}`,
+        );
         return;
       }
 
-      console.log(`Starting OPD earnings calculation for doctor ${patientVisit.doctorId}, visit ${patientVisit.visitId}`);
+      console.log(
+        `Starting OPD earnings calculation for doctor ${patientVisit.doctorId}, visit ${patientVisit.visitId}`,
+      );
 
       // Check if earning already exists for this visit to prevent duplicates
       const existingEarning = db
         .select()
         .from(schema.doctorEarnings)
-        .where(eq(schema.doctorEarnings.notes, `OPD consultation - Visit ${patientVisit.visitId}`))
+        .where(
+          eq(
+            schema.doctorEarnings.notes,
+            `OPD consultation - Visit ${patientVisit.visitId}`,
+          ),
+        )
         .get();
 
       if (existingEarning) {
-        console.log(`Earning already exists for visit ${patientVisit.visitId}, skipping creation`);
+        console.log(
+          `Earning already exists for visit ${patientVisit.visitId}, skipping creation`,
+        );
         return;
       }
 
@@ -1414,51 +1477,59 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.doctorServiceRates.doctorId, patientVisit.doctorId),
-            eq(schema.doctorServiceRates.serviceCategory, 'opd'),
-            eq(schema.doctorServiceRates.isActive, true)
-          )
+            eq(schema.doctorServiceRates.serviceCategory, "opd"),
+            eq(schema.doctorServiceRates.isActive, true),
+          ),
         )
         .get();
 
       if (!opdRate) {
-        console.log(`No OPD consultation rate found for doctor ${patientVisit.doctorId}`);
+        console.log(
+          `No OPD consultation rate found for doctor ${patientVisit.doctorId}`,
+        );
         return;
       }
 
-      console.log(`Found OPD rate: ${opdRate.rateType} = ${opdRate.rateAmount}`);
+      console.log(
+        `Found OPD rate: ${opdRate.rateType} = ${opdRate.rateAmount}`,
+      );
 
       // Calculate earning amount based on rate type
       let earnedAmount = 0;
       const consultationFee = patientVisit.consultationFee;
 
-      if (opdRate.rateType === 'percentage') {
+      if (opdRate.rateType === "percentage") {
         earnedAmount = (consultationFee * opdRate.rateAmount) / 100;
-      } else if (opdRate.rateType === 'per_instance') {
+      } else if (opdRate.rateType === "per_instance") {
         earnedAmount = opdRate.rateAmount;
       }
 
-      console.log(`Calculated OPD earning: ₹${earnedAmount} (${opdRate.rateType} of ₹${consultationFee})`);
+      console.log(
+        `Calculated OPD earning: ₹${earnedAmount} (${opdRate.rateType} of ₹${consultationFee})`,
+      );
 
       // Create doctor earning record
       await this.createDoctorEarning({
         doctorId: patientVisit.doctorId,
         patientId: patientVisit.patientId,
-        serviceId: 'opd-consultation',
+        serviceId: "opd-consultation",
         patientServiceId: null,
-        serviceName: 'OPD Consultation',
-        serviceCategory: 'opd',
+        serviceName: "OPD Consultation",
+        serviceCategory: "opd",
         serviceDate: patientVisit.scheduledDate || patientVisit.visitDate,
         rateType: opdRate.rateType,
         rateAmount: opdRate.rateAmount,
         servicePrice: consultationFee,
         earnedAmount,
-        status: 'pending',
+        status: "pending",
         notes: `OPD consultation - Visit ${patientVisit.visitId}`,
       });
 
-      console.log(`✓ Created OPD earning for doctor ${patientVisit.doctorId} amount ₹${earnedAmount}`);
+      console.log(
+        `✓ Created OPD earning for doctor ${patientVisit.doctorId} amount ₹${earnedAmount}`,
+      );
     } catch (error) {
-      console.error('Error calculating OPD earning:', error);
+      console.error("Error calculating OPD earning:", error);
     }
   }
 
@@ -1480,19 +1551,25 @@ export class SqliteStorage implements IStorage {
     const rolesJson = JSON.stringify(userData.roles);
 
     // Set primary role to the first role in the array
-    const primaryRole = Array.isArray(userData.roles) ? userData.roles[0] : userData.roles;
+    const primaryRole = Array.isArray(userData.roles)
+      ? userData.roles[0]
+      : userData.roles;
 
-    const user = db.insert(schema.users).values({
-      ...userData,
-      password: hashedPassword,
-      roles: rolesJson,
-      primaryRole: primaryRole, // Always use the calculated primaryRole
-    }).returning().get();
+    const user = db
+      .insert(schema.users)
+      .values({
+        ...userData,
+        password: hashedPassword,
+        roles: rolesJson,
+        primaryRole: primaryRole, // Always use the calculated primaryRole
+      })
+      .returning()
+      .get();
 
     // Add parsed roles array for convenience
     const userWithRoles = {
       ...user,
-      rolesArray: JSON.parse(user.roles)
+      rolesArray: JSON.parse(user.roles),
     };
 
     // Activity logging is handled in the route handler for more detailed information
@@ -1500,33 +1577,45 @@ export class SqliteStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const user = db.select().from(schema.users).where(eq(schema.users.username, username)).get();
+    const user = db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.username, username))
+      .get();
     if (!user) return undefined;
 
     // Parse the roles JSON string into an array
     return {
       ...user,
-      rolesArray: JSON.parse(user.roles)
+      rolesArray: JSON.parse(user.roles),
     };
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    const user = db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+    const user = db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, id))
+      .get();
     if (!user) return undefined;
 
     // Parse the roles JSON string into an array
     return {
       ...user,
-      rolesArray: JSON.parse(user.roles)
+      rolesArray: JSON.parse(user.roles),
     };
   }
 
   async getAllUsers(): Promise<User[]> {
-    const users = db.select().from(schema.users).where(eq(schema.users.isActive, true)).all();
+    const users = db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.isActive, true))
+      .all();
     // Parse the roles JSON string into an array for each user
-    return users.map(user => ({
+    return users.map((user) => ({
       ...user,
-      rolesArray: JSON.parse(user.roles)
+      rolesArray: JSON.parse(user.roles),
     }));
   }
 
@@ -1547,7 +1636,8 @@ export class SqliteStorage implements IStorage {
 
     updateData.updatedAt = new Date().toISOString();
 
-    const user = db.update(schema.users)
+    const user = db
+      .update(schema.users)
       .set(updateData)
       .where(eq(schema.users.id, id))
       .returning()
@@ -1556,7 +1646,7 @@ export class SqliteStorage implements IStorage {
     if (user) {
       const userWithRoles = {
         ...user,
-        rolesArray: JSON.parse(user.roles)
+        rolesArray: JSON.parse(user.roles),
       };
 
       this.logActivity(
@@ -1566,7 +1656,11 @@ export class SqliteStorage implements IStorage {
         `Updated user: ${user.username} (${user.fullName})`,
         user.id,
         "user",
-        { username: user.username, roles: userWithRoles.rolesArray, primaryRole: user.primaryRole }
+        {
+          username: user.username,
+          roles: userWithRoles.rolesArray,
+          primaryRole: user.primaryRole,
+        },
       );
 
       return userWithRoles;
@@ -1600,7 +1694,7 @@ export class SqliteStorage implements IStorage {
           username: userToDelete.username,
           fullName: userToDelete.fullName,
           roles: JSON.parse(userToDelete.roles),
-        }
+        },
       );
 
       // Append timestamp to username to free it up for reuse
@@ -1641,7 +1735,7 @@ export class SqliteStorage implements IStorage {
           doctorName: created.name,
           specialization: created.specialization,
           consultationFee: created.consultationFee,
-        }
+        },
       );
     }
 
@@ -1698,7 +1792,10 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async permanentlyDeleteDoctor(id: string, userId?: string): Promise<Doctor | undefined> {
+  async permanentlyDeleteDoctor(
+    id: string,
+    userId?: string,
+  ): Promise<Doctor | undefined> {
     try {
       // First, get the doctor to be deleted for returning and logging
       const doctorToDelete = db
@@ -1764,7 +1861,10 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async restoreDoctor(id: string, userId?: string): Promise<Doctor | undefined> {
+  async restoreDoctor(
+    id: string,
+    userId?: string,
+  ): Promise<Doctor | undefined> {
     try {
       const restored = db
         .update(schema.doctors)
@@ -1788,7 +1888,7 @@ export class SqliteStorage implements IStorage {
           {
             doctorName: restored.name,
             specialization: restored.specialization,
-          }
+          },
         );
       }
 
@@ -1929,7 +2029,7 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async searchPatients(query: string): Promise<Patient[]>{
+  async searchPatients(query: string): Promise<Patient[]> {
     return db
       .select()
       .from(schema.patients)
@@ -1997,34 +2097,43 @@ export class SqliteStorage implements IStorage {
   async createOpdVisit(data: InsertPatientVisit): Promise<PatientVisit> {
     try {
       // Generate unique visit ID using total count instead of daily count to avoid duplicates
-      const totalVisitCount = await db.select({ count: sql`COUNT(*)` })
+      const totalVisitCount = await db
+        .select({ count: sql`COUNT(*)` })
         .from(schema.patientVisits);
 
       const visitCount = totalVisitCount[0]?.count || 0;
-      const orderNumber = String(visitCount + 1).padStart(4, '0');
-      const today = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+      const orderNumber = String(visitCount + 1).padStart(4, "0");
+      const today = new Date().toISOString().slice(2, 10).replace(/-/g, "");
       const visitId = `VIS-${today}-${orderNumber}`;
 
       // Store the data as-is without any timezone conversion
-      const result = await db.insert(schema.patientVisits).values({
-        ...data,
-        id: this.generateId(),
-        visitId: visitId,
-        visitType: "opd",
-        visitDate: data.scheduledDate || data.visitDate,
-        status: 'scheduled',
-        consultationFee: data.consultationFee || 0,
-        // Database defaults will handle createdAt/updatedAt in UTC
-      }).returning().get();
+      const result = await db
+        .insert(schema.patientVisits)
+        .values({
+          ...data,
+          id: this.generateId(),
+          visitId: visitId,
+          visitType: "opd",
+          visitDate: data.scheduledDate || data.visitDate,
+          status: "scheduled",
+          consultationFee: data.consultationFee || 0,
+          // Database defaults will handle createdAt/updatedAt in UTC
+        })
+        .returning()
+        .get();
 
       // Calculate doctor earning for this OPD visit
-      if (result.doctorId && result.consultationFee && result.consultationFee > 0) {
+      if (
+        result.doctorId &&
+        result.consultationFee &&
+        result.consultationFee > 0
+      ) {
         await this.calculateOpdEarning(result);
       }
 
       return result;
     } catch (error) {
-      console.error('Error creating OPD visit:', error);
+      console.error("Error creating OPD visit:", error);
       throw error;
     }
   }
@@ -2037,30 +2146,38 @@ export class SqliteStorage implements IStorage {
     fromDate?: string;
     toDate?: string;
   }): Promise<any[]> {
-    const whereConditions: any[] = [eq(schema.patientVisits.visitType, 'opd')];
+    const whereConditions: any[] = [eq(schema.patientVisits.visitType, "opd")];
 
-    if (filters?.doctorId && filters.doctorId !== 'all') {
+    if (filters?.doctorId && filters.doctorId !== "all") {
       whereConditions.push(eq(schema.patientVisits.doctorId, filters.doctorId));
     }
 
     if (filters?.patientId) {
-      whereConditions.push(eq(schema.patientVisits.patientId, filters.patientId));
+      whereConditions.push(
+        eq(schema.patientVisits.patientId, filters.patientId),
+      );
     }
 
     if (filters?.scheduledDate) {
-      whereConditions.push(eq(schema.patientVisits.scheduledDate, filters.scheduledDate));
+      whereConditions.push(
+        eq(schema.patientVisits.scheduledDate, filters.scheduledDate),
+      );
     }
 
-    if (filters?.status && filters.status !== 'all') {
+    if (filters?.status && filters.status !== "all") {
       whereConditions.push(eq(schema.patientVisits.status, filters.status));
     }
 
     if (filters?.fromDate) {
-      whereConditions.push(gte(schema.patientVisits.scheduledDate, filters.fromDate));
+      whereConditions.push(
+        gte(schema.patientVisits.scheduledDate, filters.fromDate),
+      );
     }
 
     if (filters?.toDate) {
-      whereConditions.push(lte(schema.patientVisits.scheduledDate, filters.toDate));
+      whereConditions.push(
+        lte(schema.patientVisits.scheduledDate, filters.toDate),
+      );
     }
 
     // Join with patients and doctors to get their details
@@ -2092,30 +2209,45 @@ export class SqliteStorage implements IStorage {
         doctorConsultationFee: schema.doctors.consultationFee,
       })
       .from(schema.patientVisits)
-      .leftJoin(schema.patients, eq(schema.patientVisits.patientId, schema.patients.id))
-      .leftJoin(schema.doctors, eq(schema.patientVisits.doctorId, schema.doctors.id))
+      .leftJoin(
+        schema.patients,
+        eq(schema.patientVisits.patientId, schema.patients.id),
+      )
+      .leftJoin(
+        schema.doctors,
+        eq(schema.patientVisits.doctorId, schema.doctors.id),
+      )
       .where(and(...whereConditions))
-      .orderBy(desc(schema.patientVisits.scheduledDate), desc(schema.patientVisits.scheduledTime))
+      .orderBy(
+        desc(schema.patientVisits.scheduledDate),
+        desc(schema.patientVisits.scheduledTime),
+      )
       .all();
 
     // Ensure consultationFee is properly set - use stored fee or fallback to doctor's default
-    return results.map(visit => ({
+    return results.map((visit) => ({
       ...visit,
-      consultationFee: visit.consultationFee || visit.doctorConsultationFee || 0
+      consultationFee:
+        visit.consultationFee || visit.doctorConsultationFee || 0,
     }));
   }
 
-  async updateOpdVisitStatus(id: string, status: string): Promise<PatientVisit | undefined> {
+  async updateOpdVisitStatus(
+    id: string,
+    status: string,
+  ): Promise<PatientVisit | undefined> {
     const updated = db
       .update(schema.patientVisits)
       .set({
         status,
-        updatedAt: sql`(datetime('now'))`
+        updatedAt: sql`(datetime('now'))`,
       })
-      .where(and(
-        eq(schema.patientVisits.id, id),
-        eq(schema.patientVisits.visitType, 'opd')
-      ))
+      .where(
+        and(
+          eq(schema.patientVisits.id, id),
+          eq(schema.patientVisits.visitType, "opd"),
+        ),
+      )
       .returning()
       .get();
     return updated;
@@ -2167,7 +2299,7 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async searchServices(query: string): Promise<Service[]>{
+  async searchServices(query: string): Promise<Service[]> {
     return db
       .select()
       .from(schema.services)
@@ -2233,10 +2365,6 @@ export class SqliteStorage implements IStorage {
 
     return result.changes > 0;
   }
-
-
-
-
 
   async createBill(
     billData: InsertBill,
@@ -2304,7 +2432,7 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async getBillsWithPatients(): Promise<any[]>{
+  async getBillsWithPatients(): Promise<any[]> {
     return db
       .select({
         bill: schema.bills,
@@ -2325,16 +2453,22 @@ export class SqliteStorage implements IStorage {
     }
 
     if (filters.paymentStatus) {
-      whereConditions.push(eq(schema.bills.paymentStatus, filters.paymentStatus));
+      whereConditions.push(
+        eq(schema.bills.paymentStatus, filters.paymentStatus),
+      );
     }
 
     // Date filtering - use billDate for filtering by date range
     if (filters.fromDate) {
-      whereConditions.push(sql`DATE(${schema.bills.billDate}) >= DATE(${filters.fromDate})`);
+      whereConditions.push(
+        sql`DATE(${schema.bills.billDate}) >= DATE(${filters.fromDate})`,
+      );
     }
 
     if (filters.toDate) {
-      whereConditions.push(sql`DATE(${schema.bills.billDate}) <= DATE(${filters.toDate})`);
+      whereConditions.push(
+        sql`DATE(${schema.bills.billDate}) <= DATE(${filters.toDate})`,
+      );
     }
 
     // Build the query with all conditions
@@ -2465,8 +2599,8 @@ export class SqliteStorage implements IStorage {
         query = query.where(
           and(
             gte(schema.pathologyOrders.orderedDate, fromDate),
-            lte(schema.pathologyOrders.orderedDate, toDate)
-          )
+            lte(schema.pathologyOrders.orderedDate, toDate),
+          ),
         );
       } else if (fromDate) {
         query = query.where(gte(schema.pathologyOrders.orderedDate, fromDate));
@@ -2474,9 +2608,7 @@ export class SqliteStorage implements IStorage {
         query = query.where(lte(schema.pathologyOrders.orderedDate, toDate));
       }
 
-      return query
-        .orderBy(desc(schema.pathologyOrders.createdAt))
-        .all();
+      return query.orderBy(desc(schema.pathologyOrders.createdAt)).all();
     } catch (error) {
       console.error("Error in getPathologyOrders:", error);
       throw error;
@@ -2615,7 +2747,9 @@ export class SqliteStorage implements IStorage {
   }
 
   // Get doctor earning by patient service ID
-  async getDoctorEarningByPatientServiceId(patientServiceId: string): Promise<DoctorEarning | undefined> {
+  async getDoctorEarningByPatientServiceId(
+    patientServiceId: string,
+  ): Promise<DoctorEarning | undefined> {
     return db
       .select()
       .from(schema.doctorEarnings)
@@ -2636,7 +2770,10 @@ export class SqliteStorage implements IStorage {
 
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
-        const earningsToProcess: Array<{ patientService: PatientService, service: Service }> = [];
+        const earningsToProcess: Array<{
+          patientService: PatientService;
+          service: Service;
+        }> = [];
 
         for (const serviceData of servicesData) {
           console.log("=== BATCH SERVICE CREATION DEBUG ===");
@@ -2708,36 +2845,52 @@ export class SqliteStorage implements IStorage {
               .get();
 
             // If service not found by ID, try fallback match by name and category
-            if (!serviceForEarnings && serviceData.serviceName && serviceData.serviceType) {
-              console.log(`Batch: Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+            if (
+              !serviceForEarnings &&
+              serviceData.serviceName &&
+              serviceData.serviceType
+            ) {
+              console.log(
+                `Batch: Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
+              );
               serviceForEarnings = tx
                 .select()
                 .from(schema.services)
                 .where(
                   and(
                     eq(schema.services.name, serviceData.serviceName),
-                    eq(schema.services.category, serviceData.serviceType)
-                  )
+                    eq(schema.services.category, serviceData.serviceType),
+                  ),
                 )
                 .get();
 
               if (serviceForEarnings) {
-                console.log(`✓ Batch fallback service match found: ${serviceForEarnings.id} - ${serviceForEarnings.name}`);
+                console.log(
+                  `✓ Batch fallback service match found: ${serviceForEarnings.id} - ${serviceForEarnings.name}`,
+                );
               } else {
-                console.log(`Batch: No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+                console.log(
+                  `Batch: No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
+                );
               }
             }
 
-            console.log(`Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`);
+            console.log(
+              `Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`,
+            );
             if (serviceForEarnings) {
-              console.log(`Queueing earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`);
+              console.log(
+                `Queueing earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`,
+              );
               // Queue for processing after transaction
               earningsToProcess.push({
                 patientService: created,
-                service: serviceForEarnings
+                service: serviceForEarnings,
               });
             } else {
-              console.log(`⚠️ No service found for serviceId: ${serviceData.serviceId} in batch, cannot calculate earnings`);
+              console.log(
+                `⚠️ No service found for serviceId: ${serviceData.serviceId} in batch, cannot calculate earnings`,
+              );
             }
           }
         }
@@ -2746,10 +2899,15 @@ export class SqliteStorage implements IStorage {
         setImmediate(async () => {
           for (const { patientService, service } of earningsToProcess) {
             try {
-              console.log(`Processing queued earnings calculation for service ${patientService.id}`);
+              console.log(
+                `Processing queued earnings calculation for service ${patientService.id}`,
+              );
               await this.calculateDoctorEarning(patientService, service);
             } catch (error) {
-              console.error(`❌ Error calculating earnings for service ${patientService.id}:`, error);
+              console.error(
+                `❌ Error calculating earnings for service ${patientService.id}:`,
+                error,
+              );
             }
           }
         });
@@ -2788,22 +2946,28 @@ export class SqliteStorage implements IStorage {
 
         // If service not found by ID, try fallback match by name and category
         if (!service && serviceData.serviceName && serviceData.serviceType) {
-          console.log(`Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+          console.log(
+            `Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
+          );
           service = db
             .select()
             .from(schema.services)
             .where(
               and(
                 eq(schema.services.name, serviceData.serviceName),
-                eq(schema.services.category, serviceData.serviceType)
-              )
+                eq(schema.services.category, serviceData.serviceType),
+              ),
             )
             .get();
 
           if (service) {
-            console.log(`✓ Fallback service match found: ${service.id} - ${service.name}`);
+            console.log(
+              `✓ Fallback service match found: ${service.id} - ${service.name}`,
+            );
           } else {
-            console.log(`No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`);
+            console.log(
+              `No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
+            );
           }
         }
 
@@ -2871,19 +3035,28 @@ export class SqliteStorage implements IStorage {
 
       // Calculate doctor earnings if doctor is assigned and service has rates
       if (serviceData.doctorId) {
-        console.log(`Patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`);
+        console.log(
+          `Patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`,
+        );
         if (service) {
-          console.log(`Triggering earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`);
+          console.log(
+            `Triggering earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`,
+          );
           // Calculate earnings asynchronously to avoid blocking
           setImmediate(async () => {
             try {
               await this.calculateDoctorEarning(created, service);
             } catch (error) {
-              console.error(`Error in async earnings calculation for doctor ${serviceData.doctorId}:`, error);
+              console.error(
+                `Error in async earnings calculation for doctor ${serviceData.doctorId}:`,
+                error,
+              );
             }
           });
         } else {
-          console.log(`No service found for serviceId: ${serviceData.serviceId}, cannot calculate earnings`);
+          console.log(
+            `No service found for serviceId: ${serviceData.serviceId}, cannot calculate earnings`,
+          );
         }
       }
 
@@ -2906,21 +3079,32 @@ export class SqliteStorage implements IStorage {
           doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
-        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
-        .where(and(
-          eq(schema.patientServices.patientId, patientId),
-          isNotNull(schema.patientServices.doctorId) // Only include services with a doctor assigned
-        ))
-        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientServices.doctorId, schema.doctors.id),
+        )
+        .where(
+          and(
+            eq(schema.patientServices.patientId, patientId),
+            isNotNull(schema.patientServices.doctorId), // Only include services with a doctor assigned
+          ),
+        )
+        .orderBy(
+          desc(schema.patientServices.scheduledDate),
+          desc(schema.patientServices.createdAt),
+        )
         .all();
 
-      console.log('Retrieved services with doctor info:', results.map(s => ({
-        id: s.id,
-        serviceName: s.serviceName,
-        doctorId: s.doctorId,
-        doctorName: s.doctorName,
-        serviceType: s.serviceType
-      })));
+      console.log(
+        "Retrieved services with doctor info:",
+        results.map((s) => ({
+          id: s.id,
+          serviceName: s.serviceName,
+          doctorId: s.doctorId,
+          doctorName: s.doctorName,
+          serviceType: s.serviceType,
+        })),
+      );
 
       // Manually cast the results to PatientService type, including doctorName and doctorSpecialization
       // This is a bit of a workaround because Drizzle's type inference might not perfectly handle the selected fields from the join.
@@ -2935,39 +3119,58 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getPatientServicesWithFilters(filters: PatientServiceFilters): Promise<PatientService[]> {
+  async getPatientServicesWithFilters(
+    filters: PatientServiceFilters,
+  ): Promise<PatientService[]> {
     try {
-      console.log("Storage: getPatientServicesWithFilters called with filters:", filters);
+      console.log(
+        "Storage: getPatientServicesWithFilters called with filters:",
+        filters,
+      );
 
       // Build WHERE conditions based on filters
       const whereConditions: any[] = [];
 
       if (filters.patientId) {
-        whereConditions.push(eq(schema.patientServices.patientId, filters.patientId));
+        whereConditions.push(
+          eq(schema.patientServices.patientId, filters.patientId),
+        );
       }
 
       if (filters.serviceType) {
-        whereConditions.push(eq(schema.patientServices.serviceType, filters.serviceType));
+        whereConditions.push(
+          eq(schema.patientServices.serviceType, filters.serviceType),
+        );
       }
 
       if (filters.serviceTypes && filters.serviceTypes.length > 0) {
-        whereConditions.push(inArray(schema.patientServices.serviceType, filters.serviceTypes));
+        whereConditions.push(
+          inArray(schema.patientServices.serviceType, filters.serviceTypes),
+        );
       }
 
       if (filters.fromDate) {
-        whereConditions.push(gte(schema.patientServices.scheduledDate, filters.fromDate));
+        whereConditions.push(
+          gte(schema.patientServices.scheduledDate, filters.fromDate),
+        );
       }
 
       if (filters.toDate) {
-        whereConditions.push(lte(schema.patientServices.scheduledDate, filters.toDate));
+        whereConditions.push(
+          lte(schema.patientServices.scheduledDate, filters.toDate),
+        );
       }
 
       if (filters.doctorId) {
-        whereConditions.push(eq(schema.patientServices.doctorId, filters.doctorId));
+        whereConditions.push(
+          eq(schema.patientServices.doctorId, filters.doctorId),
+        );
       }
 
       if (filters.serviceName) {
-        whereConditions.push(eq(schema.patientServices.serviceName, filters.serviceName));
+        whereConditions.push(
+          eq(schema.patientServices.serviceName, filters.serviceName),
+        );
       }
 
       if (filters.status) {
@@ -3011,18 +3214,27 @@ export class SqliteStorage implements IStorage {
           doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
-        .innerJoin(schema.patients, eq(schema.patientServices.patientId, schema.patients.id))
-        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .innerJoin(
+          schema.patients,
+          eq(schema.patientServices.patientId, schema.patients.id),
+        )
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientServices.doctorId, schema.doctors.id),
+        )
         .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-        .orderBy(desc(schema.patientServices.scheduledDate), desc(schema.patientServices.createdAt))
+        .orderBy(
+          desc(schema.patientServices.scheduledDate),
+          desc(schema.patientServices.createdAt),
+        )
         .all();
 
       // Log a sample of results to debug doctor name resolution
-      const sampleResults = result.slice(0, 3).map(service => ({
+      const sampleResults = result.slice(0, 3).map((service) => ({
         serviceName: service.serviceName,
         doctorId: service.doctorId,
         doctorName: service.doctorName,
-        serviceType: service.serviceType
+        serviceType: service.serviceType,
       }));
       console.log("Sample patient services with doctor info:", sampleResults);
 
@@ -3195,7 +3407,11 @@ export class SqliteStorage implements IStorage {
     });
   }
 
-  async getAdmissions(patientId?: string, fromDate?: string, toDate?: string): Promise<any[]> {
+  async getAdmissions(
+    patientId?: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<any[]> {
     try {
       let conditions: any[] = [];
 
@@ -3215,22 +3431,30 @@ export class SqliteStorage implements IStorage {
         .select({
           admission: schema.admissions,
           patient: schema.patients,
-          doctor: schema.doctors
+          doctor: schema.doctors,
         })
         .from(schema.admissions)
-        .leftJoin(schema.patients, eq(schema.admissions.patientId, schema.patients.id))
-        .leftJoin(schema.doctors, eq(schema.admissions.doctorId, schema.doctors.id));
+        .leftJoin(
+          schema.patients,
+          eq(schema.admissions.patientId, schema.patients.id),
+        )
+        .leftJoin(
+          schema.doctors,
+          eq(schema.admissions.doctorId, schema.doctors.id),
+        );
 
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
 
-      const results = query.orderBy(desc(schema.admissions.admissionDate)).all();
+      const results = query
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
 
-      return results.map(row => ({
+      return results.map((row) => ({
         ...row.admission,
         patient: row.patient,
-        doctor: row.doctor
+        doctor: row.doctor,
       }));
     } catch (error) {
       console.error("Error fetching admissions:", error);
@@ -3329,7 +3553,7 @@ export class SqliteStorage implements IStorage {
     this.logActivity(
       userId,
       "payment_added",
-      "Payment added",
+      "Payment Accepted",
       `₹${paymentData.amount} payment for ${patient?.name || "Unknown Patient"}`,
       created.id,
       "patient_payment",
@@ -3444,12 +3668,12 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.patientVisits.patientId, patientId),
-            eq(schema.patientVisits.visitType, "opd")
-          )
+            eq(schema.patientVisits.visitType, "opd"),
+          ),
         )
         .all();
 
-      opdVisits.forEach(visit => {
+      opdVisits.forEach((visit) => {
         const fee = visit.consultationFee || 0;
         totalCharges += fee;
       });
@@ -3464,12 +3688,12 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.patientServices.patientId, patientId),
-            eq(schema.patientServices.serviceType, "opd")
-          )
+            eq(schema.patientServices.serviceType, "opd"),
+          ),
         )
         .all();
 
-      opdServices.forEach(service => {
+      opdServices.forEach((service) => {
         const charge = service.amount || service.price || 0;
         totalCharges += charge;
       });
@@ -3483,7 +3707,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.pathologyOrders.patientId, patientId))
         .all();
 
-      pathologyOrders.forEach(order => {
+      pathologyOrders.forEach((order) => {
         totalCharges += order.totalPrice || 0;
       });
 
@@ -3502,16 +3726,16 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.patientServices.patientId, patientId),
-            ne(schema.patientServices.serviceType, "opd")
-          )
+            ne(schema.patientServices.serviceType, "opd"),
+          ),
         )
         .all();
 
-      otherServices.forEach(service => {
+      otherServices.forEach((service) => {
         let charge = service.amount || service.price || 0;
 
         // For admission services, calculate based on stay duration
-        if (service.serviceType === 'admission') {
+        if (service.serviceType === "admission") {
           // Get admissions for this patient
           const patientAdmissions = db
             .select()
@@ -3523,9 +3747,13 @@ export class SqliteStorage implements IStorage {
             // Find relevant admission
             let relevantAdmission = patientAdmissions[0];
 
-            const matchingAdmission = patientAdmissions.find(admission => {
-              const admissionDate = new Date(admission.admissionDate).toDateString();
-              const serviceDate = new Date(service.scheduledDate || service.createdAt).toDateString();
+            const matchingAdmission = patientAdmissions.find((admission) => {
+              const admissionDate = new Date(
+                admission.admissionDate,
+              ).toDateString();
+              const serviceDate = new Date(
+                service.scheduledDate || service.createdAt,
+              ).toDateString();
               return admissionDate === serviceDate;
             });
 
@@ -3534,17 +3762,21 @@ export class SqliteStorage implements IStorage {
             }
 
             // Use the calculateStayDays function that was imported at the top
-            const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
-            const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
+            const endDate =
+              relevantAdmission.dischargeDate || new Date().toISOString();
+            const stayDuration = calculateStayDays(
+              relevantAdmission.admissionDate,
+              endDate,
+            );
 
             if (stayDuration > 0) {
-              if (service.serviceName.toLowerCase().includes('bed charges')) {
+              if (service.serviceName.toLowerCase().includes("bed charges")) {
                 // Bed charges: charge for each completed 24-hour period
                 charge = (service.price || 0) * stayDuration;
               } else if (
-                service.serviceName.toLowerCase().includes('doctor charges') ||
-                service.serviceName.toLowerCase().includes('nursing charges') ||
-                service.serviceName.toLowerCase().includes('rmo charges')
+                service.serviceName.toLowerCase().includes("doctor charges") ||
+                service.serviceName.toLowerCase().includes("nursing charges") ||
+                service.serviceName.toLowerCase().includes("rmo charges")
               ) {
                 // Other admission services: charge for each calendar day
                 charge = (service.price || 0) * stayDuration;
@@ -3565,7 +3797,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.patientPayments.patientId, patientId))
         .all();
 
-      payments.forEach(payment => {
+      payments.forEach((payment) => {
         totalPaid += payment.amount || 0;
       });
 
@@ -3579,11 +3811,10 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
-      admissionDepositsAndPayments.forEach(admission => {
+      admissionDepositsAndPayments.forEach((admission) => {
         totalPaid += admission.initialDeposit || 0;
         totalPaid += admission.additionalPayments || 0;
       });
-
 
       // 7. Get all discounts for this patient
       const discounts = db
@@ -3594,13 +3825,15 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.patientDiscounts.patientId, patientId))
         .all();
 
-      discounts.forEach(discount => {
+      discounts.forEach((discount) => {
         totalDiscounts += discount.amount || 0;
       });
 
       const balance = totalCharges - totalPaid - totalDiscounts;
 
-      console.log(`Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`);
+      console.log(
+        `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
+      );
 
       return {
         totalCharges,
@@ -3609,7 +3842,7 @@ export class SqliteStorage implements IStorage {
         balance,
       };
     } catch (error) {
-      console.error('Error generating financial summary:', error);
+      console.error("Error generating financial summary:", error);
       return {
         totalCharges: 0,
         totalPaid: 0,
@@ -3627,10 +3860,13 @@ export class SqliteStorage implements IStorage {
     try {
       // Use Indian timezone (UTC+5:30) for consistent date calculation
       const now = new Date();
-      const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const today = indianTime.getFullYear() + '-' +
-        String(indianTime.getMonth() + 1).padStart(2, '0') + '-' +
-        String(indianTime.getDate()).padStart(2, '0');
+      const indianTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      const today =
+        indianTime.getFullYear() +
+        "-" +
+        String(indianTime.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(indianTime.getDate()).padStart(2, "0");
 
       console.log(`Dashboard stats - Using today date: ${today}`);
 
@@ -3641,20 +3877,23 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.patientVisits.visitType, "opd"),
-            eq(schema.patientVisits.scheduledDate, today)
-          )
+            eq(schema.patientVisits.scheduledDate, today),
+          ),
         )
         .all();
 
       console.log(`Today OPD visits count: ${todayOpdVisits.length}`);
       if (todayOpdVisits.length > 0) {
-        console.log(`Sample OPD visits:`, todayOpdVisits.slice(0, 3).map(v => ({
-          id: v.id,
-          scheduledDate: v.scheduledDate,
-          visitType: v.visitType,
-          patientId: v.patientId,
-          doctorId: v.doctorId
-        })));
+        console.log(
+          `Sample OPD visits:`,
+          todayOpdVisits.slice(0, 3).map((v) => ({
+            id: v.id,
+            scheduledDate: v.scheduledDate,
+            visitType: v.visitType,
+            patientId: v.patientId,
+            doctorId: v.doctorId,
+          })),
+        );
       }
 
       const opdPatients = todayOpdVisits.length;
@@ -3866,14 +4105,20 @@ export class SqliteStorage implements IStorage {
       try {
         // Validate and parse discharge date/time
         let parsedDischargeDateTime: string;
-        if (!dischargeDateTime || typeof dischargeDateTime !== 'string' || dischargeDateTime.trim() === '') {
+        if (
+          !dischargeDateTime ||
+          typeof dischargeDateTime !== "string" ||
+          dischargeDateTime.trim() === ""
+        ) {
           console.log(`No discharge datetime provided, using current time`);
           parsedDischargeDateTime = new Date().toISOString();
         } else {
           try {
             parsedDischargeDateTime = new Date(dischargeDateTime).toISOString();
           } catch (e) {
-            console.log(`Failed to parse discharge datetime: ${dischargeDateTime}, using current time`);
+            console.log(
+              `Failed to parse discharge datetime: ${dischargeDateTime}, using current time`,
+            );
             parsedDischargeDateTime = new Date().toISOString();
           }
         }
@@ -3894,7 +4139,10 @@ export class SqliteStorage implements IStorage {
 
         // Calculate total cost based on stay duration and daily cost
         const admissionDate = new Date(admission.admissionDate);
-        const stayDays = calculateStayDays(admissionDate, parsedDischargeDateTime);
+        const stayDays = calculateStayDays(
+          admissionDate,
+          parsedDischargeDateTime,
+        );
         const totalCost =
           stayDays * admission.dailyCost +
           (admission.additionalPayments || 0) -
@@ -3914,8 +4162,7 @@ export class SqliteStorage implements IStorage {
           .get();
 
         // Create discharge event with receipt number
-        const eventDate =
-          parsedDischargeDateTime.split("T")[0];
+        const eventDate = parsedDischargeDateTime.split("T")[0];
         const dischargeCount = this.getDailyReceiptCountSync(
           "discharge",
           eventDate,
@@ -3928,17 +4175,19 @@ export class SqliteStorage implements IStorage {
           .slice(0, 6);
         const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
 
-
         // Create discharge event with proper receipt number
-        const dischargeEvent = tx.insert(schema.admissionEvents).values({
-          admissionId: admission.id,
-          eventType: "discharge",
-          eventTime: parsedDischargeDateTime,
-          notes: "Patient discharged",
-          receiptNumber: dischargeReceiptNumber,
-          createdBy: userId || null, // Allow null if userId is undefined
-        }).returning().get();
-
+        const dischargeEvent = tx
+          .insert(schema.admissionEvents)
+          .values({
+            admissionId: admission.id,
+            eventType: "discharge",
+            eventTime: parsedDischargeDateTime,
+            notes: "Patient discharged",
+            receiptNumber: dischargeReceiptNumber,
+            createdBy: userId || null, // Allow null if userId is undefined
+          })
+          .returning()
+          .get();
 
         // Decrement occupied beds
         if (admission.currentWardType) {
@@ -3984,7 +4233,10 @@ export class SqliteStorage implements IStorage {
 
         return updatedAdmission;
       } catch (transactionError) {
-        console.error('Transaction error during discharge patient:', transactionError);
+        console.error(
+          "Transaction error during discharge patient:",
+          transactionError,
+        );
         throw transactionError; // Re-throw to rollback the transaction
       }
     });
@@ -4003,7 +4255,8 @@ export class SqliteStorage implements IStorage {
     const defaultSettings = {
       id: "default",
       name: "Health Care Hospital and Diagnostic Center",
-      address: "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+      address:
+        "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
       phone: "8889762101, 9826325958",
       email: "hospital@healthcare.in",
       registrationNumber: "NH/3613/JUL-2021",
@@ -4319,7 +4572,7 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async getBackupHistory(): Promise<any[]>{
+  async getBackupHistory(): Promise<any[]> {
     try {
       const history = db
         .select()
@@ -4424,8 +4677,8 @@ export class SqliteStorage implements IStorage {
       // Execute statements directly using the SQLite client
       const statements = backupContent
         .split(";")
-        .map(stmt => stmt.trim())
-        .filter(stmt => stmt);
+        .map((stmt) => stmt.trim())
+        .filter((stmt) => stmt);
 
       let executedStatements = 0;
 
@@ -4434,20 +4687,29 @@ export class SqliteStorage implements IStorage {
           db.$client.exec(statement + ";");
           executedStatements++;
         } catch (stmtError) {
-          console.warn(`Warning: Failed to execute statement: ${statement.substring(0, 100)}...`, stmtError);
+          console.warn(
+            `Warning: Failed to execute statement: ${statement.substring(0, 100)}...`,
+            stmtError,
+          );
           // Optionally, you might want to stop the restore process here or log the error more severely.
           // For now, we continue and update the log with partial success/failure info.
         }
       }
 
       // Update restore log with success or partial success
-      const finalStatus = executedStatements === statements.length ? "completed" : "partially_completed";
+      const finalStatus =
+        executedStatements === statements.length
+          ? "completed"
+          : "partially_completed";
       db.update(schema.backupLogs)
         .set({
           status: finalStatus,
           endTime: new Date().toISOString(),
           recordCount: executedStatements,
-          errorMessage: executedStatements < statements.length ? "Some statements failed during restore." : null,
+          errorMessage:
+            executedStatements < statements.length
+              ? "Some statements failed during restore."
+              : null,
         })
         .where(eq(schema.backupLogs.backupId, restoreId))
         .run();
@@ -4464,14 +4726,20 @@ export class SqliteStorage implements IStorage {
       try {
         const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE"); // Re-generate or retrieve if available
         // Check if a log entry with this ID exists to avoid errors if it wasn't created
-        const existingLog = db.select().from(schema.backupLogs).where(eq(schema.backupLogs.backupId, restoreId)).get();
-        if(existingLog) {
+        const existingLog = db
+          .select()
+          .from(schema.backupLogs)
+          .where(eq(schema.backupLogs.backupId, restoreId))
+          .get();
+        if (existingLog) {
           db.update(schema.backupLogs)
             .set({
               status: "failed",
               endTime: new Date().toISOString(),
               errorMessage:
-                error instanceof Error ? error.message : "Unknown error during restore",
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error during restore",
             })
             .where(eq(schema.backupLogs.backupId, restoreId))
             .run();
@@ -4484,7 +4752,10 @@ export class SqliteStorage implements IStorage {
             filePath: backupFilePath, // Store path for context
             startTime,
             endTime: new Date().toISOString(),
-            errorMessage: error instanceof Error ? error.message : "Unknown error during restore",
+            errorMessage:
+              error instanceof Error
+                ? error.message
+                : "Unknown error during restore",
             createdAt: startTime,
           };
           db.insert(schema.backupLogs).values(failedLog).run();
@@ -4733,7 +5004,9 @@ export class SqliteStorage implements IStorage {
         if (rootUser) {
           validUserId = rootUser.id;
         } else {
-          console.warn("Skipping activity log - root user not found for system activity");
+          console.warn(
+            "Skipping activity log - root user not found for system activity",
+          );
           return;
         }
       } else {
@@ -4803,7 +5076,11 @@ export class SqliteStorage implements IStorage {
   }
 
   async createActivity(activity: InsertActivity): Promise<Activity> {
-    const created = db.insert(schema.activities).values(activity).returning().get();
+    const created = db
+      .insert(schema.activities)
+      .values(activity)
+      .returning()
+      .get();
     return created;
   }
 
@@ -5073,26 +5350,26 @@ export class SqliteStorage implements IStorage {
           };
         });
 
-      // Calculate actual occupied beds from rooms that are occupied
-      const actualOccupiedBeds = roomsWithOccupancy.filter(
-        (room) => room.isOccupied,
-      ).length;
+        // Calculate actual occupied beds from rooms that are occupied
+        const actualOccupiedBeds = roomsWithOccupancy.filter(
+          (room) => room.isOccupied,
+        ).length;
 
-      // Calculate total beds from all active rooms for this room type
-      const totalBeds = rooms.reduce(
-        (sum, room) => sum + (room.capacity || 1),
-        0,
-      );
+        // Calculate total beds from all active rooms for this room type
+        const totalBeds = rooms.reduce(
+          (sum, room) => sum + (room.capacity || 1),
+          0,
+        );
 
-      return {
-        ...roomType,
-        rooms: roomsWithOccupancy,
-        occupiedBeds: actualOccupiedBeds,
-        totalBeds: totalBeds,
-        // Keep these for backwards compatibility
-        actualOccupiedBeds: actualOccupiedBeds,
-      };
-    });
+        return {
+          ...roomType,
+          rooms: roomsWithOccupancy,
+          occupiedBeds: actualOccupiedBeds,
+          totalBeds: totalBeds,
+          // Keep these for backwards compatibility
+          actualOccupiedBeds: actualOccupiedBeds,
+        };
+      });
 
       return bedOccupancyData;
     } catch (error) {
@@ -5161,9 +5438,7 @@ export class SqliteStorage implements IStorage {
           schema.doctors,
           eq(schema.admissions.doctorId, schema.doctors.id),
         )
-        .where(
-          sql`DATE(${schema.admissions.admissionDate}) = ${today}`
-        )
+        .where(sql`DATE(${schema.admissions.admissionDate}) = ${today}`)
         .orderBy(desc(schema.admissions.createdAt))
         .all();
 
@@ -5209,7 +5484,7 @@ export class SqliteStorage implements IStorage {
           and(
             eq(schema.admissions.status, "discharged"),
             isNotNull(schema.admissions.dischargeDate),
-            sql`DATE(${schema.admissions.dischargeDate}) = ${today}`
+            sql`DATE(${schema.admissions.dischargeDate}) = ${today}`,
           ),
         )
         .orderBy(desc(schema.admissions.updatedAt))
@@ -5308,7 +5583,8 @@ export class SqliteStorage implements IStorage {
 
       const billItems: Array<{
         type: "service" | "pathology" | "admission" | "payment" | "discount";
-        id: string;        date: string;
+        id: string;
+        date: string;
         description: string;
         amount: number;
         category: string;
@@ -5335,12 +5611,15 @@ export class SqliteStorage implements IStorage {
           doctorConsultationFee: schema.doctors.consultationFee,
         })
         .from(schema.patientVisits)
-        .leftJoin(schema.doctors, eq(schema.patientVisits.doctorId, schema.doctors.id))
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientVisits.doctorId, schema.doctors.id),
+        )
         .where(
           and(
             eq(schema.patientVisits.patientId, patientId),
-            eq(schema.patientVisits.visitType, "opd")
-          )
+            eq(schema.patientVisits.visitType, "opd"),
+          ),
         )
         .orderBy(desc(schema.patientVisits.scheduledDate))
         .all();
@@ -5367,7 +5646,10 @@ export class SqliteStorage implements IStorage {
           doctorSpecialization: schema.doctors.specialization,
         })
         .from(schema.patientServices)
-        .leftJoin(schema.doctors, eq(schema.patientServices.doctorId, schema.doctors.id))
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientServices.doctorId, schema.doctors.id),
+        )
         .where(eq(schema.patientServices.patientId, patientId))
         .orderBy(desc(schema.patientServices.scheduledDate))
         .all();
@@ -5397,20 +5679,23 @@ export class SqliteStorage implements IStorage {
       }
 
       // Add OPD visits as bill items
-      opdVisits.forEach(visit => {
-        const amount = visit.consultationFee || visit.doctorConsultationFee || 0;
+      opdVisits.forEach((visit) => {
+        const amount =
+          visit.consultationFee || visit.doctorConsultationFee || 0;
         if (amount > 0) {
           // Handle doctor name to avoid duplicate "Dr." prefix
-          const doctorName = visit.doctorName || 'Unknown Doctor';
-          const formattedDoctorName = doctorName.startsWith('Dr.') ? doctorName : `Dr. ${doctorName}`;
+          const doctorName = visit.doctorName || "Unknown Doctor";
+          const formattedDoctorName = doctorName.startsWith("Dr.")
+            ? doctorName
+            : `Dr. ${doctorName}`;
 
           billItems.push({
-            type: 'service',
+            type: "service",
             id: visit.id,
             date: visit.scheduledDate || visit.createdAt,
-            description: `OPD Consultation - ${formattedDoctorName}${visit.symptoms ? ` (${visit.symptoms})` : ''}`,
+            description: `OPD Consultation - ${formattedDoctorName}${visit.symptoms ? ` (${visit.symptoms})` : ""}`,
             amount: amount,
-            category: 'OPD Consultation',
+            category: "OPD Consultation",
             details: {
               visitId: visit.visitId,
               doctorName: visit.doctorName,
@@ -5421,21 +5706,22 @@ export class SqliteStorage implements IStorage {
               consultationFee: visit.consultationFee,
               quantity: 1,
               billingQuantity: 1,
-            }
+            },
           });
         }
       });
 
       // Add patient services with daily calculation for admission services
       patientServices.forEach((ps) => {
-        let serviceAmount = (ps.calculatedAmount as number) || (ps.price as number) || 0;
+        let serviceAmount =
+          (ps.calculatedAmount as number) || (ps.price as number) || 0;
         let serviceQuantity = ps.billingQuantity || 1;
 
         // For admission services, calculate based on patient's stay duration
-        if (ps.serviceType === 'admission') {
+        if (ps.serviceType === "admission") {
           // Find the admission for this patient to get stay duration
-          const patientAdmissions = admissions.filter(admission =>
-            admission.patientId === patientId
+          const patientAdmissions = admissions.filter(
+            (admission) => admission.patientId === patientId,
           );
 
           if (patientAdmissions.length > 0) {
@@ -5443,9 +5729,13 @@ export class SqliteStorage implements IStorage {
             let relevantAdmission = patientAdmissions[0];
 
             // Try to find admission that matches the service date
-            const matchingAdmission = patientAdmissions.find(admission => {
-              const admissionDate = new Date(admission.admissionDate).toDateString();
-              const serviceDate = new Date(ps.scheduledDate || ps.createdAt).toDateString();
+            const matchingAdmission = patientAdmissions.find((admission) => {
+              const admissionDate = new Date(
+                admission.admissionDate,
+              ).toDateString();
+              const serviceDate = new Date(
+                ps.scheduledDate || ps.createdAt,
+              ).toDateString();
               return admissionDate === serviceDate;
             });
 
@@ -5454,18 +5744,22 @@ export class SqliteStorage implements IStorage {
             }
 
             // Calculate stay duration using the calculateStayDays function
-            const endDate = relevantAdmission.dischargeDate || new Date().toISOString();
-            const stayDuration = calculateStayDays(relevantAdmission.admissionDate, endDate);
+            const endDate =
+              relevantAdmission.dischargeDate || new Date().toISOString();
+            const stayDuration = calculateStayDays(
+              relevantAdmission.admissionDate,
+              endDate,
+            );
 
             if (stayDuration > 0) {
-              if (ps.serviceName.toLowerCase().includes('bed charges')) {
+              if (ps.serviceName.toLowerCase().includes("bed charges")) {
                 // Bed charges: charge for each completed 24-hour period
                 serviceQuantity = stayDuration;
                 serviceAmount = (ps.price || 0) * serviceQuantity;
               } else if (
-                ps.serviceName.toLowerCase().includes('doctor charges') ||
-                ps.serviceName.toLowerCase().includes('nursing charges') ||
-                ps.serviceName.toLowerCase().includes('rmo charges')
+                ps.serviceName.toLowerCase().includes("doctor charges") ||
+                ps.serviceName.toLowerCase().includes("nursing charges") ||
+                ps.serviceName.toLowerCase().includes("rmo charges")
               ) {
                 // Other admission services: charge for each calendar day
                 serviceQuantity = stayDuration;
@@ -5704,20 +5998,30 @@ export class SqliteStorage implements IStorage {
   }
 
   // Doctor Service Rate Management
-  async createDoctorServiceRate(rate: InsertDoctorServiceRate): Promise<DoctorServiceRate> {
-    const created = db.insert(schema.doctorServiceRates).values(rate).returning().get();
+  async createDoctorServiceRate(
+    rate: InsertDoctorServiceRate,
+  ): Promise<DoctorServiceRate> {
+    const created = db
+      .insert(schema.doctorServiceRates)
+      .values(rate)
+      .returning()
+      .get();
     return created;
   }
 
   async getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]> {
     const query = db.select().from(schema.doctorServiceRates);
     if (doctorId) {
-      return query.where(eq(schema.doctorServiceRates.doctorId, doctorId)).all();
+      return query
+        .where(eq(schema.doctorServiceRates.doctorId, doctorId))
+        .all();
     }
     return query.all();
   }
 
-  async getDoctorServiceRateById(id: string): Promise<DoctorServiceRate | undefined> {
+  async getDoctorServiceRateById(
+    id: string,
+  ): Promise<DoctorServiceRate | undefined> {
     return db
       .select()
       .from(schema.doctorServiceRates)
@@ -5725,7 +6029,10 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async updateDoctorServiceRate(id: string, rate: Partial<InsertDoctorServiceRate>): Promise<DoctorServiceRate | undefined> {
+  async updateDoctorServiceRate(
+    id: string,
+    rate: Partial<InsertDoctorServiceRate>,
+  ): Promise<DoctorServiceRate | undefined> {
     const updated = db
       .update(schema.doctorServiceRates)
       .set({ ...rate, updatedAt: new Date().toISOString() })
@@ -5751,16 +6058,20 @@ export class SqliteStorage implements IStorage {
       .where(
         and(
           eq(schema.doctorEarnings.doctorId, doctorId),
-          eq(schema.doctorEarnings.status, 'pending')
-        )
+          eq(schema.doctorEarnings.status, "pending"),
+        ),
       )
       .orderBy(desc(schema.doctorEarnings.serviceDate))
       .all();
   }
 
   // Recalculate doctor earnings for services that have doctors assigned but no earnings
-  async recalculateDoctorEarnings(doctorId?: string): Promise<{ processed: number; created: number }> {
-    console.log(`Starting recalculation of doctor earnings${doctorId ? ` for doctor ${doctorId}` : ' for all doctors'}`);
+  async recalculateDoctorEarnings(
+    doctorId?: string,
+  ): Promise<{ processed: number; created: number }> {
+    console.log(
+      `Starting recalculation of doctor earnings${doctorId ? ` for doctor ${doctorId}` : " for all doctors"}`,
+    );
 
     let processed = 0;
     let created = 0;
@@ -5774,12 +6085,14 @@ export class SqliteStorage implements IStorage {
 
       if (doctorId) {
         patientServicesQuery = patientServicesQuery.where(
-          eq(schema.patientServices.doctorId, doctorId)
+          eq(schema.patientServices.doctorId, doctorId),
         );
       }
 
       const patientServices = patientServicesQuery.all();
-      console.log(`Found ${patientServices.length} patient services to process`);
+      console.log(
+        `Found ${patientServices.length} patient services to process`,
+      );
 
       for (const patientService of patientServices) {
         processed++;
@@ -5792,7 +6105,9 @@ export class SqliteStorage implements IStorage {
           .get();
 
         if (existingEarning) {
-          console.log(`Earning already exists for patient service ${patientService.id}`);
+          console.log(
+            `Earning already exists for patient service ${patientService.id}`,
+          );
           continue;
         }
 
@@ -5804,7 +6119,9 @@ export class SqliteStorage implements IStorage {
           .get();
 
         if (!service) {
-          console.log(`Service not found for patient service ${patientService.id}`);
+          console.log(
+            `Service not found for patient service ${patientService.id}`,
+          );
           continue;
         }
 
@@ -5816,8 +6133,8 @@ export class SqliteStorage implements IStorage {
             and(
               eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
               eq(schema.doctorServiceRates.serviceId, service.id),
-              eq(schema.doctorServiceRates.isActive, true)
-            )
+              eq(schema.doctorServiceRates.isActive, true),
+            ),
           )
           .get();
 
@@ -5828,28 +6145,36 @@ export class SqliteStorage implements IStorage {
             .from(schema.doctorServiceRates)
             .where(
               and(
-                eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+                eq(
+                  schema.doctorServiceRates.doctorId,
+                  patientService.doctorId!,
+                ),
                 eq(schema.doctorServiceRates.serviceName, service.name),
-                eq(schema.doctorServiceRates.isActive, true)
-              )
+                eq(schema.doctorServiceRates.isActive, true),
+              ),
             )
             .get();
         }
 
         if (!doctorRate) {
-          console.log(`No salary rate found for doctor ${patientService.doctorId} and service ${service.id} (${service.name})`);
+          console.log(
+            `No salary rate found for doctor ${patientService.doctorId} and service ${service.id} (${service.name})`,
+          );
           continue;
         }
 
         // Calculate earning amount based on rate type
         let earnedAmount = 0;
-        const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+        const servicePrice =
+          patientService.calculatedAmount ||
+          patientService.price ||
+          service.price;
 
-        if (doctorRate.rateType === 'percentage') {
+        if (doctorRate.rateType === "percentage") {
           earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
-        } else if (doctorRate.rateType === 'amount') {
+        } else if (doctorRate.rateType === "amount") {
           earnedAmount = doctorRate.rateAmount;
-        } else if (doctorRate.rateType === 'fixed_daily') {
+        } else if (doctorRate.rateType === "fixed_daily") {
           earnedAmount = doctorRate.rateAmount;
         }
 
@@ -5867,30 +6192,41 @@ export class SqliteStorage implements IStorage {
             rateAmount: doctorRate.rateAmount,
             servicePrice,
             earnedAmount,
-            status: 'pending',
+            status: "pending",
             notes: `Recalculation for ${service.name}`,
           });
 
           created++;
-          console.log(`Created earning for doctor ${patientService.doctorId}: ₹${earnedAmount}`);
+          console.log(
+            `Created earning for doctor ${patientService.doctorId}: ₹${earnedAmount}`,
+          );
         } catch (error) {
-          console.error(`Error creating earning for patient service ${patientService.id}:`, error);
+          console.error(
+            `Error creating earning for patient service ${patientService.id}:`,
+            error,
+          );
         }
       }
 
-      console.log(`Recalculation complete: processed ${processed} services, created ${created} new earnings`);
+      console.log(
+        `Recalculation complete: processed ${processed} services, created ${created} new earnings`,
+      );
       return { processed, created };
-
     } catch (error) {
-      console.error('Error recalculating doctor earnings:', error);
+      console.error("Error recalculating doctor earnings:", error);
       throw error;
     }
   }
 
   // Get doctor earnings by doctor ID and optional status filter
-  async getDoctorEarnings(doctorId?: string, status?: string): Promise<DoctorEarning[]> {
+  async getDoctorEarnings(
+    doctorId?: string,
+    status?: string,
+  ): Promise<DoctorEarning[]> {
     try {
-      console.log(`Fetching doctor earnings - doctorId: ${doctorId}, status: ${status}`);
+      console.log(
+        `Fetching doctor earnings - doctorId: ${doctorId}, status: ${status}`,
+      );
 
       const whereConditions: any[] = [];
 
@@ -5898,13 +6234,17 @@ export class SqliteStorage implements IStorage {
         whereConditions.push(eq(schema.doctorEarnings.doctorId, doctorId));
       }
 
-      if (status && status !== 'all') {
+      if (status && status !== "all") {
         whereConditions.push(eq(schema.doctorEarnings.status, status));
       }
 
-      const query = whereConditions.length > 0
-        ? db.select().from(schema.doctorEarnings).where(and(...whereConditions))
-        : db.select().from(schema.doctorEarnings);
+      const query =
+        whereConditions.length > 0
+          ? db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(and(...whereConditions))
+          : db.select().from(schema.doctorEarnings);
 
       const earnings = query
         .orderBy(desc(schema.doctorEarnings.serviceDate))
@@ -5913,13 +6253,15 @@ export class SqliteStorage implements IStorage {
       console.log(`Found ${earnings.length} earnings for doctor ${doctorId}`);
       return earnings;
     } catch (error) {
-      console.error('Error fetching doctor earnings:', error);
+      console.error("Error fetching doctor earnings:", error);
       return [];
     }
   }
 
   // Create a new doctor earning record
-  async createDoctorEarning(earning: InsertDoctorEarning): Promise<DoctorEarning> {
+  async createDoctorEarning(
+    earning: InsertDoctorEarning,
+  ): Promise<DoctorEarning> {
     try {
       const earningId = this.generateEarningId();
 
@@ -5932,10 +6274,12 @@ export class SqliteStorage implements IStorage {
         .returning()
         .get();
 
-      console.log(`Created doctor earning: ${earningId} for amount ${created.earnedAmount}`);
+      console.log(
+        `Created doctor earning: ${earningId} for amount ${created.earnedAmount}`,
+      );
       return created;
     } catch (error) {
-      console.error('Error creating doctor earning:', error);
+      console.error("Error creating doctor earning:", error);
       throw error;
     }
   }
@@ -5949,19 +6293,22 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.doctorEarnings.id, id))
         .get();
     } catch (error) {
-      console.error('Error fetching doctor earning by ID:', error);
+      console.error("Error fetching doctor earning by ID:", error);
       throw error;
     }
   }
 
   // Update the status of a doctor earning record
-  async updateDoctorEarningStatus(id: string, status: string): Promise<DoctorEarning | undefined> {
+  async updateDoctorEarningStatus(
+    id: string,
+    status: string,
+  ): Promise<DoctorEarning | undefined> {
     try {
       const updated = db
         .update(schema.doctorEarnings)
         .set({
           status: status as any,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.doctorEarnings.id, id))
         .returning()
@@ -5970,7 +6317,7 @@ export class SqliteStorage implements IStorage {
       console.log(`Updated doctor earning ${id} status to ${status}`);
       return updated;
     } catch (error) {
-      console.error('Error updating doctor earning status:', error);
+      console.error("Error updating doctor earning status:", error);
       throw error;
     }
   }
@@ -5978,7 +6325,7 @@ export class SqliteStorage implements IStorage {
   // New function for bulk pending bills
   async getAllPatientsPendingBills(): Promise<any[]> {
     try {
-      console.log('Fetching all patients with pending bills...');
+      console.log("Fetching all patients with pending bills...");
 
       // Get all active patients
       const allPatients = db
@@ -6001,20 +6348,25 @@ export class SqliteStorage implements IStorage {
           if (summary.balance > 0) {
             patientsWithPending.push({
               ...patient,
-              pendingAmount: summary.balance
+              pendingAmount: summary.balance,
             });
           }
         } catch (error) {
-          console.error(`Error calculating pending bills for patient ${patient.id}:`, error);
+          console.error(
+            `Error calculating pending bills for patient ${patient.id}:`,
+            error,
+          );
           // Skip this patient if there's an error
           continue;
         }
       }
 
-      console.log(`Found ${patientsWithPending.length} patients with pending bills`);
+      console.log(
+        `Found ${patientsWithPending.length} patients with pending bills`,
+      );
       return patientsWithPending;
     } catch (error) {
-      console.error('Error fetching patients with pending bills:', error);
+      console.error("Error fetching patients with pending bills:", error);
       return [];
     }
   }
