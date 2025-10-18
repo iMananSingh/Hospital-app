@@ -3378,31 +3378,6 @@ export class SqliteStorage implements IStorage {
         }
       }
 
-      // Log admission activity (do this after transaction to avoid issues)
-      setImmediate(() => {
-        const patient = db
-          .select()
-          .from(schema.patients)
-          .where(eq(schema.patients.id, admission.patientId))
-          .get();
-        if (patient) {
-          this.logActivity(
-            "system",
-            "patient_admitted",
-            "Patient admitted",
-            `${patient.name} - ${admission.admissionId}`,
-            created.id,
-            "admission",
-            {
-              admissionId,
-              patientName: patient.name,
-              roomNumber: admission.currentRoomNumber,
-              wardType: admission.currentWardType,
-            },
-          );
-        }
-      });
-
       return created;
     });
   }
