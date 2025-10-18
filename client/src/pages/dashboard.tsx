@@ -23,7 +23,7 @@ import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema"
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen, IndianRupee, CircleUser } from "lucide-react";
+import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen, IndianRupee, CircleUser, BedSingle } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
 interface DashboardStats {
@@ -599,6 +599,8 @@ export default function Dashboard() {
                           return { icon: 'doctor_restored', color: 'bg-green-700' };
                         case 'doctor_permanently_deleted':
                           return { icon: 'doctor_permanently_deleted', color: 'bg-red-700' };
+                        case 'patient_admitted':
+                          return { icon: 'patient_admitted', color: 'bg-green-700' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
@@ -699,7 +701,12 @@ export default function Dashboard() {
                             <CircleUser className="w-5 h-5 text-blue-700" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && (
+                        {activity.activityType === 'patient_admitted' && (
+                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <BedSingle className="w-5 h-5 text-green-700" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
