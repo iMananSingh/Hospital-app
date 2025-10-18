@@ -732,7 +732,19 @@ export default function Dashboard() {
                         )}
                         {activity.activityType === 'backup_created' && (
                           <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center">
-                            <DatabaseZap className="w-5 h-5 text-white" />
+                            {(() => {
+                              try {
+                                const metadata = activity.metadata ? JSON.parse(activity.metadata) : {};
+                                const isAutomatic = metadata.backupType === 'automatic';
+                                return isAutomatic ? (
+                                  <DatabaseZap className="w-5 h-5 text-white" />
+                                ) : (
+                                  <Database className="w-5 h-5 text-white" />
+                                );
+                              } catch {
+                                return <Database className="w-5 h-5 text-white" />;
+                              }
+                            })()}
                           </div>
                         )}
                         {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && activity.activityType !== 'hospital_info_changed' && activity.activityType !== 'backup_created' && (
