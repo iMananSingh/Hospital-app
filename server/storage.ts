@@ -1997,7 +1997,7 @@ export class SqliteStorage implements IStorage {
       this.logActivity(
         userId,
         "patient_registered",
-        "New patient registered",
+        "New Patient Registered",
         `${patient.name} - ${patient.patientId}`,
         patient.id,
         "patient",
