@@ -970,7 +970,7 @@ export default function Settings() {
                         <div>
                           <div className="flex items-center gap-2">
                             <Label className="text-base">Email Notifications</Label>
-                            <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                            <Badge variant="outline" className="text-xs bg-fuchsia-700 text-white border-fuchsia-700">Coming Soon</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">Send email alerts for important events</p>
                         </div>
@@ -985,7 +985,7 @@ export default function Settings() {
                         <div>
                           <div className="flex items-center gap-2">
                             <Label className="text-base">SMS Notifications</Label>
-                            <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                            <Badge variant="outline" className="text-xs bg-fuchsia-700 text-white border-fuchsia-700">Coming Soon</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">Send SMS alerts to patients</p>
                         </div>
