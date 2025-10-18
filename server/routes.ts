@@ -2168,6 +2168,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
+      // Get current settings to compare changes
+      const currentSettings = await storage.getSystemSettings();
+      const newSettings = req.body;
+
+      // Track what changed
+      const changes: string[] = [];
+      
+      if (currentSettings.emailNotifications !== newSettings.emailNotifications) {
+        changes.push(`Email Notifications ${newSettings.emailNotifications ? 'enabled' : 'disabled'}`);
+      }
+      
+      if (currentSettings.smsNotifications !== newSettings.smsNotifications) {
+        changes.push(`SMS Notifications ${newSettings.smsNotifications ? 'enabled' : 'disabled'}`);
+      }
+      
+      if (currentSettings.autoBackup !== newSettings.autoBackup) {
+        changes.push(`Auto Backup ${newSettings.autoBackup ? 'enabled' : 'disabled'}`);
+      }
+      
+      if (currentSettings.auditLogging !== newSettings.auditLogging) {
+        changes.push(`Audit Logging ${newSettings.auditLogging ? 'enabled' : 'disabled'}`);
+      }
+      
+      if (currentSettings.timezone !== newSettings.timezone) {
+        changes.push(`System Timezone changed to ${newSettings.timezone}`);
+      }
+
       const settings = await storage.saveSystemSettings(req.body, req.user.id);
 
       // Update backup scheduler based on new settings
@@ -2175,6 +2202,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await backupScheduler.enableAutoBackup(settings.backupFrequency, settings.backupTime);
       } else {
         await backupScheduler.disableAutoBackup();
+      }
+
+      // Log activity if any changes were made
+      if (changes.length > 0) {
+        await storage.createActivity({
+          userId: req.user.id,
+          activityType: 'system_config_changed',
+          title: 'System Configuration Changed',
+          description: changes.join(', '),
+          entityId: settings.id,
+          entityType: 'system_settings',
+          metadata: JSON.stringify({
+            changes: changes,
+            updatedBy: req.user.username,
+          }),
+        });
       }
 
       res.json(settings);

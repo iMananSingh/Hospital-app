@@ -119,7 +119,7 @@ export default function Dashboard() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.stringify(patientData),
+        body: JSON.JSON.stringify(patientData),
       });
 
       if (!response.ok) {
@@ -587,9 +587,9 @@ export default function Dashboard() {
                         case 'user_deleted':
                           return { icon: 'X', color: 'bg-red-500' };
                         case 'payment_added':
-                          return { icon: 'payment_added', color: 'bg-green-700' };
+                          return { icon: 'payment_added', color: 'bg-emerald-700' };
                         case 'discount_added':
-                          return { icon: 'discount_added', color: 'bg-red-700' };
+                          return { icon: 'discount_added', color: 'bg-amber-700' };
                         case 'doctor_created':
                           return { icon: 'doctor_created', color: 'bg-green-800' };
                         case 'doctor_deleted':
@@ -603,10 +603,12 @@ export default function Dashboard() {
                           return { icon: 'patient_admitted', color: 'bg-green-700' };
                         case 'patient_discharged':
                           return { icon: 'patient_discharged', color: 'bg-red-700' };
+                        case 'system_config_changed':
+                          return { icon: 'system_config_changed', color: 'bg-purple-700' };
                         case 'room_type_created':
                         case 'room_type_updated':
                         case 'room_type_deleted':
-                          return { icon: 'RT', color: 'bg-green-500' };
+                          return { icon: 'R', color: 'bg-indigo-600' };
                         case 'room_created':
                         case 'room_updated':
                         case 'room_deleted':
@@ -616,7 +618,8 @@ export default function Dashboard() {
                         case 'service_deleted':
                           return { icon: 'SV', color: 'bg-pink-500' };
                         default:
-                          return { icon: 'A', color: 'bg-gray-500' };
+                          const firstLetter = type.charAt(0).toUpperCase();
+                          return { icon: firstLetter, color: 'bg-gray-600' };
                       }
                     };
 
@@ -713,7 +716,12 @@ export default function Dashboard() {
                             <ClipboardX className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && (
+                        {activity.activityType === 'system_config_changed' && (
+                          <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center">
+                            <ChevronsUpDown className="w-5 h-5 text-white" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
