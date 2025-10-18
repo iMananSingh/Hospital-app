@@ -2262,6 +2262,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const backup = await storage.createBackup(backupType, req.user.id);
       console.log(`Backup created successfully:`, backup);
 
+      // Log activity for manual backup creation
+      if (backupType === 'manual') {
+        await storage.createActivity({
+          userId: req.user.id,
+          activityType: 'backup_created',
+          title: 'Backup Created',
+          description: 'Manual Backup Created',
+          entityId: backup.backupId,
+          entityType: 'backup',
+          metadata: JSON.stringify({
+            backupId: backup.backupId,
+            fileName: backup.filePath ? backup.filePath.split('/').pop() : 'unknown',
+            fileSize: backup.fileSize,
+            createdBy: req.user.username,
+          }),
+        });
+      }
+
       res.json(backup);
     } catch (error) {
       console.error("Error creating backup:", error);
