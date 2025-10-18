@@ -108,8 +108,9 @@ export class BackupScheduler {
       console.log(`Backup details:`, JSON.stringify(backup, null, 2));
 
       // Log activity for automatic backup creation
+      // Use admin user ID for system-generated activities
       await storage.createActivity({
-        userId: 'system',
+        userId: 'admin-user-id',
         activityType: 'backup_created',
         title: 'Backup Created',
         description: 'Scheduled Backup Created',
