@@ -1684,7 +1684,7 @@ export class SqliteStorage implements IStorage {
 
       // Log activity BEFORE deleting (while user still exists)
       await this.logActivity(
-        "system",
+        userId,
         "user_deleted",
         "User Deactivated",
         `${userToDelete.fullName} (${userToDelete.username}) was deactivated`,
@@ -4416,12 +4416,12 @@ export class SqliteStorage implements IStorage {
       const backupPath = path.join(backupDir, backupFileName);
 
       console.log(`Creating backup using VACUUM INTO: ${backupPath}`);
-      
+
       // Use VACUUM INTO to create a complete database copy
       // This includes ALL tables, indexes, triggers, and data automatically
       const vacuumQuery = `VACUUM INTO '${backupPath}'`;
       console.log(`Executing: ${vacuumQuery}`);
-      
+
       db.$client.exec(vacuumQuery);
       console.log(`VACUUM INTO completed successfully`);
 
@@ -4432,7 +4432,7 @@ export class SqliteStorage implements IStorage {
 
       const fileStats = fs.statSync(backupPath);
       console.log(`Backup file size: ${fileStats.size} bytes`);
-      
+
       const endTime = new Date().toISOString();
 
       // Count total records across all tables for reporting
@@ -4600,147 +4600,92 @@ export class SqliteStorage implements IStorage {
   }
 
   async restoreBackup(backupFilePath: string, userId?: string): Promise<any> {
-    const startTime = new Date().toISOString();
-    const tempHistoryFile = "/tmp/backup_history_temp.json";
-
     try {
-      // Validate backup file exists
-      if (!fs.existsSync(backupFilePath)) {
-        throw new Error(`Backup file not found: ${backupFilePath}`);
-      }
-
-      // Only accept .db files
-      if (!backupFilePath.endsWith('.db')) {
-        throw new Error("Only .db backup files are supported. Please create a new backup.");
-      }
-
-      const fileStats = fs.statSync(backupFilePath);
-      if (fileStats.size === 0) {
-        throw new Error("Backup file is empty or corrupted");
-      }
-
       console.log(`Starting restore from: ${backupFilePath}`);
-      console.log(`File size: ${fileStats.size} bytes`);
+      const stats = fs.statSync(backupFilePath);
+      console.log(`File size: ${stats.size} bytes`);
 
-      // Step 1: Save current backup_logs to preserve complete history
+      // Step 1: Save current backup history to preserve it
       console.log("Saving current backup history...");
-      const currentBackupLogs = db.select().from(schema.backupLogs).all();
-      fs.writeFileSync(
-        tempHistoryFile,
-        JSON.stringify(currentBackupLogs, null, 2),
-        "utf8",
-      );
-      console.log(
-        `Saved ${currentBackupLogs.length} backup log entries to temp file`,
-      );
+      const currentBackupHistory = db.select().from(schema.backupLogs).all();
+      const tempHistoryFile = path.join(process.cwd(), 'backup-history-temp.json');
+      fs.writeFileSync(tempHistoryFile, JSON.stringify(currentBackupHistory, null, 2));
+      console.log(`Saved ${currentBackupHistory.length} backup log entries to temp file`);
 
-      // Step 2: Close database connection
+      // Step 2: Close the database connection
       console.log("Closing database connection...");
       db.$client.close();
 
-      // Step 3: Replace current database with backup file
-      const dbPath = path.join(process.cwd(), "hospital.db");
-      const dbBackupBeforeRestore = path.join(
-        process.cwd(),
-        `hospital-before-restore-${Date.now()}.db`,
-      );
-
-      // Create safety backup of current database before restore
+      // Step 3: Create a safety backup of the current database
       console.log("Creating safety backup of current database...");
-      fs.copyFileSync(dbPath, dbBackupBeforeRestore);
+      const safetyBackupPath = path.join(process.cwd(), `hospital-before-restore-${Date.now()}.db`);
+      fs.copyFileSync(dbPath, safetyBackupPath);
 
+      // Step 4: Restore the database file
       console.log("Restoring database from backup...");
       fs.copyFileSync(backupFilePath, dbPath);
       console.log("✓ Database file replaced successfully");
 
-      // Step 4: Reopen database connection
+      // Step 5: Reopen the database connection using ES module import
       console.log("Reopening database connection...");
-      const Database = require("better-sqlite3");
-      const newSqlite = new Database(dbPath);
-      const { drizzle } = await import("drizzle-orm/better-sqlite3");
+      const BetterSqlite = (await import('better-sqlite3')).default;
+      const newSqlite = new BetterSqlite(dbPath);
 
-      // Replace the global db instance
-      const newDb = drizzle(newSqlite, { schema });
+      // Replace the global sqlite instance
+      Object.assign(sqlite, newSqlite);
 
-      // Step 5: Merge backup history - combine old and new without duplicates
-      console.log("Merging backup history...");
-      const restoredBackupLogs = newDb.select().from(schema.backupLogs).all();
-      const savedBackupLogs = JSON.parse(
-        fs.readFileSync(tempHistoryFile, "utf8"),
-      );
+      // Recreate drizzle instance with new connection
+      const { drizzle } = await import('drizzle-orm/better-sqlite3');
+      Object.assign(db, drizzle(sqlite, { schema }));
 
-      // Create a map of existing backup IDs from restored database
-      const existingBackupIds = new Set(
-        restoredBackupLogs.map((log: any) => log.backupId),
-      );
+      console.log("✓ Database connection reopened successfully");
 
-      // Add only new backup logs that don't exist in restored database
-      let mergedCount = 0;
-      for (const log of savedBackupLogs) {
-        if (!existingBackupIds.has(log.backupId)) {
-          newDb.insert(schema.backupLogs).values(log).run();
-          mergedCount++;
+      // Step 6: Merge backup histories
+      console.log("Merging backup histories...");
+      const restoredHistory = db.select().from(schema.backupLogs).all();
+      const tempHistory = JSON.parse(fs.readFileSync(tempHistoryFile, 'utf-8'));
+
+      // Merge histories, avoiding duplicates based on backupId
+      const mergedHistory = [...restoredHistory];
+      const existingBackupIds = new Set(restoredHistory.map(h => h.backupId));
+
+      for (const entry of tempHistory) {
+        if (!existingBackupIds.has(entry.backupId)) {
+          db.insert(schema.backupLogs).values(entry).run();
+          mergedHistory.push(entry);
         }
       }
 
-      console.log(
-        `✓ Merged ${mergedCount} newer backup log entries into restored database`,
-      );
+      // Clean up temp file
+      fs.unlinkSync(tempHistoryFile);
 
-      // Step 6: Create restore log entry
-      const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE");
-      const restoreLog = {
-        backupId: restoreId,
-        status: "completed",
-        backupType: "restore",
-        filePath: backupFilePath,
-        startTime,
-        endTime: new Date().toISOString(),
-        fileSize: fileStats.size,
-        createdAt: startTime,
-      };
-
-      newDb.insert(schema.backupLogs).values(restoreLog).run();
-      console.log(`✓ Restore log created: ${restoreId}`);
-
-      // Step 7: Clean up temp file and safety backup
-      if (fs.existsSync(tempHistoryFile)) {
-        fs.unlinkSync(tempHistoryFile);
+      // Log activity
+      if (userId) {
+        this.logActivity(
+          userId,
+          'backup_restored',
+          'Backup Restored',
+          `Database restored from ${path.basename(backupFilePath)}`,
+          'backup',
+          'backup',
+          {
+            backupFile: path.basename(backupFilePath),
+            fileSize: stats.size,
+            mergedHistoryCount: mergedHistory.length,
+          }
+        );
       }
-      // Keep safety backup for a short time, then clean it up
-      setTimeout(() => {
-        if (fs.existsSync(dbBackupBeforeRestore)) {
-          fs.unlinkSync(dbBackupBeforeRestore);
-        }
-      }, 60000); // Delete after 1 minute
 
-      console.log(
-        "✓ Restore completed successfully. Application will restart to load the restored database...",
-      );
-
-      // Step 8: Exit process to trigger workflow restart with restored database
-      setTimeout(() => {
-        process.exit(0);
-      }, 1000);
+      console.log(`✓ Backup restored successfully. Merged ${mergedHistory.length} history entries.`);
 
       return {
-        restoreId,
-        status: "completed",
-        message:
-          "Restore completed successfully. Application is restarting...",
+        success: true,
+        message: "Backup restored successfully. The application has been updated with the restored database.",
+        backupFile: path.basename(backupFilePath),
+        historyEntriesRestored: mergedHistory.length,
       };
     } catch (error) {
       console.error("❌ Backup restore error:", error);
-
-      // Clean up temp file on error
-      try {
-        if (fs.existsSync(tempHistoryFile)) {
-          fs.unlinkSync(tempHistoryFile);
-        }
-      } catch (cleanupError) {
-        console.error("Failed to clean up temp file:", cleanupError);
-      }
-
       throw error;
     }
   }
@@ -5032,7 +4977,7 @@ export class SqliteStorage implements IStorage {
           a.entity_type as entityType,
           a.metadata,
           a.created_at as createdAt,
-          CASE 
+          CASE
             WHEN a.user_id = 'system' THEN 'System'
             ELSE COALESCE(u.full_name, 'Deleted User')
           END as userName
