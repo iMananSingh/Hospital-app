@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super users can delete administrator accounts" });
       }
 
-      const deleted = await storage.deleteUser(id);
+      const deleted = await storage.deleteUser(id, req.user.id);
       if (!deleted) {
         return res.status(404).json({ message: "User not found" });
       }

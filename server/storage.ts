@@ -1669,7 +1669,7 @@ export class SqliteStorage implements IStorage {
     return undefined;
   }
 
-  async deleteUser(id: string): Promise<User | undefined> {
+  async deleteUser(id: string, userId?: string): Promise<User | undefined> {
     try {
       // Soft delete: mark user as inactive and append timestamp to username
       const userToDelete = db
@@ -1683,19 +1683,21 @@ export class SqliteStorage implements IStorage {
       }
 
       // Log activity BEFORE deleting (while user still exists)
-      await this.logActivity(
-        userId,
-        "user_deleted",
-        "User Deactivated",
-        `${userToDelete.fullName} (${userToDelete.username}) was deactivated`,
-        userToDelete.id,
-        "user",
-        {
-          username: userToDelete.username,
-          fullName: userToDelete.fullName,
-          roles: JSON.parse(userToDelete.roles),
-        },
-      );
+      if (userId) {
+        await this.logActivity(
+          userId,
+          "user_deleted",
+          "User Deactivated",
+          `${userToDelete.fullName} (${userToDelete.username}) was deactivated`,
+          userToDelete.id,
+          "user",
+          {
+            username: userToDelete.username,
+            fullName: userToDelete.fullName,
+            roles: JSON.parse(userToDelete.roles),
+          },
+        );
+      }
 
       // Append timestamp to username to free it up for reuse
       const timestamp = Date.now();
