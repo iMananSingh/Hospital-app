@@ -1,6 +1,6 @@
 -- Hospital Management System Database Backup
--- Created: 2025-10-18T20:34:00.080Z
--- Backup ID: BACKUP-2025-005
+-- Created: 2025-10-19T04:50:21.557Z
+-- Backup ID: BACKUP-2025-006
 
 -- Table: users
 DELETE FROM users;
@@ -130,7 +130,7 @@ INSERT INTO hospital_settings (id, name, address, phone, email, logo_path, creat
 
 -- Table: system_settings
 DELETE FROM system_settings;
-INSERT INTO system_settings (id, email_notifications, sms_notifications, auto_backup, audit_logging, backup_frequency, backup_time, last_backup_date, backup_retention_days, created_at, updated_at, timezone, timezone_offset) VALUES ('p4isf6r3g8jmglbn189', 0, 0, 1, 0, 'daily', '02:04', '2025-10-18', 30, '2025-10-10T20:51:07.642Z', '2025-10-18T20:33:30.958Z', 'Asia/Kolkata', '+05:30');
+INSERT INTO system_settings (id, email_notifications, sms_notifications, auto_backup, audit_logging, backup_frequency, backup_time, last_backup_date, backup_retention_days, created_at, updated_at, timezone, timezone_offset) VALUES ('p4isf6r3g8jmglbn189', 0, 0, 1, 0, 'daily', '02:04', '2025-10-18', 30, '2025-10-10T20:51:07.642Z', '2025-10-18T20:34:00.116Z', 'Asia/Kolkata', '+05:30');
 
 -- Table: room_types
 DELETE FROM room_types;
