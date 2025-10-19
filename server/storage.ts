@@ -4610,34 +4610,13 @@ export class SqliteStorage implements IStorage {
       const stats = fs.statSync(backupFilePath);
       console.log(`File size: ${stats.size} bytes`);
 
-      // Create a safety backup of current database before restore in backups folder
-      const backupsDir = path.join(process.cwd(), "backups");
+      // Create a safety backup before restore
       const safetyBackupPath = path.join(
-        backupsDir,
-        `hospital-before-restore-${Date.now()}.db`,
+        process.cwd(),
+        `hospital-before-restore-${Date.now()}.db`
       );
-      console.log(`Created safety backup at: ${safetyBackupPath}`);
       fs.copyFileSync(dbPath, safetyBackupPath);
-
-      // Clean up old safety backups (keep only the last 3)
-      try {
-        const safetyBackups = fs.readdirSync(backupsDir)
-          .filter(file => file.startsWith('hospital-before-restore-'))
-          .map(file => ({
-            name: file,
-            path: path.join(backupsDir, file),
-            time: fs.statSync(path.join(backupsDir, file)).mtime.getTime()
-          }))
-          .sort((a, b) => b.time - a.time);
-
-        // Remove all but the 3 most recent
-        for (let i = 3; i < safetyBackups.length; i++) {
-          fs.unlinkSync(safetyBackups[i].path);
-          console.log(`Removed old safety backup: ${safetyBackups[i].name}`);
-        }
-      } catch (cleanupError) {
-        console.error('Error cleaning up old safety backups:', cleanupError);
-      }
+      console.log(`Created safety backup at: ${safetyBackupPath}`);
 
       // 1. Save current backup history BEFORE closing database
       console.log("Saving current backup history...");
