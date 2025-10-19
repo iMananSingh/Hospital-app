@@ -4387,7 +4387,7 @@ export class SqliteStorage implements IStorage {
     return `BACKUP-${year}-${count.toString().padStart(3, "0")}`;
   }
 
-  async createBackup(backupType: string = "auto"): Promise<any> {
+  async createBackup(backupType: string = "auto", userId?: string): Promise<any> {
     const backupId = this.generateBackupId();
     const startTime = new Date().toISOString();
 
@@ -4407,53 +4407,45 @@ export class SqliteStorage implements IStorage {
       const backupDir = path.join(process.cwd(), "backups");
       if (!fs.existsSync(backupDir)) {
         fs.mkdirSync(backupDir, { recursive: true });
+        console.log(`Created backups directory: ${backupDir}`);
       }
 
-      // Generate backup filename with timestamp
+      // Generate backup filename with timestamp (ONLY .db format)
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const backupPath = path.join(
-        backupDir,
-        `hospital-backup-${timestamp}.db`,
-      );
+      const backupFileName = `hospital-backup-${timestamp}.db`;
+      const backupPath = path.join(backupDir, backupFileName);
 
-      // Use VACUUM INTO to create a clean, optimized copy of the entire database
-      // This automatically includes ALL tables, indexes, triggers, and data
       console.log(`Creating backup using VACUUM INTO: ${backupPath}`);
-      db.$client.exec(`VACUUM INTO '${backupPath}'`);
+      
+      // Use VACUUM INTO to create a complete database copy
+      // This includes ALL tables, indexes, triggers, and data automatically
+      const vacuumQuery = `VACUUM INTO '${backupPath}'`;
+      console.log(`Executing: ${vacuumQuery}`);
+      
+      db.$client.exec(vacuumQuery);
+      console.log(`VACUUM INTO completed successfully`);
+
+      // Verify the file was created
+      if (!fs.existsSync(backupPath)) {
+        throw new Error(`Backup file was not created at ${backupPath}`);
+      }
 
       const fileStats = fs.statSync(backupPath);
+      console.log(`Backup file size: ${fileStats.size} bytes`);
+      
       const endTime = new Date().toISOString();
 
       // Count total records across all tables for reporting
       let totalRecords = 0;
       const tables = [
-        "users",
-        "doctors",
-        "patients",
-        "patient_visits",
-        "services",
-        "bills",
-        "bill_items",
-        "pathology_orders",
-        "pathology_tests",
-        "patient_services",
-        "admissions",
-        "admission_events",
-        "hospital_settings",
-        "system_settings",
-        "room_types",
-        "rooms",
-        "backup_logs",
-        "audit_log",
-        "activities",
-        "patient_payments",
-        "patient_discounts",
-        "pathology_categories",
-        "dynamic_pathology_tests",
-        "service_categories",
-        "doctor_service_rates",
-        "doctor_earnings",
-        "doctor_payments",
+        "users", "doctors", "patients", "patient_visits", "services",
+        "bills", "bill_items", "pathology_orders", "pathology_tests",
+        "patient_services", "admissions", "admission_events",
+        "hospital_settings", "system_settings", "room_types", "rooms",
+        "backup_logs", "audit_log", "activities", "patient_payments",
+        "patient_discounts", "pathology_categories", "dynamic_pathology_tests",
+        "service_categories", "doctor_service_rates", "doctor_earnings",
+        "doctor_payments", "schedule_events"
       ];
 
       for (const tableName of tables) {
@@ -4463,13 +4455,11 @@ export class SqliteStorage implements IStorage {
             .get() as { count: number };
           totalRecords += result.count;
         } catch (tableError) {
-          // Table might not exist, skip it
+          console.warn(`Could not count records in table ${tableName}:`, tableError);
         }
       }
 
-      console.log(
-        `Backup file created: ${backupPath} (${fileStats.size} bytes, ${totalRecords} total records)`,
-      );
+      console.log(`Total records backed up: ${totalRecords} across ${tables.length} tables`);
 
       // Update backup log with success
       db.update(schema.backupLogs)
@@ -4484,7 +4474,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.backupLogs.backupId, backupId))
         .run();
 
-      console.log(`Backup log updated for ${backupId} with status: completed`);
+      console.log(`✓ Backup completed successfully: ${backupId}`);
 
       // Update system settings with last backup date
       const systemSettings = await this.getSystemSettings();
@@ -4498,12 +4488,14 @@ export class SqliteStorage implements IStorage {
       return {
         backupId,
         filePath: backupPath,
+        fileName: backupFileName,
         fileSize: fileStats.size,
         recordCount: totalRecords,
+        tableCount: tables.length,
         status: "completed",
       };
     } catch (error) {
-      console.error("Backup creation error:", error);
+      console.error("❌ Backup creation error:", error);
 
       // Update backup log with failure
       db.update(schema.backupLogs)
@@ -4607,14 +4599,19 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  async restoreBackup(backupFilePath: string): Promise<any> {
+  async restoreBackup(backupFilePath: string, userId?: string): Promise<any> {
     const startTime = new Date().toISOString();
     const tempHistoryFile = "/tmp/backup_history_temp.json";
 
     try {
       // Validate backup file exists
       if (!fs.existsSync(backupFilePath)) {
-        throw new Error("Backup file not found");
+        throw new Error(`Backup file not found: ${backupFilePath}`);
+      }
+
+      // Only accept .db files
+      if (!backupFilePath.endsWith('.db')) {
+        throw new Error("Only .db backup files are supported. Please create a new backup.");
       }
 
       const fileStats = fs.statSync(backupFilePath);
@@ -4623,17 +4620,7 @@ export class SqliteStorage implements IStorage {
       }
 
       console.log(`Starting restore from: ${backupFilePath}`);
-
-      // Determine if this is a legacy SQL dump (.sql) or new database file (.db)
-      const isLegacySqlDump = backupFilePath.endsWith('.sql');
-
-      if (isLegacySqlDump) {
-        console.log("Detected legacy SQL dump format - using SQL restore method");
-        return await this.restoreLegacySqlBackup(backupFilePath, startTime);
-      }
-
-      // New file-based restore for .db backups
-      console.log("Detected database file format - using file-based restore method");
+      console.log(`File size: ${fileStats.size} bytes`);
 
       // Step 1: Save current backup_logs to preserve complete history
       console.log("Saving current backup history...");
@@ -4664,7 +4651,7 @@ export class SqliteStorage implements IStorage {
 
       console.log("Restoring database from backup...");
       fs.copyFileSync(backupFilePath, dbPath);
-      console.log("Database file replaced successfully");
+      console.log("✓ Database file replaced successfully");
 
       // Step 4: Reopen database connection
       console.log("Reopening database connection...");
@@ -4697,7 +4684,7 @@ export class SqliteStorage implements IStorage {
       }
 
       console.log(
-        `Merged ${mergedCount} newer backup log entries into restored database`,
+        `✓ Merged ${mergedCount} newer backup log entries into restored database`,
       );
 
       // Step 6: Create restore log entry
@@ -4714,7 +4701,7 @@ export class SqliteStorage implements IStorage {
       };
 
       newDb.insert(schema.backupLogs).values(restoreLog).run();
-      console.log(`Restore log created: ${restoreId}`);
+      console.log(`✓ Restore log created: ${restoreId}`);
 
       // Step 7: Clean up temp file and safety backup
       if (fs.existsSync(tempHistoryFile)) {
@@ -4728,7 +4715,7 @@ export class SqliteStorage implements IStorage {
       }, 60000); // Delete after 1 minute
 
       console.log(
-        "Restore completed successfully. Application will restart to load the restored database...",
+        "✓ Restore completed successfully. Application will restart to load the restored database...",
       );
 
       // Step 8: Exit process to trigger workflow restart with restored database
@@ -4743,7 +4730,7 @@ export class SqliteStorage implements IStorage {
           "Restore completed successfully. Application is restarting...",
       };
     } catch (error) {
-      console.error("Backup restore error:", error);
+      console.error("❌ Backup restore error:", error);
 
       // Clean up temp file on error
       try {
@@ -4758,126 +4745,22 @@ export class SqliteStorage implements IStorage {
     }
   }
 
-  private async restoreLegacySqlBackup(backupFilePath: string, startTime: string): Promise<any> {
-    console.log("Note: SQL dump restore is deprecated. New backups use database file format for better reliability.");
-    
-    try {
-      // Read backup file content
-      const backupContent = fs.readFileSync(backupFilePath, "utf8");
-
-      if (!backupContent || backupContent.trim().length === 0) {
-        throw new Error("Backup file is empty or corrupted");
-      }
-
-      // Create a restore log entry
-      const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE");
-      const restoreLog = {
-        backupId: restoreId,
-        status: "running",
-        backupType: "restore",
-        filePath: backupFilePath,
-        startTime,
-        createdAt: startTime,
-      };
-
-      db.insert(schema.backupLogs).values(restoreLog).run();
-
-      // For SQL dumps, we need to disable foreign keys before restore
-      db.$client.exec("PRAGMA foreign_keys = OFF;");
-
-      // Execute statements directly using the SQLite client
-      const statements = backupContent
-        .split(";")
-        .map((stmt) => stmt.trim())
-        .filter((stmt) => stmt && !stmt.startsWith("--")); // Filter out comments
-
-      let executedStatements = 0;
-      let failedStatements = 0;
-
-      for (const statement of statements) {
-        try {
-          db.$client.exec(statement + ";");
-          executedStatements++;
-        } catch (stmtError) {
-          console.warn(
-            `Warning: Failed to execute statement: ${statement.substring(0, 100)}...`,
-            stmtError,
-          );
-          failedStatements++;
-        }
-      }
-
-      // Re-enable foreign keys
-      db.$client.exec("PRAGMA foreign_keys = ON;");
-
-      // Update restore log with success or partial success
-      const finalStatus =
-        failedStatements === 0
-          ? "completed"
-          : "partially_completed";
-      
-      db.update(schema.backupLogs)
-        .set({
-          status: finalStatus,
-          endTime: new Date().toISOString(),
-          recordCount: executedStatements,
-          errorMessage:
-            failedStatements > 0
-              ? `${failedStatements} statements failed during restore. Consider creating a new backup using the current system.`
-              : null,
-        })
-        .where(eq(schema.backupLogs.backupId, restoreId))
-        .run();
-
-      return {
-        restoreId,
-        executedStatements,
-        failedStatements,
-        status: finalStatus,
-        message: failedStatements > 0 
-          ? "Restore completed with some errors. Legacy SQL format may not restore all data correctly. Please verify and create a new backup."
-          : "Legacy SQL backup restored successfully. Consider creating a new backup using the current system."
-      };
-    } catch (error) {
-      console.error("Legacy SQL backup restore error:", error);
-
-      // Attempt to update restore log with failure
-      try {
-        const restoreId = this.generateBackupId().replace("BACKUP", "RESTORE");
-        db.update(schema.backupLogs)
-          .set({
-            status: "failed",
-            endTime: new Date().toISOString(),
-            errorMessage:
-              error instanceof Error
-                ? error.message
-                : "Unknown error during restore",
-          })
-          .where(eq(schema.backupLogs.backupId, restoreId))
-          .run();
-      } catch (logError) {
-        console.error("Failed to update restore log:", logError);
-      }
-
-      throw error;
-    }
-  }
-
   async getAvailableBackups(): Promise<any[]> {
     try {
       const backupDir = path.join(process.cwd(), "backups");
 
       if (!fs.existsSync(backupDir)) {
+        console.log("Backups directory does not exist, creating it...");
+        fs.mkdirSync(backupDir, { recursive: true });
         return [];
       }
 
       const files = fs
         .readdirSync(backupDir)
-        .filter((file) => file.endsWith(".db") || file.endsWith(".sql"))
+        .filter((file) => file.endsWith(".db")) // Only .db files
         .map((file) => {
           const filePath = path.join(backupDir, file);
           const stats = fs.statSync(filePath);
-          const isLegacy = file.endsWith(".sql");
 
           // Get backup log info if available by matching file path
           const backupLog = db
@@ -4899,7 +4782,6 @@ export class SqliteStorage implements IStorage {
             createdAt: backupLog?.createdAt || stats.birthtime.toISOString(),
             modifiedAt: stats.mtime.toISOString(),
             backupLog: backupLog || null,
-            isLegacy,
           };
         })
         .sort(
@@ -4908,7 +4790,7 @@ export class SqliteStorage implements IStorage {
         );
 
       console.log(
-        `Found ${files.length} backup files (${files.filter((f) => !f.isLegacy).length} new format, ${files.filter((f) => f.isLegacy).length} legacy), ${files.filter((f) => f.backupLog).length} with logs`,
+        `Found ${files.length} backup files (.db format), ${files.filter((f) => f.backupLog).length} with logs`,
       );
       return files;
     } catch (error) {

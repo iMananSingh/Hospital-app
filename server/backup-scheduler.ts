@@ -103,7 +103,7 @@ export class BackupScheduler {
       }
 
       console.log('Creating automatic backup...');
-      const backup = await storage.createBackup('auto');
+      const backup = await storage.createBackup('auto', 'admin-user-id');
       console.log(`Automatic backup completed: ${backup.backupId}`);
       console.log(`Backup details:`, JSON.stringify(backup, null, 2));
 
