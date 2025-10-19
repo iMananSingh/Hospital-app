@@ -92,8 +92,8 @@ export interface BillFilters {
 
 // Initialize SQLite database
 const dbPath = path.join(process.cwd(), "hospital.db");
-const sqlite = new Database(dbPath);
-export const db = drizzle(sqlite, { schema });
+let sqlite = new Database(dbPath);
+let db = drizzle(sqlite, { schema });
 
 // Initialize database with tables
 async function initializeDatabase() {
@@ -1207,9 +1207,6 @@ export interface IStorage {
   recalculateDoctorEarnings(
     doctorId?: string,
   ): Promise<{ processed: number; created: number }>;
-
-  // New function for bulk pending bills
-  getAllPatientsPendingBills(): Promise<any[]>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -4632,76 +4629,28 @@ export class SqliteStorage implements IStorage {
       console.log("Closing database connection...");
       sqlite.close();
 
-      // 3. Replace the database file
+      // Step 3: Replace the database file
       console.log("Replacing database file...");
       fs.copyFileSync(backupFilePath, dbPath);
 
-      // 4. Log the restore operation BEFORE reopening
-      const restoreLogEntry = {
-        backupId: `RESTORE-${Date.now()}`,
-        status: "completed",
-        backupType: "restore",
-        filePath: backupFilePath,
-        fileSize: stats.size,
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        tableCount: null,
-        recordCount: null,
-      };
+      // Step 4: The database connection will be reopened when the application restarts
+      console.log("Database file replaced successfully.");
 
-      // 5. Reopen the database connection
-      console.log("Reopening database connection...");
-      const newSqlite = new Database(dbPath);
-      const newDb = drizzle(newSqlite, { schema });
+      console.log("✓ Backup restored successfully");
+      console.log(
+        `Database restored from ${backupFilePath}. Application will restart to load the restored database.`,
+      );
 
-      // 6. Restore backup history (merge with existing)
-      console.log("Restoring backup history...");
-      const restoredHistory = newDb.select().from(schema.backupLogs).all();
-
-      // Merge histories - add current history entries that don't exist in restored backup
-      for (const historyEntry of currentBackupHistory) {
-        const exists = restoredHistory.some(
-          (entry) => entry.backupId === historyEntry.backupId,
-        );
-        if (!exists) {
-          newDb.insert(schema.backupLogs).values(historyEntry).run();
-        }
-      }
-
-      // Insert the restore log entry
-      newDb.insert(schema.backupLogs).values(restoreLogEntry).run();
-
-      // Update global variables to use the new database instance
-      Object.assign(sqlite, newSqlite); // Assign properties from newSqlite to the global sqlite
-      Object.assign(db, newDb); // Assign properties from newDb to the global db
-
-      console.log("✅ Backup restored successfully");
-
-      // Log activity for restore (create directly in the database)
-      if (userId) {
-        try {
-          newDb.insert(schema.activities).values({
-            userId: userId,
-            activityType: "backup_restored",
-            title: "Backup Restored",
-            description: `Database restored from ${path.basename(backupFilePath)}`,
-            entityId: restoreLogEntry.backupId,
-            entityType: "backup",
-            metadata: JSON.stringify({
-              backupFilePath,
-              fileSize: stats.size,
-            }),
-            createdAt: new Date().toISOString(),
-          }).run();
-        } catch (activityError) {
-          console.error("Failed to log restore activity:", activityError);
-        }
-      }
+      // Trigger application restart after a short delay
+      setTimeout(() => {
+        console.log("Restarting application to load restored database...");
+        process.exit(0); // Exit cleanly - the process manager will restart the app
+      }, 1000);
 
       return {
         success: true,
-        message: "Backup restored successfully. Please refresh the page to reload the application.",
-        backupPath: backupFilePath,
+        message: "Backup restored successfully. Application will restart.",
+        backupFilePath,
       };
     } catch (error) {
       console.error("❌ Backup restore error:", error);
