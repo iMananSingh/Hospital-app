@@ -562,13 +562,50 @@ export default function Settings() {
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description:
-          "Backup restored successfully. Please refresh the page to see changes.",
+        title: "Restoring backup...",
+        description: "Application will restart automatically. Please wait...",
       });
       setShowRestoreDialog(false);
       setSelectedBackupFile("");
-      refetchBackupHistory();
+
+      // Poll for server restart and auto-refresh
+      let pollAttempts = 0;
+      const maxPollAttempts = 30; // 30 seconds max wait
+      
+      const pollServer = setInterval(async () => {
+        pollAttempts++;
+        
+        try {
+          // Try to ping the server
+          const healthCheck = await fetch("/api/users/me", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+            },
+          });
+          
+          if (healthCheck.ok) {
+            // Server is back online, reload the page
+            clearInterval(pollServer);
+            toast({
+              title: "Restore complete!",
+              description: "Refreshing application...",
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          }
+        } catch (error) {
+          // Server still down, continue polling
+          if (pollAttempts >= maxPollAttempts) {
+            clearInterval(pollServer);
+            toast({
+              title: "Please refresh manually",
+              description: "The server took longer than expected to restart.",
+              variant: "destructive",
+            });
+          }
+        }
+      }, 1000); // Check every second
     },
     onError: (error: Error) => {
       toast({
