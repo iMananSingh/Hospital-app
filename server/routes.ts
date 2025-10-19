@@ -2367,8 +2367,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Backup file path is required" });
       }
 
-      const result = await storage.restoreBackup(backupFilePath, req.user.id);
-      res.json(result);
+      // Send response immediately, then restore in background
+      res.json({
+        success: true,
+        message: "Backup restore initiated. Application will restart shortly."
+      });
+
+      // Perform restore after response is sent
+      setImmediate(async () => {
+        try {
+          await storage.restoreBackup(backupFilePath);
+        } catch (error) {
+          console.error("Background restore error:", error);
+        }
+      });
     } catch (error) {
       console.error("Error restoring backup:", error);
       res.status(500).json({

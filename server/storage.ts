@@ -4619,7 +4619,7 @@ export class SqliteStorage implements IStorage {
       console.log(`Created safety backup at: ${safetyBackupPath}`);
       fs.copyFileSync(dbPath, safetyBackupPath);
 
-      // Clean up old safety backups (keep only the last 3)
+      // Clean up old safety backups (keep only the 3 most recent)
       try {
         const safetyBackups = fs.readdirSync(backupsDir)
           .filter(file => file.startsWith('hospital-before-restore-'))
@@ -4644,37 +4644,72 @@ export class SqliteStorage implements IStorage {
       const currentBackupHistory = db
         .select()
         .from(schema.backupLogs)
+        .orderBy(desc(schema.backupLogs.createdAt))
         .all();
 
-      // 2. Close the database connection
-      console.log("Closing database connection...");
+      // 2. Close current database connection
+      console.log("Closing current database connection...");
+      db.$client.close();
       sqlite.close();
 
-      // Step 3: Replace the database file
-      console.log("Replacing database file...");
+      // 3. Replace database file with backup
+      console.log("Replacing database file with backup...");
       fs.copyFileSync(backupFilePath, dbPath);
 
-      // Step 4: The database connection will be reopened when the application restarts
-      console.log("Database file replaced successfully.");
+      // 4. Open new database connection
+      console.log("Opening new database connection...");
+      sqlite = new Database(dbPath);
+      db = drizzle(sqlite, { schema });
+
+      // 5. Restore backup history
+      console.log("Restoring backup history...");
+      for (const log of currentBackupHistory) {
+        try {
+          db.insert(schema.backupLogs)
+            .values({
+              ...log,
+              id: undefined, // Let database generate new IDs
+            })
+            .run();
+        } catch (error) {
+          console.error("Error restoring backup log:", error);
+        }
+      }
+
+      // 6. Log the restore operation
+      console.log("Logging restore operation...");
+      await this.createBackupLog({
+        backupId: `RESTORE-${Date.now()}`,
+        status: "completed",
+        backupType: "restore",
+        filePath: backupFilePath,
+        fileSize: fs.statSync(backupFilePath).size,
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+      });
 
       console.log("✓ Backup restored successfully");
-      console.log(
-        `Database restored from ${backupFilePath}. Application will restart to load the restored database.`,
-      );
 
-      // Trigger application restart after a short delay
+      // 7. Close database connection before restart
+      console.log("Closing database connection before restart...");
+      db.$client.close();
+      sqlite.close();
+
+      // 8. Schedule application restart immediately
+      console.log("Triggering application restart...");
       setTimeout(() => {
-        console.log("Restarting application to load restored database...");
-        process.exit(0); // Exit cleanly - the process manager will restart the app
-      }, 1000);
+        console.log("Restarting application now...");
+        process.exit(0);
+      }, 100);
 
       return {
         success: true,
         message: "Backup restored successfully. Application will restart.",
-        backupFilePath,
+        backupFile: backupFilePath,
       };
     } catch (error) {
       console.error("❌ Backup restore error:", error);
+      console.error("Error restoring backup:", error);
       throw error;
     }
   }
