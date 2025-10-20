@@ -62,6 +62,7 @@ import {
   Check,
   ChevronsUpDown,
   FileText,
+  Eye,
 } from "lucide-react";
 import {
   insertServiceSchema,
@@ -1830,7 +1831,7 @@ export default function Settings() {
                                   size="sm"
                                   onClick={() => setSelectedAuditLog(log)}
                                 >
-                                  <Edit className="w-4 h-4" />
+                                  <Eye className="w-4 h-4" />
                                 </Button>
                               </TableCell>
                             </TableRow>
