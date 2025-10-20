@@ -376,14 +376,33 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS audit_log (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         user_id TEXT NOT NULL REFERENCES users(id),
+        username TEXT NOT NULL,
         action TEXT NOT NULL,
         table_name TEXT NOT NULL,
         record_id TEXT NOT NULL,
         old_values TEXT,
         new_values TEXT,
+        changed_fields TEXT,
         ip_address TEXT,
         user_agent TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_log_backup (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        username TEXT NOT NULL,
+        action TEXT NOT NULL,
+        table_name TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        old_values TEXT,
+        new_values TEXT,
+        changed_fields TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        fiscal_year TEXT NOT NULL,
+        archived_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS system_settings (
@@ -396,6 +415,10 @@ async function initializeDatabase() {
         backup_time TEXT NOT NULL DEFAULT '02:00',
         last_backup_date TEXT,
         backup_retention_days INTEGER NOT NULL DEFAULT 30,
+        fiscal_year_start_month INTEGER NOT NULL DEFAULT 4,
+        fiscal_year_start_day INTEGER NOT NULL DEFAULT 1,
+        audit_log_retention_years INTEGER NOT NULL DEFAULT 7,
+        last_audit_archive_date TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -747,6 +770,145 @@ async function initializeDatabase() {
       console.log("Added timezone_offset column to system_settings table");
     } catch (error) {
       // Column already exists, ignore error
+    }
+
+    // Add fiscal year columns to system_settings table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN fiscal_year_start_month INTEGER DEFAULT 4;
+      `);
+      console.log("Added fiscal_year_start_month column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN fiscal_year_start_day INTEGER DEFAULT 1;
+      `);
+      console.log("Added fiscal_year_start_day column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN audit_log_retention_years INTEGER DEFAULT 7;
+      `);
+      console.log("Added audit_log_retention_years column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN last_audit_archive_date TEXT;
+      `);
+      console.log("Added last_audit_archive_date column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add new columns to audit_log table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE audit_log ADD COLUMN username TEXT DEFAULT '';
+      `);
+      console.log("Added username column to audit_log table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE audit_log ADD COLUMN changed_fields TEXT;
+      `);
+      console.log("Added changed_fields column to audit_log table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Create indexes for audit_log table for better query performance
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+      `);
+      console.log("Created index on audit_log.user_id");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_table_name ON audit_log(table_name);
+      `);
+      console.log("Created index on audit_log.table_name");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+      `);
+      console.log("Created index on audit_log.action");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at);
+      `);
+      console.log("Created index on audit_log.created_at");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_record_id ON audit_log(record_id);
+      `);
+      console.log("Created index on audit_log.record_id");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    // Create indexes for audit_log_backup table
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_backup_user_id ON audit_log_backup(user_id);
+      `);
+      console.log("Created index on audit_log_backup.user_id");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_backup_table_name ON audit_log_backup(table_name);
+      `);
+      console.log("Created index on audit_log_backup.table_name");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_backup_fiscal_year ON audit_log_backup(fiscal_year);
+      `);
+      console.log("Created index on audit_log_backup.fiscal_year");
+    } catch (error) {
+      // Index already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        CREATE INDEX IF NOT EXISTS idx_audit_log_backup_created_at ON audit_log_backup(created_at);
+      `);
+      console.log("Created index on audit_log_backup.created_at");
+    } catch (error) {
+      // Index already exists, ignore error
     }
 
     // Always ensure demo users and data exist on every restart
@@ -4386,6 +4548,10 @@ export class SqliteStorage implements IStorage {
           backupTime: "02:00",
           lastBackupDate: null,
           backupRetentionDays: 30,
+          fiscalYearStartMonth: 4,
+          fiscalYearStartDay: 1,
+          auditLogRetentionYears: 7,
+          lastAuditArchiveDate: null,
           timezone: "UTC",
           timezoneOffset: "+00:00",
           createdAt: new Date().toISOString(),
@@ -6406,6 +6572,377 @@ export class SqliteStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching patients with pending bills:", error);
       return [];
+    }
+  }
+
+  // ============ AUDIT LOGGING METHODS ============
+
+  /**
+   * Check if audit logging is enabled in system settings
+   */
+  async isAuditLoggingEnabled(): Promise<boolean> {
+    try {
+      const settings = await this.getSystemSettings();
+      return settings?.auditLogging === true;
+    } catch (error) {
+      console.error("Error checking audit logging status:", error);
+      return false; // Default to disabled on error
+    }
+  }
+
+  /**
+   * Helper function to compare old and new values and identify changed fields
+   */
+  private getChangedFields(
+    oldValues: any,
+    newValues: any
+  ): { changedFields: string[]; oldData: any; newData: any } {
+    const changed: string[] = [];
+    const oldData: any = {};
+    const newData: any = {};
+
+    // Get all unique keys from both objects
+    const allKeys = new Set([
+      ...Object.keys(oldValues || {}),
+      ...Object.keys(newValues || {}),
+    ]);
+
+    for (const key of allKeys) {
+      // Skip metadata fields
+      if (["createdAt", "updatedAt", "id"].includes(key)) {
+        continue;
+      }
+
+      const oldVal = oldValues?.[key];
+      const newVal = newValues?.[key];
+
+      // Compare values (handle null/undefined)
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        changed.push(key);
+        oldData[key] = oldVal;
+        newData[key] = newVal;
+      }
+    }
+
+    return {
+      changedFields: changed,
+      oldData,
+      newData,
+    };
+  }
+
+  /**
+   * Create an audit log entry
+   */
+  async createAuditLog(params: {
+    userId: string;
+    username: string;
+    action: "create" | "update" | "delete" | "view";
+    tableName: string;
+    recordId: string;
+    oldValues?: any;
+    newValues?: any;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    try {
+      // Check if audit logging is enabled
+      const isEnabled = await this.isAuditLoggingEnabled();
+      if (!isEnabled) {
+        return; // Silently skip if disabled
+      }
+
+      const { changedFields, oldData, newData } = this.getChangedFields(
+        params.oldValues,
+        params.newValues
+      );
+
+      // Insert audit log
+      db.insert(schema.auditLog)
+        .values({
+          userId: params.userId,
+          username: params.username,
+          action: params.action,
+          tableName: params.tableName,
+          recordId: params.recordId,
+          oldValues: params.oldValues
+            ? JSON.stringify(oldData)
+            : null,
+          newValues: params.newValues
+            ? JSON.stringify(newData)
+            : null,
+          changedFields: changedFields.length > 0
+            ? JSON.stringify(changedFields)
+            : null,
+          ipAddress: params.ipAddress || null,
+          userAgent: params.userAgent || null,
+        })
+        .run();
+
+      console.log(
+        `Audit log created: ${params.action} on ${params.tableName} by ${params.username}`
+      );
+    } catch (error) {
+      // Log error but don't throw - audit logging should not break the app
+      console.error("Error creating audit log:", error);
+    }
+  }
+
+  /**
+   * Get audit logs with optional filters
+   */
+  async getAuditLogs(filters: {
+    userId?: string;
+    tableName?: string;
+    action?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ logs: AuditLog[]; total: number }> {
+    try {
+      const whereConditions: any[] = [];
+
+      if (filters.userId) {
+        whereConditions.push(eq(schema.auditLog.userId, filters.userId));
+      }
+
+      if (filters.tableName) {
+        whereConditions.push(eq(schema.auditLog.tableName, filters.tableName));
+      }
+
+      if (filters.action) {
+        whereConditions.push(eq(schema.auditLog.action, filters.action));
+      }
+
+      if (filters.startDate) {
+        whereConditions.push(
+          sql`${schema.auditLog.createdAt} >= ${filters.startDate}`
+        );
+      }
+
+      if (filters.endDate) {
+        whereConditions.push(
+          sql`${schema.auditLog.createdAt} <= ${filters.endDate}`
+        );
+      }
+
+      // Get total count
+      const countQuery =
+        whereConditions.length > 0
+          ? db
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.auditLog)
+              .where(and(...whereConditions))
+          : db
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.auditLog);
+
+      const countResult = countQuery.get();
+      const total = countResult?.count || 0;
+
+      // Get logs with pagination
+      const query =
+        whereConditions.length > 0
+          ? db
+              .select()
+              .from(schema.auditLog)
+              .where(and(...whereConditions))
+          : db.select().from(schema.auditLog);
+
+      const logs = query
+        .orderBy(desc(schema.auditLog.createdAt))
+        .limit(filters.limit || 50)
+        .offset(filters.offset || 0)
+        .all();
+
+      return { logs, total };
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      return { logs: [], total: 0 };
+    }
+  }
+
+  /**
+   * Archive audit logs to audit_log_backup table based on fiscal year
+   */
+  async archiveAuditLogs(fiscalYear: string): Promise<{
+    archived: number;
+    deleted: number;
+  }> {
+    try {
+      const settings = await this.getSystemSettings();
+
+      // Calculate the date range for the fiscal year
+      const [startYear, endYear] = fiscalYear.split("-").map(Number);
+      const fiscalStartMonth = settings.fiscalYearStartMonth || 4;
+      const fiscalStartDay = settings.fiscalYearStartDay || 1;
+
+      const startDate = new Date(
+        startYear,
+        fiscalStartMonth - 1,
+        fiscalStartDay
+      );
+      const endDate = new Date(endYear, fiscalStartMonth - 1, fiscalStartDay);
+
+      const startDateStr = startDate.toISOString();
+      const endDateStr = endDate.toISOString();
+
+      // Get logs to archive
+      const logsToArchive = db
+        .select()
+        .from(schema.auditLog)
+        .where(
+          and(
+            sql`${schema.auditLog.createdAt} >= ${startDateStr}`,
+            sql`${schema.auditLog.createdAt} < ${endDateStr}`
+          )
+        )
+        .all();
+
+      if (logsToArchive.length === 0) {
+        console.log(`No logs found for fiscal year ${fiscalYear}`);
+        return { archived: 0, deleted: 0 };
+      }
+
+      // Insert into backup table
+      for (const log of logsToArchive) {
+        db.insert(schema.auditLogBackup)
+          .values({
+            userId: log.userId,
+            username: log.username,
+            action: log.action,
+            tableName: log.tableName,
+            recordId: log.recordId,
+            oldValues: log.oldValues,
+            newValues: log.newValues,
+            changedFields: log.changedFields,
+            ipAddress: log.ipAddress,
+            userAgent: log.userAgent,
+            fiscalYear,
+            createdAt: log.createdAt,
+          })
+          .run();
+      }
+
+      // Delete from active table
+      db.delete(schema.auditLog)
+        .where(
+          and(
+            sql`${schema.auditLog.createdAt} >= ${startDateStr}`,
+            sql`${schema.auditLog.createdAt} < ${endDateStr}`
+          )
+        )
+        .run();
+
+      // Update last archive date
+      await this.saveSystemSettings({
+        lastAuditArchiveDate: new Date().toISOString(),
+      });
+
+      console.log(
+        `Archived ${logsToArchive.length} audit logs for fiscal year ${fiscalYear}`
+      );
+      return { archived: logsToArchive.length, deleted: logsToArchive.length };
+    } catch (error) {
+      console.error("Error archiving audit logs:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get archived audit logs with filters
+   */
+  async getArchivedAuditLogs(filters: {
+    fiscalYear?: string;
+    userId?: string;
+    tableName?: string;
+    action?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ logs: any[]; total: number }> {
+    try {
+      const whereConditions: any[] = [];
+
+      if (filters.fiscalYear) {
+        whereConditions.push(
+          eq(schema.auditLogBackup.fiscalYear, filters.fiscalYear)
+        );
+      }
+
+      if (filters.userId) {
+        whereConditions.push(eq(schema.auditLogBackup.userId, filters.userId));
+      }
+
+      if (filters.tableName) {
+        whereConditions.push(
+          eq(schema.auditLogBackup.tableName, filters.tableName)
+        );
+      }
+
+      if (filters.action) {
+        whereConditions.push(eq(schema.auditLogBackup.action, filters.action));
+      }
+
+      // Get total count
+      const countQuery =
+        whereConditions.length > 0
+          ? db
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.auditLogBackup)
+              .where(and(...whereConditions))
+          : db
+              .select({ count: sql<number>`count(*)` })
+              .from(schema.auditLogBackup);
+
+      const countResult = countQuery.get();
+      const total = countResult?.count || 0;
+
+      // Get logs with pagination
+      const query =
+        whereConditions.length > 0
+          ? db
+              .select()
+              .from(schema.auditLogBackup)
+              .where(and(...whereConditions))
+          : db.select().from(schema.auditLogBackup);
+
+      const logs = query
+        .orderBy(desc(schema.auditLogBackup.createdAt))
+        .limit(filters.limit || 50)
+        .offset(filters.offset || 0)
+        .all();
+
+      return { logs, total };
+    } catch (error) {
+      console.error("Error fetching archived audit logs:", error);
+      return { logs: [], total: 0 };
+    }
+  }
+
+  /**
+   * Clean up old archived audit logs beyond retention period
+   */
+  async cleanOldArchivedAuditLogs(): Promise<number> {
+    try {
+      const settings = await this.getSystemSettings();
+      const retentionYears = settings.auditLogRetentionYears || 7;
+
+      // Calculate cutoff fiscal year
+      const currentYear = new Date().getFullYear();
+      const cutoffYear = currentYear - retentionYears;
+
+      // Delete archived logs older than retention period
+      const result = db
+        .delete(schema.auditLogBackup)
+        .where(sql`substr(${schema.auditLogBackup.fiscalYear}, 1, 4) < ${cutoffYear.toString()}`)
+        .run();
+
+      console.log(`Cleaned up ${result.changes} old archived audit logs`);
+      return result.changes || 0;
+    } catch (error) {
+      console.error("Error cleaning old archived audit logs:", error);
+      return 0;
     }
   }
 }

@@ -2390,6 +2390,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ AUDIT LOG ROUTES ============
+
+  // Get audit logs with filters
+  app.get("/api/audit-logs", authenticateToken, async (req: any, res) => {
+    try {
+      // Allow admin and super_user roles to view audit logs
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
+      }
+
+      const filters = {
+        userId: req.query.userId as string | undefined,
+        tableName: req.query.tableName as string | undefined,
+        action: req.query.action as string | undefined,
+        startDate: req.query.startDate as string | undefined,
+        endDate: req.query.endDate as string | undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+      };
+
+      const result = await storage.getAuditLogs(filters);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Get archived audit logs with filters
+  app.get("/api/audit-logs/archived", authenticateToken, async (req: any, res) => {
+    try {
+      // Allow admin and super_user roles to view archived logs
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
+      }
+
+      const filters = {
+        fiscalYear: req.query.fiscalYear as string | undefined,
+        userId: req.query.userId as string | undefined,
+        tableName: req.query.tableName as string | undefined,
+        action: req.query.action as string | undefined,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+      };
+
+      const result = await storage.getArchivedAuditLogs(filters);
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching archived audit logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Manually trigger audit log archival for a fiscal year
+  app.post("/api/audit-logs/archive", authenticateToken, async (req: any, res) => {
+    try {
+      // Allow admin and super_user roles to archive logs
+      const userRoles = req.user.roles || [req.user.role];
+      if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
+      }
+
+      const { fiscalYear } = req.body;
+
+      if (!fiscalYear || !/^\d{4}-\d{4}$/.test(fiscalYear)) {
+        return res.status(400).json({ error: "Invalid fiscal year format. Use YYYY-YYYY (e.g., 2024-2025)" });
+      }
+
+      const result = await storage.archiveAuditLogs(fiscalYear);
+
+      // Log activity
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: 'audit_logs_archived',
+        title: 'Audit Logs Archived',
+        description: `Archived ${result.archived} audit logs for fiscal year ${fiscalYear}`,
+        entityId: fiscalYear,
+        entityType: 'audit_archive',
+        metadata: JSON.stringify({
+          fiscalYear,
+          archived: result.archived,
+          archivedBy: req.user.username,
+        }),
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error archiving audit logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Daily receipt count for receipt numbering
   app.get("/api/receipts/daily-count/:serviceType/:date", authenticateToken, async (req, res) => {
     try {

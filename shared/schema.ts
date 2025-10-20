@@ -238,6 +238,10 @@ export const systemSettings = sqliteTable("system_settings", {
   backupTime: text("backup_time").notNull().default("02:00"), // HH:MM format
   lastBackupDate: text("last_backup_date"),
   backupRetentionDays: integer("backup_retention_days").notNull().default(30),
+  fiscalYearStartMonth: integer("fiscal_year_start_month").notNull().default(4), // 1-12, default April (4)
+  fiscalYearStartDay: integer("fiscal_year_start_day").notNull().default(1), // 1-31, default 1st
+  auditLogRetentionYears: integer("audit_log_retention_years").notNull().default(7), // Keep archived logs for 7 years
+  lastAuditArchiveDate: text("last_audit_archive_date"), // Last time audit logs were archived
   timezone: text("timezone").notNull().default("UTC"), // Timezone for all timestamps (e.g., "Asia/Kolkata", "America/New_York")
   timezoneOffset: text("timezone_offset").notNull().default("+00:00"), // Offset in ±HH:MM format
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
@@ -260,18 +264,38 @@ export const backupLogs = sqliteTable("backup_logs", {
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 });
 
-// Audit log for tracking user actions
+// Audit log for tracking user actions (active year)
 export const auditLog = sqliteTable("audit_log", {
   id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
   userId: text("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(), // Denormalized for easier querying
   action: text("action").notNull(), // create, update, delete, view
   tableName: text("table_name").notNull(),
   recordId: text("record_id").notNull(),
   oldValues: text("old_values"), // JSON string of old values
   newValues: text("new_values"), // JSON string of new values
+  changedFields: text("changed_fields"), // JSON array of field names that changed
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
+// Audit log backup for archived audit logs (multi-year retention)
+export const auditLogBackup = sqliteTable("audit_log_backup", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  userId: text("user_id").notNull().references(() => users.id),
+  username: text("username").notNull(),
+  action: text("action").notNull(), // create, update, delete, view
+  tableName: text("table_name").notNull(),
+  recordId: text("record_id").notNull(),
+  oldValues: text("old_values"), // JSON string of old values
+  newValues: text("new_values"), // JSON string of new values
+  changedFields: text("changed_fields"), // JSON array of field names that changed
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  fiscalYear: text("fiscal_year").notNull(), // e.g., "2024-2025"
+  archivedAt: text("archived_at").notNull().default(sql`(datetime('now'))`),
+  createdAt: text("created_at").notNull(),
 });
 
 // Room/Service Management
@@ -557,6 +581,11 @@ export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
   createdAt: true,
 });
 
+export const insertAuditLogBackupSchema = createInsertSchema(auditLogBackup).omit({
+  id: true,
+  archivedAt: true,
+});
+
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
   createdAt: true,
@@ -744,6 +773,9 @@ export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
 
 export type AuditLog = typeof auditLog.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export type AuditLogBackup = typeof auditLogBackup.$inferSelect;
+export type InsertAuditLogBackup = z.infer<typeof insertAuditLogBackupSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
