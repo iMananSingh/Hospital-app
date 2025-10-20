@@ -1671,36 +1671,6 @@ export default function Settings() {
 
           <TabsContent value="audit">
             <div className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{auditStats?.totalLogs || 0}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Actions Tracked</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{auditStats?.actionCounts?.length || 0}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium">Tables Monitored</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{auditStats?.tableCounts?.length || 0}</div>
-                  </CardContent>
-                </Card>
-              </div>
-
               {/* Filters */}
               <Card>
                 <CardHeader>
