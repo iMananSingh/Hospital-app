@@ -304,7 +304,7 @@ export default function Settings() {
       enabled: showRestoreDialog,
     });
 
-  const { data: auditLogs = [], isLoading: auditLogsLoading } = useQuery({
+  const { data: auditLogsData, isLoading: auditLogsLoading } = useQuery({
     queryKey: ["/api/audit-logs", auditFromDate, auditToDate, selectedAuditUser, selectedAuditTable, selectedAuditAction],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -325,6 +325,8 @@ export default function Settings() {
     },
     enabled: hasAccess,
   });
+
+  const auditLogs = auditLogsData?.logs || [];
 
   const { data: auditStats } = useQuery({
     queryKey: ["/api/audit-logs/stats"],
@@ -1779,7 +1781,7 @@ export default function Settings() {
                 <CardContent>
                   {auditLogsLoading ? (
                     <div className="text-center py-8">Loading audit logs...</div>
-                  ) : auditLogs.logs?.length === 0 ? (
+                  ) : auditLogs.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No audit logs found</p>
                     </div>
@@ -1798,7 +1800,7 @@ export default function Settings() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {auditLogs.logs?.map((log: any) => (
+                          {auditLogs.map((log: any) => (
                             <TableRow key={log.id}>
                               <TableCell className="text-sm">
                                 {formatDateTime(log.createdAt)}
