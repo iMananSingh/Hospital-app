@@ -321,46 +321,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+  // Delete user
+  app.delete("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has admin or super_user role
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
+      const userRoles = req.user.roles || [req.user.role];
       if (!userRoles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Access denied. Admin role required." });
+        return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
-      const { id } = req.params;
+      const userId = req.params.id;
 
-      // Prevent deleting self
-      if (req.user.id === id) {
+      // Prevent deleting yourself
+      if (userId === req.user.id) {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
 
-      // Get user to check if it's the root user
-      const userToDelete = await storage.getUserById(id);
-      if (!userToDelete) {
-        return res.status(404).json({ message: "User not found" });
+      // Get user data before deletion for audit log
+      const userToDelete = await storage.getUserById(userId);
+
+      const result = await storage.deleteUser(userId);
+
+      // Create audit log
+      if (userToDelete) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'delete',
+          tableName: 'users',
+          recordId: userId,
+          oldValues: userToDelete,
+          newValues: null,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
       }
 
-      // Prevent deleting root user unless the current user is a super_user
-      if (userToDelete.username === 'root' && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Cannot delete the root user" });
-      }
-
-      // Only super users can delete admin users
-      const targetUserRoles = userToDelete.rolesArray || [];
-      if (targetUserRoles.includes('admin') && !userRoles.includes('super_user')) {
-        return res.status(403).json({ message: "Only super users can delete administrator accounts" });
-      }
-
-      const deleted = await storage.deleteUser(id, req.user.id);
-      if (!deleted) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json({ message: "User deleted successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to delete user" });
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 
@@ -432,6 +431,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       patientData.createdAt = indianTime.toISOString();
 
       const patient = await storage.createPatient(patientData, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'patients',
+        recordId: patient.id,
+        oldValues: null,
+        newValues: patient,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(patient);
     } catch (error) {
       console.error("Patient creation error:", error);
@@ -470,11 +483,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate incoming data (allow partial updates)
       const patientData = updatePatientSchema.parse(req.body);
 
+      // Get patient data before update for audit log
+      const patientToUpdate = await storage.getPatientById(id);
+
       const updated = await storage.updatePatient(id, patientData);
 
       if (!updated) {
         return res.status(404).json({ message: "Patient not found" });
       }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'update',
+        tableName: 'patients',
+        recordId: id,
+        oldValues: patientToUpdate,
+        newValues: updated,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
 
       res.json(updated);
     } catch (error) {
@@ -511,6 +540,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const doctorData = insertDoctorSchema.parse(req.body);
       const doctor = await storage.createDoctor(doctorData, req.user?.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'doctors',
+        recordId: doctor.id,
+        oldValues: null,
+        newValues: doctor,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(doctor);
     } catch (error) {
       console.error("Doctor creation error:", error);
@@ -525,8 +568,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const doctorData = insertDoctorSchema.parse(req.body);
+
+      // Get doctor data before update for audit log
+      const doctorToUpdate = await storage.getDoctorById(id);
+
       const doctor = await storage.updateDoctor(id, doctorData, req.user?.id);
       res.json(doctor);
+
+      // Create audit log
+      if (doctorToUpdate && doctor) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'doctors',
+          recordId: id,
+          oldValues: doctorToUpdate,
+          newValues: doctor,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
     } catch (error) {
       console.error("Doctor update error:", error);
       if (error instanceof Error) {
@@ -565,6 +627,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // Create audit log for doctor deletion
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'delete',
+        tableName: 'doctors',
+        recordId: id,
+        oldValues: doctor,
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({ message: "Doctor deactivated successfully" });
     } catch (error) {
       console.error("Doctor deactivation error:", error);
@@ -595,6 +670,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!restored) {
         return res.status(404).json({ message: "Doctor not found" });
       }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'restore',
+        tableName: 'doctors',
+        recordId: id,
+        oldValues: { status: 'deleted' }, // Assuming deleted doctors have a 'deleted' status
+        newValues: restored,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({ message: "Doctor restored successfully", doctor: restored });
     } catch (error) {
       console.error("Doctor restoration error:", error);
@@ -635,6 +724,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specialization: doctor.specialization,
           deletedBy: req.user?.username,
         }),
+      });
+
+      // Create audit log for permanent doctor deletion
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'permanent_delete',
+        tableName: 'doctors',
+        recordId: id,
+        oldValues: doctor,
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
       });
 
       res.json({ message: "Doctor permanently deleted successfully" });
@@ -795,6 +897,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Create audit log for updating doctor service rates
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'update',
+        tableName: 'doctor_service_rates',
+        recordId: doctorId, // doctorId as the primary identifier for this update
+        oldValues: { existingRates }, // Log the rates that were present before update
+        newValues: { createdRates }, // Log the newly created rates
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+
       res.json({ message: "Doctor service rates updated successfully", rates: createdRates });
     } catch (error) {
       console.error("Update doctor service rates error:", error);
@@ -860,6 +976,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate with schema
       const validatedData = insertServiceSchema.parse(serviceData);
       const service = await storage.createService(validatedData, req.user?.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'services',
+        recordId: service.id,
+        oldValues: null,
+        newValues: service,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(service);
     } catch (error) {
       console.error("Create service error:", error);
@@ -892,10 +1022,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate with schema
       const validatedData = insertServiceSchema.parse(serviceData);
+
+      // Get service data before update for audit log
+      const serviceToUpdate = await storage.getServiceById(req.params.id);
+
       const service = await storage.updateService(req.params.id, validatedData, req.user?.id);
 
       if (!service) {
         return res.status(404).json({ message: "Service not found" });
+      }
+
+      // Create audit log
+      if (serviceToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'services',
+          recordId: req.params.id,
+          oldValues: serviceToUpdate,
+          newValues: service,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
       }
 
       res.json(service);
@@ -913,10 +1062,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/services/:id", authenticateToken, async (req: any, res) => {
     try {
+      // Get service data before deletion for audit log
+      const serviceToDelete = await storage.getServiceById(req.params.id);
+
       const deleted = await storage.deleteService(req.params.id, req.user.id);
       if (!deleted) {
         return res.status(404).json({ message: "Service not found" });
       }
+
+      // Create audit log
+      if (serviceToDelete) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'delete',
+          tableName: 'services',
+          recordId: req.params.id,
+          oldValues: serviceToDelete,
+          newValues: null,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json({ message: "Service deleted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete service" });
@@ -954,6 +1122,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true
       });
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'pathology_categories',
+        recordId: category.id,
+        oldValues: null,
+        newValues: category,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(category);
     } catch (error) {
       console.error("Error creating pathology category:", error);
@@ -964,12 +1145,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/pathology-categories/:id", authenticateToken, async (req, res) => {
     try {
       const categoryData = insertPathologyCategorySchema.partial().parse(req.body);
-      const category = await storage.updatePathologyCategory(req.params.id, categoryData);
+      const categoryId = req.params.id;
+
+      // Get category data before update for audit log
+      const categoryToUpdate = await storage.getPathologyCategoryById(categoryId);
+
+      const category = await storage.updatePathologyCategory(categoryId, categoryData);
       if (!category) {
         return res.status(404).json({ message: "Pathology category not found" });
       }
+
+      // Create audit log
+      if (categoryToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'pathology_categories',
+          recordId: categoryId,
+          oldValues: categoryToUpdate,
+          newValues: category,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(category);
     } catch (error) {
+      console.error("Error updating pathology category:", error);
       res.status(400).json({ message: "Failed to update pathology category" });
     }
   });
@@ -978,6 +1181,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
 
+      // Get category data before deletion for audit log
+      const categoryToDelete = await storage.getPathologyCategoryById(id);
+
       // Check if it's a system category (categoryId is a string that matches system category name)
       const systemCategories = getCategories();
       const isSystemCategory = systemCategories.includes(id);
@@ -985,8 +1191,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isSystemCategory) {
         try {
           deleteCategoryFromFile(id);
+          // Create audit log for system category deletion
+          if (categoryToDelete) {
+            await storage.createAuditLog({
+              userId: req.user.id,
+              username: req.user.username,
+              action: 'delete',
+              tableName: 'pathology_categories',
+              recordId: id,
+              oldValues: { ...categoryToDelete, isSystem: true }, // Mark as system category in old values
+              newValues: null,
+              ipAddress: req.ip,
+              userAgent: req.get('user-agent')
+            });
+          }
           res.json({ message: "System pathology category deleted successfully" });
         } catch (error) {
+          console.error("Error deleting system pathology category:", error);
           res.status(500).json({ message: "Failed to delete system pathology category" });
         }
       } else {
@@ -995,9 +1216,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!deleted) {
           return res.status(404).json({ message: "Pathology category not found or has associated tests" });
         }
+
+        // Create audit log for custom category deletion
+        if (categoryToDelete) {
+          await storage.createAuditLog({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'delete',
+            tableName: 'pathology_categories',
+            recordId: id,
+            oldValues: categoryToDelete,
+            newValues: null,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent')
+          });
+        }
         res.json({ message: "Pathology category deleted successfully" });
       }
     } catch (error) {
+      console.error("Error deleting pathology category:", error);
       res.status(500).json({ message: "Failed to delete pathology category" });
     }
   });
@@ -1040,6 +1277,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subtests: []
           });
 
+          // Create audit log for system test creation
+          await storage.createAuditLog({
+            userId: req.user.id,
+            username: req.user.username,
+            action: 'create',
+            tableName: 'pathology_tests', // Assuming system tests are logged under a generic table
+            recordId: `${categoryId}-${testName}`, // Combine category and test name for unique ID
+            oldValues: null,
+            newValues: { categoryId, testName, price },
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent')
+          });
+
           // Return a mock response that matches the expected format
           res.json({
             id: `system-${Date.now()}`,
@@ -1069,6 +1319,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isActive: true
         });
 
+        // Create audit log for custom test creation
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'create',
+          tableName: 'dynamic_pathology_tests',
+          recordId: test.id,
+          oldValues: null,
+          newValues: test,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+
         res.json(test);
       }
     } catch (error) {
@@ -1081,24 +1344,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/dynamic-pathology-tests/:id", authenticateToken, async (req, res) => {
     try {
       const testData = insertDynamicPathologyTestSchema.partial().parse(req.body);
-      const test = await storage.updateDynamicPathologyTest(req.params.id, testData);
+      const testId = req.params.id;
+
+      // Get test data before update for audit log
+      const testToUpdate = await storage.getDynamicPathologyTestById(testId);
+
+      const test = await storage.updateDynamicPathologyTest(testId, testData);
       if (!test) {
         return res.status(404).json({ message: "Dynamic pathology test not found" });
       }
+
+      // Create audit log
+      if (testToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'dynamic_pathology_tests',
+          recordId: testId,
+          oldValues: testToUpdate,
+          newValues: test,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(test);
     } catch (error) {
+      console.error("Error updating dynamic pathology test:", error);
       res.status(400).json({ message: "Failed to update dynamic pathology test" });
     }
   });
 
   app.delete("/api/dynamic-pathology-tests/:id", authenticateToken, async (req, res) => {
     try {
-      const deleted = await storage.deleteDynamicPathologyTest(req.params.id);
+      const testId = req.params.id;
+
+      // Get test data before deletion for audit log
+      const testToDelete = await storage.getDynamicPathologyTestById(testId);
+
+      const deleted = await storage.deleteDynamicPathologyTest(testId);
       if (!deleted) {
         return res.status(404).json({ message: "Dynamic pathology test not found" });
       }
+
+      // Create audit log
+      if (testToDelete) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'delete',
+          tableName: 'dynamic_pathology_tests',
+          recordId: testId,
+          oldValues: testToDelete,
+          newValues: null,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json({ message: "Dynamic pathology test deleted successfully" });
     } catch (error) {
+      console.error("Error deleting dynamic pathology test:", error);
       res.status(500).json({ message: "Failed to delete dynamic pathology test" });
     }
   });
@@ -1109,6 +1416,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { categoryName, testName } = req.params;
 
       deleteTestFromFile(categoryName, testName);
+
+      // Create audit log for system test deletion
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'delete',
+        tableName: 'pathology_tests', // Assuming system tests are logged under a generic table
+        recordId: `${categoryName}-${testName}`, // Combine category and test name for unique ID
+        oldValues: { categoryName, testName },
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({ message: "System pathology test deleted successfully" });
     } catch (error) {
       console.error("Error deleting system pathology test:", error);
@@ -1176,9 +1497,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Create audit log for bulk upload
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'bulk_create',
+        tableName: 'pathology_tests',
+        recordId: 'bulk_upload', // Generic ID for bulk operations
+        oldValues: null,
+        newValues: {
+          categoriesCreated: results.categories.length,
+          testsCreated: results.tests.length,
+          errors: results.errors.length > 0 ? results.errors : undefined
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(results);
     } catch (error) {
-      res.status(400).json({ message: "Failed to bulk upload pathology tests" });
+      console.error("Error during bulk upload:", error);
+      res.status(400).json({ message: "Failed to bulk upload pathology tests", error: error.message });
     }
   });
 
@@ -1275,9 +1614,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemsData = items.map((item: any) => insertBillItemSchema.parse(item));
 
       const createdBill = await storage.createBill(billData, itemsData, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'bills',
+        recordId: createdBill.id,
+        oldValues: null,
+        newValues: { ...createdBill, items: itemsData }, // Include items in newValues for context
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(createdBill);
     } catch (error) {
-      res.status(400).json({ message: "Failed to create bill" });
+      console.error("Error creating bill:", error);
+      res.status(400).json({ message: "Failed to create bill", error: error.message });
     }
   });
 
@@ -1290,6 +1644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const items = await storage.getBillItems(req.params.id);
       res.json({ ...bill, items });
     } catch (error) {
+      console.error("Error fetching bill:", error);
       res.status(500).json({ message: "Failed to get bill" });
     }
   });
@@ -1357,6 +1712,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const order = await storage.createPathologyOrder(processedOrderData, tests, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'pathology_orders',
+        recordId: order.id,
+        oldValues: null,
+        newValues: { orderData: processedOrderData, tests }, // Include order details and tests for context
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(order);
     } catch (error: any) {
       console.error("Error creating pathology order:", error);
@@ -1373,7 +1742,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Status is required" });
       }
 
+      // Get order details before status update for audit log
+      const orderToUpdate = await storage.getPathologyOrderById(id);
+
       const updatedOrder = await storage.updatePathologyOrderStatus(id, status);
+
+      // Create audit log
+      if (orderToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update_status',
+          tableName: 'pathology_orders',
+          recordId: id,
+          oldValues: { status: orderToUpdate.status },
+          newValues: { status: status },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updatedOrder);
     } catch (error: any) {
       console.error("Error updating pathology order status:", error);
@@ -1389,6 +1777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json(orderDetails);
     } catch (error) {
+      console.error("Error fetching pathology order details:", error);
       res.status(500).json({ message: "Failed to get pathology order details" });
     }
   });
@@ -1398,6 +1787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getPathologyOrdersByPatient(req.params.patientId);
       res.json(orders);
     } catch (error) {
+      console.error("Error fetching patient pathology orders:", error);
       res.status(500).json({ message: "Failed to get patient pathology orders" });
     }
   });
@@ -1560,6 +1950,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduledTime: serviceData.scheduledTime,
         }),
       });
+
+      // Create audit log for patient service creation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'patient_services',
+        recordId: service.id,
+        oldValues: null,
+        newValues: service,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(service);
     } catch (error) {
       console.error("Error creating patient service:", error);
@@ -1663,6 +2067,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Create audit log for batch service creation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'batch_create',
+        tableName: 'patient_services',
+        recordId: services.length > 0 ? services[0].orderId : 'batch_upload', // Use first service's orderId or a generic ID
+        oldValues: null,
+        newValues: {
+          serviceCount: services.length,
+          receiptNumber: receiptNumber,
+          patientId: servicesWithReceipt[0].patientId,
+          services: services.map(s => ({ id: s.id, serviceName: s.serviceName })) // Log created service IDs
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(services);
     } catch (error: any) {
       console.error("Batch service creation error:", error);
@@ -1673,7 +2095,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/patient-services/:id", authenticateToken, async (req, res) => {
     try {
-      const service = await storage.updatePatientService(req.params.id, req.body, req.user.id);
+      const serviceId = req.params.id;
+      // Get service data before update for audit log
+      const serviceToUpdate = await storage.getPatientServiceById(serviceId);
+
+      const service = await storage.updatePatientService(serviceId, req.body, req.user.id);
 
       // Log activity if service is being completed
       if (req.body.status === "completed") {
@@ -1693,6 +2119,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }),
         });
       }
+
+      // Create audit log
+      if (serviceToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'patient_services',
+          recordId: serviceId,
+          oldValues: serviceToUpdate,
+          newValues: service,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(service);
     } catch (error) {
       console.error("Error updating patient service:", error);
@@ -1760,6 +2202,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'admissions',
+        recordId: admission.id,
+        oldValues: null,
+        newValues: admission,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(admission);
     } catch (error) {
       console.error("Error creating admission:", error);
@@ -1786,7 +2241,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.updateAdmission(req.params.id, requestBody, req.user.id);
+      const admissionId = req.params.id;
+      // Get admission data before update for audit log
+      const admissionToUpdate = await storage.getAdmissionById(admissionId);
+
+      const admission = await storage.updateAdmission(admissionId, requestBody, req.user.id);
+
+      // Create audit log
+      if (admissionToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'admissions',
+          recordId: admissionId,
+          oldValues: admissionToUpdate,
+          newValues: admission,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
@@ -1813,7 +2288,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.updateAdmission(req.params.id, requestBody, req.user.id);
+      const admissionId = req.params.id;
+      // Get admission data before update for audit log
+      const admissionToUpdate = await storage.getAdmissionById(admissionId);
+
+      const admission = await storage.updateAdmission(admissionId, requestBody, req.user.id);
+
+      // Create audit log
+      if (admissionToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update', // Using 'update' for patch as well, or could use 'patch'
+          tableName: 'admissions',
+          recordId: admissionId,
+          oldValues: admissionToUpdate,
+          newValues: admission,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(admission);
     } catch (error) {
       console.error("Error updating admission:", error);
@@ -1838,12 +2333,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/pathology/:id/status", authenticateToken, async (req, res) => {
     try {
       const { status } = req.body;
-      const updated = await storage.updatePathologyOrderStatus(req.params.id, status);
+      const orderId = req.params.id;
+
+      // Get order details before status update for audit log
+      const orderToUpdate = await storage.getPathologyOrderById(orderId);
+
+      const updated = await storage.updatePathologyOrderStatus(orderId, status);
       if (!updated) {
         return res.status(404).json({ message: "Pathology order not found" });
       }
+
+      // Create audit log
+      if (orderToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update_status',
+          tableName: 'pathology_orders',
+          recordId: orderId,
+          oldValues: { status: orderToUpdate.status },
+          newValues: { status: status },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
+      console.error("Error updating pathology order status:", error);
       res.status(500).json({ message: "Failed to update pathology order status" });
     }
   });
@@ -1851,12 +2368,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/pathology/test/:id/status", authenticateToken, async (req: any, res) => {
     try {
       const { status, results } = req.body;
-      const updated = await storage.updatePathologyTestStatus(req.params.id, status, results, req.user.id);
+      const testId = req.params.id;
+
+      // Get test details before status update for audit log
+      const testToUpdate = await storage.getPathologyTestById(testId); // Assuming getPathologyTestById exists
+
+      const updated = await storage.updatePathologyTestStatus(testId, status, results, req.user.id);
       if (!updated) {
         return res.status(404).json({ message: "Pathology test not found" });
       }
+
+      // Create audit log
+      if (testToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update_status',
+          tableName: 'pathology_tests', // Assuming a pathology_tests table
+          recordId: testId,
+          oldValues: { status: testToUpdate.status, results: testToUpdate.results },
+          newValues: { status: status, results: results },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
+      console.error("Error updating pathology test status:", error);
       res.status(500).json({ message: "Failed to update pathology test status" });
     }
   });
@@ -1966,6 +2505,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'patient_visits', // Assuming patient_visits table for OPD
+        recordId: opdVisit.id,
+        oldValues: null,
+        newValues: opdVisit,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.status(201).json(opdVisit);
     } catch (error) {
       console.error("Error creating OPD visit:", error);
@@ -1983,10 +2535,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Status is required" });
       }
 
+      // Get OPD visit data before status update for audit log
+      const opdVisitToUpdate = await storage.getOpdVisitById(id); // Assuming getOpdVisitById exists
+
       const updated = await storage.updateOpdVisitStatus(id, status, req.user.id);
 
       if (!updated) {
         return res.status(404).json({ error: "OPD visit not found" });
+      }
+
+      // Create audit log
+      if (opdVisitToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update_status',
+          tableName: 'patient_visits', // Assuming patient_visits table for OPD
+          recordId: id,
+          oldValues: { status: opdVisitToUpdate.status },
+          newValues: { status: status },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
       }
 
       res.json(updated);
@@ -2010,6 +2580,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/room-types", authenticateToken, async (req: any, res) => {
     try {
       const roomType = await storage.createRoomType(req.body, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'room_types',
+        recordId: roomType.id,
+        oldValues: null,
+        newValues: roomType,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.status(201).json(roomType);
     } catch (error) {
       console.error("Error creating room type:", error);
@@ -2019,10 +2603,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/room-types/:id", authenticateToken, async (req: any, res) => {
     try {
-      const updated = await storage.updateRoomType(req.params.id, req.body, req.user.id);
+      const roomTypeId = req.params.id;
+      // Get room type data before update for audit log
+      const roomTypeToUpdate = await storage.getRoomTypeById(roomTypeId); // Assuming getRoomTypeById exists
+
+      const updated = await storage.updateRoomType(roomTypeId, req.body, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room type not found" });
       }
+
+      // Create audit log
+      if (roomTypeToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'room_types',
+          recordId: roomTypeId,
+          oldValues: roomTypeToUpdate,
+          newValues: updated,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating room type:", error);
@@ -2032,7 +2636,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/room-types/:id", authenticateToken, async (req: any, res) => {
     try {
-      await storage.deleteRoomType(req.params.id, req.user.id);
+      const roomTypeId = req.params.id;
+      // Get room type data before deletion for audit log
+      const roomTypeToDelete = await storage.getRoomTypeById(roomTypeId); // Assuming getRoomTypeById exists
+
+      await storage.deleteRoomType(roomTypeId, req.user.id);
+
+      // Create audit log
+      if (roomTypeToDelete) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'delete',
+          tableName: 'room_types',
+          recordId: roomTypeId,
+          oldValues: roomTypeToDelete,
+          newValues: null,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting room type:", error);
@@ -2054,6 +2678,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/rooms", authenticateToken, async (req: any, res) => {
     try {
       const room = await storage.createRoom(req.body, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'rooms',
+        recordId: room.id,
+        oldValues: null,
+        newValues: room,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.status(201).json(room);
     } catch (error) {
       console.error("Error creating room:", error);
@@ -2063,10 +2701,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/rooms/:id", authenticateToken, async (req: any, res) => {
     try {
-      const updated = await storage.updateRoom(req.params.id, req.body, req.user.id);
+      const roomId = req.params.id;
+      // Get room data before update for audit log
+      const roomToUpdate = await storage.getRoomById(roomId); // Assuming getRoomById exists
+
+      const updated = await storage.updateRoom(roomId, req.body, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room not found" });
       }
+
+      // Create audit log
+      if (roomToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'rooms',
+          recordId: roomId,
+          oldValues: roomToUpdate,
+          newValues: updated,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating room:", error);
@@ -2076,7 +2734,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/rooms/:id", authenticateToken, async (req: any, res) => {
     try {
-      await storage.deleteRoom(req.params.id, req.user.id);
+      const roomId = req.params.id;
+      // Get room data before deletion for audit log
+      const roomToDelete = await storage.getRoomById(roomId); // Assuming getRoomById exists
+
+      await storage.deleteRoom(roomId, req.user.id);
+
+      // Create audit log
+      if (roomToDelete) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'delete',
+          tableName: 'rooms',
+          recordId: roomId,
+          oldValues: roomToDelete,
+          newValues: null,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting room:", error);
@@ -2096,11 +2774,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/rooms/:id/occupancy", authenticateToken, async (req, res) => {
     try {
+      const roomId = req.params.id;
       const { isOccupied } = req.body;
-      const updated = await storage.updateRoomOccupancy(req.params.id, isOccupied, req.user.id);
+      // Get room data before update for audit log
+      const roomToUpdate = await storage.getRoomById(roomId); // Assuming getRoomById exists
+
+      const updated = await storage.updateRoomOccupancy(roomId, isOccupied, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Room not found" });
       }
+
+      // Create audit log
+      if (roomToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update_occupancy',
+          tableName: 'rooms',
+          recordId: roomId,
+          oldValues: { isOccupied: roomToUpdate.isOccupied },
+          newValues: { isOccupied: isOccupied },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error updating room occupancy:", error);
@@ -2126,6 +2824,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/settings/hospital", requireAuth, async (req, res) => {
     try {
       const settingsData = req.body;
+      // Get hospital settings before update for audit log
+      const settingsToUpdate = await storage.getHospitalSettings();
       const result = await storage.saveHospitalSettings(settingsData);
 
       // Log activity for hospital information change
@@ -2145,6 +2845,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'update',
+        tableName: 'hospital_settings',
+        recordId: result.id, // Assuming result has an id
+        oldValues: settingsToUpdate,
+        newValues: result,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(result);
     } catch (error: any) {
       console.error("Error saving hospital settings:", error);
@@ -2156,6 +2869,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { logo } = req.body;
       const logoPath = await storage.saveLogo(logo, req.user.id);
+
+      // Create audit log for logo upload
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'upload_logo',
+        tableName: 'hospital_settings', // Assuming logo is part of hospital settings
+        recordId: req.user.id, // User ID as record ID for this action
+        oldValues: null, // No old logo path available directly here
+        newValues: { logoPath: logoPath },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({ logoPath });
     } catch (error) {
       console.error("Error uploading logo:", error);
@@ -2240,6 +2967,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'update',
+        tableName: 'system_settings',
+        recordId: settings.id,
+        oldValues: currentSettings,
+        newValues: settings,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(settings);
     } catch (error) {
       console.error("Error saving system settings:", error);
@@ -2279,6 +3019,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }),
         });
       }
+
+      // Create audit log for backup creation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'backups',
+        recordId: backup.backupId,
+        oldValues: null,
+        newValues: {
+          backupId: backup.backupId,
+          filePath: backup.filePath,
+          fileSize: backup.fileSize,
+          backupType: backupType,
+          createdBy: req.user.id
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
 
       res.json(backup);
     } catch (error) {
@@ -2329,8 +3088,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied. Admin or super user role required." });
       }
 
-      await storage.cleanOldBackups(req.user.id);
-      res.json({ message: "Old backups cleaned up successfully" });
+      const cleanupResult = await storage.cleanOldBackups(req.user.id);
+
+      // Create audit log for backup cleanup
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'cleanup',
+        tableName: 'backups',
+        recordId: 'cleanup_operation', // Generic ID for cleanup operation
+        oldValues: null, // No specific old values to log for a cleanup operation
+        newValues: {
+          deletedCount: cleanupResult.deletedCount,
+          message: cleanupResult.message
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
+      res.json({ message: "Old backups cleaned up successfully", ...cleanupResult });
     } catch (error) {
       console.error("Error cleaning up backups:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -2367,6 +3143,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Backup file path is required" });
       }
 
+      // Create audit log before initiating restore
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'restore_backup',
+        tableName: 'backups',
+        recordId: backupFilePath, // Use file path as record identifier
+        oldValues: null, // No specific old values to log before restore
+        newValues: { backupFilePath: backupFilePath, initiatedBy: req.user.username },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       // Send response immediately, then restore in background
       res.json({
         success: true,
@@ -2379,6 +3168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.restoreBackup(backupFilePath);
         } catch (error) {
           console.error("Background restore error:", error);
+          // Optionally log this error to audit logs or a separate error logging system
         }
       });
     } catch (error) {
@@ -2477,6 +3267,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       });
 
+      // Create audit log for the archival operation itself
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'archive',
+        tableName: 'audit_logs',
+        recordId: fiscalYear, // Use fiscal year as record identifier
+        oldValues: null, // Not applicable for the operation itself
+        newValues: {
+          fiscalYear: fiscalYear,
+          archivedCount: result.archived,
+          archivedBy: req.user.username
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(result);
     } catch (error) {
       console.error("Error archiving audit logs:", error);
@@ -2509,11 +3316,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admissions/:id/transfer", authenticateToken, async (req: any, res) => {
     try {
+      const admissionId = req.params.id;
       const { roomNumber, wardType } = req.body;
-      const updated = await storage.transferRoom(req.params.id, { roomNumber, wardType }, req.user.id);
+      // Get admission data before transfer for audit log
+      const admissionToUpdate = await storage.getAdmissionById(admissionId);
+
+      const updated = await storage.transferRoom(admissionId, { roomNumber, wardType }, req.user.id);
       if (!updated) {
         return res.status(404).json({ error: "Admission not found" });
       }
+
+      // Create audit log
+      if (admissionToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'transfer_room',
+          tableName: 'admissions',
+          recordId: admissionId,
+          oldValues: { roomNumber: admissionToUpdate.roomNumber, wardType: admissionToUpdate.currentWardType },
+          newValues: { roomNumber, wardType },
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Error transferring room:", error);
@@ -2526,9 +3353,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { dischargeDateTime } = req.body;
 
+      // Get admission data before discharge for audit log
+      const admissionToUpdate = await storage.getAdmissionById(id);
+
       const admission = await storage.dischargePatient(id, req.user.id, dischargeDateTime);
       if (!admission) {
         return res.status(404).json({ error: "Admission not found" });
+      }
+
+      // Create audit log for discharge
+      if (admissionToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'discharge',
+          tableName: 'admissions',
+          recordId: id,
+          oldValues: { ...admissionToUpdate, dischargeDateTime: admissionToUpdate.dischargeDateTime }, // Include relevant old values
+          newValues: { ...admission, dischargeDateTime: admission.dischargeDateTime }, // Include relevant new values
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
       }
 
       // Activity logging is already handled in storage.dischargePatient()
@@ -2618,6 +3463,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         processedBy: req.user.id,
       }, req.user.id);
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'patient_payments',
+        recordId: payment.id,
+        oldValues: null,
+        newValues: payment,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       // Log activity for payment
       const patient = await storage.getPatientById(patientId);
 
@@ -2694,6 +3552,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         approvedBy: req.user.id,
       }, req.user.id);
 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'patient_discounts',
+        recordId: discount.id,
+        oldValues: null,
+        newValues: discount,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       // Log activity for discount
       const patient = await storage.getPatientById(patientId);
 
@@ -2746,6 +3617,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const categoryData = insertServiceCategorySchema.parse(req.body);
       const category = await storage.createServiceCategory(categoryData, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'create',
+        tableName: 'service_categories',
+        recordId: category.id,
+        oldValues: null,
+        newValues: category,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(category);
     } catch (error: any) {
       console.error("Error creating service category:", error);
@@ -2758,11 +3643,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/service-categories/:id", authenticateToken, async (req: any, res) => {
     try {
+      const categoryId = req.params.id;
       const categoryData = insertServiceCategorySchema.partial().parse(req.body);
-      const category = await storage.updateServiceCategory(req.params.id, categoryData, req.user.id);
+      // Get category data before update for audit log
+      const categoryToUpdate = await storage.getServiceCategoryById(categoryId); // Assuming getServiceCategoryById exists
+
+      const category = await storage.updateServiceCategory(categoryId, categoryData, req.user.id);
       if (!category) {
         return res.status(404).json({ message: "Service category not found" });
       }
+
+      // Create audit log
+      if (categoryToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: 'update',
+          tableName: 'service_categories',
+          recordId: categoryId,
+          oldValues: categoryToUpdate,
+          newValues: category,
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+      }
+
       res.json(category);
     } catch (error: any) {
       console.error("Error updating service category:", error);
@@ -2801,6 +3706,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) {
         return res.status(404).json({ message: "Service category not found" });
       }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'delete',
+        tableName: 'service_categories',
+        recordId: id,
+        oldValues: categoryToDelete,
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({ message: "Service category deleted successfully" });
     } catch (error: any) {
       console.error("Error deleting service category:", error);
@@ -2827,6 +3746,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { doctorId } = req.body;
       const result = await storage.recalculateDoctorEarnings(doctorId, req.user.id);
+
+      // Create audit log for recalculation
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'recalculate_earnings',
+        tableName: 'doctor_earnings',
+        recordId: doctorId, // Doctor ID is the primary identifier for this operation
+        oldValues: null, // No specific old values logged here, as it's a recalculation
+        newValues: {
+          processed: result.processed,
+          created: result.created,
+          message: `Recalculation complete: processed ${result.processed} services, created ${result.created} new earnings`
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json({
         message: `Recalculation complete: processed ${result.processed} services, created ${result.created} new earnings`,
         ...result
@@ -2841,7 +3778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { doctorId } = req.params;
 
-      // Get all pending earnings for this doctor
+      // Get all pending earnings for this doctor before marking as paid
       const pendingEarnings = await storage.getDoctorEarnings(doctorId, 'pending');
 
       if (pendingEarnings.length === 0) {
@@ -2849,13 +3786,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Mark all pending earnings as paid
+      const updatedEarnings = [];
       for (const earning of pendingEarnings) {
-        await storage.updateDoctorEarningStatus(earning.id, 'paid', req.user.id);
+        const updatedEarning = await storage.updateDoctorEarningStatus(earning.id, 'paid', req.user.id);
+        updatedEarnings.push(updatedEarning);
       }
+
+      // Create audit log for marking earnings as paid
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'mark_paid',
+        tableName: 'doctor_earnings',
+        recordId: doctorId, // Doctor ID as the identifier for this batch operation
+        oldValues: pendingEarnings.map(e => ({ id: e.id, status: e.status })), // Log the statuses before update
+        newValues: updatedEarnings.map(e => ({ id: e.id, status: e.status })), // Log the statuses after update
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
 
       res.json({
         message: `Successfully marked ${pendingEarnings.length} earnings as paid`,
-        count: pendingEarnings.length
+        count: pendingEarnings.length,
+        earnings: updatedEarnings // Optionally return the updated earnings
       });
     } catch (error) {
       console.error("Error marking earnings as paid:", error);
