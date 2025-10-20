@@ -1649,7 +1649,7 @@ export class SqliteStorage implements IStorage {
       this.logActivity(
         "system",
         "user_updated",
-        "User updated",
+        "User Updated",
         `Updated user: ${user.username} (${user.fullName})`,
         user.id,
         "user",
@@ -1779,23 +1779,39 @@ export class SqliteStorage implements IStorage {
     if (updated && userId && originalDoctor) {
       // Determine what changed
       const changes: string[] = [];
-      
+
       if (doctor.name && doctor.name !== originalDoctor.name) {
         changes.push(`name from "${originalDoctor.name}" to "${doctor.name}"`);
       }
-      if (doctor.specialization && doctor.specialization !== originalDoctor.specialization) {
-        changes.push(`specialization from "${originalDoctor.specialization}" to "${doctor.specialization}"`);
+      if (
+        doctor.specialization &&
+        doctor.specialization !== originalDoctor.specialization
+      ) {
+        changes.push(
+          `specialization from "${originalDoctor.specialization}" to "${doctor.specialization}"`,
+        );
       }
-      if (doctor.qualification && doctor.qualification !== originalDoctor.qualification) {
-        changes.push(`qualification from "${originalDoctor.qualification}" to "${doctor.qualification}"`);
+      if (
+        doctor.qualification &&
+        doctor.qualification !== originalDoctor.qualification
+      ) {
+        changes.push(
+          `qualification from "${originalDoctor.qualification}" to "${doctor.qualification}"`,
+        );
       }
-      if (doctor.consultationFee !== undefined && doctor.consultationFee !== originalDoctor.consultationFee) {
-        changes.push(`consultation fee from ₹${originalDoctor.consultationFee} to ₹${doctor.consultationFee}`);
+      if (
+        doctor.consultationFee !== undefined &&
+        doctor.consultationFee !== originalDoctor.consultationFee
+      ) {
+        changes.push(
+          `consultation fee from ₹${originalDoctor.consultationFee} to ₹${doctor.consultationFee}`,
+        );
       }
 
-      const changesDescription = changes.length > 0 
-        ? `Updated: ${changes.join(', ')}` 
-        : 'Updated doctor information';
+      const changesDescription =
+        changes.length > 0
+          ? `Updated: ${changes.join(", ")}`
+          : "Updated doctor information";
 
       this.logActivity(
         userId,
@@ -4431,7 +4447,10 @@ export class SqliteStorage implements IStorage {
     return `BACKUP-${year}-${count.toString().padStart(3, "0")}`;
   }
 
-  async createBackup(backupType: string = "auto", userId?: string): Promise<any> {
+  async createBackup(
+    backupType: string = "auto",
+    userId?: string,
+  ): Promise<any> {
     const backupId = this.generateBackupId();
     const startTime = new Date().toISOString();
 
@@ -4482,14 +4501,34 @@ export class SqliteStorage implements IStorage {
       // Count total records across all tables for reporting
       let totalRecords = 0;
       const tables = [
-        "users", "doctors", "patients", "patient_visits", "services",
-        "bills", "bill_items", "pathology_orders", "pathology_tests",
-        "patient_services", "admissions", "admission_events",
-        "hospital_settings", "system_settings", "room_types", "rooms",
-        "backup_logs", "audit_log", "activities", "patient_payments",
-        "patient_discounts", "pathology_categories", "dynamic_pathology_tests",
-        "service_categories", "doctor_service_rates", "doctor_earnings",
-        "doctor_payments", "schedule_events"
+        "users",
+        "doctors",
+        "patients",
+        "patient_visits",
+        "services",
+        "bills",
+        "bill_items",
+        "pathology_orders",
+        "pathology_tests",
+        "patient_services",
+        "admissions",
+        "admission_events",
+        "hospital_settings",
+        "system_settings",
+        "room_types",
+        "rooms",
+        "backup_logs",
+        "audit_log",
+        "activities",
+        "patient_payments",
+        "patient_discounts",
+        "pathology_categories",
+        "dynamic_pathology_tests",
+        "service_categories",
+        "doctor_service_rates",
+        "doctor_earnings",
+        "doctor_payments",
+        "schedule_events",
       ];
 
       for (const tableName of tables) {
@@ -4499,11 +4538,16 @@ export class SqliteStorage implements IStorage {
             .get() as { count: number };
           totalRecords += result.count;
         } catch (tableError) {
-          console.warn(`Could not count records in table ${tableName}:`, tableError);
+          console.warn(
+            `Could not count records in table ${tableName}:`,
+            tableError,
+          );
         }
       }
 
-      console.log(`Total records backed up: ${totalRecords} across ${tables.length} tables`);
+      console.log(
+        `Total records backed up: ${totalRecords} across ${tables.length} tables`,
+      );
 
       // Update backup log with success
       db.update(schema.backupLogs)
@@ -4666,12 +4710,13 @@ export class SqliteStorage implements IStorage {
 
       // Clean up old safety backups (keep only the 3 most recent)
       try {
-        const safetyBackups = fs.readdirSync(backupsDir)
-          .filter(file => file.startsWith('hospital-before-restore-'))
-          .map(file => ({
+        const safetyBackups = fs
+          .readdirSync(backupsDir)
+          .filter((file) => file.startsWith("hospital-before-restore-"))
+          .map((file) => ({
             name: file,
             path: path.join(backupsDir, file),
-            time: fs.statSync(path.join(backupsDir, file)).mtime.getTime()
+            time: fs.statSync(path.join(backupsDir, file)).mtime.getTime(),
           }))
           .sort((a, b) => b.time - a.time);
 
@@ -4681,7 +4726,7 @@ export class SqliteStorage implements IStorage {
           console.log(`Removed old safety backup: ${safetyBackups[i].name}`);
         }
       } catch (cleanupError) {
-        console.error('Error cleaning up old safety backups:', cleanupError);
+        console.error("Error cleaning up old safety backups:", cleanupError);
       }
 
       // 1. Save current backup history BEFORE closing database
