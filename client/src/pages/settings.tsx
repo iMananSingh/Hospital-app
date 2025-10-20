@@ -97,6 +97,12 @@ export default function Settings() {
   });
   const [pendingSystemSettings, setPendingSystemSettings] = useState<any>(null);
   const [timezoneOpen, setTimezoneOpen] = useState(false);
+  const [auditFromDate, setAuditFromDate] = useState("");
+  const [auditToDate, setAuditToDate] = useState("");
+  const [selectedAuditUser, setSelectedAuditUser] = useState("all");
+  const [selectedAuditTable, setSelectedAuditTable] = useState("all");
+  const [selectedAuditAction, setSelectedAuditAction] = useState("all");
+  const [selectedAuditLog, setSelectedAuditLog] = useState<any>(null);
 
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
@@ -297,6 +303,42 @@ export default function Settings() {
       },
       enabled: showRestoreDialog,
     });
+
+  const { data: auditLogs = [], isLoading: auditLogsLoading } = useQuery({
+    queryKey: ["/api/audit-logs", auditFromDate, auditToDate, selectedAuditUser, selectedAuditTable, selectedAuditAction],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (auditFromDate) params.append("fromDate", auditFromDate);
+      if (auditToDate) params.append("toDate", auditToDate);
+      if (selectedAuditUser !== "all") params.append("userId", selectedAuditUser);
+      if (selectedAuditTable !== "all") params.append("tableName", selectedAuditTable);
+      if (selectedAuditAction !== "all") params.append("action", selectedAuditAction);
+      params.append("limit", "100");
+
+      const response = await fetch(`/api/audit-logs?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch audit logs");
+      return response.json();
+    },
+    enabled: hasAccess,
+  });
+
+  const { data: auditStats } = useQuery({
+    queryKey: ["/api/audit-logs/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/audit-logs/stats", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch stats");
+      return response.json();
+    },
+    enabled: hasAccess,
+  });
 
   const saveHospitalSettingsMutation = useMutation({
     mutationFn: async (settingsData: any) => {
@@ -810,6 +852,35 @@ export default function Settings() {
     }).format(amount);
   };
 
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case "create":
+        return "bg-green-100 text-green-800";
+      case "update":
+        return "bg-blue-100 text-blue-800";
+      case "delete":
+        return "bg-red-100 text-red-800";
+      case "view":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
+  const auditTables = ["all", "patients", "doctors", "users", "bills", "services", "pathology_orders", "admissions"];
+  const auditActions = ["all", "create", "update", "delete", "view"];
+
   const serviceCategories = [
     "consultation",
     "pathology",
@@ -901,6 +972,9 @@ export default function Settings() {
             </TabsTrigger>
             <TabsTrigger value="backup" data-testid="tab-backup">
               Backup
+            </TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-audit">
+              Audit Logs
             </TabsTrigger>
           </TabsList>
 
@@ -1589,8 +1663,251 @@ export default function Settings() {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="audit">
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Total Logs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{auditStats?.totalLogs || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Actions Tracked</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{auditStats?.actionCounts?.length || 0}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium">Tables Monitored</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{auditStats?.tableCounts?.length || 0}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Filters */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Filter Audit Logs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="space-y-2">
+                      <Label>From Date</Label>
+                      <Input
+                        type="date"
+                        value={auditFromDate}
+                        onChange={(e) => setAuditFromDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>To Date</Label>
+                      <Input
+                        type="date"
+                        value={auditToDate}
+                        onChange={(e) => setAuditToDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>User</Label>
+                      <Select value={selectedAuditUser} onValueChange={setSelectedAuditUser}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Users</SelectItem>
+                          {users.map((u: any) => (
+                            <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Table</Label>
+                      <Select value={selectedAuditTable} onValueChange={setSelectedAuditTable}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {auditTables.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t === "all" ? "All Tables" : t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Action</Label>
+                      <Select value={selectedAuditAction} onValueChange={setSelectedAuditAction}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {auditActions.map((a) => (
+                            <SelectItem key={a} value={a}>
+                              {a === "all" ? "All Actions" : a.charAt(0).toUpperCase() + a.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Audit Logs Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audit Trail</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {auditLogsLoading ? (
+                    <div className="text-center py-8">Loading audit logs...</div>
+                  ) : auditLogs.logs?.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No audit logs found</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Timestamp</TableHead>
+                            <TableHead>User</TableHead>
+                            <TableHead>Action</TableHead>
+                            <TableHead>Table</TableHead>
+                            <TableHead>Record ID</TableHead>
+                            <TableHead>Changes</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {auditLogs.logs?.map((log: any) => (
+                            <TableRow key={log.id}>
+                              <TableCell className="text-sm">
+                                {formatDateTime(log.createdAt)}
+                              </TableCell>
+                              <TableCell>{log.username}</TableCell>
+                              <TableCell>
+                                <Badge className={getActionColor(log.action)}>
+                                  {log.action}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono text-sm">{log.tableName}</TableCell>
+                              <TableCell className="font-mono text-xs">{log.recordId.substring(0, 8)}...</TableCell>
+                              <TableCell>
+                                {log.changedFields ? (
+                                  <span className="text-sm text-muted-foreground">
+                                    {JSON.parse(log.changedFields).length} field(s)
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">N/A</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedAuditLog(log)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Audit Log Details Dialog */}
+      {selectedAuditLog && (
+        <Dialog open={true} onOpenChange={() => setSelectedAuditLog(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Audit Log Details</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Timestamp</Label>
+                  <p className="text-sm">{formatDateTime(selectedAuditLog.createdAt)}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">User</Label>
+                  <p className="text-sm">{selectedAuditLog.username}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Action</Label>
+                  <Badge className={getActionColor(selectedAuditLog.action)}>
+                    {selectedAuditLog.action}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Table</Label>
+                  <p className="text-sm font-mono">{selectedAuditLog.tableName}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Record ID</Label>
+                  <p className="text-sm font-mono">{selectedAuditLog.recordId}</p>
+                </div>
+              </div>
+
+              {selectedAuditLog.oldValues && (
+                <div>
+                  <Label className="text-sm font-medium">Old Values</Label>
+                  <pre className="mt-2 p-4 bg-gray-50 rounded-lg text-xs overflow-x-auto">
+                    {JSON.stringify(JSON.parse(selectedAuditLog.oldValues), null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {selectedAuditLog.newValues && (
+                <div>
+                  <Label className="text-sm font-medium">New Values</Label>
+                  <pre className="mt-2 p-4 bg-gray-50 rounded-lg text-xs overflow-x-auto">
+                    {JSON.stringify(JSON.parse(selectedAuditLog.newValues), null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {selectedAuditLog.changedFields && (
+                <div>
+                  <Label className="text-sm font-medium">Changed Fields</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {JSON.parse(selectedAuditLog.changedFields).map((field: string) => (
+                      <Badge key={field} variant="outline">{field}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* New Service Dialog */}
       <Dialog open={isNewServiceOpen} onOpenChange={setIsNewServiceOpen}>

@@ -290,9 +290,6 @@ export default function Sidebar() {
         {navigation.map((item) => (
           <NavItem key={item.name} to={item.href} icon={item.icon} label={item.name} />
         ))}
-        {(userRoles.includes("admin") || userRoles.includes("super_user")) && (
-          <NavItem to="/audit-logs" icon={FileText} label="Audit Logs" />
-        )}
       </nav>
 
       {/* User Profile Section */}
