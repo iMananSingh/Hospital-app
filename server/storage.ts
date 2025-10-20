@@ -1760,13 +1760,58 @@ export class SqliteStorage implements IStorage {
   async updateDoctor(
     id: string,
     doctor: Partial<InsertDoctor>,
+    userId?: string,
   ): Promise<Doctor | undefined> {
+    // Get the original doctor data before update
+    const originalDoctor = db
+      .select()
+      .from(schema.doctors)
+      .where(eq(schema.doctors.id, id))
+      .get();
+
     const updated = db
       .update(schema.doctors)
       .set({ ...doctor, updatedAt: new Date().toISOString() })
       .where(eq(schema.doctors.id, id))
       .returning()
       .get();
+
+    if (updated && userId && originalDoctor) {
+      // Determine what changed
+      const changes: string[] = [];
+      
+      if (doctor.name && doctor.name !== originalDoctor.name) {
+        changes.push(`name from "${originalDoctor.name}" to "${doctor.name}"`);
+      }
+      if (doctor.specialization && doctor.specialization !== originalDoctor.specialization) {
+        changes.push(`specialization from "${originalDoctor.specialization}" to "${doctor.specialization}"`);
+      }
+      if (doctor.qualification && doctor.qualification !== originalDoctor.qualification) {
+        changes.push(`qualification from "${originalDoctor.qualification}" to "${doctor.qualification}"`);
+      }
+      if (doctor.consultationFee !== undefined && doctor.consultationFee !== originalDoctor.consultationFee) {
+        changes.push(`consultation fee from ₹${originalDoctor.consultationFee} to ₹${doctor.consultationFee}`);
+      }
+
+      const changesDescription = changes.length > 0 
+        ? `Updated: ${changes.join(', ')}` 
+        : 'Updated doctor information';
+
+      this.logActivity(
+        userId,
+        "doctor_updated",
+        "Doctor Updated",
+        `Updated Doctor: ${updated.name} - ${changesDescription}`,
+        updated.id,
+        "doctor",
+        {
+          doctorName: updated.name,
+          specialization: updated.specialization,
+          changes: changes,
+        },
+      );
+    }
+
     return updated;
   }
 

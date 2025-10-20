@@ -521,11 +521,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/doctors/:id", authenticateToken, async (req, res) => {
+  app.put("/api/doctors/:id", authenticateToken, async (req: any, res) => {
     try {
       const { id } = req.params;
       const doctorData = insertDoctorSchema.parse(req.body);
-      const doctor = await storage.updateDoctor(id, doctorData);
+      const doctor = await storage.updateDoctor(id, doctorData, req.user?.id);
       res.json(doctor);
     } catch (error) {
       console.error("Doctor update error:", error);

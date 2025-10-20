@@ -685,9 +685,14 @@ export default function Dashboard() {
                             <UserStarIcon className="w-5 h-5 text-green-800" />
                           </div>
                         )}
+                        {activity.activityType === 'doctor_updated' && (
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <UserStarIcon className="w-5 h-5 text-blue-600" />
+                          </div>
+                        )}
                         {activity.activityType === 'doctor_permanently_deleted' && (
                           <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center">
-                            <Trash2 className="w-5 h-5 text-red-700" />
+                            <UserStarIcon className="w-5 h-5 text-red-800" />
                           </div>
                         )}
                         {activity.activityType === 'user_updated' && (
