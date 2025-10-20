@@ -62,7 +62,7 @@ interface ProfileEditFormProps {
 function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm({
     resolver: zodResolver(profileEditSchema),
     defaultValues: {
@@ -79,12 +79,12 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
         username: data.username,
         fullName: data.fullName,
       };
-      
+
       // Only include password if it's provided
       if (data.password && data.password.trim() !== "") {
         updateData.password = data.password;
       }
-      
+
       const response = await fetch("/api/profile", {
         method: "PUT",
         headers: {
@@ -145,7 +145,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="fullName"
@@ -159,7 +159,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="password"
@@ -178,7 +178,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="confirmPassword"
@@ -249,6 +249,26 @@ export default function Sidebar() {
 
   // Show all navigation items regardless of role
   const navigation = baseNavigation;
+  const userRoles = user?.roles || [];
+
+  const NavItem = ({ to, icon: Icon, label }: { to: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string }) => {
+    return (
+      <Link 
+        key={label} 
+        href={to}
+        className={cn(
+          "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
+          isActive(to)
+            ? "bg-medical-blue text-white"
+            : "text-text-muted hover:bg-muted hover:text-text-dark"
+        )}
+        data-testid={`nav-${to === "/" ? "dashboard" : to.substring(1)}`}
+      >
+        <Icon className="w-5 h-5" />
+        <span>{label}</span>
+      </Link>
+    );
+  };
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">
@@ -268,21 +288,11 @@ export default function Sidebar() {
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 space-y-2">
         {navigation.map((item) => (
-          <Link 
-            key={item.name} 
-            href={item.href}
-            className={cn(
-              "flex items-center space-x-3 px-3 py-3 rounded-lg font-medium transition-colors",
-              isActive(item.href)
-                ? "bg-medical-blue text-white"
-                : "text-text-muted hover:bg-muted hover:text-text-dark"
-            )}
-            data-testid={`nav-${item.href === "/" ? "dashboard" : item.href.substring(1)}`}
-          >
-            <item.icon className="w-5 h-5" />
-            <span>{item.name}</span>
-          </Link>
+          <NavItem key={item.name} to={item.href} icon={item.icon} label={item.name} />
         ))}
+        {(userRoles.includes("admin") || userRoles.includes("super_user")) && (
+          <NavItem to="/audit-logs" icon={FileText} label="Audit Logs" />
+        )}
       </nav>
 
       {/* User Profile Section */}

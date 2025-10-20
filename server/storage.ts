@@ -1898,6 +1898,23 @@ export class SqliteStorage implements IStorage {
           consultationFee: created.consultationFee,
         },
       );
+
+      // Audit log
+      const user = await this.getUserById(userId);
+      if (user) {
+        await this.logAction({
+          userId,
+          username: user.username,
+          action: "create",
+          tableName: "doctors",
+          recordId: created.id,
+          oldValues: null,
+          newValues: JSON.stringify(created),
+          changedFields: JSON.stringify(Object.keys(created)),
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
     }
 
     return created;
@@ -2229,6 +2246,23 @@ export class SqliteStorage implements IStorage {
           gender: patient.gender,
         },
       );
+
+      // Audit log
+      const user = await this.getUserById(userId);
+      if (user) {
+        await this.logAction({
+          userId,
+          username: user.username,
+          action: "create",
+          tableName: "patients",
+          recordId: patient.id,
+          oldValues: null,
+          newValues: JSON.stringify(patient),
+          changedFields: JSON.stringify(Object.keys(patient)),
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
     }
 
     return patient;
@@ -2268,13 +2302,42 @@ export class SqliteStorage implements IStorage {
   async updatePatient(
     id: string,
     patient: Partial<InsertPatient>,
+    userId?: string,
   ): Promise<Patient | undefined> {
+    // Get old values before update
+    const oldPatient = db
+      .select()
+      .from(schema.patients)
+      .where(eq(schema.patients.id, id))
+      .get();
+
     const updated = db
       .update(schema.patients)
       .set({ ...patient, updatedAt: new Date().toISOString() })
       .where(eq(schema.patients.id, id))
       .returning()
       .get();
+
+    // Audit log
+    if (updated && userId && oldPatient) {
+      const user = await this.getUserById(userId);
+      if (user) {
+        const changedFields = Object.keys(patient);
+        await this.logAction({
+          userId,
+          username: user.username,
+          action: "update",
+          tableName: "patients",
+          recordId: id,
+          oldValues: JSON.stringify(oldPatient),
+          newValues: JSON.stringify(updated),
+          changedFields: JSON.stringify(changedFields),
+          ipAddress: null,
+          userAgent: null,
+        });
+      }
+    }
+
     return updated;
   }
 

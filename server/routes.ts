@@ -9,7 +9,7 @@ import { pathologyCatalog, getAllPathologyTests, getTestsByCategory, getTestByNa
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
 import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
-import { eq, gte, lte, and, inArray } from "drizzle-orm"; // Import Drizzle ORM operators
+import { eq, gte, lte, and, inArray, desc, sql } from "drizzle-orm"; // Import Drizzle ORM operators
 import { patientServices, patients } from "@shared/schema"; // Import necessary schemas
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";

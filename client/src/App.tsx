@@ -21,8 +21,7 @@ import CurrentlyAdmitted from "@/pages/currently-admitted";
 import AdmittedToday from "@/pages/admitted-today";
 import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
-import PendingBills from "@/pages/pending-bills";
-import Diagnostics from "@/pages/diagnostics";
+import AuditLogs from "@/pages/audit-logs";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import { useEffect } from "react";
@@ -75,6 +74,7 @@ function AppRoutes() {
       <Route path="/opd-list" component={() => <ProtectedRoute component={OpdList} />} />
       <Route path="/lab-tests" component={() => <ProtectedRoute component={LabTests} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/audit-logs" component={AuditLogs} />
       <Route path="/pending-bills" component={() => <ProtectedRoute component={PendingBills} />} />
       <Route path="/diagnostics" component={() => <ProtectedRoute component={Diagnostics} />} />
       <Route component={NotFound} />
