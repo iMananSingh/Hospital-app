@@ -1775,6 +1775,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!orderDetails) {
         return res.status(404).json({ message: "Pathology order not found" });
       }
+
+      // Create audit log for view access
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: 'view',
+        tableName: 'pathology_orders',
+        recordId: req.params.id,
+        oldValues: null, // No old values for a view operation
+        newValues: {
+          orderId: req.params.id,
+          viewedBy: req.user.username
+        },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       res.json(orderDetails);
     } catch (error) {
       console.error("Error fetching pathology order details:", error);
