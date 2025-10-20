@@ -105,6 +105,12 @@ export default function Settings() {
   const [selectedAuditAction, setSelectedAuditAction] = useState("all");
   const [selectedAuditLog, setSelectedAuditLog] = useState<any>(null);
 
+  // Check user access early since it's used in queries
+  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
+  const hasAccess =
+    currentUserRoles.includes("admin") ||
+    currentUserRoles.includes("super_user");
+
   const { data: services, isLoading: servicesLoading } = useQuery({
     queryKey: ["/api/services"],
   });
@@ -941,11 +947,6 @@ export default function Settings() {
   };
 
   // Only show settings if user has admin or super_user role
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const hasAccess =
-    currentUserRoles.includes("admin") ||
-    currentUserRoles.includes("super_user");
-
   if (!hasAccess) {
     return (
       <div className="space-y-6">
