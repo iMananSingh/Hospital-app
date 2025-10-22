@@ -77,3 +77,31 @@ app.use((req, res, next) => {
     }
   });
 })();
+import express from "express";
+import { createServer } from "vite";
+import path from "path";
+import fs from "fs";
+
+const app = express();
+
+(async () => {
+  if (process.env.NODE_ENV === "development") {
+    const vite = await createServer({
+      server: { middlewareMode: true },
+      appType: "custom"
+    });
+
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.resolve(process.cwd(), "dist/public");
+    app.use(express.static(distPath));
+    app.use("*", (_req, res) => {
+      res.sendFile(path.resolve(distPath, "index.html"));
+    });
+  }
+
+  const port = parseInt(process.env.PORT || "5000", 10);
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`Server running on port ${port}`);
+  });
+})();
