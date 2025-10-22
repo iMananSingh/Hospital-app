@@ -1,32 +1,27 @@
-# MedCare Pro - Hospital Management System
+# HMSync - Hospital Management SaaS
 
 ## Overview
 
-MedCare Pro is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning MedCare Pro as a leading solution in the healthcare IT market.
+HMSync is a professional SaaS landing page for a comprehensive hospital management system. The landing page showcases the product's capabilities and encourages potential customers to request demos for custom pricing. Built with modern web technologies, featuring smooth animations, parallax effects, and a conversion-optimized design.
 
-## Demo Credentials
+**Product Positioning:**
+- Name: HMSync
+- Tagline: "Advanced Control. Owner-First. Fully Customizable."
+- Target Market: Global hospitals and healthcare facilities of all sizes
+- Business Model: SaaS with custom pricing (no fixed costs shown on website)
 
-The system comes pre-configured with demo users for testing:
+## Landing Page Features
 
-- **Root User (Super Admin)**
-  - Username: `root`
-  - Password: `root123`
-  - Roles: Super User
+The HMSync landing page includes:
 
-- **Doctor**
-  - Username: `doctor`
-  - Password: `doctor123`
-  - Roles: Doctor, Billing Staff
-
-- **Billing Staff**
-  - Username: `billing`
-  - Password: `billing123`
-  - Roles: Billing Staff
-
-- **Reception Staff**
-  - Username: `reception`
-  - Password: `reception123`
-  - Roles: Receptionist
+- **Hero Section**: Animated gradient background with parallax effects, clear value proposition, and prominent CTAs
+- **Problem/Solution Section**: Comparison of traditional systems vs HMSync approach
+- **Features Grid**: 9 key modules showcased (Patient, Doctor, OPD, Lab, Admissions, Billing, Analytics, Audit, Backup)
+- **Why Choose HMSync**: 4 key differentiators with parallax backgrounds
+- **Contact Form**: Validated demo request form (name, email, hospital, phone, message)
+- **Footer**: Professional footer with contact information and quick links
+- **Theme Toggle**: Light/dark mode support with smooth transitions
+- **Responsive Design**: Optimized for mobile, tablet, and desktop
 
 ## User Preferences
 
@@ -34,81 +29,106 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**October 15, 2025** - Timezone Display Enhancement
-- Implemented centralized timezone-aware date/time formatting across the application
-- Created useTimezone hook with formatDateTime, formatDate, and formatTime utilities
-- Updated all patient-related pages (patients list, patient details, OPD, pathology, services, admission) to use timezone-aware formatting
-- Removed hardcoded timezone conversions (IST corrections) in favor of configurable timezone support
-- Enhanced settings page to invalidate React Query cache when timezone changes, ensuring immediate UI updates
-- All timestamps now dynamically adjust based on the configured hospital timezone setting
-
-**October 2, 2025** - Replit Environment Setup Completed
-- Successfully imported GitHub repository into Replit environment
-- Verified all dependencies and configurations are working correctly
-- Workflow configured: "Start application" running `npm run dev` on port 5000
-- Deployment configuration set up for autoscale deployment
-- Vite already properly configured with `allowedHosts: true` and `host: "0.0.0.0"` for Replit proxy compatibility
-- Application successfully running and accessible via web preview
-- SQLite database (hospital.db) present with demo data
+**October 22, 2025** - HMSync Landing Page Creation
+- Created professional SaaS landing page with HMSync branding
+- Implemented Framer Motion animations with parallax effects
+- Added scroll-triggered fade-in animations throughout
+- Built comprehensive features section showcasing actual HMS capabilities
+- Created validated contact/demo request form with React Hook Form + Zod
+- Implemented full dark/light mode support with theme toggle
+- Responsive design optimized for all screen sizes
+- Smooth scrolling and performance-optimized animations
+- No fixed pricing displayed - encourages demo requests for custom quotes
+- Architect-approved design ready for deployment
 
 ## System Architecture
 
 ### Frontend Architecture
 
-The frontend uses React 18 with TypeScript, Wouter for routing, and TanStack Query for server state management. UI components are built with Radix UI and styled using Tailwind CSS. Form handling is managed by React Hook Form with Zod validation. Vite is used for development and optimized production builds. The frontend incorporates a protected route system with authentication middleware and a responsive sidebar navigation layout.
+The landing page is a single-page React 18 application built with TypeScript. It uses Framer Motion for animations and parallax effects, React Hook Form with Zod for form validation, and Tailwind CSS for styling. The design is fully responsive with dark/light mode support via a custom ThemeProvider. Vite is used for development and optimized production builds.
 
-### Backend Architecture
+### Key Technologies
 
-The backend is a RESTful API built with Express.js and TypeScript. It utilizes Drizzle ORM for type-safe SQLite database operations. Authentication is JWT-based with bcrypt for password hashing. The API is organized route-wise with middleware for authentication and logging, and features centralized error handling.
+- **React 18**: Modern UI library with hooks
+- **TypeScript**: Type-safe development
+- **Framer Motion**: Smooth animations and parallax effects
+- **React Hook Form + Zod**: Form validation and error handling
+- **Tailwind CSS**: Utility-first styling
+- **Radix UI**: Accessible component primitives
+- **Lucide Icons**: Consistent iconography
+- **Vite**: Fast development and build tool
 
-### Data Storage Solutions
+### Landing Page Sections
 
-SQLite serves as the primary database, managed by Drizzle ORM for type-safe queries and schema management. It employs a normalized relational design with foreign key relationships. Drizzle Kit is used for database schema migrations. Key tables include Users, Patients, Doctors, Patient Visits, Bills, Services, Pathology Tests, and Audit Logs.
+**1. Hero Section**
+- Animated gradient background with parallax scrolling effects
+- HMSync branding with gradient text effect
+- Clear value proposition and tagline
+- Two prominent CTAs: "Request a Demo" and "Explore Features"
+- Animated scroll indicator
 
-### Authentication and Authorization
+**2. Problem/Solution Section**
+- Side-by-side comparison cards
+- Traditional system pain points vs HMSync benefits
+- Scroll-triggered fade-in animations
+- Visual differentiation (red vs green)
 
-The system implements JWT-based authentication with bcrypt for password hashing. It supports role-based access control for administrators, doctors, receptionists, and billing staff. Token-based sessions are used, with both frontend and backend route guards ensuring secure access.
+**3. Features Grid**
+- 9 key HMS modules with icons:
+  - Patient Management
+  - Doctor Management
+  - OPD Management
+  - Pathology Lab
+  - In-Patient Admissions
+  - Billing & Payments
+  - Analytics & Reports
+  - Audit Logs
+  - Backup & Restore
+- Hover animations for interactive feel
+- Responsive grid layout
 
-### UI/UX Decisions
+**4. Why Choose HMSync**
+- Parallax background section
+- 4 key differentiators:
+  - Fully Customizable
+  - Owner-First Control
+  - Advanced Features
+  - Modern Interface
+- Custom quote CTA card (no fixed pricing)
 
-The application prioritizes a modern and responsive user interface. Radix UI primitives are used for accessible and customizable components, complemented by Tailwind CSS for a utility-first styling approach. Lucide Icons provide consistent iconography. The design emphasizes intuitive navigation and clear presentation of information, such as dynamic OPD consultation fees and time-based scheduling.
+**5. Contact Form**
+- Form fields: Name, Email, Hospital Name, Phone, Message
+- Full validation with inline error messages
+- Success toast notification
+- Smooth animations on interaction
 
-### Feature Specifications
+**6. Footer**
+- 3-column layout
+- Contact information (email, phone, location)
+- Quick links
+- Copyright information
 
-Key features include:
-- Patient registration and management
-- Billing and invoicing with automated doctor earnings calculation
-- Pathology test management
-- Doctor management with salary tracking and individual payment processing
-- OPD management with dynamic consultation fees and doctor-segregated listings
-- Secure self-profile editing for all users
-- Role-based access control for different user types
-- **Configurable Timezone Support**: System timezone can be configured in settings for international deployment
-  - All database timestamps are stored in UTC for consistency and reliability
-  - Frontend utilities format timestamps for display in the configured timezone
-  - Supports major global timezones with DST handling via Intl.DateTimeFormat
-  - Timezone cache invalidation ensures immediate propagation of timezone changes
+**7. Theme Toggle**
+- Fixed position in top-right corner
+- Sun/moon icon transition
+- Smooth theme switching
+- Persisted in localStorage
 
 ## External Dependencies
 
-### Third-Party Services
-- **Neon Database**: PostgreSQL serverless database option (used for potential future scaling)
-
-### UI and Component Libraries
-- **Radix UI**: UI primitives
+### UI and Animation Libraries
+- **Framer Motion**: Animation library for smooth transitions and parallax effects
+- **Radix UI**: Accessible component primitives (Button, Input, Card, etc.)
 - **Tailwind CSS**: Utility-first CSS framework
-- **Lucide Icons**: Icon library
-- **TanStack Query**: Server state management and caching
-- **React Hook Form**: Form handling
-- **Zod**: Runtime type validation
+- **Lucide Icons**: Icon library for consistent iconography
+- **React Hook Form**: Form state management and validation
+- **Zod**: Schema validation for forms
 
 ### Development and Build Tools
-- **Vite**: Build tool and development server
+- **Vite**: Fast build tool and development server
 - **TypeScript**: Static type checking
-- **ESBuild**: Fast bundler
 - **PostCSS**: CSS processing
-- **Drizzle Kit**: Database migration and schema management tools
+- **Autoprefixer**: CSS vendor prefixing
 
-### Database and Storage
-- **better-sqlite3**: SQLite database driver
-- **Drizzle ORM**: Type-safe database operations
+### Note
+The original HMS application code (patient management, billing, etc.) has been preserved in the codebase for reference. The current deployment shows only the HMSync landing page for marketing purposes.
