@@ -3,6 +3,12 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { backupScheduler } from "./backup-scheduler";
 
+// The duplicate declaration and its associated code have been removed.
+// The following code block is from the edited snippet and replaces the original server setup.
+
+import { createServer } from "vite";
+import path from "path";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -68,40 +74,12 @@ app.use((req, res, next) => {
     reusePort: true,
   }, async () => {
     log(`serving on port ${port}`);
-    
+
     // Initialize backup scheduler
     try {
       await backupScheduler.initializeScheduler();
     } catch (error) {
       console.error('Failed to initialize backup scheduler:', error);
     }
-  });
-})();
-import express from "express";
-import { createServer } from "vite";
-import path from "path";
-import fs from "fs";
-
-const app = express();
-
-(async () => {
-  if (process.env.NODE_ENV === "development") {
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: "custom"
-    });
-
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(process.cwd(), "dist/public");
-    app.use(express.static(distPath));
-    app.use("*", (_req, res) => {
-      res.sendFile(path.resolve(distPath, "index.html"));
-    });
-  }
-
-  const port = parseInt(process.env.PORT || "5000", 10);
-  app.listen(port, "0.0.0.0", () => {
-    console.log(`Server running on port ${port}`);
   });
 })();
