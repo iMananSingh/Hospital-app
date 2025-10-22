@@ -1,0 +1,25 @@
+Manan Singh commenced employment with the Firm on 24 July 2023. He continued to be employed with the 
+Firm until 1 February 2025. At the time of leaving the firm he was holding the position of Associate 1. As per 
+firm’s policy the employee worked for 40 hours in a week.   
+During his tenure with the Firm, the responsibilities and duties included the following: 
+• Executed IT audits and risk assessments for more than ten global clients across cloud-based and 
+enterprise environments, focusing on compliance, access management, and technical control testing. 
+• Regularly collaborated with cross-functional teams to deliver comprehensive assurance and risk 
+mitigation solutions.  
+• Assessed controls in complex systems such as Workday (Payroll & HCM), SAP, Oracle, and NetSuite, 
+ensuring audit-readiness across access, configuration, and change management layers. 
+• For key clients, he was part of the team that led end-to-end audit cycles, performing GITC and ITAC 
+controls testing in coordination with our US onshore colleagues.  
+• Involved in Real Time System Implementation Assessments (RTSAs), data migration validation, security 
+configuration reviews, and Segregation of Duties (SoD) analysis adding value to the engagement. 
+• He was part of the IT Attest team which conducted SOC 1 (Type II) control testing and documentation 
+for clients in the banking sector.  
+• He helped with the internal standardization initiative to develop Audit Program Guides (APGs) which can 
+then be used across the firm for technology audits.  
+• He was involved in technical documentation, worked with US onshore colleagues in testing and 
+analyzing rulesets for FastPath which is a tool used to perform analysis of Separation of Duties (SOD) 
+Risk and Sensitive Access Risk.  
+• His involvement in the testing phase of the rulesets provided him with an understanding of risk 
+governance and controls design.  
+• He was also involved in automation initiatives in Workday audits which are testament to his innovative 
+and results-oriented mindset.

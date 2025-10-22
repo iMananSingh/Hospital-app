@@ -1,0 +1,1727 @@
+=== SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:3235 === DOCTOR SELECTION CHANGE ===
+patient-detail.tsx:3236 Selected value: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:3239 Form value set to: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:3841 Submit button clicked
+patient-detail.tsx:3842 Form is valid: false
+patient-detail.tsx:3843 Form errors: {}
+patient-detail.tsx:3844 Selected service type: 
+patient-detail.tsx:3845 Selected services count: 1
+patient-detail.tsx:3849 Service name: 
+patient-detail.tsx:3853 Price: 0
+patient-detail.tsx:3176 Form submit event triggered
+patient-detail.tsx:3181 Submit button clicked
+patient-detail.tsx:3182 Form is valid: false
+patient-detail.tsx:3183 Form errors: {}
+patient-detail.tsx:3184 Selected service type: 
+patient-detail.tsx:3185 Selected services count: 1
+patient-detail.tsx:3186 Service name: 
+patient-detail.tsx:3187 Price: 0
+patient-detail.tsx:819 === FORM SUBMISSION DEBUG ===
+patient-detail.tsx:820 Form data received: {patientId: '0104d5bc5ff9c6056aebc04180ed8d74', serviceType: '', serviceName: '', scheduledDate: '2025-09-24', scheduledTime: '10:13', …}
+patient-detail.tsx:821 Selected service type: 
+patient-detail.tsx:822 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:823 Scheduled date: 2025-09-24
+patient-detail.tsx:824 Scheduled time: 10:13
+patient-detail.tsx:825 Selected services: [{…}]
+patient-detail.tsx:826 Form validation state: {defaultValues: {…}, …}
+patient-detail.tsx:827 Available doctors: 8
+patient-detail.tsx:931 === CATALOG SERVICE CREATION ===
+patient-detail.tsx:932 Service: Catheterization
+patient-detail.tsx:933 Doctor ID from form: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:954 Final service data doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 24
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (28) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 9b25e50ddf70456e460eec7c08cbc98a
+patient-detail.tsx:1990 Doctor Name from API: Dr. Prakhar
+patient-detail.tsx:2008 Final doctor name: Dr. Prakhar
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: ECG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: biki
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: baka
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: OPD Consultation
+patient-detail.tsx:1989 Doctor ID: 8a5d3fa53165827b7afbadc2cdeaf97b
+patient-detail.tsx:1990 Doctor Name from API: Dr. Gurumohan Singh
+patient-detail.tsx:2008 Final doctor name: Dr. Gurumohan Singh
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: Catheterization
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:1987 === SERVICE DISPLAY DEBUG ===
+patient-detail.tsx:1988 Service: USG
+patient-detail.tsx:1989 Doctor ID: null
+patient-detail.tsx:1990 Doctor Name from API: null
+patient-detail.tsx:2008 Final doctor name: No Doctor Assigned
+patient-detail.tsx:2552 === TIMELINE DEBUG START ===
+patient-detail.tsx:2583 Normalizing date for registration unknown: "2025-09-23T22:20:17.015Z"
+patient-detail.tsx:2631 Final normalized registration date: "2025-09-23T22:20:17.015Z" -> timestamp: 1758666017015 (9/24/2025, 3:50:17 AM)
+patient-detail.tsx:2709 Processing services for timeline: 25
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-159: "2025-09-24 04:44:34"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:44:34Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-159: "2025-09-24T04:44:34Z" -> timestamp: 1758689074000 (9/24/2025, 10:14:34 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-158: "2025-09-24 04:42:10"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:42:10Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-158: "2025-09-24T04:42:10Z" -> timestamp: 1758688930000 (9/24/2025, 10:12:10 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-157: "2025-09-24 04:38:07"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:38:07Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-157: "2025-09-24T04:38:07Z" -> timestamp: 1758688687000 (9/24/2025, 10:08:07 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-156: "2025-09-24 04:36:13"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:36:13Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-156: "2025-09-24T04:36:13Z" -> timestamp: 1758688573000 (9/24/2025, 10:06:13 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-155: "2025-09-24 04:32:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:32:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-155: "2025-09-24T04:32:31Z" -> timestamp: 1758688351000 (9/24/2025, 10:02:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-154: "2025-09-24 04:29:31"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:31Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-154: "2025-09-24T04:29:31Z" -> timestamp: 1758688171000 (9/24/2025, 9:59:31 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-153: "2025-09-24 04:29:22"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:29:22Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-153: "2025-09-24T04:29:22Z" -> timestamp: 1758688162000 (9/24/2025, 9:59:22 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-152: "2025-09-24 04:27:23"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:27:23Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-152: "2025-09-24T04:27:23Z" -> timestamp: 1758688043000 (9/24/2025, 9:57:23 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-151: "2025-09-24 04:22:30"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T04:22:30Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-151: "2025-09-24T04:22:30Z" -> timestamp: 1758687750000 (9/24/2025, 9:52:30 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-150: "2025-09-24 03:51:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:51:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-150: "2025-09-24T03:51:26Z" -> timestamp: 1758685886000 (9/24/2025, 9:21:26 AM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-149: "2025-09-23 17:57:03"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:57:03Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-149: "2025-09-23T17:57:03Z" -> timestamp: 1758650223000 (9/23/2025, 11:27:03 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-148: "2025-09-23 17:50:41"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:50:41Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-148: "2025-09-23T17:50:41Z" -> timestamp: 1758649841000 (9/23/2025, 11:20:41 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-147: "2025-09-23 17:43:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:43:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-147: "2025-09-23T17:43:33Z" -> timestamp: 1758649413000 (9/23/2025, 11:13:33 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-146: "2025-09-23 17:39:26"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:39:26Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-146: "2025-09-23T17:39:26Z" -> timestamp: 1758649166000 (9/23/2025, 11:09:26 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-145: "2025-09-23 17:32:21"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:21Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-145: "2025-09-23T17:32:21Z" -> timestamp: 1758648741000 (9/23/2025, 11:02:21 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-144: "2025-09-23 17:32:02"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:32:02Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-144: "2025-09-23T17:32:02Z" -> timestamp: 1758648722000 (9/23/2025, 11:02:02 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-143: "2025-09-23 17:31:27"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:27Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-143: "2025-09-23T17:31:27Z" -> timestamp: 1758648687000 (9/23/2025, 11:01:27 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-142: "2025-09-23 17:31:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:31:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-142: "2025-09-23T17:31:05Z" -> timestamp: 1758648665000 (9/23/2025, 11:01:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-141: "2025-09-23 17:30:56"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:30:56Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-141: "2025-09-23T17:30:56Z" -> timestamp: 1758648656000 (9/23/2025, 11:00:56 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-140: "2025-09-23 17:04:11"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:04:11Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-140: "2025-09-23T17:04:11Z" -> timestamp: 1758647051000 (9/23/2025, 10:34:11 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-139: "2025-09-23 17:01:52"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T17:01:52Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-139: "2025-09-23T17:01:52Z" -> timestamp: 1758646912000 (9/23/2025, 10:31:52 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-138: "2025-09-23 16:57:19"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:57:19Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-138: "2025-09-23T16:57:19Z" -> timestamp: 1758646639000 (9/23/2025, 10:27:19 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-137: "2025-09-23 16:51:05"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:51:05Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-137: "2025-09-23T16:51:05Z" -> timestamp: 1758646265000 (9/23/2025, 10:21:05 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-136: "2025-09-23 16:50:43"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:43Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-136: "2025-09-23T16:50:43Z" -> timestamp: 1758646243000 (9/23/2025, 10:20:43 PM)
+patient-detail.tsx:2583 Normalizing date for service SRV-2025-135: "2025-09-23 16:50:33"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-23T16:50:33Z"
+patient-detail.tsx:2679 Final normalized date for service SRV-2025-135: "2025-09-23T16:50:33Z" -> timestamp: 1758646233000 (9/23/2025, 10:20:33 PM)
+patient-detail.tsx:2797 Processing admissions for timeline: 1
+patient-detail.tsx:2810 Processing admission 4c46f16dad6d15fb6c6853f0a15e02a8 with 2 events
+patient-detail.tsx:2583 Normalizing date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z"
+patient-detail.tsx:2679 Final normalized date for admission_event d88228964e17980bf81f573e51953b03: "2025-09-23T17:04:31.796Z" -> timestamp: 1758647071796 (9/23/2025, 10:34:31 PM)
+patient-detail.tsx:2583 Normalizing date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24 10:02:00"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T10:02:00Z"
+patient-detail.tsx:2679 Final normalized date for admission_event 0f0d53688253efa8b666a820bd6c87a3: "2025-09-24T10:02:00Z" -> timestamp: 1758708120000 (9/24/2025, 3:32:00 PM)
+patient-detail.tsx:2911 Processing payment and discount entries for timeline
+patient-detail.tsx:2963 Processing pathology orders for timeline: 1
+patient-detail.tsx:2583 Normalizing date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24 03:49:09"
+patient-detail.tsx:2644 Converted SQLite format to: "2025-09-24T03:49:09Z"
+patient-detail.tsx:2679 Final normalized date for pathology 070432080de87d71bc7682afafbae745: "2025-09-24T03:49:09Z" -> timestamp: 1758685749000 (9/24/2025, 9:19:09 AM)
+patient-detail.tsx:3031 Timeline events before sorting: (29) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3054 Timeline events after sorting: (29) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+patient-detail.tsx:3065 === TIMELINE DEBUG END ===
