@@ -3217,9 +3217,9 @@ export default function PatientDetail() {
                         eventType: string,
                         eventData?: any,
                       ) => {
-                        // Check if this is a discharge admissionevent and make it red
+                        // Check if this is a discharge admission_event and make it red
                         if (
-                          eventType === "admissionevent" &&
+                          eventType === "admission_event" &&
                           eventData?.eventType === "discharge"
                         ) {
                           return {
