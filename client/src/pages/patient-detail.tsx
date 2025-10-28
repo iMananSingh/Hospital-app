@@ -2730,7 +2730,14 @@ export default function PatientDetail() {
                               </span>
                               <div className="font-medium">
                                 {admission.dischargeDate
-                                  ? formatDateTime(admission.dischargeDate)
+                                  ? new Date(admission.dischargeDate).toLocaleString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: 'numeric',
+                                      minute: '2-digit',
+                                      hour12: true
+                                    })
                                   : calcStayDays(admission.admissionDate)}
                               </div>
                             </div>
