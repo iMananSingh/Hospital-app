@@ -116,6 +116,18 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const getButtonColor = () => {
+    // Check for OPD first before checking type
+    if (receiptData.details?.category === 'OPD Consultation' ||
+        receiptData.details?.serviceType === 'opd' ||
+        receiptData.details?.serviceName === 'OPD Consultation' ||
+        receiptData.title === 'OPD Consultation' ||
+        receiptData.title?.includes('OPD') ||
+        receiptData.description?.includes('OPD') ||
+        receiptData.details?.type === 'opd_visit' ||
+        receiptData.details?.consultationFee) {
+      return 'bg-blue-500 hover:bg-blue-600 text-white';
+    }
+
     switch (receiptData.type) {
       case 'pathology':
         return 'bg-pink-500 hover:bg-pink-600 text-white';
@@ -128,17 +140,6 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       case 'discount':
         return 'bg-amber-500 hover:bg-amber-600 text-white';
       default:
-        // For OPD visits and other cases, check details
-        if (receiptData.details?.category === 'OPD Consultation' ||
-            receiptData.details?.serviceType === 'opd' ||
-            receiptData.details?.serviceName === 'OPD Consultation' ||
-            receiptData.title === 'OPD Consultation' ||
-            receiptData.title?.includes('OPD') ||
-            receiptData.description?.includes('OPD') ||
-            receiptData.details?.type === 'opd_visit' ||
-            receiptData.details?.consultationFee) {
-          return 'bg-blue-500 hover:bg-blue-600 text-white';
-        }
         return 'bg-gray-500 hover:bg-gray-600 text-white';
     }
   };
