@@ -2770,7 +2770,7 @@ export default function PatientDetail() {
                               <div className="font-medium">
                                 {admission.dischargeDate
                                   ? formatDateTime(admission.dischargeDate)
-                                  : calcStayDays(admission.admissionDate)}
+                                  : calcStayDays(admission.admissionDate, undefined)}
                               </div>
                             </div>
                           </div>
@@ -3552,17 +3552,17 @@ export default function PatientDetail() {
                                           <span className="font-medium">
                                             Total Stay:
                                           </span>{" "}
-                                          {calcStayDays(
+                                          {event.data.dischargeDate ? calcStayDays(
                                             event.data.admissionDate,
                                             event.data.dischargeDate,
-                                          )}{" "}
+                                          ) : calcStayDays(event.data.admissionDate, undefined)}{" "}
                                           days
                                         </div>
                                         <div>
                                           <span className="font-medium">
                                             Total Cost:
                                           </span>{" "}
-                                          ₹{event.data.totalCost}
+                                          ₹{event.data.totalCost || 0}
                                         </div>
                                       </div>
                                     );
