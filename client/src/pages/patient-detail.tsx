@@ -1341,7 +1341,7 @@ export default function PatientDetail() {
     const requiredFields = [
       "doctorId",
       "currentWardType",
-      "currentRoomNumber", // Added room number validation
+      "currentRoomNumber",
       "admissionDate",
       "dailyCost",
     ];
@@ -1361,10 +1361,14 @@ export default function PatientDetail() {
     setIsCreatingAdmission(true);
 
     try {
+      // ✅ Convert admission datetime to UTC ISO string (same as discharge)
+      const utcAdmissionDate = new Date(data.admissionDate).toISOString();
+
       // Create admission first
       const admissionData = {
         ...data,
         admissionId: `ADM-${Date.now()}`,
+        admissionDate: utcAdmissionDate, // ✅ Send UTC string instead of local
       };
 
       const admissionResult = await apiRequest("/api/admissions", {
@@ -1386,8 +1390,8 @@ export default function PatientDetail() {
             price: service.price,
             quantity: 1,
             notes: `Admission service - ${service.name}`,
-            scheduledDate: data.admissionDate.split("T")[0], // Extract date part
-            scheduledTime: data.admissionDate.split("T")[1] || "00:00", // Extract time part
+            scheduledDate: utcAdmissionDate.split("T")[0], // ✅ Use UTC date part
+            scheduledTime: utcAdmissionDate.split("T")[1].slice(0, 5), // ✅ Use UTC time (HH:MM)
             status: "scheduled",
             doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
@@ -1646,9 +1650,11 @@ export default function PatientDetail() {
       return;
     }
 
+    const utcDateTime = new Date(dischargeDateTime).toISOString();
+
     dischargePatientMutation.mutate({
       currentAdmissionId: currentAdmission.id,
-      dischargeDateTime,
+      dischargeDateTime: utcDateTime,
     });
   };
 
@@ -2720,12 +2726,14 @@ export default function PatientDetail() {
                                   const admitEvent = events?.find(
                                     (e: any) => e.eventType === "admit",
                                   );
-                                  const dateStr = admitEvent?.eventTime || admission.admissionDate;
-                                  
+                                  const dateStr =
+                                    admitEvent?.eventTime ||
+                                    admission.admissionDate;
+
                                   // Parse the date string directly without timezone conversion
                                   // since it's already in local time from datetime-local input
                                   const date = new Date(dateStr);
-                                  
+
                                   return new Intl.DateTimeFormat("en-US", {
                                     year: "numeric",
                                     month: "short",

@@ -3561,64 +3561,26 @@ export class SqliteStorage implements IStorage {
 
   async createAdmission(admission: InsertAdmission): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
-    // Use the provided admission date, or current system time if not provided
-    const now = new Date();
     let admissionDate: string;
     let eventDate: string;
 
     if (admission.admissionDate) {
-      try {
-        // Convert datetime-local format to UTC ISO format
-        // datetime-local sends "YYYY-MM-DDTHH:MM[:SS[.sss]]" which lacks timezone info
-        // Treat it as UTC by appending 'Z' and validate through Date constructor
-        let dateString: string;
-        if (
-          admission.admissionDate.includes("T") &&
-          !admission.admissionDate.includes("Z") &&
-          !admission.admissionDate.includes("+")
-        ) {
-          // datetime-local format: determine what to append based on precision
-          const timePart = admission.admissionDate.split("T")[1];
-          const colonCount = (timePart.match(/:/g) || []).length;
-
-          if (colonCount === 1) {
-            // HH:MM format - append seconds and milliseconds
-            dateString = admission.admissionDate + ":00.000";
-          } else if (colonCount === 2 && !timePart.includes(".")) {
-            // HH:MM:SS format - append milliseconds
-            dateString = admission.admissionDate + ".000";
-          } else {
-            // HH:MM:SS.sss format - just append Z
-            dateString = admission.admissionDate;
-          }
-        } else if (
-          admission.admissionDate.includes("Z") ||
-          admission.admissionDate.includes("+")
-        ) {
-          // Already has timezone info
-          dateString = admission.admissionDate;
-        } else {
-          // Date only format
-          dateString = admission.admissionDate + "T00:00:00.000";
-        }
-        // Validate the constructed string through Date constructor
-        admissionDate = new Date(dateString).toISOString();
-        // Extract just the date part for receipt generation
-        eventDate = admissionDate.split("T")[0];
-      } catch (e) {
-        console.log(
-          `Failed to parse admission date: ${admission.admissionDate}, using current time`,
-        );
-        admissionDate = now.toISOString();
-        eventDate =
-          now.getFullYear() +
-          "-" +
-          String(now.getMonth() + 1).padStart(2, "0") +
-          "-" +
-          String(now.getDate()).padStart(2, "0");
+      // Frontend should send UTC ISO string (with Z suffix)
+      // If it has Z or +, use it directly; otherwise convert to ISO
+      if (
+        admission.admissionDate.includes("Z") ||
+        admission.admissionDate.includes("+")
+      ) {
+        admissionDate = admission.admissionDate;
+      } else {
+        // Fallback: convert to ISO if needed
+        admissionDate = new Date(admission.admissionDate).toISOString();
       }
+      // Extract date part for receipt generation
+      eventDate = admissionDate.split("T")[0];
     } else {
-      // Fallback to current system datetime
+      // No admission date provided, use current system time (same as transferRoom)
+      const now = new Date();
       admissionDate = now.toISOString();
       eventDate =
         now.getFullYear() +
@@ -3673,20 +3635,19 @@ export class SqliteStorage implements IStorage {
           ...admission,
           admissionId,
           admissionDate,
-          // Map the wardType to current fields
           currentWardType: admission.currentWardType,
           currentRoomNumber: admission.currentRoomNumber,
         })
         .returning()
         .get();
 
-      // Create an 'admit' event to track the admission with exact timing in UTC
+      // Create an 'admit' event with UTC timestamp (same as transferRoom)
       const admitEvent = tx
         .insert(schema.admissionEvents)
         .values({
           admissionId: newAdmission.id,
           eventType: "admit",
-          eventTime: admissionDate, // This is already in UTC ISO format from above
+          eventTime: admissionDate, // UTC ISO format
           roomNumber: admission.currentRoomNumber || null,
           wardType: admission.currentWardType || null,
           notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
@@ -4427,58 +4388,29 @@ export class SqliteStorage implements IStorage {
   ): Promise<Admission | undefined> {
     return db.transaction((tx) => {
       try {
-        // Validate and parse discharge date/time
+        // Parse discharge date/time - simplified to match transferRoom logic
         let parsedDischargeDateTime: string;
+
         if (
           !dischargeDateTime ||
           typeof dischargeDateTime !== "string" ||
           dischargeDateTime.trim() === ""
         ) {
+          // No datetime provided, use current time (same as transferRoom)
           console.log(`No discharge datetime provided, using current time`);
           parsedDischargeDateTime = new Date().toISOString();
+        } else if (
+          dischargeDateTime.includes("Z") ||
+          dischargeDateTime.includes("+")
+        ) {
+          // Already in UTC ISO format (frontend converted it) - use directly
+          parsedDischargeDateTime = dischargeDateTime;
         } else {
-          try {
-            // Convert datetime-local format to UTC ISO format
-            // datetime-local sends "YYYY-MM-DDTHH:MM[:SS[.sss]]" which lacks timezone info
-            // Treat it as UTC by appending 'Z' and validate through Date constructor
-            let dateString: string;
-            if (
-              dischargeDateTime.includes("T") &&
-              !dischargeDateTime.includes("Z") &&
-              !dischargeDateTime.includes("+")
-            ) {
-              // datetime-local format: determine what to append based on precision
-              const timePart = dischargeDateTime.split("T")[1];
-              const colonCount = (timePart.match(/:/g) || []).length;
-
-              if (colonCount === 1) {
-                // HH:MM format - append seconds and milliseconds
-                dateString = dischargeDateTime + ":00.000";
-              } else if (colonCount === 2 && !timePart.includes(".")) {
-                // HH:MM:SS format - append milliseconds
-                dateString = dischargeDateTime + ".000";
-              } else {
-                // HH:MM:SS.sss format - just append Z
-                dateString = dischargeDateTime;
-              }
-            } else if (
-              dischargeDateTime.includes("Z") ||
-              dischargeDateTime.includes("+")
-            ) {
-              // Already has timezone info
-              dateString = dischargeDateTime;
-            } else {
-              // Date only format
-              dateString = dischargeDateTime + "T00:00:00.000";
-            }
-            // Validate the constructed string through Date constructor
-            parsedDischargeDateTime = new Date(dateString).toISOString();
-          } catch (e) {
-            console.log(
-              `Failed to parse discharge datetime: ${dischargeDateTime}, using current time`,
-            );
-            parsedDischargeDateTime = new Date().toISOString();
-          }
+          // Should not happen if frontend converts properly, but handle gracefully
+          console.log(
+            `Received non-UTC datetime: ${dischargeDateTime}, attempting to parse`,
+          );
+          parsedDischargeDateTime = new Date(dischargeDateTime).toISOString();
         }
 
         const admission = tx
@@ -4533,13 +4465,13 @@ export class SqliteStorage implements IStorage {
           .slice(0, 6);
         const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
 
-        // Create discharge event with UTC timestamp
+        // Create discharge event with UTC timestamp (same as transferRoom)
         const dischargeEvent = tx
           .insert(schema.admissionEvents)
           .values({
             admissionId: admission.id,
             eventType: "discharge",
-            eventTime: parsedDischargeDateTime, // Already in UTC ISO format
+            eventTime: parsedDischargeDateTime, // UTC ISO format
             notes: "Patient discharged",
             createdBy: userId,
             receiptNumber: dischargeReceiptNumber,
@@ -4566,7 +4498,7 @@ export class SqliteStorage implements IStorage {
           }
         }
 
-        // Log discharge activity (do this after transaction to avoid issues)
+        // Log discharge activity
         setImmediate(() => {
           const patient = db
             .select()
@@ -4595,7 +4527,7 @@ export class SqliteStorage implements IStorage {
           "Transaction error during discharge patient:",
           transactionError,
         );
-        throw transactionError; // Re-throw to rollback the transaction
+        throw transactionError;
       }
     });
   }
