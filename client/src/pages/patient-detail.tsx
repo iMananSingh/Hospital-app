@@ -621,6 +621,42 @@ export default function PatientDetail() {
     refetchInterval: 10000, // Refetch every 10 seconds for financial updates
   });
 
+  // Fetch patient payments
+  const { data: patientPayments = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "payments"],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/patients/${patientId}/payments`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch payments");
+      return response.json();
+    },
+    enabled: !!patientId,
+  });
+
+  // Fetch patient discounts
+  const { data: patientDiscounts = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "discounts"],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/patients/${patientId}/discounts`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        },
+      );
+      if (!response.ok) throw new Error("Failed to fetch discounts");
+      return response.json();
+    },
+    enabled: !!patientId,
+  });
+
   // Fetch admission events for detailed history
   const { data: admissionEventsMap = {} } = useQuery({
     queryKey: ["/api/admission-events", patientId],
@@ -3056,6 +3092,40 @@ export default function PatientDetail() {
                       });
                     }
 
+                    // Add payments
+                    if (patientPayments && patientPayments.length > 0) {
+                      patientPayments.forEach((payment: any) => {
+                        const paymentDateTime = new Date(payment.paymentDate || payment.createdAt);
+
+                        allEvents.push({
+                          type: "payment",
+                          data: {
+                            ...payment,
+                            sortTimestamp: paymentDateTime.getTime(),
+                          },
+                          timestamp: paymentDateTime,
+                          sortTimestamp: paymentDateTime.getTime(),
+                        });
+                      });
+                    }
+
+                    // Add discounts
+                    if (patientDiscounts && patientDiscounts.length > 0) {
+                      patientDiscounts.forEach((discount: any) => {
+                        const discountDateTime = new Date(discount.discountDate || discount.createdAt);
+
+                        allEvents.push({
+                          type: "discount",
+                          data: {
+                            ...discount,
+                            sortTimestamp: discountDateTime.getTime(),
+                          },
+                          timestamp: discountDateTime,
+                          sortTimestamp: discountDateTime.getTime(),
+                        });
+                      });
+                    }
+
                     // Add admissions and related events
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
@@ -3199,6 +3269,18 @@ export default function PatientDetail() {
                               bgColor: "bg-red-100",
                               iconColor: "text-red-700",
                             };
+                          case "payment":
+                            return {
+                              borderColor: "border-l-green-500",
+                              bgColor: "bg-green-50",
+                              iconColor: "text-green-600",
+                            };
+                          case "discount":
+                            return {
+                              borderColor: "border-l-orange-500",
+                              bgColor: "bg-orange-50",
+                              iconColor: "text-orange-600",
+                            };
                           default:
                             return {
                               borderColor: "border-l-gray-500",
@@ -3259,6 +3341,10 @@ export default function PatientDetail() {
                                       return `Admission ${event.data.eventType}`;
                                     case "discharge":
                                       return "Patient Discharged";
+                                    case "payment":
+                                      return `Payment Received - ${event.data.paymentMethod || "Cash"}`;
+                                    case "discount":
+                                      return `Discount Applied - ${event.data.discountType || "Manual"}`;
                                     default:
                                       return "Timeline Event";
                                   }
@@ -3579,6 +3665,60 @@ export default function PatientDetail() {
                                           </span>{" "}
                                           ₹{event.data.totalCost}
                                         </div>
+                                      </div>
+                                    );
+                                  case "payment":
+                                    return (
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="font-medium">
+                                            Amount:
+                                          </span>{" "}
+                                          <span className="text-green-600 font-semibold">
+                                            ₹{event.data.amount}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium">
+                                            Method:
+                                          </span>{" "}
+                                          {event.data.paymentMethod || "Cash"}
+                                        </div>
+                                        {event.data.reason && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Reason:
+                                            </span>{" "}
+                                            {event.data.reason}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  case "discount":
+                                    return (
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="font-medium">
+                                            Amount:
+                                          </span>{" "}
+                                          <span className="text-orange-600 font-semibold">
+                                            ₹{event.data.amount}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium">
+                                            Type:
+                                          </span>{" "}
+                                          {event.data.discountType || "Manual"}
+                                        </div>
+                                        {event.data.reason && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Reason:
+                                            </span>{" "}
+                                            {event.data.reason}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   default:
