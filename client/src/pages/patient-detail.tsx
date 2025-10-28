@@ -3272,7 +3272,7 @@ export default function PatientDetail() {
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-8 w-8 p-0 flex items-center justify-center hover:bg-white border"
+                                        className="h-8 w-8 p-0 flex items-center justify-center hover:bg-white border rounded-none"
                                       >
                                         <Printer className="w-4 h-4" />
                                       </Button>
