@@ -115,35 +115,6 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     return receiptData.details?.receiptNumber || 'RECEIPT-NOT-GENERATED';
   };
 
-  const getButtonColor = () => {
-    // Check for OPD first before checking type
-    if (receiptData.details?.category === 'OPD Consultation' ||
-        receiptData.details?.serviceType === 'opd' ||
-        receiptData.details?.serviceName === 'OPD Consultation' ||
-        receiptData.title === 'OPD Consultation' ||
-        receiptData.title?.includes('OPD') ||
-        receiptData.description?.includes('OPD') ||
-        receiptData.details?.type === 'opd_visit' ||
-        receiptData.details?.consultationFee) {
-      return 'bg-blue-500 hover:bg-blue-600 text-white';
-    }
-
-    switch (receiptData.type) {
-      case 'pathology':
-        return 'bg-pink-500 hover:bg-pink-600 text-white';
-      case 'service':
-        return 'bg-purple-500 hover:bg-purple-600 text-white';
-      case 'admission':
-        return 'bg-green-500 hover:bg-green-600 text-white';
-      case 'payment':
-        return 'bg-blue-500 hover:bg-blue-600 text-white';
-      case 'discount':
-        return 'bg-amber-500 hover:bg-amber-600 text-white';
-      default:
-        return 'bg-gray-500 hover:bg-gray-600 text-white';
-    }
-  };
-
   const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -693,7 +664,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       onClick={handlePrint}
       variant="outline"
       size="sm"
-      className={`flex items-center justify-center h-10 w-10 p-0 rounded-full ${getButtonColor()}`}
+      className="flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-10 w-10 p-0 rounded-full"
       title="Print Receipt"
     >
       <Printer className="h-4 w-4" />
