@@ -4328,29 +4328,41 @@ export class SqliteStorage implements IStorage {
         .slice(0, 6);
       const receiptNumber = `${yymmdd}-RMC-${transferCount.toString().padStart(4, "0")}`;
 
+      // Get current admission details BEFORE updating
+      const currentAdmission = tx
+        .select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.id, admissionId))
+        .get();
+
+      if (!currentAdmission) {
+        throw new Error("Admission not found");
+      }
+
       // Update the admission's current room
       const updated = tx
         .update(schema.admissions)
         .set({
           currentRoomNumber: roomData.roomNumber,
           currentWardType: roomData.wardType,
-          updatedAt: eventTime,
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.admissions.id, admissionId))
         .returning()
         .get();
 
-      // Create room change event with UTC timestamp
-      const roomChangeEvent = tx
+      // Create a room_change event
+      const transferEvent = tx
         .insert(schema.admissionEvents)
         .values({
           admissionId: admissionId,
           eventType: "room_change",
-          eventTime: new Date().toISOString(), // Already in UTC
+          eventTime: new Date().toISOString(), // Store in UTC ISO format
           roomNumber: roomData.roomNumber,
           wardType: roomData.wardType,
-          notes: updates.notes || "Room changed",
+          notes: `Patient transferred from ${currentAdmission.currentWardType} (${currentAdmission.currentRoomNumber}) to ${roomData.wardType} (${roomData.roomNumber})`,
           createdBy: userId,
+          receiptNumber: receiptNumber,
         })
         .returning()
         .get();
@@ -6827,7 +6839,7 @@ export class SqliteStorage implements IStorage {
   }
 
   /**
-   * Archive audit logs to audit_log_backup table based on fiscal year
+   * Archive audit logs to audit_log_backup table based on fiscalyear
    */
   async archiveAuditLogs(fiscalYear: string): Promise<{
     archived: number;
