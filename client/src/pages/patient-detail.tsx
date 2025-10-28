@@ -1361,14 +1361,22 @@ export default function PatientDetail() {
     setIsCreatingAdmission(true);
 
     try {
-      // ✅ Convert admission datetime to UTC ISO string (same as discharge)
-      const utcAdmissionDate = new Date(data.admissionDate).toISOString();
+      // ✅ Parse user-selected datetime and add current seconds/milliseconds
+      const selectedDate = new Date(data.admissionDate);
+      const now = new Date();
+
+      // Set seconds and milliseconds from current time
+      selectedDate.setSeconds(now.getSeconds());
+      selectedDate.setMilliseconds(now.getMilliseconds());
+
+      // Convert to UTC ISO string
+      const utcAdmissionDate = selectedDate.toISOString();
 
       // Create admission first
       const admissionData = {
         ...data,
         admissionId: `ADM-${Date.now()}`,
-        admissionDate: utcAdmissionDate, // ✅ Send UTC string instead of local
+        admissionDate: utcAdmissionDate,
       };
 
       const admissionResult = await apiRequest("/api/admissions", {
@@ -1390,8 +1398,8 @@ export default function PatientDetail() {
             price: service.price,
             quantity: 1,
             notes: `Admission service - ${service.name}`,
-            scheduledDate: utcAdmissionDate.split("T")[0], // ✅ Use UTC date part
-            scheduledTime: utcAdmissionDate.split("T")[1].slice(0, 5), // ✅ Use UTC time (HH:MM)
+            scheduledDate: utcAdmissionDate.split("T")[0],
+            scheduledTime: utcAdmissionDate.split("T")[1].slice(0, 5),
             status: "scheduled",
             doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
@@ -1426,8 +1434,8 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
 
       setIsAdmissionDialogOpen(false);
-      setSelectedServices([]); // Clear selected services
-      setSelectedServiceSearchQuery(""); // Clear search
+      setSelectedServices([]);
+      setSelectedServiceSearchQuery("");
       admissionForm.reset();
 
       toast({
@@ -1437,7 +1445,6 @@ export default function PatientDetail() {
     } catch (error: any) {
       console.error("Admission creation error:", error);
 
-      // Handle room occupancy error specifically
       let errorMessage = "Please try again.";
       if (error.message && error.message.includes("already occupied")) {
         errorMessage = error.message;
@@ -1650,7 +1657,16 @@ export default function PatientDetail() {
       return;
     }
 
-    const utcDateTime = new Date(dischargeDateTime).toISOString();
+    // ✅ Parse user-selected datetime and add current seconds/milliseconds
+    const selectedDate = new Date(dischargeDateTime);
+    const now = new Date();
+
+    // Set seconds and milliseconds from current time
+    selectedDate.setSeconds(now.getSeconds());
+    selectedDate.setMilliseconds(now.getMilliseconds());
+
+    // Convert to UTC ISO string
+    const utcDateTime = selectedDate.toISOString();
 
     dischargePatientMutation.mutate({
       currentAdmissionId: currentAdmission.id,
