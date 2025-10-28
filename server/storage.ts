@@ -3618,7 +3618,7 @@ export class SqliteStorage implements IStorage {
       const receiptNumber = `${yymmdd}-ADM-${admissionCount.toString().padStart(4, "0")}`;
 
       // Create the admission episode
-      const created = tx
+      const newAdmission = tx
         .insert(schema.admissions)
         .values({
           ...admission,
@@ -3631,18 +3631,20 @@ export class SqliteStorage implements IStorage {
         .returning()
         .get();
 
-      // Create the initial admission event with receipt number
-      tx.insert(schema.admissionEvents)
+      // Create an 'admit' event to track the admission with exact timing in UTC
+      const admitEvent = tx
+        .insert(schema.admissionEvents)
         .values({
-          admissionId: created.id,
+          admissionId: newAdmission.id,
           eventType: "admit",
-          eventTime: now.toISOString(),
-          roomNumber: admission.currentRoomNumber,
-          wardType: admission.currentWardType,
+          eventTime: admissionDate, // This is already in UTC ISO format from above
+          roomNumber: admission.currentRoomNumber || null,
+          wardType: admission.currentWardType || null,
           notes: `Patient admitted to ${admission.currentWardType} - Room ${admission.currentRoomNumber}`,
           receiptNumber: receiptNumber,
         })
-        .run();
+        .returning()
+        .get();
 
       // Increment occupied beds for the room type
       if (admission.currentWardType) {
@@ -3663,7 +3665,7 @@ export class SqliteStorage implements IStorage {
         }
       }
 
-      return created;
+      return newAdmission;
     });
   }
 
@@ -4338,19 +4340,20 @@ export class SqliteStorage implements IStorage {
         .returning()
         .get();
 
-      // Create room change event with receipt number
-      tx.insert(schema.admissionEvents)
+      // Create room change event with UTC timestamp
+      const roomChangeEvent = tx
+        .insert(schema.admissionEvents)
         .values({
           admissionId: admissionId,
           eventType: "room_change",
-          eventTime: eventTime,
+          eventTime: new Date().toISOString(), // Already in UTC
           roomNumber: roomData.roomNumber,
           wardType: roomData.wardType,
-          notes: `Room transferred to ${roomData.wardType} - Room ${roomData.roomNumber}`,
+          notes: updates.notes || "Room changed",
           createdBy: userId,
-          receiptNumber: receiptNumber,
         })
-        .run();
+        .returning()
+        .get();
 
       return updated;
     });
@@ -4421,30 +4424,16 @@ export class SqliteStorage implements IStorage {
           .returning()
           .get();
 
-        // Create discharge event with receipt number
-        const eventDate = parsedDischargeDateTime.split("T")[0];
-        const dischargeCount = this.getDailyReceiptCountSync(
-          "discharge",
-          eventDate,
-        );
-        const dateObj = new Date(eventDate);
-        const yymmdd = dateObj
-          .toISOString()
-          .slice(2, 10)
-          .replace(/-/g, "")
-          .slice(0, 6);
-        const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
-
-        // Create discharge event with proper receipt number
+        // Create discharge event with UTC timestamp
         const dischargeEvent = tx
           .insert(schema.admissionEvents)
           .values({
             admissionId: admission.id,
             eventType: "discharge",
-            eventTime: parsedDischargeDateTime,
+            eventTime: new Date(dischargeDateTime).toISOString(), // Ensure UTC ISO format
             notes: "Patient discharged",
-            receiptNumber: dischargeReceiptNumber,
-            createdBy: userId || null, // Allow null if userId is undefined
+            createdBy: userId,
+            receiptNumber: receiptNumber,
           })
           .returning()
           .get();
