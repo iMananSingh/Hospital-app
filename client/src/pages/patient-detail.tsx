@@ -3145,7 +3145,22 @@ export default function PatientDetail() {
 
                     return allEvents.map((event, index) => {
                       // Define colors and icons for different event types
-                      const getEventColor = (eventType: string) => {
+                      const getEventColor = (
+                        eventType: string,
+                        eventData?: any,
+                      ) => {
+                        // Check if this is a discharge admissionevent and make it red
+                        if (
+                          eventType === "admissionevent" &&
+                          eventData?.eventType === "discharge"
+                        ) {
+                          return {
+                            borderColor: "border-l-red-600",
+                            bgColor: "bg-red-100",
+                            iconColor: "text-red-700",
+                          };
+                        }
+
                         switch (eventType) {
                           case "opd_visit":
                             return {
@@ -3193,7 +3208,7 @@ export default function PatientDetail() {
                         }
                       };
 
-                      const eventColors = getEventColor(event.type);
+                      const eventColors = getEventColor(event.type, event.data);
 
                       return (
                         <div
