@@ -777,7 +777,9 @@ async function initializeDatabase() {
       db.$client.exec(`
         ALTER TABLE system_settings ADD COLUMN fiscal_year_start_month INTEGER DEFAULT 4;
       `);
-      console.log("Added fiscal_year_start_month column to system_settings table");
+      console.log(
+        "Added fiscal_year_start_month column to system_settings table",
+      );
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -786,7 +788,9 @@ async function initializeDatabase() {
       db.$client.exec(`
         ALTER TABLE system_settings ADD COLUMN fiscal_year_start_day INTEGER DEFAULT 1;
       `);
-      console.log("Added fiscal_year_start_day column to system_settings table");
+      console.log(
+        "Added fiscal_year_start_day column to system_settings table",
+      );
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -795,7 +799,9 @@ async function initializeDatabase() {
       db.$client.exec(`
         ALTER TABLE system_settings ADD COLUMN audit_log_retention_years INTEGER DEFAULT 7;
       `);
-      console.log("Added audit_log_retention_years column to system_settings table");
+      console.log(
+        "Added audit_log_retention_years column to system_settings table",
+      );
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -804,7 +810,9 @@ async function initializeDatabase() {
       db.$client.exec(`
         ALTER TABLE system_settings ADD COLUMN last_audit_archive_date TEXT;
       `);
-      console.log("Added last_audit_archive_date column to system_settings table");
+      console.log(
+        "Added last_audit_archive_date column to system_settings table",
+      );
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -3564,27 +3572,34 @@ export class SqliteStorage implements IStorage {
         // datetime-local sends "YYYY-MM-DDTHH:MM[:SS[.sss]]" which lacks timezone info
         // Treat it as UTC by appending 'Z' and validate through Date constructor
         let dateString: string;
-        if (admission.admissionDate.includes("T") && !admission.admissionDate.includes("Z") && !admission.admissionDate.includes("+")) {
+        if (
+          admission.admissionDate.includes("T") &&
+          !admission.admissionDate.includes("Z") &&
+          !admission.admissionDate.includes("+")
+        ) {
           // datetime-local format: determine what to append based on precision
           const timePart = admission.admissionDate.split("T")[1];
           const colonCount = (timePart.match(/:/g) || []).length;
-          
+
           if (colonCount === 1) {
             // HH:MM format - append seconds and milliseconds
-            dateString = admission.admissionDate + ":00.000Z";
+            dateString = admission.admissionDate + ":00.000";
           } else if (colonCount === 2 && !timePart.includes(".")) {
             // HH:MM:SS format - append milliseconds
-            dateString = admission.admissionDate + ".000Z";
+            dateString = admission.admissionDate + ".000";
           } else {
             // HH:MM:SS.sss format - just append Z
-            dateString = admission.admissionDate + "Z";
+            dateString = admission.admissionDate;
           }
-        } else if (admission.admissionDate.includes("Z") || admission.admissionDate.includes("+")) {
+        } else if (
+          admission.admissionDate.includes("Z") ||
+          admission.admissionDate.includes("+")
+        ) {
           // Already has timezone info
           dateString = admission.admissionDate;
         } else {
           // Date only format
-          dateString = admission.admissionDate + "T00:00:00.000Z";
+          dateString = admission.admissionDate + "T00:00:00.000";
         }
         // Validate the constructed string through Date constructor
         admissionDate = new Date(dateString).toISOString();
@@ -4427,27 +4442,34 @@ export class SqliteStorage implements IStorage {
             // datetime-local sends "YYYY-MM-DDTHH:MM[:SS[.sss]]" which lacks timezone info
             // Treat it as UTC by appending 'Z' and validate through Date constructor
             let dateString: string;
-            if (dischargeDateTime.includes("T") && !dischargeDateTime.includes("Z") && !dischargeDateTime.includes("+")) {
+            if (
+              dischargeDateTime.includes("T") &&
+              !dischargeDateTime.includes("Z") &&
+              !dischargeDateTime.includes("+")
+            ) {
               // datetime-local format: determine what to append based on precision
               const timePart = dischargeDateTime.split("T")[1];
               const colonCount = (timePart.match(/:/g) || []).length;
-              
+
               if (colonCount === 1) {
                 // HH:MM format - append seconds and milliseconds
-                dateString = dischargeDateTime + ":00.000Z";
+                dateString = dischargeDateTime + ":00.000";
               } else if (colonCount === 2 && !timePart.includes(".")) {
                 // HH:MM:SS format - append milliseconds
-                dateString = dischargeDateTime + ".000Z";
+                dateString = dischargeDateTime + ".000";
               } else {
                 // HH:MM:SS.sss format - just append Z
-                dateString = dischargeDateTime + "Z";
+                dateString = dischargeDateTime;
               }
-            } else if (dischargeDateTime.includes("Z") || dischargeDateTime.includes("+")) {
+            } else if (
+              dischargeDateTime.includes("Z") ||
+              dischargeDateTime.includes("+")
+            ) {
               // Already has timezone info
               dateString = dischargeDateTime;
             } else {
               // Date only format
-              dateString = dischargeDateTime + "T00:00:00.000Z";
+              dateString = dischargeDateTime + "T00:00:00.000";
             }
             // Validate the constructed string through Date constructor
             parsedDischargeDateTime = new Date(dateString).toISOString();
@@ -4499,7 +4521,10 @@ export class SqliteStorage implements IStorage {
 
         // Generate receipt number for discharge event using the parsed UTC datetime
         const eventDate = parsedDischargeDateTime.split("T")[0];
-        const dischargeCount = this.getDailyReceiptCountSync("discharge", eventDate);
+        const dischargeCount = this.getDailyReceiptCountSync(
+          "discharge",
+          eventDate,
+        );
         const dateObj = new Date(eventDate);
         const yymmdd = dateObj
           .toISOString()
@@ -6731,7 +6756,7 @@ export class SqliteStorage implements IStorage {
    */
   private getChangedFields(
     oldValues: any,
-    newValues: any
+    newValues: any,
   ): { changedFields: string[]; oldData: any; newData: any } {
     const changed: string[] = [];
     const oldData: any = {};
@@ -6790,7 +6815,7 @@ export class SqliteStorage implements IStorage {
 
       const { changedFields, oldData, newData } = this.getChangedFields(
         params.oldValues,
-        params.newValues
+        params.newValues,
       );
 
       // Insert audit log
@@ -6801,22 +6826,17 @@ export class SqliteStorage implements IStorage {
           action: params.action,
           tableName: params.tableName,
           recordId: params.recordId,
-          oldValues: params.oldValues
-            ? JSON.stringify(oldData)
-            : null,
-          newValues: params.newValues
-            ? JSON.stringify(newData)
-            : null,
-          changedFields: changedFields.length > 0
-            ? JSON.stringify(changedFields)
-            : null,
+          oldValues: params.oldValues ? JSON.stringify(oldData) : null,
+          newValues: params.newValues ? JSON.stringify(newData) : null,
+          changedFields:
+            changedFields.length > 0 ? JSON.stringify(changedFields) : null,
           ipAddress: params.ipAddress || null,
           userAgent: params.userAgent || null,
         })
         .run();
 
       console.log(
-        `Audit log created: ${params.action} on ${params.tableName} by ${params.username}`
+        `Audit log created: ${params.action} on ${params.tableName} by ${params.username}`,
       );
     } catch (error) {
       // Log error but don't throw - audit logging should not break the app
@@ -6853,13 +6873,13 @@ export class SqliteStorage implements IStorage {
 
       if (filters.startDate) {
         whereConditions.push(
-          sql`${schema.auditLog.createdAt} >= ${filters.startDate}`
+          sql`${schema.auditLog.createdAt} >= ${filters.startDate}`,
         );
       }
 
       if (filters.endDate) {
         whereConditions.push(
-          sql`${schema.auditLog.createdAt} <= ${filters.endDate}`
+          sql`${schema.auditLog.createdAt} <= ${filters.endDate}`,
         );
       }
 
@@ -6870,9 +6890,7 @@ export class SqliteStorage implements IStorage {
               .select({ count: sql<number>`count(*)` })
               .from(schema.auditLog)
               .where(and(...whereConditions))
-          : db
-              .select({ count: sql<number>`count(*)` })
-              .from(schema.auditLog);
+          : db.select({ count: sql<number>`count(*)` }).from(schema.auditLog);
 
       const countResult = countQuery.get();
       const total = countResult?.count || 0;
@@ -6917,7 +6935,7 @@ export class SqliteStorage implements IStorage {
       const startDate = new Date(
         startYear,
         fiscalStartMonth - 1,
-        fiscalStartDay
+        fiscalStartDay,
       );
       const endDate = new Date(endYear, fiscalStartMonth - 1, fiscalStartDay);
 
@@ -6931,8 +6949,8 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             sql`${schema.auditLog.createdAt} >= ${startDateStr}`,
-            sql`${schema.auditLog.createdAt} < ${endDateStr}`
-          )
+            sql`${schema.auditLog.createdAt} < ${endDateStr}`,
+          ),
         )
         .all();
 
@@ -6966,8 +6984,8 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             sql`${schema.auditLog.createdAt} >= ${startDateStr}`,
-            sql`${schema.auditLog.createdAt} < ${endDateStr}`
-          )
+            sql`${schema.auditLog.createdAt} < ${endDateStr}`,
+          ),
         )
         .run();
 
@@ -6977,7 +6995,7 @@ export class SqliteStorage implements IStorage {
       });
 
       console.log(
-        `Archived ${logsToArchive.length} audit logs for fiscal year ${fiscalYear}`
+        `Archived ${logsToArchive.length} audit logs for fiscal year ${fiscalYear}`,
       );
       return { archived: logsToArchive.length, deleted: logsToArchive.length };
     } catch (error) {
@@ -7002,7 +7020,7 @@ export class SqliteStorage implements IStorage {
 
       if (filters.fiscalYear) {
         whereConditions.push(
-          eq(schema.auditLogBackup.fiscalYear, filters.fiscalYear)
+          eq(schema.auditLogBackup.fiscalYear, filters.fiscalYear),
         );
       }
 
@@ -7012,7 +7030,7 @@ export class SqliteStorage implements IStorage {
 
       if (filters.tableName) {
         whereConditions.push(
-          eq(schema.auditLogBackup.tableName, filters.tableName)
+          eq(schema.auditLogBackup.tableName, filters.tableName),
         );
       }
 
@@ -7071,7 +7089,9 @@ export class SqliteStorage implements IStorage {
       // Delete archived logs older than retention period
       const result = db
         .delete(schema.auditLogBackup)
-        .where(sql`substr(${schema.auditLogBackup.fiscalYear}, 1, 4) < ${cutoffYear.toString()}`)
+        .where(
+          sql`substr(${schema.auditLogBackup.fiscalYear}, 1, 4) < ${cutoffYear.toString()}`,
+        )
         .run();
 
       console.log(`Cleaned up ${result.changes} old archived audit logs`);
