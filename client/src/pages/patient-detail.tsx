@@ -3234,6 +3234,11 @@ export default function PatientDetail() {
                                 })()}
                               </h3>
                               <div className="flex items-center gap-3">
+                                <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
+                                  {formatDateTime(
+                                    event.timestamp.toISOString(),
+                                  )}
+                                </div>
                                 {/* Receipt/Print button for applicable events */}
                                 {(event.type === "service" ||
                                   event.type === "service_batch" ||
@@ -3259,11 +3264,6 @@ export default function PatientDetail() {
                                     }
                                   />
                                 )}
-                                <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
-                                  {formatDateTime(
-                                    event.timestamp.toISOString(),
-                                  )}
-                                </div>
                               </div>
                             </div>
 
