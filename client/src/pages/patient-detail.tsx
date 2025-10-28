@@ -2720,10 +2720,20 @@ export default function PatientDetail() {
                                   const admitEvent = events?.find(
                                     (e: any) => e.eventType === "admit",
                                   );
-                                  return formatDateTime(
-                                    admitEvent?.eventTime ||
-                                      admission.admissionDate,
-                                  );
+                                  const dateStr = admitEvent?.eventTime || admission.admissionDate;
+                                  
+                                  // Parse the date string directly without timezone conversion
+                                  // since it's already in local time from datetime-local input
+                                  const date = new Date(dateStr);
+                                  
+                                  return new Intl.DateTimeFormat("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  }).format(date);
                                 })()}
                               </div>
                             </div>
