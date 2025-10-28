@@ -3180,9 +3180,9 @@ export default function PatientDetail() {
                             };
                           case "discharge":
                             return {
-                              borderColor: "border-l-red-500",
-                              bgColor: "bg-red-50",
-                              iconColor: "text-red-600",
+                              borderColor: "border-l-red-600",
+                              bgColor: "bg-red-100",
+                              iconColor: "text-red-700",
                             };
                           default:
                             return {
