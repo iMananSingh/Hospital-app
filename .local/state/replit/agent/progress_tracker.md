@@ -66,6 +66,36 @@
 - **Status**: Application now running successfully on port 5000
 - **Verification**: Database initialized, backup scheduler running, MedCare Pro login page verified ✓
 
+### Admission Events Timezone Fix (October 28, 2025 at 2:32 PM)
+[x] Fixed event_time storage to strictly use UTC timestamps
+- **Issue**: event_time column in admission_events table was storing local time instead of UTC
+  - datetime-local inputs send values like "2025-10-28T15:00" without timezone information
+  - Backend was not properly converting these to UTC before storage
+  - Could cause issues with timezone-dependent features and data consistency
+- **Root Cause**:
+  - datetime-local format lacks timezone information
+  - Previous code didn't validate or normalize timestamps before storage
+  - No error handling for malformed date inputs
+- **Solution**:
+  - Implemented precision-aware datetime parsing for all input variants:
+    - HH:MM format → append ":00.000Z"
+    - HH:MM:SS format → append ".000Z"
+    - HH:MM:SS.sss format → append "Z"
+    - ISO with timezone → use as-is
+    - Date only → append "T00:00:00.000Z"
+  - All constructed strings validated through `new Date().toISOString()`
+  - Added try/catch blocks with fallback to current time for invalid inputs
+  - Consistent error handling across admission and discharge flows
+- **Files Modified**:
+  - `server/storage.ts` - Updated createAdmission() and dischargePatient() functions
+- **Impact**:
+  - All admission events (admit, discharge, room_change) now store UTC timestamps
+  - Graceful degradation for malformed inputs instead of crashes
+  - Receipt generation and sequencing remain accurate
+  - Analytics and reporting will show correct UTC-normalized times
+- **Architect Review**: Approved ✓
+- **Testing**: Application running successfully with no errors ✓
+
 ### "Coming Soon" Badges Added (October 18, 2025)
 [x] Added visual indicators for upcoming notification features
 - **Change**: Added "Coming Soon" badges to Email and SMS notification toggles in System Settings
