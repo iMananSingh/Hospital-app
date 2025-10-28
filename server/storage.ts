@@ -4424,6 +4424,17 @@ export class SqliteStorage implements IStorage {
           .returning()
           .get();
 
+        // Generate receipt number for discharge event
+        const eventDate = new Date(dischargeDateTime).toISOString().split("T")[0];
+        const dischargeCount = this.getDailyReceiptCountSync("discharge", eventDate);
+        const dateObj = new Date(eventDate);
+        const yymmdd = dateObj
+          .toISOString()
+          .slice(2, 10)
+          .replace(/-/g, "")
+          .slice(0, 6);
+        const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
+
         // Create discharge event with UTC timestamp
         const dischargeEvent = tx
           .insert(schema.admissionEvents)
@@ -4433,7 +4444,7 @@ export class SqliteStorage implements IStorage {
             eventTime: new Date(dischargeDateTime).toISOString(), // Ensure UTC ISO format
             notes: "Patient discharged",
             createdBy: userId,
-            receiptNumber: receiptNumber,
+            receiptNumber: dischargeReceiptNumber,
           })
           .returning()
           .get();
