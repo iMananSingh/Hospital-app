@@ -625,14 +625,11 @@ export default function PatientDetail() {
   const { data: patientPayments = [] } = useQuery({
     queryKey: ["/api/patients", patientId, "payments"],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/patients/${patientId}/payments`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-          },
+      const response = await fetch(`/api/patients/${patientId}/payments`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-      );
+      });
       if (!response.ok) throw new Error("Failed to fetch payments");
       return response.json();
     },
@@ -643,14 +640,11 @@ export default function PatientDetail() {
   const { data: patientDiscounts = [] } = useQuery({
     queryKey: ["/api/patients", patientId, "discounts"],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/patients/${patientId}/discounts`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-          },
+      const response = await fetch(`/api/patients/${patientId}/discounts`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-      );
+      });
       if (!response.ok) throw new Error("Failed to fetch discounts");
       return response.json();
     },
@@ -3095,7 +3089,9 @@ export default function PatientDetail() {
                     // Add payments
                     if (patientPayments && patientPayments.length > 0) {
                       patientPayments.forEach((payment: any) => {
-                        const paymentDateTime = new Date(payment.paymentDate || payment.createdAt);
+                        const paymentDateTime = new Date(
+                          payment.paymentDate || payment.createdAt,
+                        );
 
                         allEvents.push({
                           type: "payment",
@@ -3112,7 +3108,9 @@ export default function PatientDetail() {
                     // Add discounts
                     if (patientDiscounts && patientDiscounts.length > 0) {
                       patientDiscounts.forEach((discount: any) => {
-                        const discountDateTime = new Date(discount.discountDate || discount.createdAt);
+                        const discountDateTime = new Date(
+                          discount.discountDate || discount.createdAt,
+                        );
 
                         allEvents.push({
                           type: "discount",
@@ -3269,18 +3267,18 @@ export default function PatientDetail() {
                               bgColor: "bg-red-100",
                               iconColor: "text-red-700",
                             };
-                          case "payment":
-                            return {
-                              borderColor: "border-l-green-500",
-                              bgColor: "bg-green-50",
-                              iconColor: "text-green-600",
-                            };
-                          case "discount":
-                            return {
-                              borderColor: "border-l-orange-500",
-                              bgColor: "bg-orange-50",
-                              iconColor: "text-orange-600",
-                            };
+                          // case "payment":
+                          //   return {
+                          //     borderColor: "border-l-green-500",
+                          //     bgColor: "bg-green-50",
+                          //     iconColor: "text-green-600",
+                          //   };
+                          // case "discount":
+                          //   return {
+                          //     borderColor: "border-l-orange-500",
+                          //     bgColor: "bg-orange-50",
+                          //     iconColor: "text-orange-600",
+                          //   };
                           default:
                             return {
                               borderColor: "border-l-gray-500",
@@ -3337,6 +3335,9 @@ export default function PatientDetail() {
                                         event.data.eventType === "room_change"
                                       ) {
                                         return `Room Transfer - ${event.data.wardType} (${event.data.roomNumber})`;
+                                      }
+                                      if (event.data.eventType === "discharge") {
+                                        return "Patient Discharged";
                                       }
                                       return `Admission ${event.data.eventType}`;
                                     case "discharge":
