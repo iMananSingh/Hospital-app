@@ -117,8 +117,10 @@ export default function PatientDetail() {
     useState<string>("");
   const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] =
     useState(""); // Renamed from serviceSearchQuery to avoid conflict
-  const [selectedServiceCategorySearchQuery, setSelectedServiceCategorySearchQuery] =
-    useState(""); // Added for filtering services by category name
+  const [
+    selectedServiceCategorySearchQuery,
+    setSelectedServiceCategorySearchQuery,
+  ] = useState(""); // Added for filtering services by category name
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
@@ -143,7 +145,10 @@ export default function PatientDetail() {
 
   // Check user roles for billing staff restrictions
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+  const isBillingStaff =
+    currentUserRoles.includes("billing_staff") &&
+    !currentUserRoles.includes("admin") &&
+    !currentUserRoles.includes("super_user");
 
   // Fetch hospital settings for receipts and other uses with proper error handling
   const {
@@ -310,7 +315,13 @@ export default function PatientDetail() {
       }
 
       // Try to resolve doctor ID from the doctors array
-      if (event.doctorId && event.doctorId !== "" && event.doctorId !== "none" && doctors && doctors.length > 0) {
+      if (
+        event.doctorId &&
+        event.doctorId !== "" &&
+        event.doctorId !== "none" &&
+        doctors &&
+        doctors.length > 0
+      ) {
         const doctor = doctors.find((d: Doctor) => d.id === event.doctorId);
         if (doctor) {
           return doctor.name;
@@ -362,7 +373,7 @@ export default function PatientDetail() {
       return {
         type: "service" as const,
         id: event.receiptNumber,
-        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? 's' : ''}`,
+        title: `Service Order - ${event.services.length} service${event.services.length > 1 ? "s" : ""}`,
         date: firstService.sortTimestamp,
         amount: event.totalCost,
         description: event.services.map((s: any) => s.serviceName).join(", "),
@@ -411,7 +422,10 @@ export default function PatientDetail() {
       }
 
       // For admission fallback, try to get from admission data
-      if (eventType === "admission" && event.rawData?.admission?.receiptNumber) {
+      if (
+        eventType === "admission" &&
+        event.rawData?.admission?.receiptNumber
+      ) {
         return event.rawData.admission.receiptNumber;
       }
       if (eventType === "admission" && event.receiptNumber) {
@@ -436,11 +450,12 @@ export default function PatientDetail() {
 
     if (eventType === "opd_visit") {
       // For OPD visits, prioritize consultation fee from the event data
-      eventAmount = event.consultationFee || 
-                   event.amount || 
-                   (event.rawData?.visit?.consultationFee) ||
-                   (event.rawData?.doctor?.consultationFee) || 
-                   0;
+      eventAmount =
+        event.consultationFee ||
+        event.amount ||
+        event.rawData?.visit?.consultationFee ||
+        event.rawData?.doctor?.consultationFee ||
+        0;
     } else {
       eventAmount = event.amount || event.price || event.totalPrice || 0;
     }
@@ -454,19 +469,20 @@ export default function PatientDetail() {
         | "payment"
         | "discount",
       id: event.id,
-      title: eventType === "opd_visit" ? "OPD Consultation" : (
-        event.title ||
-        event.serviceName ||
-        event.testName ||
-        event.description ||
-        "Service"
-      ),
+      title:
+        eventType === "opd_visit"
+          ? "OPD Consultation"
+          : event.title ||
+            event.serviceName ||
+            event.testName ||
+            event.description ||
+            "Service",
       date: event.sortTimestamp,
       amount: eventAmount,
-      description: eventType === "opd_visit" ? 
-        `OPD Consultation - ${getDoctorName()}` : (
-        event.description || event.serviceName || event.testName || ""
-      ),
+      description:
+        eventType === "opd_visit"
+          ? `OPD Consultation - ${getDoctorName()}`
+          : event.description || event.serviceName || event.testName || "",
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
       details: {
@@ -477,14 +493,19 @@ export default function PatientDetail() {
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
         // For OPD visits, add explicit identifiers for receipt title detection
-        ...(eventType === "opd_visit" ? {
-          serviceType: "opd",
-          serviceName: "OPD Consultation",
-          category: "OPD Consultation",
-          type: "opd_visit"
-        } : {}),
+        ...(eventType === "opd_visit"
+          ? {
+              serviceType: "opd",
+              serviceName: "OPD Consultation",
+              category: "OPD Consultation",
+              type: "opd_visit",
+            }
+          : {}),
         // For pathology orders, ensure tests are accessible
-        tests: eventType === "pathology" ? (event.tests || event.rawData?.tests || event.order?.tests) : undefined,
+        tests:
+          eventType === "pathology"
+            ? event.tests || event.rawData?.tests || event.order?.tests
+            : undefined,
       },
     };
 
@@ -689,14 +710,16 @@ export default function PatientDetail() {
 
   // OPD Visit Form (separate from services)
   const opdVisitForm = useForm({
-    resolver: zodResolver(z.object({
-      patientId: z.string().min(1),
-      doctorId: z.string().min(1, "Doctor is required"),
-      scheduledDate: z.string().min(1, "Date is required"),
-      scheduledTime: z.string().min(1, "Time is required"),
-      consultationFee: z.number().optional(), // Added for OPD consultation fee
-      symptoms: z.string().optional(),
-    })),
+    resolver: zodResolver(
+      z.object({
+        patientId: z.string().min(1),
+        doctorId: z.string().min(1, "Doctor is required"),
+        scheduledDate: z.string().min(1, "Date is required"),
+        scheduledTime: z.string().min(1, "Time is required"),
+        consultationFee: z.number().optional(), // Added for OPD consultation fee
+        symptoms: z.string().optional(),
+      }),
+    ),
     defaultValues: {
       patientId: patientId || "",
       doctorId: "",
@@ -718,28 +741,28 @@ export default function PatientDetail() {
       const timezone = systemSettings.timezone;
       const now = new Date();
 
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
 
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
 
       const currentDate = `${year}-${month}-${day}`;
       const currentTime = `${hour}:${minute}`;
 
-      opdVisitForm.setValue('scheduledDate', currentDate);
-      opdVisitForm.setValue('scheduledTime', currentTime);
+      opdVisitForm.setValue("scheduledDate", currentDate);
+      opdVisitForm.setValue("scheduledTime", currentTime);
     }
   }, [systemSettings?.timezone, isOpdVisitDialogOpen]);
 
@@ -749,28 +772,28 @@ export default function PatientDetail() {
       const timezone = systemSettings.timezone;
       const now = new Date();
 
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
 
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
 
       const currentDate = `${year}-${month}-${day}`;
       const currentTime = `${hour}:${minute}`;
 
-      serviceForm.setValue('scheduledDate', currentDate);
-      serviceForm.setValue('scheduledTime', currentTime);
+      serviceForm.setValue("scheduledDate", currentDate);
+      serviceForm.setValue("scheduledTime", currentTime);
     }
   }, [systemSettings?.timezone, isServiceDialogOpen]);
 
@@ -780,26 +803,26 @@ export default function PatientDetail() {
       const timezone = systemSettings.timezone;
       const now = new Date();
 
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
 
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
 
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
 
-      admissionForm.setValue('admissionDate', currentDateTime);
+      admissionForm.setValue("admissionDate", currentDateTime);
     }
   }, [systemSettings?.timezone, isAdmissionDialogOpen]);
 
@@ -809,22 +832,22 @@ export default function PatientDetail() {
       const timezone = systemSettings.timezone;
       const now = new Date();
 
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
 
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
 
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
 
@@ -842,10 +865,7 @@ export default function PatientDetail() {
 
   // Calculate billing preview when service or parameters change
   useEffect(() => {
-    if (
-      selectedCatalogService &&
-      selectedCatalogService.billingType
-    ) {
+    if (selectedCatalogService && selectedCatalogService.billingType) {
       calculateBillingPreview();
     } else if (selectedServiceType === "opd" || selectedServiceType === "") {
       // Reset billing preview if it's OPD or no service type selected
@@ -1115,10 +1135,15 @@ export default function PatientDetail() {
 
       if (selectedServiceType === "opd") {
         // Get selected doctor and consultation fee
-        console.log('Selected Doctor ID from form:', selectedDoctorId);
+        console.log("Selected Doctor ID from form:", selectedDoctorId);
 
-        if (!selectedDoctorId || selectedDoctorId === "none" || selectedDoctorId === "" || selectedDoctorId === "external") {
-          console.log('No doctor selected for OPD consultation');
+        if (
+          !selectedDoctorId ||
+          selectedDoctorId === "none" ||
+          selectedDoctorId === "" ||
+          selectedDoctorId === "external"
+        ) {
+          console.log("No doctor selected for OPD consultation");
           toast({
             title: "Doctor Required",
             description: "Please select a doctor for OPD consultation",
@@ -1129,18 +1154,19 @@ export default function PatientDetail() {
 
         // Validate consultation fee is positive
         if (!consultationFee || consultationFee <= 0) {
-          console.log('Invalid consultation fee:', consultationFee);
+          console.log("Invalid consultation fee:", consultationFee);
           toast({
             title: "Invalid Fee",
-            description: "Consultation fee must be greater than 0. Please select a valid doctor.",
+            description:
+              "Consultation fee must be greater than 0. Please select a valid doctor.",
             variant: "destructive",
           });
           return;
         }
 
-        console.log('=== OPD SERVICE CREATION ===');
-        console.log('Selected Doctor ID:', selectedDoctorId);
-        console.log('Consultation Fee:', consultationFee);
+        console.log("=== OPD SERVICE CREATION ===");
+        console.log("Selected Doctor ID:", selectedDoctorId);
+        console.log("Consultation Fee:", consultationFee);
 
         servicesToCreate.push({
           patientId: patientId,
@@ -1162,13 +1188,13 @@ export default function PatientDetail() {
         // Handle selected catalog services
         if (selectedServices.length > 0) {
           selectedServices.forEach((service) => {
-            console.log('=== CATALOG SERVICE CREATION ===');
-            console.log('Service:', service.name);
-            console.log('Doctor ID from form:', data.doctorId);
+            console.log("=== CATALOG SERVICE CREATION ===");
+            console.log("Service:", service.name);
+            console.log("Doctor ID from form:", data.doctorId);
 
             // Get the actual doctor ID from the form - use same method as OPD
             const actualDoctorId = serviceForm.watch("doctorId");
-            console.log('Actual doctor ID to use:', actualDoctorId);
+            console.log("Actual doctor ID to use:", actualDoctorId);
 
             let serviceData: any = {
               patientId: patientId,
@@ -1181,12 +1207,17 @@ export default function PatientDetail() {
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
               status: "scheduled",
-              doctorId: actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== "" ? actualDoctorId : null,
+              doctorId:
+                actualDoctorId &&
+                actualDoctorId !== "none" &&
+                actualDoctorId !== ""
+                  ? actualDoctorId
+                  : null,
               billingType: "per_instance",
               calculatedAmount: Number(data.price),
             };
 
-            console.log('Final service data doctor ID:', serviceData.doctorId);
+            console.log("Final service data doctor ID:", serviceData.doctorId);
 
             // Add smart billing parameters if service has special billing type
             if (service.billingType) {
@@ -1223,7 +1254,8 @@ export default function PatientDetail() {
                 serviceData.calculatedAmount = calculatedAmount;
                 serviceData.price = calculatedAmount;
               } else if (service.billingType === "per_hour") {
-                const calculatedAmount = service.price * (service.quantity || 1);
+                const calculatedAmount =
+                  service.price * (service.quantity || 1);
                 serviceData.calculatedAmount = calculatedAmount;
                 serviceData.price = calculatedAmount;
               } else if (service.billingType === "variable") {
@@ -1239,12 +1271,15 @@ export default function PatientDetail() {
           });
         } else if (data.serviceName && data.price > 0) {
           // Custom service
-          console.log('=== CUSTOM SERVICE CREATION ===');
-          console.log('Doctor ID from form:', data.doctorId);
+          console.log("=== CUSTOM SERVICE CREATION ===");
+          console.log("Doctor ID from form:", data.doctorId);
 
           // Get the actual doctor ID from the form - use same method as OPD
           const actualDoctorId = serviceForm.watch("doctorId");
-          console.log('Actual doctor ID to use for custom service:', actualDoctorId);
+          console.log(
+            "Actual doctor ID to use for custom service:",
+            actualDoctorId,
+          );
 
           servicesToCreate.push({
             patientId: patientId,
@@ -1257,12 +1292,17 @@ export default function PatientDetail() {
             scheduledTime: data.scheduledTime,
             status: "scheduled",
             doctorId:
-              actualDoctorId && actualDoctorId !== "none" && actualDoctorId !== ""
+              actualDoctorId &&
+              actualDoctorId !== "none" &&
+              actualDoctorId !== ""
                 ? actualDoctorId
                 : null,
           });
 
-          console.log('Custom service doctor ID:', servicesToCreate[servicesToCreate.length - 1].doctorId);
+          console.log(
+            "Custom service doctor ID:",
+            servicesToCreate[servicesToCreate.length - 1].doctorId,
+          );
         }
       }
 
@@ -1284,7 +1324,8 @@ export default function PatientDetail() {
       console.error("Error in onServiceSubmit:", error);
       toast({
         title: "Form Submission Error",
-        description: "An unexpected error occurred during form submission. Please check your inputs.",
+        description:
+          "An unexpected error occurred during form submission. Please check your inputs.",
         variant: "destructive",
       });
     }
@@ -1340,8 +1381,8 @@ export default function PatientDetail() {
             price: service.price,
             quantity: 1,
             notes: `Admission service - ${service.name}`,
-            scheduledDate: data.admissionDate.split('T')[0], // Extract date part
-            scheduledTime: data.admissionDate.split('T')[1] || "00:00", // Extract time part
+            scheduledDate: data.admissionDate.split("T")[0], // Extract date part
+            scheduledTime: data.admissionDate.split("T")[1] || "00:00", // Extract time part
             status: "scheduled",
             doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
@@ -1367,8 +1408,12 @@ export default function PatientDetail() {
       }
 
       // Refresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/admissions", patientId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/patient-services", patientId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admissions", patientId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patient-services", patientId],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
 
       setIsAdmissionDialogOpen(false);
@@ -1380,7 +1425,6 @@ export default function PatientDetail() {
         title: "Admission created successfully",
         description: `Patient admitted${selectedServices.length > 0 ? ` with ${selectedServices.length} admission service(s)` : ""}.`,
       });
-
     } catch (error: any) {
       console.error("Admission creation error:", error);
 
@@ -1664,7 +1708,9 @@ export default function PatientDetail() {
     if (selectedServiceSearchQuery.trim()) {
       filtered = filtered.filter(
         (s) =>
-          s.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
+          s.name
+            .toLowerCase()
+            .includes(selectedServiceSearchQuery.toLowerCase()) ||
           (s.description &&
             s.description
               .toLowerCase()
@@ -1706,7 +1752,7 @@ export default function PatientDetail() {
     // Set the current time as default
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5); // HH:MM format
-    const currentDate = now.toISOString().split('T')[0];
+    const currentDate = now.toISOString().split("T")[0];
 
     // Reset form but preserve doctor selection if it exists
     const currentDoctorId = serviceForm.getValues("doctorId");
@@ -2087,15 +2133,14 @@ export default function PatientDetail() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                Financial Summary
-              </div>
+              <div className="flex items-center gap-2">Financial Summary</div>
               <div className="flex items-center gap-2">
                 {/* Hide payment and discount buttons for receptionist users */}
                 {(() => {
                   // Get user roles with fallback to single role for backward compatibility
-                  const userRoles = user?.roles || (user?.role ? [user.role] : []);
-                  return !userRoles.includes('receptionist');
+                  const userRoles =
+                    user?.roles || (user?.role ? [user.role] : []);
+                  return !userRoles.includes("receptionist");
                 })() && (
                   <>
                     <Button
@@ -2244,65 +2289,79 @@ export default function PatientDetail() {
                       {opdVisits
                         .sort((a: any, b: any) => {
                           // Sort by scheduled date descending (latest first)
-                          const dateA = new Date(a.scheduledDate || a.createdAt);
-                          const dateB = new Date(b.scheduledDate || b.createdAt);
+                          const dateA = new Date(
+                            a.scheduledDate || a.createdAt,
+                          );
+                          const dateB = new Date(
+                            b.scheduledDate || b.createdAt,
+                          );
                           return dateB.getTime() - dateA.getTime();
                         })
                         .map((visit: any) => {
-                        // Find doctor details
-                        const doctor = doctors?.find(
-                          (d: Doctor) => d.id === visit.doctorId,
-                        );
-                        const doctorName = doctor ? doctor.name : "Unknown Doctor";
-                        const consultationFee = doctor ? doctor.consultationFee : 0;
+                          // Find doctor details
+                          const doctor = doctors?.find(
+                            (d: Doctor) => d.id === visit.doctorId,
+                          );
+                          const doctorName = doctor
+                            ? doctor.name
+                            : "Unknown Doctor";
+                          const consultationFee = doctor
+                            ? doctor.consultationFee
+                            : 0;
 
-                        return (
-                          <TableRow key={visit.id}>
-                            <TableCell className="font-medium">
-                              {doctorName}
-                              {doctor && (
-                                <div className="text-sm text-muted-foreground">
-                                  {doctor.specialization}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {(() => {
-                                // Format date and time using configured timezone
-                                if (!visit.scheduledDate) return "N/A";
+                          return (
+                            <TableRow key={visit.id}>
+                              <TableCell className="font-medium">
+                                {doctorName}
+                                {doctor && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {doctor.specialization}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {(() => {
+                                  // Format date and time using configured timezone
+                                  if (!visit.scheduledDate) return "N/A";
 
-                                // The scheduledDate and scheduledTime are already in UTC from the database
-                                // We just need to display them in the configured timezone
-                                if (!visit.scheduledTime) {
-                                  return formatDate(visit.scheduledDate);
-                                }
+                                  // The scheduledDate and scheduledTime are already in UTC from the database
+                                  // We just need to display them in the configured timezone
+                                  if (!visit.scheduledTime) {
+                                    return formatDate(visit.scheduledDate);
+                                  }
 
-                                // Combine date and time for display
-                                const dateDisplay = formatDate(visit.scheduledDate);
-                                const timeDisplay = formatTime(`${visit.scheduledDate}T${visit.scheduledTime}:00`);
+                                  // Combine date and time for display
+                                  const dateDisplay = formatDate(
+                                    visit.scheduledDate,
+                                  );
+                                  const timeDisplay = formatTime(
+                                    `${visit.scheduledDate}T${visit.scheduledTime}:00`,
+                                  );
 
-                                return (
-                                  <>
-                                    {dateDisplay}
-                                    <span className="text-muted-foreground ml-2">
-                                      at {timeDisplay}
-                                    </span>
-                                  </>
-                                );
-                              })()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(visit.status)}>
-                                {visit.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {visit.symptoms || "No symptoms noted"}
-                            </TableCell>
-                            <TableCell>₹{visit.consultationFee || consultationFee}</TableCell>
-                          </TableRow>
-                        );
-                      })}
+                                  return (
+                                    <>
+                                      {dateDisplay}
+                                      <span className="text-muted-foreground ml-2">
+                                        at {timeDisplay}
+                                      </span>
+                                    </>
+                                  );
+                                })()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={getStatusColor(visit.status)}>
+                                  {visit.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {visit.symptoms || "No symptoms noted"}
+                              </TableCell>
+                              <TableCell>
+                                ₹{visit.consultationFee || consultationFee}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                     </TableBody>
                   </Table>
                 ) : (
@@ -2332,8 +2391,6 @@ export default function PatientDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-
-
 
           <TabsContent value="services">
             <Card>
@@ -2408,8 +2465,12 @@ export default function PatientDetail() {
                       {services
                         .sort((a: any, b: any) => {
                           // Sort by scheduled date descending (latest first)
-                          const dateA = new Date(a.scheduledDate || a.createdAt);
-                          const dateB = new Date(b.scheduledDate || b.createdAt);
+                          const dateA = new Date(
+                            a.scheduledDate || a.createdAt,
+                          );
+                          const dateB = new Date(
+                            b.scheduledDate || b.createdAt,
+                          );
                           return dateB.getTime() - dateA.getTime();
                         })
                         .map((service: any) => {
@@ -2417,11 +2478,21 @@ export default function PatientDetail() {
                           let doctorName = "No Doctor Assigned";
 
                           // Check if doctorName is directly available from the joined query
-                          if (service.doctorName && service.doctorName.trim() !== "") {
+                          if (
+                            service.doctorName &&
+                            service.doctorName.trim() !== ""
+                          ) {
                             doctorName = service.doctorName;
-                          } else if (service.doctorId && service.doctorId !== "" && service.doctorId !== "none" && service.doctorId !== null) {
+                          } else if (
+                            service.doctorId &&
+                            service.doctorId !== "" &&
+                            service.doctorId !== "none" &&
+                            service.doctorId !== null
+                          ) {
                             // Fallback to finding doctor in the doctors array
-                            const doctor = doctors?.find((d: Doctor) => d.id === service.doctorId);
+                            const doctor = doctors?.find(
+                              (d: Doctor) => d.id === service.doctorId,
+                            );
                             if (doctor) {
                               doctorName = doctor.name;
                             } else {
@@ -2452,8 +2523,12 @@ export default function PatientDetail() {
                                   }
 
                                   // Combine date and time for display (without adding Z to avoid timezone shift)
-                                  const dateDisplay = formatDate(service.scheduledDate);
-                                  const timeDisplay = formatTime(`${service.scheduledDate}T${service.scheduledTime}:00`);
+                                  const dateDisplay = formatDate(
+                                    service.scheduledDate,
+                                  );
+                                  const timeDisplay = formatTime(
+                                    `${service.scheduledDate}T${service.scheduledTime}:00`,
+                                  );
 
                                   return (
                                     <>
@@ -2466,7 +2541,11 @@ export default function PatientDetail() {
                                 })()}
                               </TableCell>
                               <TableCell>
-                                <Badge className={getStatusColor(service.status || "scheduled")}>
+                                <Badge
+                                  className={getStatusColor(
+                                    service.status || "scheduled",
+                                  )}
+                                >
                                   {service.status || "scheduled"}
                                 </Badge>
                               </TableCell>
@@ -2476,7 +2555,8 @@ export default function PatientDetail() {
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
-                                ₹{service.calculatedAmount || service.price || 0}
+                                ₹
+                                {service.calculatedAmount || service.price || 0}
                               </TableCell>
                             </TableRow>
                           );
@@ -2631,7 +2711,15 @@ export default function PatientDetail() {
                                 Admission Date:
                               </span>
                               <div className="font-medium">
-                                {formatDateTime(admission.admissionDate)}
+                                {(() => {
+                                  const admitEvent = events?.find(
+                                    (e: any) => e.eventType === "admit",
+                                  );
+                                  return formatDateTime(
+                                    admitEvent?.eventTime ||
+                                      admission.admissionDate,
+                                  );
+                                })()}
                               </div>
                             </div>
                             <div>
@@ -2822,9 +2910,12 @@ export default function PatientDetail() {
                     // Add OPD visits
                     if (opdVisits && opdVisits.length > 0) {
                       opdVisits.forEach((visit: any) => {
-                        const visitDateTime = visit.scheduledDate && visit.scheduledTime
-                          ? new Date(`${visit.scheduledDate}T${visit.scheduledTime}:00`)
-                          : new Date(visit.createdAt);
+                        const visitDateTime =
+                          visit.scheduledDate && visit.scheduledTime
+                            ? new Date(
+                                `${visit.scheduledDate}T${visit.scheduledTime}:00`,
+                              )
+                            : new Date(visit.createdAt);
 
                         allEvents.push({
                           type: "opd_visit",
@@ -2841,48 +2932,60 @@ export default function PatientDetail() {
                     // Group patient services by order ID (batch)
                     if (services && services.length > 0) {
                       // Filter out admission services to prevent duplicates in timeline
-                      const nonAdmissionServices = services.filter((service: any) => 
-                        service.serviceType !== "admission"
+                      const nonAdmissionServices = services.filter(
+                        (service: any) => service.serviceType !== "admission",
                       );
 
-                      const serviceGroups = nonAdmissionServices.reduce((groups: any, service: any) => {
-                        const orderId = service.orderId || `BATCH-${service.id}`;
-                        if (!groups[orderId]) {
-                          groups[orderId] = [];
-                        }
-                        groups[orderId].push(service);
-                        return groups;
-                      }, {});
+                      const serviceGroups = nonAdmissionServices.reduce(
+                        (groups: any, service: any) => {
+                          const orderId =
+                            service.orderId || `BATCH-${service.id}`;
+                          if (!groups[orderId]) {
+                            groups[orderId] = [];
+                          }
+                          groups[orderId].push(service);
+                          return groups;
+                        },
+                        {},
+                      );
 
                       // Add each service group as a single event
-                      Object.entries(serviceGroups).forEach(([orderId, groupServices]: [string, any]) => {
-                        const firstService = groupServices[0];
-                        const serviceDateTime = new Date(
-                          `${firstService.scheduledDate}T${firstService.scheduledTime}:00`
-                        );
+                      Object.entries(serviceGroups).forEach(
+                        ([orderId, groupServices]: [string, any]) => {
+                          const firstService = groupServices[0];
+                          const serviceDateTime = new Date(
+                            `${firstService.scheduledDate}T${firstService.scheduledTime}:00`,
+                          );
 
-                        // Calculate total cost for the batch
-                        const totalCost = groupServices.reduce((sum: number, service: any) => {
-                          return sum + (service.calculatedAmount || service.price || 0);
-                        }, 0);
+                          // Calculate total cost for the batch
+                          const totalCost = groupServices.reduce(
+                            (sum: number, service: any) => {
+                              return (
+                                sum +
+                                (service.calculatedAmount || service.price || 0)
+                              );
+                            },
+                            0,
+                          );
 
-                        allEvents.push({
-                          type: "service_batch",
-                          data: {
-                            orderId,
-                            receiptNumber: firstService.receiptNumber,
-                            services: groupServices,
-                            totalCost,
-                            scheduledDate: firstService.scheduledDate,
-                            scheduledTime: firstService.scheduledTime,
-                            doctorId: firstService.doctorId,
-                            doctorName: firstService.doctorName,
+                          allEvents.push({
+                            type: "service_batch",
+                            data: {
+                              orderId,
+                              receiptNumber: firstService.receiptNumber,
+                              services: groupServices,
+                              totalCost,
+                              scheduledDate: firstService.scheduledDate,
+                              scheduledTime: firstService.scheduledTime,
+                              doctorId: firstService.doctorId,
+                              doctorName: firstService.doctorName,
+                              sortTimestamp: serviceDateTime.getTime(),
+                            },
+                            timestamp: serviceDateTime,
                             sortTimestamp: serviceDateTime.getTime(),
-                          },
-                          timestamp: serviceDateTime,
-                          sortTimestamp: serviceDateTime.getTime(),
-                        });
-                      });
+                          });
+                        },
+                      );
                     }
 
                     // Add pathology orders
@@ -2900,7 +3003,9 @@ export default function PatientDetail() {
                           data: {
                             ...order,
                             tests: tests,
-                            testName: tests.map((test: any) => test.testName).join(", "),
+                            testName: tests
+                              .map((test: any) => test.testName)
+                              .join(", "),
                             orderId: order.orderId || order.id,
                             totalPrice: order.totalPrice,
                             receiptNumber: order.receiptNumber,
@@ -2919,7 +3024,9 @@ export default function PatientDetail() {
                         const events = admissionEventsMap[admission.id] || [];
 
                         // Find the initial 'admit' event (if any)
-                        const admitEvent = events.find((event: any) => event.eventType === 'admit');
+                        const admitEvent = events.find(
+                          (event: any) => event.eventType === "admit",
+                        );
 
                         // Add consolidated admission event (merge admission record with admit event)
                         allEvents.push({
@@ -2929,40 +3036,54 @@ export default function PatientDetail() {
                             // Merge admit event details if available
                             admitEventNotes: admitEvent?.notes,
                             admitEventTime: admitEvent?.eventTime,
-                            sortTimestamp: new Date(admission.admissionDate).getTime(),
+                            sortTimestamp: new Date(
+                              admission.admissionDate,
+                            ).getTime(),
                           },
                           timestamp: new Date(admission.admissionDate),
-                          sortTimestamp: new Date(admission.admissionDate).getTime(),
+                          sortTimestamp: new Date(
+                            admission.admissionDate,
+                          ).getTime(),
                         });
 
                         // Add other admission events (excluding 'admit' events to avoid duplication)
                         events.forEach((event: any) => {
-                          if (event.eventType !== 'admit') {
+                          if (event.eventType !== "admit") {
                             allEvents.push({
                               type: "admission_event",
                               data: {
                                 ...event,
                                 admission,
-                                sortTimestamp: new Date(event.eventTime).getTime(),
+                                sortTimestamp: new Date(
+                                  event.eventTime,
+                                ).getTime(),
                               },
                               timestamp: new Date(event.eventTime),
-                              sortTimestamp: new Date(event.eventTime).getTime(),
+                              sortTimestamp: new Date(
+                                event.eventTime,
+                              ).getTime(),
                             });
                           }
                         });
 
                         // Add discharge event if discharged (only if no explicit discharge event exists)
                         if (admission.dischargeDate) {
-                          const hasDischargeEvent = events.some((event: any) => event.eventType === 'discharge');
+                          const hasDischargeEvent = events.some(
+                            (event: any) => event.eventType === "discharge",
+                          );
                           if (!hasDischargeEvent) {
                             allEvents.push({
                               type: "discharge",
                               data: {
                                 ...admission,
-                                sortTimestamp: new Date(admission.dischargeDate).getTime(),
+                                sortTimestamp: new Date(
+                                  admission.dischargeDate,
+                                ).getTime(),
                               },
                               timestamp: new Date(admission.dischargeDate),
-                              sortTimestamp: new Date(admission.dischargeDate).getTime(),
+                              sortTimestamp: new Date(
+                                admission.dischargeDate,
+                              ).getTime(),
                             });
                           }
                         }
@@ -2976,7 +3097,9 @@ export default function PatientDetail() {
                       return (
                         <div className="text-center py-8">
                           <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500">No timeline events yet</p>
+                          <p className="text-gray-500">
+                            No timeline events yet
+                          </p>
                         </div>
                       );
                     }
@@ -2989,44 +3112,44 @@ export default function PatientDetail() {
                             return {
                               borderColor: "border-l-blue-500",
                               bgColor: "bg-blue-50",
-                              iconColor: "text-blue-600"
+                              iconColor: "text-blue-600",
                             };
                           case "service_batch":
                           case "service":
                             return {
                               borderColor: "border-l-purple-500",
                               bgColor: "bg-purple-50",
-                              iconColor: "text-purple-600"
+                              iconColor: "text-purple-600",
                             };
                           case "pathology":
                             return {
                               borderColor: "border-l-pink-500",
                               bgColor: "bg-pink-50",
-                              iconColor: "text-pink-600"
+                              iconColor: "text-pink-600",
                             };
                           case "admission":
                             return {
                               borderColor: "border-l-green-500",
                               bgColor: "bg-green-50",
-                              iconColor: "text-green-600"
+                              iconColor: "text-green-600",
                             };
                           case "admission_event":
                             return {
                               borderColor: "border-l-amber-500",
                               bgColor: "bg-amber-50",
-                              iconColor: "text-amber-600"
+                              iconColor: "text-amber-600",
                             };
                           case "discharge":
                             return {
                               borderColor: "border-l-red-500",
                               bgColor: "bg-red-50",
-                              iconColor: "text-red-600"
+                              iconColor: "text-red-600",
                             };
                           default:
                             return {
                               borderColor: "border-l-gray-500",
                               bgColor: "bg-gray-50",
-                              iconColor: "text-gray-600"
+                              iconColor: "text-gray-600",
                             };
                         }
                       };
@@ -3034,8 +3157,8 @@ export default function PatientDetail() {
                       const eventColors = getEventColor(event.type);
 
                       return (
-                        <div 
-                          key={`${event.type}-${index}`} 
+                        <div
+                          key={`${event.type}-${index}`}
                           className={`relative mb-6 border-2 border-gray-200 rounded-lg ${eventColors.bgColor} ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
                         >
                           {/* Timeline connector line */}
@@ -3044,28 +3167,39 @@ export default function PatientDetail() {
                           )}
 
                           {/* Event icon circle */}
-                          <div className={`absolute -left-3 top-4 w-6 h-6 rounded-full ${eventColors.bgColor} border-2 ${eventColors.borderColor} flex items-center justify-center`}>
-                            <div className={`w-2 h-2 rounded-full ${eventColors.iconColor.replace('text-', 'bg-')}`}></div>
+                          <div
+                            className={`absolute -left-3 top-4 w-6 h-6 rounded-full ${eventColors.bgColor} border-2 ${eventColors.borderColor} flex items-center justify-center`}
+                          >
+                            <div
+                              className={`w-2 h-2 rounded-full ${eventColors.iconColor.replace("text-", "bg-")}`}
+                            ></div>
                           </div>
 
                           <div className="p-4 pl-8">
                             <div className="flex items-center justify-between mb-3">
-                              <h3 className={`font-semibold text-lg ${eventColors.iconColor}`}>
+                              <h3
+                                className={`font-semibold text-lg ${eventColors.iconColor}`}
+                              >
                                 {(() => {
                                   switch (event.type) {
                                     case "opd_visit":
                                       return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
                                     case "service_batch":
-                                      const serviceCount = event.data.services.length;
-                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? 's' : ''} (${event.data.orderId})`;
+                                      const serviceCount =
+                                        event.data.services.length;
+                                      return `Service Order - ${serviceCount} service${serviceCount > 1 ? "s" : ""} (${event.data.orderId})`;
                                     case "service":
-                                      return event.data.serviceName || "Service";
+                                      return (
+                                        event.data.serviceName || "Service"
+                                      );
                                     case "pathology":
                                       return `Pathology Tests - Order ${event.data.orderId}`;
                                     case "admission":
                                       return `Patient Admitted - ${event.data.currentWardType} (${event.data.currentRoomNumber})`;
                                     case "admission_event":
-                                      if (event.data.eventType === "room_change") {
+                                      if (
+                                        event.data.eventType === "room_change"
+                                      ) {
                                         return `Room Transfer - ${event.data.wardType} (${event.data.roomNumber})`;
                                       }
                                       return `Admission ${event.data.eventType}`;
@@ -3085,10 +3219,17 @@ export default function PatientDetail() {
                                   event.type === "admission_event" ||
                                   event.type === "opd_visit") && (
                                   <ReceiptTemplate
-                                    receiptData={generateReceiptData(event.data, event.type)}
+                                    receiptData={generateReceiptData(
+                                      event.data,
+                                      event.type,
+                                    )}
                                     hospitalInfo={hospitalInfo}
                                     trigger={
-                                      <Button size="sm" variant="outline" className="flex items-center gap-1 hover:bg-white">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex items-center gap-1 hover:bg-white"
+                                      >
                                         <Printer className="w-3 h-3" />
                                         Receipt
                                       </Button>
@@ -3096,7 +3237,9 @@ export default function PatientDetail() {
                                   />
                                 )}
                                 <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
-                                  {formatDateTime(event.timestamp.toISOString())}
+                                  {formatDateTime(
+                                    event.timestamp.toISOString(),
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -3107,43 +3250,90 @@ export default function PatientDetail() {
                                   case "opd_visit":
                                     return (
                                       <div className="space-y-1">
-                                        <div className="font-medium">Consultation Fee: ₹{event.data.consultationFee || 0}</div>
-                                        {event.data.symptoms && <div><span className="font-medium">Symptoms:</span> {event.data.symptoms}</div>}
-                                        {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
+                                        <div className="font-medium">
+                                          Consultation Fee: ₹
+                                          {event.data.consultationFee || 0}
+                                        </div>
+                                        {event.data.symptoms && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Symptoms:
+                                            </span>{" "}
+                                            {event.data.symptoms}
+                                          </div>
+                                        )}
+                                        {event.data.diagnosis && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Diagnosis:
+                                            </span>{" "}
+                                            {event.data.diagnosis}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   case "service_batch":
                                     return (
                                       <div>
-                                        <div className="font-medium mb-2 text-gray-800">Services in this order:</div>
+                                        <div className="font-medium mb-2 text-gray-800">
+                                          Services in this order:
+                                        </div>
                                         <div className="space-y-1 ml-4 bg-white rounded p-2 border">
-                                          {event.data.services.map((service: any, idx: number) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm">
-                                              <span>• {service.serviceName}</span>
-                                              <span className="font-medium">₹{service.calculatedAmount || service.price}</span>
-                                            </div>
-                                          ))}
+                                          {event.data.services.map(
+                                            (service: any, idx: number) => (
+                                              <div
+                                                key={idx}
+                                                className="flex justify-between items-center text-sm"
+                                              >
+                                                <span>
+                                                  • {service.serviceName}
+                                                </span>
+                                                <span className="font-medium">
+                                                  ₹
+                                                  {service.calculatedAmount ||
+                                                    service.price}
+                                                </span>
+                                              </div>
+                                            ),
+                                          )}
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
-                                          <span className="text-lg">₹{event.data.totalCost}</span>
+                                          <span className="text-lg">
+                                            ₹{event.data.totalCost}
+                                          </span>
                                         </div>
                                         {(() => {
                                           // Get doctor name for service batch
                                           let doctorName = null;
 
                                           // Try to get doctor name from the event data
-                                          if (event.data.doctorName && event.data.doctorName.trim() !== "") {
+                                          if (
+                                            event.data.doctorName &&
+                                            event.data.doctorName.trim() !== ""
+                                          ) {
                                             doctorName = event.data.doctorName;
-                                          } else if (event.data.doctorId && event.data.doctorId !== "" && event.data.doctorId !== "none") {
-                                            const doctor = doctors?.find((d: Doctor) => d.id === event.data.doctorId);
+                                          } else if (
+                                            event.data.doctorId &&
+                                            event.data.doctorId !== "" &&
+                                            event.data.doctorId !== "none"
+                                          ) {
+                                            const doctor = doctors?.find(
+                                              (d: Doctor) =>
+                                                d.id === event.data.doctorId,
+                                            );
                                             if (doctor) {
                                               doctorName = doctor.name;
                                             }
                                           }
 
                                           return doctorName ? (
-                                            <div className="mt-2"><span className="font-medium">Doctor:</span> {doctorName}</div>
+                                            <div className="mt-2">
+                                              <span className="font-medium">
+                                                Doctor:
+                                              </span>{" "}
+                                              {doctorName}
+                                            </div>
                                           ) : null;
                                         })()}
                                       </div>
@@ -3151,110 +3341,226 @@ export default function PatientDetail() {
                                   case "service":
                                     return (
                                       <div className="space-y-1">
-                                        <div className="font-medium">Cost: ₹{event.data.calculatedAmount || event.data.price}</div>
-                                        {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
+                                        <div className="font-medium">
+                                          Cost: ₹
+                                          {event.data.calculatedAmount ||
+                                            event.data.price}
+                                        </div>
+                                        {event.data.notes && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Notes:
+                                            </span>{" "}
+                                            {event.data.notes}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   case "pathology":
                                     return (
                                       <div>
-                                        <div className="font-medium mb-2 text-gray-800">Tests in this order:</div>
+                                        <div className="font-medium mb-2 text-gray-800">
+                                          Tests in this order:
+                                        </div>
                                         <div className="space-y-1 ml-4 bg-white rounded p-2 border">
-                                          {event.data.tests && event.data.tests.length > 0 ? (
-                                            event.data.tests.map((test: any, idx: number) => (
-                                              <div key={idx} className="flex justify-between items-center text-sm">
-                                                <span>• {test.testName}</span>
-                                                <span className="font-medium">₹{test.price || 0}</span>
-                                              </div>
-                                            ))
+                                          {event.data.tests &&
+                                          event.data.tests.length > 0 ? (
+                                            event.data.tests.map(
+                                              (test: any, idx: number) => (
+                                                <div
+                                                  key={idx}
+                                                  className="flex justify-between items-center text-sm"
+                                                >
+                                                  <span>• {test.testName}</span>
+                                                  <span className="font-medium">
+                                                    ₹{test.price || 0}
+                                                  </span>
+                                                </div>
+                                              ),
+                                            )
                                           ) : (
                                             <div className="flex justify-between items-center text-sm">
-                                              <span>• {event.data.testName}</span>
-                                              <span className="font-medium">₹{event.data.totalPrice || 0}</span>
+                                              <span>
+                                                • {event.data.testName}
+                                              </span>
+                                              <span className="font-medium">
+                                                ₹{event.data.totalPrice || 0}
+                                              </span>
                                             </div>
                                           )}
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
-                                          <span className="text-lg">₹{event.data.totalPrice}</span>
+                                          <span className="text-lg">
+                                            ₹{event.data.totalPrice}
+                                          </span>
                                         </div>
                                         {(() => {
                                           // Get doctor name from the pathology order
                                           let doctorName = null;
 
                                           // Try to get doctor ID from the event data
-                                          const doctorId = event.data.doctorId || 
-                                                         (event.data.rawData?.order?.doctorId) ||
-                                                         (event.data.order?.doctorId);
+                                          const doctorId =
+                                            event.data.doctorId ||
+                                            event.data.rawData?.order
+                                              ?.doctorId ||
+                                            event.data.order?.doctorId;
 
-                                          if (doctorId && doctors && doctors.length > 0) {
-                                            const doctor = doctors.find((d: Doctor) => d.id === doctorId);
+                                          if (
+                                            doctorId &&
+                                            doctors &&
+                                            doctors.length > 0
+                                          ) {
+                                            const doctor = doctors.find(
+                                              (d: Doctor) => d.id === doctorId,
+                                            );
                                             if (doctor) {
                                               doctorName = doctor.name;
                                             }
                                           }
 
                                           return doctorName ? (
-                                            <div className="mt-2"><span className="font-medium">Doctor:</span> {doctorName}</div>
+                                            <div className="mt-2">
+                                              <span className="font-medium">
+                                                Doctor:
+                                              </span>{" "}
+                                              {doctorName}
+                                            </div>
                                           ) : null;
                                         })()}
-                                        {event.data.remarks && <div className="mt-1"><span className="font-medium">Remarks:</span> {event.data.remarks}</div>}
+                                        {event.data.remarks && (
+                                          <div className="mt-1">
+                                            <span className="font-medium">
+                                              Remarks:
+                                            </span>{" "}
+                                            {event.data.remarks}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   case "admission":
                                     const admissionContent = (
                                       <div className="space-y-1">
-                                        <div><span className="font-medium">Daily Cost:</span> ₹{event.data.dailyCost}</div>
-                                        {event.data.reason && <div><span className="font-medium">Reason:</span> {event.data.reason}</div>}
-                                        {event.data.diagnosis && <div><span className="font-medium">Diagnosis:</span> {event.data.diagnosis}</div>}
-                                        {event.data.admitEventNotes && <div><span className="font-medium">Notes:</span> {event.data.admitEventNotes}</div>}
-                                        {event.data.initialDeposit > 0 && <div><span className="font-medium">Initial Deposit:</span> ₹{event.data.initialDeposit}</div>}
+                                        <div>
+                                          <span className="font-medium">
+                                            Daily Cost:
+                                          </span>{" "}
+                                          ₹{event.data.dailyCost}
+                                        </div>
+                                        {event.data.reason && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Reason:
+                                            </span>{" "}
+                                            {event.data.reason}
+                                          </div>
+                                        )}
+                                        {event.data.diagnosis && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Diagnosis:
+                                            </span>{" "}
+                                            {event.data.diagnosis}
+                                          </div>
+                                        )}
+                                        {event.data.admitEventNotes && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Notes:
+                                            </span>{" "}
+                                            {event.data.admitEventNotes}
+                                          </div>
+                                        )}
+                                        {event.data.initialDeposit > 0 && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Initial Deposit:
+                                            </span>{" "}
+                                            ₹{event.data.initialDeposit}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                     return admissionContent;
                                   case "admission_event":
                                     return (
                                       <div className="space-y-1">
-                                        {event.data.eventType === "room_change" && (
-                                          <div><span className="font-medium">Previous Room:</span> {event.data.admission?.currentRoomNumber}</div>
+                                        {event.data.eventType ===
+                                          "room_change" && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Previous Room:
+                                            </span>{" "}
+                                            {
+                                              event.data.admission
+                                                ?.currentRoomNumber
+                                            }
+                                          </div>
                                         )}
-                                        {event.data.notes && <div><span className="font-medium">Notes:</span> {event.data.notes}</div>}
+                                        {event.data.notes && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Notes:
+                                            </span>{" "}
+                                            {event.data.notes}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   case "discharge":
                                     return (
                                       <div className="space-y-1">
-                                        <div><span className="font-medium">Total Stay:</span> {calcStayDays(event.data.admissionDate, event.data.dischargeDate)} days</div>
-                                        <div><span className="font-medium">Total Cost:</span> ₹{event.data.totalCost}</div>
+                                        <div>
+                                          <span className="font-medium">
+                                            Total Stay:
+                                          </span>{" "}
+                                          {calcStayDays(
+                                            event.data.admissionDate,
+                                            event.data.dischargeDate,
+                                          )}{" "}
+                                          days
+                                        </div>
+                                        <div>
+                                          <span className="font-medium">
+                                            Total Cost:
+                                          </span>{" "}
+                                          ₹{event.data.totalCost}
+                                        </div>
                                       </div>
                                     );
                                   default:
-                                    return <div>Event details not available</div>;
+                                    return (
+                                      <div>Event details not available</div>
+                                    );
                                 }
                               })()}
                             </div>
 
                             {/* Doctor information outside details section for admission events */}
-                            {event.type === "admission" && (() => {
-                              // Get doctor name from the admission
-                              let doctorName = null;
+                            {event.type === "admission" &&
+                              (() => {
+                                // Get doctor name from the admission
+                                let doctorName = null;
 
-                              // Try to get doctor ID from the event data
-                              const doctorId = event.data.doctorId;
+                                // Try to get doctor ID from the event data
+                                const doctorId = event.data.doctorId;
 
-                              if (doctorId && doctors && doctors.length > 0) {
-                                const doctor = doctors.find((d: Doctor) => d.id === doctorId);
-                                if (doctor) {
-                                  doctorName = doctor.name;
+                                if (doctorId && doctors && doctors.length > 0) {
+                                  const doctor = doctors.find(
+                                    (d: Doctor) => d.id === doctorId,
+                                  );
+                                  if (doctor) {
+                                    doctorName = doctor.name;
+                                  }
                                 }
-                              }
 
-                              return doctorName ? (
-                                <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600">
-                                  <span className="font-medium">Doctor:</span> {doctorName}
-                                </div>
-                              ) : null;
-                            })()}
+                                return doctorName ? (
+                                  <div className="mt-3 pt-2 border-t border-gray-200 text-sm text-gray-600">
+                                    <span className="font-medium">Doctor:</span>{" "}
+                                    {doctorName}
+                                  </div>
+                                ) : null;
+                              })()}
                           </div>
                         </div>
                       );
@@ -3347,7 +3653,9 @@ export default function PatientDetail() {
 
                     // Find doctor info
                     if (value && value !== "none" && value !== "") {
-                      const selectedDoctor = doctors?.find((d: Doctor) => d.id === value);
+                      const selectedDoctor = doctors?.find(
+                        (d: Doctor) => d.id === value,
+                      );
                       console.log("Selected doctor:", selectedDoctor);
                     }
 
@@ -3356,7 +3664,10 @@ export default function PatientDetail() {
                     // Verify the form actually updated
                     setTimeout(() => {
                       const currentValue = serviceForm.getValues("doctorId");
-                      console.log("Form doctorId after setValue:", currentValue);
+                      console.log(
+                        "Form doctorId after setValue:",
+                        currentValue,
+                      );
                     }, 100);
                   }}
                   data-testid="select-doctor"
@@ -3482,7 +3793,9 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="border rounded-lg max-h-64 overflow-y-auto">
-                  <Table key={`service-table-${selectedServiceType}-${isServiceDialogOpen}`}>
+                  <Table
+                    key={`service-table-${selectedServiceType}-${isServiceDialogOpen}`}
+                  >
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-12">Select</TableHead>
@@ -3726,7 +4039,7 @@ export default function PatientDetail() {
                           {(() => {
                             const params =
                               selectedCatalogService.billingParameters
-                                                                 ? JSON.parse(
+                                ? JSON.parse(
                                     selectedCatalogService.billingParameters,
                                   )
                                 : {};
@@ -3901,7 +4214,7 @@ export default function PatientDetail() {
                     </li>
                     <li>
                       Enter both service name and price (greater than ₹0) in the
-                    manual entry fields
+                      manual entry fields
                     </li>
                   </ul>
                 </div>
@@ -4043,21 +4356,29 @@ export default function PatientDetail() {
 
                       if (selectedRoomType) {
                         // Update Bed Charges service price if it's selected
-                        const updatedServices = selectedServices.map(service => {
-                          if (service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) {
-                            return {
-                              ...service,
-                              price: selectedRoomType.dailyCost
-                            };
-                          }
-                          return service;
-                        });
+                        const updatedServices = selectedServices.map(
+                          (service) => {
+                            if (
+                              service.name === "Bed Charges" ||
+                              service.name.toLowerCase().includes("bed charges")
+                            ) {
+                              return {
+                                ...service,
+                                price: selectedRoomType.dailyCost,
+                              };
+                            }
+                            return service;
+                          },
+                        );
                         setSelectedServices(updatedServices);
 
                         // Calculate total daily cost from all selected services
-                        const totalServicesCost = updatedServices.reduce((total, service) => {
-                          return total + (service.price || 0);
-                        }, 0);
+                        const totalServicesCost = updatedServices.reduce(
+                          (total, service) => {
+                            return total + (service.price || 0);
+                          },
+                          0,
+                        );
 
                         // Set the daily cost to the total of all selected services
                         admissionForm.setValue("dailyCost", totalServicesCost);
@@ -4128,10 +4449,13 @@ export default function PatientDetail() {
                           allCurrentAdmissions
                             .filter(
                               (admission: any) =>
-                                admission.currentWardType === selectedWardType &&
+                                admission.currentWardType ===
+                                  selectedWardType &&
                                 admission.status === "admitted",
                             )
-                            .map((admission: any) => admission.currentRoomNumber),
+                            .map(
+                              (admission: any) => admission.currentRoomNumber,
+                            ),
                         );
 
                         return allRoomsForType.map((room: any) => {
@@ -4204,7 +4528,9 @@ export default function PatientDetail() {
               {/* Admission Services Selection */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-lg font-semibold">Select Admission Services</Label>
+                  <Label className="text-lg font-semibold">
+                    Select Admission Services
+                  </Label>
                   <div className="flex items-center space-x-2">
                     <Input
                       placeholder="Search admission services..."
@@ -4231,41 +4557,73 @@ export default function PatientDetail() {
                     <TableBody>
                       {(() => {
                         // Filter admission services
-                        const admissionServices = allServices?.filter((service) => 
-                          service.category === "admissions" && service.isActive
-                        ) || [];
+                        const admissionServices =
+                          allServices?.filter(
+                            (service) =>
+                              service.category === "admissions" &&
+                              service.isActive,
+                          ) || [];
 
                         // Apply search filter
-                        const filteredServices = selectedServiceSearchQuery.trim()
-                          ? admissionServices.filter(service =>
-                              service.name.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
-                              (service.description && 
-                               service.description.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
-                            )
-                          : admissionServices;
+                        const filteredServices =
+                          selectedServiceSearchQuery.trim()
+                            ? admissionServices.filter(
+                                (service) =>
+                                  service.name
+                                    .toLowerCase()
+                                    .includes(
+                                      selectedServiceSearchQuery.toLowerCase(),
+                                    ) ||
+                                  (service.description &&
+                                    service.description
+                                      .toLowerCase()
+                                      .includes(
+                                        selectedServiceSearchQuery.toLowerCase(),
+                                      )),
+                              )
+                            : admissionServices;
 
                         if (filteredServices.length === 0) {
                           return (
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                No admission services found. {selectedServiceSearchQuery ? 'Try adjusting your search.' : 'Create admission services in the Services page first.'}
+                              <TableCell
+                                colSpan={4}
+                                className="text-center text-muted-foreground py-8"
+                              >
+                                No admission services found.{" "}
+                                {selectedServiceSearchQuery
+                                  ? "Try adjusting your search."
+                                  : "Create admission services in the Services page first."}
                               </TableCell>
                             </TableRow>
                           );
                         }
 
                         return filteredServices.map((service) => {
-                          const isSelected = selectedServices.some((s) => s.id === service.id);
-                          const selectedService = selectedServices.find((s) => s.id === service.id);
+                          const isSelected = selectedServices.some(
+                            (s) => s.id === service.id,
+                          );
+                          const selectedService = selectedServices.find(
+                            (s) => s.id === service.id,
+                          );
 
                           // For Bed Charges service, show the room type price if available
                           let displayPrice = service.price;
-                          if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedService) {
+                          if (
+                            (service.name === "Bed Charges" ||
+                              service.name
+                                .toLowerCase()
+                                .includes("bed charges")) &&
+                            selectedService
+                          ) {
                             displayPrice = selectedService.price;
                           }
 
                           return (
-                            <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
+                            <TableRow
+                              key={service.id}
+                              className={isSelected ? "bg-blue-50" : ""}
+                            >
                               <TableCell>
                                 <Checkbox
                                   checked={isSelected}
@@ -4274,30 +4632,58 @@ export default function PatientDetail() {
                                     let updatedServices;
                                     if (checked) {
                                       // Get current room type for Bed Charges pricing
-                                      const currentWardType = admissionForm.watch("currentWardType");
-                                      const selectedRoomType = roomTypes.find((rt: any) => rt.name === currentWardType);
+                                      const currentWardType =
+                                        admissionForm.watch("currentWardType");
+                                      const selectedRoomType = roomTypes.find(
+                                        (rt: any) =>
+                                          rt.name === currentWardType,
+                                      );
 
-                                      let serviceToAdd = { ...service, quantity: 1 };
+                                      let serviceToAdd = {
+                                        ...service,
+                                        quantity: 1,
+                                      };
 
                                       // If this is Bed Charges and we have a room type selected, use room type price
-                                      if ((service.name === "Bed Charges" || service.name.toLowerCase().includes("bed charges")) && selectedRoomType) {
-                                        serviceToAdd.price = selectedRoomType.dailyCost;
+                                      if (
+                                        (service.name === "Bed Charges" ||
+                                          service.name
+                                            .toLowerCase()
+                                            .includes("bed charges")) &&
+                                        selectedRoomType
+                                      ) {
+                                        serviceToAdd.price =
+                                          selectedRoomType.dailyCost;
                                       }
 
-                                      updatedServices = [...selectedServices, serviceToAdd];
+                                      updatedServices = [
+                                        ...selectedServices,
+                                        serviceToAdd,
+                                      ];
                                     } else {
-                                      updatedServices = selectedServices.filter((s) => s.id !== service.id);
+                                      updatedServices = selectedServices.filter(
+                                        (s) => s.id !== service.id,
+                                      );
                                     }
 
                                     setSelectedServices(updatedServices);
 
                                     // Recalculate total daily cost from all selected services
-                                    const totalServicesCost = updatedServices.reduce((total, selectedService) => {
-                                      return total + (selectedService.price || 0);
-                                    }, 0);
+                                    const totalServicesCost =
+                                      updatedServices.reduce(
+                                        (total, selectedService) => {
+                                          return (
+                                            total + (selectedService.price || 0)
+                                          );
+                                        },
+                                        0,
+                                      );
 
                                     // Update the daily cost field
-                                    admissionForm.setValue("dailyCost", totalServicesCost);
+                                    admissionForm.setValue(
+                                      "dailyCost",
+                                      totalServicesCost,
+                                    );
                                   }}
                                 />
                               </TableCell>
@@ -4310,19 +4696,27 @@ export default function PatientDetail() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className={
-                                  service.billingType === "per_date" ? "bg-indigo-100 text-indigo-800" :
-                                  service.billingType === "per_24_hours" ? "bg-green-100 text-green-800" :
-                                  "bg-gray-100 text-gray-800"
-                                }>
-                                  {service.billingType === "per_date" ? "Per Date" :
-                                   service.billingType === "per_24_hours" ? "Per 24 Hours" :
-                                   service.billingType || "Per Instance"}
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    service.billingType === "per_date"
+                                      ? "bg-indigo-100 text-indigo-800"
+                                      : service.billingType === "per_24_hours"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-gray-100 text-gray-800"
+                                  }
+                                >
+                                  {service.billingType === "per_date"
+                                    ? "Per Date"
+                                    : service.billingType === "per_24_hours"
+                                      ? "Per 24 Hours"
+                                      : service.billingType || "Per Instance"}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
                                 ₹{displayPrice}
-                                {(service.billingType === "per_date" || service.billingType === "per_24_hours") && (
+                                {(service.billingType === "per_date" ||
+                                  service.billingType === "per_24_hours") && (
                                   <div className="text-xs text-muted-foreground">
                                     Auto-billed during stay
                                   </div>
@@ -4339,16 +4733,23 @@ export default function PatientDetail() {
                 {/* Selected Services Summary */}
                 {selectedServices.length > 0 && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium mb-3">Selected Admission Services</h4>
+                    <h4 className="font-medium mb-3">
+                      Selected Admission Services
+                    </h4>
                     <div className="space-y-2">
                       {selectedServices.map((service) => (
-                        <div key={service.id} className="flex justify-between items-center text-sm">
+                        <div
+                          key={service.id}
+                          className="flex justify-between items-center text-sm"
+                        >
                           <span className="font-medium">{service.name}</span>
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary" className="text-xs">
-                              {service.billingType === "per_date" ? "Per Date" :
-                               service.billingType === "per_24_hours" ? "Per 24 Hours" :
-                               service.billingType || "Per Instance"}
+                              {service.billingType === "per_date"
+                                ? "Per Date"
+                                : service.billingType === "per_24_hours"
+                                  ? "Per 24 Hours"
+                                  : service.billingType || "Per Instance"}
                             </Badge>
                             <span>₹{service.price}</span>
                           </div>
@@ -4356,10 +4757,17 @@ export default function PatientDetail() {
                       ))}
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Daily Cost:</span>
-                        <span>₹{selectedServices.reduce((total, service) => total + (service.price || 0), 0)}</span>
+                        <span>
+                          ₹
+                          {selectedServices.reduce(
+                            (total, service) => total + (service.price || 0),
+                            0,
+                          )}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        * Services with per_date/per_24_hours billing will be automatically charged during the admission period
+                        * Services with per_date/per_24_hours billing will be
+                        automatically charged during the admission period
                       </div>
                     </div>
                   </div>
@@ -4393,9 +4801,7 @@ export default function PatientDetail() {
                   disabled={isCreatingAdmission}
                   data-testid="button-admit"
                 >
-                  {isCreatingAdmission
-                    ? "Admitting..."
-                    : "Admit Patient"}
+                  {isCreatingAdmission ? "Admitting..." : "Admit Patient"}
                 </Button>
               </div>
             </form>
@@ -4445,7 +4851,9 @@ export default function PatientDetail() {
                     );
                   }
                   // Handle SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-                  else if (dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
+                  else if (
+                    dateStr.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+                  ) {
                     const parts = dateStr.split(" ");
                     const dateParts = parts[0].split("-");
                     const timeParts = parts[1].split(":");
@@ -4477,7 +4885,7 @@ export default function PatientDetail() {
                   if (isNaN(displayDate.getTime())) return "N/A";
 
                   // Get timezone from system settings
-                  const timezone = systemSettings?.timezone || 'UTC';
+                  const timezone = systemSettings?.timezone || "UTC";
 
                   // Return formatted date with time using configured timezone
                   return new Intl.DateTimeFormat("en-US", {
@@ -4503,7 +4911,18 @@ export default function PatientDetail() {
                     </p>
                     <p className="text-sm">
                       <strong>Admission Date & Time:</strong>{" "}
-                      {formatAdmissionDateTime(currentAdmission.admissionDate)}
+                      {(() => {
+                        // Get admission events for the current admission
+                        const admitEvents =
+                          admissionEventsMap?.[currentAdmission.id] || [];
+                        const admitEvent = admitEvents?.find(
+                          (e: any) => e.eventType === "admit",
+                        );
+                        return formatDateTime(
+                          admitEvent?.eventTime ||
+                            currentAdmission.admissionDate,
+                        );
+                      })()}
                     </p>
                   </div>
                 );
@@ -4719,330 +5138,312 @@ export default function PatientDetail() {
 
           <div className="flex justify-end gap-2">
             <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsPaymentDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  const amount = parseFloat(paymentAmount);
-                  if (amount > 0) {
-                    addPaymentMutation.mutate({
-                      amount: amount,
-                      paymentMethod: "cash", // Default to cash, can be extended with a dropdown
-                      reason: "Payment",
-                    });
-                  }
-                }}
-                disabled={
-                  addPaymentMutation.isPending ||
-                  !paymentAmount ||
-                  parseFloat(paymentAmount) <= 0
+              type="button"
+              variant="outline"
+              onClick={() => setIsPaymentDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const amount = parseFloat(paymentAmount);
+                if (amount > 0) {
+                  addPaymentMutation.mutate({
+                    amount: amount,
+                    paymentMethod: "cash", // Default to cash, can be extended with a dropdown
+                    reason: "Payment",
+                  });
                 }
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {addPaymentMutation.isPending
-                  ? "Adding Payment..."
-                  : "Add Payment"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+              }}
+              disabled={
+                addPaymentMutation.isPending ||
+                !paymentAmount ||
+                parseFloat(paymentAmount) <= 0
+              }
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {addPaymentMutation.isPending
+                ? "Adding Payment..."
+                : "Add Payment"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Discount Dialog */}
-        <Dialog
-          open={isDiscountDialogOpen}
-          onOpenChange={setIsDiscountDialogOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Discount</DialogTitle>
-            </DialogHeader>
+      {/* Discount Dialog */}
+      <Dialog
+        open={isDiscountDialogOpen}
+        onOpenChange={setIsDiscountDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Discount</DialogTitle>
+          </DialogHeader>
 
-            <div className="py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Discount Amount *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={discountAmount}
-                    onChange={(e) => setDiscountAmount(e.target.value)}
-                    placeholder="Enter discount amount"
-                    data-testid="input-discount-amount"
-                  />
-                </div>
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Discount Amount *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discountAmount}
+                  onChange={(e) => setDiscountAmount(e.target.value)}
+                  placeholder="Enter discount amount"
+                  data-testid="input-discount-amount"
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label>Reason for Discount</Label>
-                  <Input
-                    type="text"
-                    value={discountReason}
-                    onChange={(e) => setDiscountReason(e.target.value)}
-                    placeholder="Enter reason for discount (optional)"
-                    data-testid="input-discount-reason"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Reason for Discount</Label>
+                <Input
+                  type="text"
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  placeholder="Enter reason for discount (optional)"
+                  data-testid="input-discount-reason"
+                />
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDiscountDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  const amount = parseFloat(discountAmount);
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDiscountDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const amount = parseFloat(discountAmount);
 
-                  if (amount > 0) {
-                    addDiscountMutation.mutate({
-                      amount: amount,
-                      reason: discountReason.trim() || "Manual discount",
-                      discountType: "manual",
-                    });
-                  } else {
-                    toast({
-                      title: "Error",
-                      description: "Please enter a valid discount amount.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                disabled={
-                  addDiscountMutation.isPending ||
-                  !discountAmount ||
-                  parseFloat(discountAmount) <= 0
-                }
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {addDiscountMutation.isPending
-                  ? "Adding Discount..."
-                  : "Add Discount"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Comprehensive Bill Dialog */}
-        {isComprehensiveBillOpen && comprehensiveBillData && (
-          <ComprehensiveBillTemplate
-            billData={comprehensiveBillData}
-            hospitalInfo={hospitalInfo}
-            isOpen={isComprehensiveBillOpen}
-            onClose={() => {
-              console.log("Closing comprehensive bill dialog");
-              setIsComprehensiveBillOpen(false);
-            }}
-          />
-        )}
-
-        {/* OPD Visit Dialog */}
-        <Dialog open={isOpdVisitDialogOpen} onOpenChange={setIsOpdVisitDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Schedule OPD Appointment</DialogTitle>
-            </DialogHeader>
-
-            <Form {...opdVisitForm}>
-              <form
-                onSubmit={opdVisitForm.handleSubmit((data) => {
-                  console.log("OPD form submitted with data:", data);
-
-                  // Validate required fields
-                  if (!data.doctorId) {
-                    toast({
-                      title: "Error",
-                      description: "Please select a doctor",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  if (!data.scheduledDate) {
-                    toast({
-                      title: "Error",
-                      description: "Please select a date",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  if (!data.scheduledTime) {
-                    toast({
-                      title: "Error",
-                      description: "Please select a time",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  // Ensure consultation fee is included
-                  const consultationFee = data.consultationFee || 0;
-                  if (consultationFee <= 0) {
-                    toast({
-                      title: "Error",
-                      description: "Please enter a valid consultation fee",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  createOpdVisitMutation.mutate({
-                    ...data,
-                    consultationFee: consultationFee,
-                    amount: consultationFee // Also store as amount for consistent access
+                if (amount > 0) {
+                  addDiscountMutation.mutate({
+                    amount: amount,
+                    reason: discountReason.trim() || "Manual discount",
+                    discountType: "manual",
                   });
-                })}
-                className="space-y-4"
-              >
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="doctorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Doctor *</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            // Auto-fill consultation fee when doctor is selected
-                            const selectedDoctor = doctors?.find((d: Doctor) => d.id === value);
-                            if (selectedDoctor) {
-                              opdVisitForm.setValue("consultationFee", selectedDoctor.consultationFee);
-                            } else {
-                              // If no doctor is selected or it's an invalid ID, reset fee
-                              opdVisitForm.setValue("consultationFee", undefined);
-                            }
-                          }}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-opd-doctor">
-                              <SelectValue placeholder="Select a doctor" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {doctors?.map((doctor: Doctor) => (
-                              <SelectItem key={doctor.id} value={doctor.id}>
-                                {doctor.name} - {doctor.specialization}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a valid discount amount.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={
+                addDiscountMutation.isPending ||
+                !discountAmount ||
+                parseFloat(discountAmount) <= 0
+              }
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {addDiscountMutation.isPending
+                ? "Adding Discount..."
+                : "Add Discount"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="consultationFee"
-                    render={({ field }) => (
-                      <FormItem>
-                        <Label>Consultation Fee (₹)</Label>
-                        {(() => {
-                          const selectedDoctorId = opdVisitForm.watch("doctorId");
-                          const selectedDoctor = doctors.find(
-                            (d: Doctor) => d.id === selectedDoctorId,
+      {/* Comprehensive Bill Dialog */}
+      {isComprehensiveBillOpen && comprehensiveBillData && (
+        <ComprehensiveBillTemplate
+          billData={comprehensiveBillData}
+          hospitalInfo={hospitalInfo}
+          isOpen={isComprehensiveBillOpen}
+          onClose={() => {
+            console.log("Closing comprehensive bill dialog");
+            setIsComprehensiveBillOpen(false);
+          }}
+        />
+      )}
+
+      {/* OPD Visit Dialog */}
+      <Dialog
+        open={isOpdVisitDialogOpen}
+        onOpenChange={setIsOpdVisitDialogOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schedule OPD Appointment</DialogTitle>
+          </DialogHeader>
+
+          <Form {...opdVisitForm}>
+            <form
+              onSubmit={opdVisitForm.handleSubmit((data) => {
+                console.log("OPD form submitted with data:", data);
+
+                // Validate required fields
+                if (!data.doctorId) {
+                  toast({
+                    title: "Error",
+                    description: "Please select a doctor",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (!data.scheduledDate) {
+                  toast({
+                    title: "Error",
+                    description: "Please select a date",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                if (!data.scheduledTime) {
+                  toast({
+                    title: "Error",
+                    description: "Please select a time",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                // Ensure consultation fee is included
+                const consultationFee = data.consultationFee || 0;
+                if (consultationFee <= 0) {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a valid consultation fee",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                createOpdVisitMutation.mutate({
+                  ...data,
+                  consultationFee: consultationFee,
+                  amount: consultationFee, // Also store as amount for consistent access
+                });
+              })}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={opdVisitForm.control}
+                  name="doctorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Doctor *</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Auto-fill consultation fee when doctor is selected
+                          const selectedDoctor = doctors?.find(
+                            (d: Doctor) => d.id === value,
                           );
-                          const defaultFee = selectedDoctor ? selectedDoctor.consultationFee : 0;
-                          const currentFee = opdVisitForm.watch("consultationFee");
-
-                          // Set default fee when doctor changes, but only if the field hasn't been manually edited
-                          React.useEffect(() => {
-                            if (selectedDoctor && (currentFee === undefined || currentFee === 0)) {
-                              opdVisitForm.setValue("consultationFee", defaultFee);
-                            }
-                          }, [selectedDoctorId, defaultFee]); // Remove currentFee dependency to prevent interference
-
-                          return (
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={currentFee === undefined ? "" : currentFee}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // Allow empty string (complete erasure)
-                                  if (value === "") {
-                                    field.onChange(undefined);
-                                    opdVisitForm.setValue("consultationFee", undefined);
-                                  } else {
-                                    const fee = parseFloat(value) || 0;
-                                    field.onChange(fee);
-                                    opdVisitForm.setValue("consultationFee", fee);
-                                  }
-                                }}
-                                placeholder="Enter consultation fee"
-                                data-testid="input-consultation-fee"
-                              />
-                            </FormControl>
-                          );
-                        })()}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="scheduledDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date *</FormLabel>
+                          if (selectedDoctor) {
+                            opdVisitForm.setValue(
+                              "consultationFee",
+                              selectedDoctor.consultationFee,
+                            );
+                          } else {
+                            // If no doctor is selected or it's an invalid ID, reset fee
+                            opdVisitForm.setValue("consultationFee", undefined);
+                          }
+                        }}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
-                          <Input
-                            type="date"
-                            {...field}
-                            data-testid="input-opd-date"
-                          />
+                          <SelectTrigger data-testid="select-opd-doctor">
+                            <SelectValue placeholder="Select a doctor" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={opdVisitForm.control}
-                    name="scheduledTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Time *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="time"
-                            {...field}
-                            data-testid="input-opd-time"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          {doctors?.map((doctor: Doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.name} - {doctor.specialization}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={opdVisitForm.control}
-                  name="symptoms"
+                  name="consultationFee"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Symptoms (Optional)</FormLabel>
+                      <Label>Consultation Fee (₹)</Label>
+                      {(() => {
+                        const selectedDoctorId = opdVisitForm.watch("doctorId");
+                        const selectedDoctor = doctors.find(
+                          (d: Doctor) => d.id === selectedDoctorId,
+                        );
+                        const defaultFee = selectedDoctor
+                          ? selectedDoctor.consultationFee
+                          : 0;
+                        const currentFee =
+                          opdVisitForm.watch("consultationFee");
+
+                        // Set default fee when doctor changes, but only if the field hasn't been manually edited
+                        React.useEffect(() => {
+                          if (
+                            selectedDoctor &&
+                            (currentFee === undefined || currentFee === 0)
+                          ) {
+                            opdVisitForm.setValue(
+                              "consultationFee",
+                              defaultFee,
+                            );
+                          }
+                        }, [selectedDoctorId, defaultFee]); // Remove currentFee dependency to prevent interference
+
+                        return (
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={currentFee === undefined ? "" : currentFee}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty string (complete erasure)
+                                if (value === "") {
+                                  field.onChange(undefined);
+                                  opdVisitForm.setValue(
+                                    "consultationFee",
+                                    undefined,
+                                  );
+                                } else {
+                                  const fee = parseFloat(value) || 0;
+                                  field.onChange(fee);
+                                  opdVisitForm.setValue("consultationFee", fee);
+                                }
+                              }}
+                              placeholder="Enter consultation fee"
+                              data-testid="input-consultation-fee"
+                            />
+                          </FormControl>
+                        );
+                      })()}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={opdVisitForm.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date *</FormLabel>
                       <FormControl>
-                        <textarea
+                        <Input
+                          type="date"
                           {...field}
-                          className="w-full min-h-[80px] p-2 border border-input rounded-md"
-                          placeholder="Enter symptoms or reason for visit..."
-                          data-testid="textarea-opd-symptoms"
+                          data-testid="input-opd-date"
                         />
                       </FormControl>
                       <FormMessage />
@@ -5050,29 +5451,67 @@ export default function PatientDetail() {
                   )}
                 />
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsOpdVisitDialogOpen(false)}
-                    data-testid="button-cancel-opd"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createOpdVisitMutation.isPending}
-                    data-testid="button-schedule-opd-visit"
-                  >
-                    {createOpdVisitMutation.isPending
-                      ? "Scheduling..."
-                      : "Schedule Appointment"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                <FormField
+                  control={opdVisitForm.control}
+                  name="scheduledTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          {...field}
+                          data-testid="input-opd-time"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={opdVisitForm.control}
+                name="symptoms"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Symptoms (Optional)</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        className="w-full min-h-[80px] p-2 border border-input rounded-md"
+                        placeholder="Enter symptoms or reason for visit..."
+                        data-testid="textarea-opd-symptoms"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpdVisitDialogOpen(false)}
+                  data-testid="button-cancel-opd"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createOpdVisitMutation.isPending}
+                  data-testid="button-schedule-opd-visit"
+                >
+                  {createOpdVisitMutation.isPending
+                    ? "Scheduling..."
+                    : "Schedule Appointment"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
