@@ -3089,7 +3089,7 @@ export default function PatientDetail() {
                         events.forEach((event: any) => {
                           if (event.eventType !== "admit") {
                             allEvents.push({
-                              type: "admission_event",
+                              type: event.eventType === "discharge" ? "discharge" : "admission_event",
                               data: {
                                 ...event,
                                 admission,
