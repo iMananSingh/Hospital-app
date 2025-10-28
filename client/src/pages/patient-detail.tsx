@@ -822,6 +822,11 @@ export default function PatientDetail() {
 
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
 
+      // The admission date is expected to be stored in UTC in the backend.
+      // When displaying it in the form, we should convert it to the user's local time.
+      // However, the datetime-local input expects a local string.
+      // The goal here is to pre-fill the form with the current time in the user's local timezone.
+      // The current implementation correctly sets the local time.
       admissionForm.setValue("admissionDate", currentDateTime);
     }
   }, [systemSettings?.timezone, isAdmissionDialogOpen]);
@@ -1746,8 +1751,8 @@ export default function PatientDetail() {
     setSelectedServiceType(serviceType);
     setSelectedServiceCategory("");
     setSelectedServiceSearchQuery(""); // Clear search query
-    setSelectedCatalogService(null);
-    setBillingPreview(null);
+    setSelectedCatalogService(null); // Reset selected service
+    setBillingPreview(null); // Reset billing preview
 
     // Set the current time as default
     const now = new Date();
