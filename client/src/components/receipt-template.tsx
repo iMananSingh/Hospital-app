@@ -664,7 +664,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       onClick={handlePrint}
       variant="outline"
       size="sm"
-      className="flex items-center justify-center bg-blue-600 text-white hover:bg-blue-700 h-10 w-10 p-0 rounded-full"
+      className="flex items-center justify-center bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 h-10 w-10 p-0 rounded-full"
       title="Print Receipt"
     >
       <Printer className="h-4 w-4" />
