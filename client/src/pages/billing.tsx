@@ -115,15 +115,17 @@ export default function Billing() {
     return serviceMatch && searchMatch;
   });
 
-  // Combine inpatient services and admissions
+  // Combine inpatient services and admissions - exclude diagnostic services
   const combinedInpatientData = [
-    // Map patient services for procedures, operations, misc
-    ...inpatientServicesApi.map((service: any) => ({
-      ...service,
-      type: 'service',
-      price: service.calculatedAmount || service.price || 0,
-      doctorId: service.doctorId // Assuming doctorId is available in service data
-    })),
+    // Map patient services for procedures, operations, misc (exclude diagnostic services)
+    ...inpatientServicesApi
+      .filter((service: any) => service.serviceType !== 'diagnostic')
+      .map((service: any) => ({
+        ...service,
+        type: 'service',
+        price: service.calculatedAmount || service.price || 0,
+        doctorId: service.doctorId
+      })),
     // Map admissions data
     ...admissionsDataApi.map((admission: any) => ({
       ...admission,
@@ -132,7 +134,7 @@ export default function Billing() {
       serviceName: `Admission - ${admission.currentWardType || 'General Ward'}`,
       scheduledDate: admission.admissionDate,
       price: admission.totalCost || admission.dailyCost || 0,
-      doctorId: admission.doctorId // Assuming doctorId is available in admission data
+      doctorId: admission.doctorId
     }))
   ];
 
