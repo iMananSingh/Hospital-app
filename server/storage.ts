@@ -1377,6 +1377,9 @@ export interface IStorage {
   recalculateDoctorEarnings(
     doctorId?: string,
   ): Promise<{ processed: number; created: number }>;
+
+  // Room management
+  getRoomById(id: string): Promise<any | undefined>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -4276,6 +4279,10 @@ export class SqliteStorage implements IStorage {
 
   async deleteRoom(id: string): Promise<void> {
     await db.delete(schema.rooms).where(eq(schema.rooms.id, id)).run();
+  }
+
+  async getRoomById(id: string): Promise<any | undefined> {
+    return db.select().from(schema.rooms).where(eq(schema.rooms.id, id)).get();
   }
 
   async getRoomsByType(roomTypeId: string): Promise<any[]> {
