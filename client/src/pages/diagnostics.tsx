@@ -50,7 +50,8 @@ export default function Diagnostics() {
     queryKey: ["/api/services"],
   });
 
-  const isLoading = servicesLoading || patientsLoading || doctorsLoading || allServicesLoading;
+  // Only show loading if critical data (patientServices) is loading
+  const isLoading = servicesLoading;
 
   // Filter diagnostic services (radiology category or services with diagnostic-related names)
   const diagnosticServices = useMemo(() => {
@@ -66,22 +67,29 @@ export default function Diagnostics() {
     );
   }, [allServices]);
 
-  // Filter patient services to only diagnostic ones
+  // Filter patient services to only diagnostic ones - more lenient filtering
   const diagnosticPatientServices = useMemo(() => {
     if (!patientServices || patientServices.length === 0) return [];
     
     return patientServices.filter((service: PatientService) => {
-      // Check if the service name or type matches diagnostic services
+      if (!service) return false;
+      
       const serviceName = service.serviceName?.toLowerCase() || '';
       const serviceType = service.serviceType?.toLowerCase() || '';
       
-      return diagnosticServices.some(diagService => 
-        diagService.name?.toLowerCase() === serviceName
-      ) ||
-      serviceType === 'xray' ||
-      serviceType === 'ecg' ||
-      serviceType === 'ultrasound' ||
-      serviceType === 'diagnostic';
+      // Check against diagnostic keywords in service type or name
+      const diagnosticKeywords = ['xray', 'x-ray', 'ecg', 'ultrasound', 'usg', 'diagnostic', 'radiology', 'endoscopy', 'electrocardiogram'];
+      const hasKeyword = diagnosticKeywords.some(keyword => 
+        serviceType.includes(keyword) || serviceName.includes(keyword)
+      );
+      
+      // Also check against the diagnostic services list if available
+      const matchesDiagnosticService = diagnosticServices.length > 0 && 
+        diagnosticServices.some(diagService => 
+          diagService.name?.toLowerCase() === serviceName
+        );
+      
+      return hasKeyword || matchesDiagnosticService;
     });
   }, [patientServices, diagnosticServices]);
 
@@ -206,8 +214,36 @@ export default function Diagnostics() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex justify-center items-center h-64">
-          <p>Loading diagnostics...</p>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading diagnostics...</p>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show message if no data at all
+  if (!patientServices || patientServices.length === 0) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Diagnostics</h1>
+            <p className="text-muted-foreground">
+              Manage and view all diagnostic services by type
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">No patient services found in the system.</p>
+            <Link href="/services">
+              <Button className="mt-4">Go to Services</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
