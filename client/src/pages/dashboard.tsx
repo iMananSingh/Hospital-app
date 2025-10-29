@@ -629,10 +629,10 @@ export default function Dashboard() {
 
                     const formatTimeAgo = (dateString: string) => {
                       const now = new Date();
-                      // Parse the UTC timestamp from backend
-                      const date = new Date(dateString);
+                      // Parse the UTC timestamp from backend - ensure it's treated as UTC
+                      const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
                       
-                      // Calculate difference in milliseconds (both are in UTC internally)
+                      // Calculate difference in milliseconds using current local time
                       const diffInMs = now.getTime() - date.getTime();
                       const diffInMins = Math.floor(diffInMs / (1000 * 60));
                       const diffInHours = Math.floor(diffInMins / 60);
