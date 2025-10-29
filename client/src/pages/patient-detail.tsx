@@ -3395,8 +3395,8 @@ export default function PatientDetail() {
                                     return (
                                       <div className="space-y-1">
                                         <div className="font-medium">
-                                          Consultation Fee: ₹
-                                          {event.data.consultationFee || 0}
+                                          Consultation Fee: <span className="text-red-600 font-semibold">₹
+                                          {event.data.consultationFee || 0}</span>
                                         </div>
                                         {event.data.symptoms && (
                                           <div>
