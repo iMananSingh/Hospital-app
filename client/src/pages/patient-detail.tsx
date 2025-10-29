@@ -3589,7 +3589,9 @@ export default function PatientDetail() {
                                           <span className="font-medium">
                                             Daily Cost:
                                           </span>{" "}
-                                          ₹{event.data.dailyCost}
+                                          <span className="text-red-600 font-semibold">
+                                            ₹{event.data.dailyCost}
+                                          </span>
                                         </div>
                                         {event.data.reason && (
                                           <div>
