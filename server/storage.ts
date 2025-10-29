@@ -3953,192 +3953,85 @@ export class SqliteStorage implements IStorage {
     balance: number;
   }> {
     try {
-      console.log(`Generating financial summary for patient: ${patientId}`);
+      console.log("Generating financial summary for patient:", patientId);
 
-      // Calculate total charges from different sources
-      let totalCharges = 0;
-      let totalPaid = 0;
-      let totalDiscounts = 0;
+      // Get all patient services with their costs
+      const services = await this.getPatientServices(patientId);
 
-      // 1. OPD Consultation charges from patient_visits table
-      const opdVisits = db
-        .select({
-          consultationFee: schema.patientVisits.consultationFee,
-        })
-        .from(schema.patientVisits)
-        .where(
-          and(
-            eq(schema.patientVisits.patientId, patientId),
-            eq(schema.patientVisits.visitType, "opd"),
-          ),
-        )
-        .all();
+      // Get all admissions for the patient
+      const admissions = await this.getAdmissions(patientId);
 
-      opdVisits.forEach((visit) => {
-        const fee = visit.consultationFee || 0;
-        totalCharges += fee;
+      // Get all pathology orders for the patient
+      const pathologyOrders = await this.getPathologyOrdersByPatient(patientId);
+
+      // Get all payments
+      const payments = await this.getPatientPaymentsByPatient(patientId);
+
+      // Get all discounts
+      const discounts = await this.getPatientDiscountsByPatient(patientId);
+
+      // Calculate total charges from services
+      let totalServiceCharges = 0;
+      services.forEach((service) => {
+        const amount = service.calculatedAmount || service.price || 0;
+        totalServiceCharges += amount;
       });
 
-      // 2. OPD Services charges from patient_services table
-      const opdServices = db
-        .select({
-          amount: schema.patientServices.calculatedAmount,
-          price: schema.patientServices.price,
-        })
-        .from(schema.patientServices)
-        .where(
-          and(
-            eq(schema.patientServices.patientId, patientId),
-            eq(schema.patientServices.serviceType, "opd"),
-          ),
-        )
-        .all();
-
-      opdServices.forEach((service) => {
-        const charge = service.amount || service.price || 0;
-        totalCharges += charge;
-      });
-
-      // 3. Pathology orders charges
-      const pathologyOrders = db
-        .select({
-          totalPrice: schema.pathologyOrders.totalPrice,
-        })
-        .from(schema.pathologyOrders)
-        .where(eq(schema.pathologyOrders.patientId, patientId))
-        .all();
-
+      // Calculate total charges from pathology orders
+      let totalPathologyCharges = 0;
       pathologyOrders.forEach((order) => {
-        totalCharges += order.totalPrice || 0;
+        totalPathologyCharges += order.totalPrice || 0;
       });
 
-      // 4. Other patient services charges (with daily calculation for admission services)
-      const otherServices = db
-        .select({
-          id: schema.patientServices.id,
-          serviceType: schema.patientServices.serviceType,
-          serviceName: schema.patientServices.serviceName,
-          amount: schema.patientServices.calculatedAmount,
-          price: schema.patientServices.price,
-          scheduledDate: schema.patientServices.scheduledDate,
-          createdAt: schema.patientServices.createdAt,
-        })
-        .from(schema.patientServices)
-        .where(
-          and(
-            eq(schema.patientServices.patientId, patientId),
-            ne(schema.patientServices.serviceType, "opd"),
-          ),
-        )
-        .all();
-
-      otherServices.forEach((service) => {
-        let charge = service.amount || service.price || 0;
-
-        // For admission services, calculate based on stay duration
-        if (service.serviceType === "admission") {
-          // Get admissions for this patient
-          const patientAdmissions = db
-            .select()
-            .from(schema.admissions)
-            .where(eq(schema.admissions.patientId, patientId))
-            .all();
-
-          if (patientAdmissions.length > 0) {
-            // Find relevant admission
-            let relevantAdmission = patientAdmissions[0];
-
-            const matchingAdmission = patientAdmissions.find((admission) => {
-              const admissionDate = new Date(
-                admission.admissionDate,
-              ).toDateString();
-              const serviceDate = new Date(
-                service.scheduledDate || service.createdAt,
-              ).toDateString();
-              return admissionDate === serviceDate;
-            });
-
-            if (matchingAdmission) {
-              relevantAdmission = matchingAdmission;
-            }
-
-            // Use the calculateStayDays function that was imported at the top
-            const endDate =
-              relevantAdmission.dischargeDate || new Date().toISOString();
-            const stayDuration = calculateStayDays(
-              relevantAdmission.admissionDate,
-              endDate,
-            );
-
-            if (stayDuration > 0) {
-              if (service.serviceName.toLowerCase().includes("bed charges")) {
-                // Bed charges: charge for each completed 24-hour period
-                charge = (service.price || 0) * stayDuration;
-              } else if (
-                service.serviceName.toLowerCase().includes("doctor charges") ||
-                service.serviceName.toLowerCase().includes("nursing charges") ||
-                service.serviceName.toLowerCase().includes("rmo charges")
-              ) {
-                // Other admission services: charge for each calendar day
-                charge = (service.price || 0) * stayDuration;
-              }
-            }
-          }
+      // Calculate total charges from admissions (daily cost * days stayed)
+      let totalAdmissionCharges = 0;
+      admissions.forEach((admission) => {
+        if (admission.status === "admitted") {
+          // For active admissions, calculate based on days from admission to now
+          const admissionDate = new Date(admission.admissionDate);
+          const now = new Date();
+          const daysStayed = Math.ceil(
+            (now.getTime() - admissionDate.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          totalAdmissionCharges += (admission.dailyCost || 0) * daysStayed;
+        } else if (admission.status === "discharged") {
+          // For discharged admissions, use the total cost
+          totalAdmissionCharges += admission.totalCost || 0;
         }
-
-        totalCharges += charge;
       });
 
-      // 5. Get all payments for this patient
-      const payments = db
-        .select({
-          amount: schema.patientPayments.amount,
-        })
-        .from(schema.patientPayments)
-        .where(eq(schema.patientPayments.patientId, patientId))
-        .all();
-
+      // Calculate total payments (only from patient_payments table - initial deposits are already recorded there)
+      let totalPayments = 0;
       payments.forEach((payment) => {
-        totalPaid += payment.amount || 0;
+        totalPayments += payment.amount || 0;
       });
 
-      // 6. Include initial deposits and additional payments from admissions
-      const admissionDepositsAndPayments = db
-        .select({
-          initialDeposit: schema.admissions.initialDeposit,
-          additionalPayments: schema.admissions.additionalPayments,
-        })
-        .from(schema.admissions)
-        .where(eq(schema.admissions.patientId, patientId))
-        .all();
-
-      admissionDepositsAndPayments.forEach((admission) => {
-        totalPaid += admission.initialDeposit || 0;
-        totalPaid += admission.additionalPayments || 0;
-      });
-
-      // 7. Get all discounts for this patient
-      const discounts = db
-        .select({
-          amount: schema.patientDiscounts.amount,
-        })
-        .from(schema.patientDiscounts)
-        .where(eq(schema.patientDiscounts.patientId, patientId))
-        .all();
-
+      // Calculate total discounts
+      let totalDiscounts = 0;
       discounts.forEach((discount) => {
         totalDiscounts += discount.amount || 0;
       });
 
-      const balance = totalCharges - totalPaid - totalDiscounts;
+      // Calculate totals
+      const totalCharges =
+        totalServiceCharges + totalPathologyCharges + totalAdmissionCharges;
+      const balance = totalCharges - totalPayments - totalDiscounts;
 
       console.log(
-        `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
+        "Financial summary - Total charges:",
+        totalCharges,
+        "Total paid:",
+        totalPayments,
+        "Total discounts:",
+        totalDiscounts,
+        "Balance:",
+        balance,
       );
+      console.log("Financial summary - Total charges:", totalCharges, "Total paid:", totalPayments);
 
       return {
         totalCharges,
-        totalPaid,
+        totalPaid: totalPayments,
         totalDiscounts,
         balance,
       };
@@ -6010,7 +5903,7 @@ export class SqliteStorage implements IStorage {
         .orderBy(desc(schema.admissions.admissionDate))
         .all();
 
-      // Get admission doctors for context
+      // Get admission doctors forcontext
       const admissionDoctorIds = admissions
         .map((a) => a.doctorId)
         .filter(Boolean) as string[];
@@ -6322,7 +6215,7 @@ export class SqliteStorage implements IStorage {
           .reduce((sum, item) => sum + item.amount, 0),
       );
 
-      const remainingBalance = totalCharges - totalPaid - totalDiscounts;
+      const remainingBalance = totalCharges - totalPayments - totalDiscounts;
 
       const lastPayment = billItems.find((item) => item.type === "payment");
       const lastDiscount = billItems.find((item) => item.type === "discount");
