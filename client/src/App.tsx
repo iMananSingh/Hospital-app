@@ -21,6 +21,8 @@ import CurrentlyAdmitted from "@/pages/currently-admitted";
 import AdmittedToday from "@/pages/admitted-today";
 import DischargedToday from "@/pages/discharged-today";
 import Settings from "@/pages/settings";
+import Diagnostics from "@/pages/diagnostics";
+import PendingBills from "@/pages/pending-bills";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import { useEffect } from "react";
