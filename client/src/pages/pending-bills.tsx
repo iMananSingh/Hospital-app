@@ -7,16 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { Patient } from "@shared/schema";
 
 interface PatientWithBalance extends Patient {
   pendingAmount: number;
 }
 
+type SortColumn = 'patientId' | 'pendingAmount' | null;
+type SortDirection = 'asc' | 'desc';
+
 export default function PendingBills() {
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Fetch patients with pending bills using optimized bulk endpoint
   const { data: patientsWithPending = [], isLoading } = useQuery<PatientWithBalance[]>({
@@ -25,13 +30,44 @@ export default function PendingBills() {
     refetchOnMount: true,
   });
 
+  const handleSort = (column: SortColumn) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="ml-1 h-4 w-4 inline" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="ml-1 h-4 w-4 inline" />
+      : <ArrowDown className="ml-1 h-4 w-4 inline" />;
+  };
+
   const filteredPatients = patientsWithPending.filter((patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.phone.includes(searchQuery)
   );
 
-  const totalPending = filteredPatients.reduce((sum, patient) => sum + patient.pendingAmount, 0);
+  const sortedPatients = [...filteredPatients].sort((a, b) => {
+    if (!sortBy) return 0;
+
+    let comparison = 0;
+    if (sortBy === 'patientId') {
+      comparison = a.patientId.localeCompare(b.patientId);
+    } else if (sortBy === 'pendingAmount') {
+      comparison = a.pendingAmount - b.pendingAmount;
+    }
+
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  const totalPending = sortedPatients.reduce((sum, patient) => sum + patient.pendingAmount, 0);
 
   if (isLoading) {
     return (
@@ -84,11 +120,11 @@ export default function PendingBills() {
           <CardHeader>
             <CardTitle>Patients with Pending Bills</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {filteredPatients.length} patient{filteredPatients.length !== 1 ? 's' : ''} with outstanding payments
+              {sortedPatients.length} patient{sortedPatients.length !== 1 ? 's' : ''} with outstanding payments
             </p>
           </CardHeader>
           <CardContent>
-            {filteredPatients.length === 0 ? (
+            {sortedPatients.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">
                   {searchQuery ? "No matching patients found" : "No pending bills at this time"}
@@ -99,18 +135,30 @@ export default function PendingBills() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Patient ID</TableHead>
+                      <TableHead 
+                        className="cursor-pointer select-none hover:bg-muted/50"
+                        onClick={() => handleSort('patientId')}
+                        data-testid="header-patient-id"
+                      >
+                        Patient ID{getSortIcon('patientId')}
+                      </TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Age/Gender</TableHead>
                       <TableHead>Phone</TableHead>
-                      <TableHead className="text-right">Pending Amount</TableHead>
+                      <TableHead 
+                        className="text-right cursor-pointer select-none hover:bg-muted/50"
+                        onClick={() => handleSort('pendingAmount')}
+                        data-testid="header-pending-amount"
+                      >
+                        Pending Amount{getSortIcon('pendingAmount')}
+                      </TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPatients.map((patient) => (
+                    {sortedPatients.map((patient) => (
                       <TableRow key={patient.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium" data-testid={`patient-id-${patient.id}`}>
                           {patient.patientId}
                         </TableCell>
                         <TableCell>{patient.name}</TableCell>
@@ -118,7 +166,7 @@ export default function PendingBills() {
                           {patient.age}y, {patient.gender}
                         </TableCell>
                         <TableCell>{patient.phone}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" data-testid={`pending-amount-${patient.id}`}>
                           <span className="font-semibold text-red-600">
                             ₹{patient.pendingAmount.toLocaleString()}
                           </span>
@@ -128,6 +176,7 @@ export default function PendingBills() {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/patients/${patient.id}`)}
+                            data-testid={`button-view-patient-${patient.id}`}
                           >
                             <Eye className="w-4 h-4 mr-1" />
                             View Details
