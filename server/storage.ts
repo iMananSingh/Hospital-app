@@ -1381,6 +1381,7 @@ export interface IStorage {
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
   getRoomTypeById(id: string): Promise<any | undefined>; // Added this line
+  deleteRoom(id: string): Promise<boolean>; // Added this line
 }
 
 export class SqliteStorage implements IStorage {
@@ -4278,8 +4279,14 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async deleteRoom(id: string): Promise<void> {
-    await db.delete(schema.rooms).where(eq(schema.rooms.id, id)).run();
+  async deleteRoom(id: string): Promise<boolean> {
+    try {
+      const result = db.delete(schema.rooms).where(eq(schema.rooms.id, id)).run();
+      return result.changes > 0;
+    } catch (error) {
+      console.error("Error in deleteRoom:", error);
+      return false;
+    }
   }
 
   async getRoomById(id: string): Promise<any | undefined> {

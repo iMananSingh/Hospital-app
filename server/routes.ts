@@ -3245,59 +3245,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete room
   app.delete("/api/rooms/:id", authenticateToken, async (req: any, res) => {
     try {
-      const roomId = req.params.id;
-      // Get room data before deletion for audit log
-      const roomToDelete = await storage.getRoomById(roomId); // Assuming getRoomById exists
+      const { id } = req.params;
 
-      // Get room type details for activity log
-      const roomType = roomToDelete
-        ? await storage.getRoomTypeById(roomToDelete.roomTypeId)
-        : null;
-
-      const deleted = await storage.deleteRoom(roomId, req.user.id);
-      if (!deleted) {
+      // Get room details BEFORE deletion for activity log
+      const room = await storage.getRoomById(id);
+      if (!room) {
         return res.status(404).json({ error: "Room not found" });
       }
 
+      // Get room type details for better activity description
+      const roomType = await storage.getRoomTypeById(room.roomTypeId);
+
+      const deleted = await storage.deleteRoom(id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Failed to delete room" });
+      }
+
+      // Create activity log for room deletion
+      await storage.createActivity({
+        userId: req.user?.id,
+        activityType: "room_deleted",
+        title: "Room Deleted",
+        description: `Room ${room.roomNumber} (${roomType?.name || 'Unknown Type'}) has been deleted`,
+        entityId: id,
+        entityType: "room",
+        metadata: JSON.stringify({
+          roomNumber: room.roomNumber,
+          roomType: roomType?.name,
+          deletedBy: req.user?.username,
+        }),
+      });
+
       // Create audit log
-      if (roomToDelete) {
-        await storage.createAuditLog({
-          userId: req.user.id,
-          username: req.user.username,
-          action: "delete",
-          tableName: "rooms",
-          recordId: roomId,
-          oldValues: roomToDelete,
-          newValues: null,
-          ipAddress: req.ip,
-          userAgent: req.get("user-agent"),
-        });
-      }
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "delete",
+        tableName: "rooms",
+        recordId: id,
+        oldValues: room,
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
 
-      // Create activity log
-      if (roomToDelete) {
-        await storage.createActivity({
-          userId: req.user.id,
-          activityType: "room_deleted",
-          title: "Room Deleted",
-          description: `Room ${roomToDelete.roomNumber} (${roomType?.name || "Unknown Type"}) deleted`,
-          entityId: roomId,
-          entityType: "room",
-          metadata: JSON.stringify({
-            roomNumber: roomToDelete.roomNumber,
-            roomType: roomType?.name,
-            floor: roomToDelete.floor,
-            building: roomToDelete.building,
-          }),
-        });
-      }
-
-      res.status(204).send();
-    } catch (error) {
+      res.json({ message: "Room deleted successfully" });
+    } catch (error: any) {
       console.error("Error deleting room:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: error.message || "Internal server error" });
     }
   });
 
