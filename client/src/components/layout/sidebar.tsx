@@ -279,7 +279,7 @@ export default function Sidebar() {
             <Hospital className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-text-dark">MedCare Pro</h1>
+            <h1 className="text-lg font-bold text-text-dark">HMSync</h1>
             <p className="text-sm text-text-muted">Hospital Management</p>
           </div>
         </div>

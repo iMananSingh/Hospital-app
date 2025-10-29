@@ -302,7 +302,7 @@ async function initializeDatabase() {
 
       CREATE TABLE IF NOT EXISTS hospital_settings (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        name TEXT NOT NULL DEFAULT 'MedCare Pro Hospital',
+        name TEXT NOT NULL DEFAULT 'HMSync Hospital',
         address TEXT NOT NULL DEFAULT '123 Healthcare Street, Medical District, City - 123456',
         phone TEXT NOT NULL DEFAULT '+91 98765 43210',
         email TEXT NOT NULL DEFAULT 'info@medcarepro.com',
