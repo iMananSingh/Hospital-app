@@ -2581,7 +2581,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.createAdmission(requestBody, req.user.id);
+      // Validate admission data using Zod schema
+      const insertAdmissionData = insertAdmissionSchema.parse(requestBody);
+
+      // Generate a unique admission ID
+      const admissionCount = await storage.getAdmissionsCount();
+      const newAdmissionId = `ADM-${new Date().getFullYear()}-${String(admissionCount + 1).padStart(4, "0")}`;
+
+      // Create admission
+      const admission = await storage.createAdmission({
+        ...insertAdmissionData,
+        admissionId: newAdmissionId,
+      });
+
+      // Create initial admission event
+      await storage.createAdmissionEvent({
+        admissionId: admission.id,
+        eventType: "admit",
+        eventTime: insertAdmissionData.admissionDate,
+        roomId: insertAdmissionData.currentRoomId,
+        roomNumber: insertAdmissionData.currentRoomNumber,
+        wardType: insertAdmissionData.currentWardType,
+        notes: insertAdmissionData.reason || "Patient admitted",
+        receiptNumber: null,
+        createdBy: req.user?.id,
+      });
+
+      // Create payment record if initial deposit is provided
+      if (insertAdmissionData.initialDeposit && insertAdmissionData.initialDeposit > 0) {
+        // Generate payment ID
+        const paymentCount = await storage.getPaymentsCount();
+        const paymentId = `PAY-${new Date().getFullYear()}-${String(paymentCount + 1).padStart(3, "0")}`;
+
+        // Create payment record
+        await storage.createPatientPayment(
+          {
+            paymentId,
+            patientId: insertAdmissionData.patientId,
+            amount: insertAdmissionData.initialDeposit,
+            paymentMethod: "cash", // Default to cash for initial deposit
+            paymentDate: insertAdmissionData.admissionDate,
+            reason: `Initial deposit for admission ${newAdmissionId}`,
+            receiptNumber: null,
+            processedBy: req.user?.id || "system",
+          },
+          req.user?.id || "system", // Pass userId for audit logging
+        );
+
+        // Create audit log for payment
+        await storage.createAuditLog({
+          userId: req.user?.id || "system",
+          username: req.user?.username || "System",
+          action: "create",
+          tableName: "patient_payments",
+          recordId: paymentId,
+          oldValues: null,
+          newValues: JSON.stringify({
+            paymentId,
+            patientId: insertAdmissionData.patientId,
+            amount: insertAdmissionData.initialDeposit,
+            paymentMethod: "cash",
+            paymentDate: insertAdmissionData.admissionDate,
+            reason: `Initial deposit for admission ${newAdmissionId}`,
+          }),
+          changedFields: null,
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get("user-agent"),
+        });
+      }
+
 
       // Log activity for admission
       const patient = await storage.getPatientById(admission.patientId);
