@@ -151,20 +151,25 @@ export default function Billing() {
         serviceMatch = selectedService === "admission";
       } else {
         // For patient services, check the service category/type
-        if (item.serviceType === 'procedure' || item.serviceName?.toLowerCase().includes('procedure')) {
+        const serviceType = (item.serviceType || '').toLowerCase();
+        const serviceName = (item.serviceName || '').toLowerCase();
+        
+        if (serviceType === 'procedure' || serviceName.includes('procedure')) {
           serviceMatch = selectedService === "procedures";
-        } else if (item.serviceType === 'operation' || item.serviceName?.toLowerCase().includes('operation') || item.serviceName?.toLowerCase().includes('surgery')) {
+        } else if (serviceType === 'operation' || serviceName.includes('operation') || serviceName.includes('surgery')) {
           serviceMatch = selectedService === "operations";
-        } else if (item.serviceType === 'misc' || item.category === 'misc' || item.serviceType === 'service') {
+        } else if (serviceType === 'misc' || serviceType === 'service' || item.category === 'misc') {
           serviceMatch = selectedService === "misc";
         } else {
-          serviceMatch = false;
+          // If no specific match, include it in misc category
+          serviceMatch = selectedService === "misc";
         }
       }
     }
 
     const searchMatch = inpatientSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
+      item.patientName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
       item.serviceName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase());
 
     return serviceMatch && searchMatch;
