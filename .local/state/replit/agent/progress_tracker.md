@@ -52,6 +52,25 @@
 - **Files Modified**: `server/storage.ts` (line 4478)
 - **Status**: Application restarted successfully, enhancement deployed ✓
 
+### Dashboard Activity Timestamp Timezone Fix (October 29, 2025 at 6:10 AM)
+[x] Fixed activity timestamps showing 5.5 hours ahead (IST timezone issue)
+- **Issue**: Dashboard "Recent Activities" showing times 5.5 hours ahead and not timezone-adjusted
+- **Root Cause**: 
+  - SQLite's `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" format without timezone indicator
+  - When JavaScript parses this, it treats it as local time instead of UTC
+  - This caused a 5.5-hour offset for IST (UTC+5:30) timezone users
+- **Solution**:
+  - Updated `logActivity` function to explicitly set `createdAt` using `new Date().toISOString()`
+  - This generates proper ISO 8601 format with 'Z' UTC indicator (e.g., "2025-10-29T05:51:30.000Z")
+  - JavaScript now correctly parses timestamps as UTC and converts to user's local timezone
+- **Impact**: 
+  - All NEW activity logs will show correct timestamps
+  - Existing activity logs may still show incorrect times (stored in old format before fix)
+- **Files Modified**: 
+  - `server/storage.ts` (line 5335 - added explicit createdAt)
+  - `client/src/pages/dashboard.tsx` (lines 633-648 - added clarifying comments)
+- **Status**: Application restarted successfully, timezone fix deployed ✓
+
 ## Migration Summary
 - All npm packages reinstalled successfully (565 packages including tsx)
 - Workflow "Start application" restarted and running successfully on port 5000

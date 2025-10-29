@@ -1,8 +1,8 @@
-# MedCare Pro - Hospital Management System
+# HMSync - Hospital Management System
 
 ## Overview
 
-MedCare Pro is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning MedCare Pro as a leading solution in the healthcare IT market.
+HMSync is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning HMSync as a leading solution in the healthcare IT market.
 
 ## Demo Credentials
 

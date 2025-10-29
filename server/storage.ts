@@ -305,7 +305,7 @@ async function initializeDatabase() {
         name TEXT NOT NULL DEFAULT 'HMSync Hospital',
         address TEXT NOT NULL DEFAULT '123 Healthcare Street, Medical District, City - 123456',
         phone TEXT NOT NULL DEFAULT '+91 98765 43210',
-        email TEXT NOT NULL DEFAULT 'info@medcarepro.com',
+        email TEXT NOT NULL DEFAULT 'info@hmsync.com',
         registration_number TEXT,
         logo_path TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -5329,6 +5329,7 @@ export class SqliteStorage implements IStorage {
           entityId,
           entityType,
           metadata: metadata ? JSON.stringify(metadata) : null,
+          createdAt: new Date().toISOString(), // Explicitly set UTC timestamp in ISO 8601 format
         })
         .run();
     } catch (error) {

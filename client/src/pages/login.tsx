@@ -2,7 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Hospital, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
@@ -43,7 +49,9 @@ export default function Login() {
             <Hospital className="w-8 h-8 text-white" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-text-dark">MedCare Pro</CardTitle>
+            <CardTitle className="text-2xl font-bold text-text-dark">
+              HMSync
+            </CardTitle>
             <CardDescription className="text-text-muted">
               Hospital Management System
             </CardDescription>
@@ -52,7 +60,9 @@ export default function Login() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" data-testid="label-username">Username</Label>
+              <Label htmlFor="username" data-testid="label-username">
+                Username
+              </Label>
               <Input
                 id="username"
                 type="text"
@@ -64,7 +74,9 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" data-testid="label-password">Password</Label>
+              <Label htmlFor="password" data-testid="label-password">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -75,8 +87,8 @@ export default function Login() {
                 data-testid="input-password"
               />
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-medical-blue hover:bg-medical-blue/90"
               disabled={isLoading || !username || !password}
               data-testid="button-login"

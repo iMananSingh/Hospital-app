@@ -313,14 +313,24 @@ export default function Settings() {
     });
 
   const { data: auditLogsData, isLoading: auditLogsLoading } = useQuery({
-    queryKey: ["/api/audit-logs", auditFromDate, auditToDate, selectedAuditUser, selectedAuditTable, selectedAuditAction],
+    queryKey: [
+      "/api/audit-logs",
+      auditFromDate,
+      auditToDate,
+      selectedAuditUser,
+      selectedAuditTable,
+      selectedAuditAction,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (auditFromDate) params.append("fromDate", auditFromDate);
       if (auditToDate) params.append("toDate", auditToDate);
-      if (selectedAuditUser !== "all") params.append("userId", selectedAuditUser);
-      if (selectedAuditTable !== "all") params.append("tableName", selectedAuditTable);
-      if (selectedAuditAction !== "all") params.append("action", selectedAuditAction);
+      if (selectedAuditUser !== "all")
+        params.append("userId", selectedAuditUser);
+      if (selectedAuditTable !== "all")
+        params.append("tableName", selectedAuditTable);
+      if (selectedAuditAction !== "all")
+        params.append("action", selectedAuditAction);
       params.append("limit", "100");
 
       const response = await fetch(`/api/audit-logs?${params.toString()}`, {
@@ -623,10 +633,10 @@ export default function Settings() {
       // Poll for server restart and auto-refresh
       let pollAttempts = 0;
       const maxPollAttempts = 30; // 30 seconds max wait
-      
+
       const pollServer = setInterval(async () => {
         pollAttempts++;
-        
+
         try {
           // Try to ping the server
           const healthCheck = await fetch("/api/users/me", {
@@ -634,7 +644,7 @@ export default function Settings() {
               Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
             },
           });
-          
+
           if (healthCheck.ok) {
             // Server is back online, reload the page
             clearInterval(pollServer);
@@ -698,12 +708,12 @@ export default function Settings() {
 
   const hospitalForm = useForm({
     defaultValues: {
-      name: hospitalSettings?.name || "MedCare Pro Hospital",
+      name: hospitalSettings?.name || "HMSync Hospital",
       address:
         hospitalSettings?.address ||
         "123 Healthcare Street, Medical District, City - 123456",
       phone: hospitalSettings?.phone || "+91 98765 43210",
-      email: hospitalSettings?.email || "info@medcarepro.com",
+      email: hospitalSettings?.email || "info@hmsync.com",
       registrationNumber: hospitalSettings?.registrationNumber || "",
     },
   });
@@ -888,7 +898,16 @@ export default function Settings() {
     });
   };
 
-  const auditTables = ["all", "patients", "doctors", "users", "bills", "services", "pathology_orders", "admissions"];
+  const auditTables = [
+    "all",
+    "patients",
+    "doctors",
+    "users",
+    "bills",
+    "services",
+    "pathology_orders",
+    "admissions",
+  ];
   const auditActions = ["all", "create", "update", "delete", "view"];
 
   const serviceCategories = [
@@ -1698,14 +1717,19 @@ export default function Settings() {
 
                     <div className="space-y-2">
                       <Label>User</Label>
-                      <Select value={selectedAuditUser} onValueChange={setSelectedAuditUser}>
+                      <Select
+                        value={selectedAuditUser}
+                        onValueChange={setSelectedAuditUser}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Users</SelectItem>
                           {users.map((u: any) => (
-                            <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.fullName}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1713,7 +1737,10 @@ export default function Settings() {
 
                     <div className="space-y-2">
                       <Label>Table</Label>
-                      <Select value={selectedAuditTable} onValueChange={setSelectedAuditTable}>
+                      <Select
+                        value={selectedAuditTable}
+                        onValueChange={setSelectedAuditTable}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -1729,14 +1756,19 @@ export default function Settings() {
 
                     <div className="space-y-2">
                       <Label>Action</Label>
-                      <Select value={selectedAuditAction} onValueChange={setSelectedAuditAction}>
+                      <Select
+                        value={selectedAuditAction}
+                        onValueChange={setSelectedAuditAction}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {auditActions.map((a) => (
                             <SelectItem key={a} value={a}>
-                              {a === "all" ? "All Actions" : a.charAt(0).toUpperCase() + a.slice(1)}
+                              {a === "all"
+                                ? "All Actions"
+                                : a.charAt(0).toUpperCase() + a.slice(1)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1753,7 +1785,9 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent>
                   {auditLogsLoading ? (
-                    <div className="text-center py-8">Loading audit logs...</div>
+                    <div className="text-center py-8">
+                      Loading audit logs...
+                    </div>
                   ) : auditLogs.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No audit logs found</p>
@@ -1784,15 +1818,22 @@ export default function Settings() {
                                   {log.action}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="font-mono text-sm">{log.tableName}</TableCell>
-                              <TableCell className="font-mono text-xs">{log.recordId.substring(0, 8)}...</TableCell>
+                              <TableCell className="font-mono text-sm">
+                                {log.tableName}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {log.recordId.substring(0, 8)}...
+                              </TableCell>
                               <TableCell>
                                 {log.changedFields ? (
                                   <span className="text-sm text-muted-foreground">
-                                    {JSON.parse(log.changedFields).length} field(s)
+                                    {JSON.parse(log.changedFields).length}{" "}
+                                    field(s)
                                   </span>
                                 ) : (
-                                  <span className="text-sm text-muted-foreground">N/A</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    N/A
+                                  </span>
                                 )}
                               </TableCell>
                               <TableCell>
@@ -1829,7 +1870,9 @@ export default function Settings() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Timestamp</Label>
-                  <p className="text-sm">{formatDateTime(selectedAuditLog.createdAt)}</p>
+                  <p className="text-sm">
+                    {formatDateTime(selectedAuditLog.createdAt)}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">User</Label>
@@ -1843,11 +1886,15 @@ export default function Settings() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Table</Label>
-                  <p className="text-sm font-mono">{selectedAuditLog.tableName}</p>
+                  <p className="text-sm font-mono">
+                    {selectedAuditLog.tableName}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Record ID</Label>
-                  <p className="text-sm font-mono">{selectedAuditLog.recordId}</p>
+                  <p className="text-sm font-mono">
+                    {selectedAuditLog.recordId}
+                  </p>
                 </div>
               </div>
 
@@ -1855,7 +1902,11 @@ export default function Settings() {
                 <div>
                   <Label className="text-sm font-medium">Old Values</Label>
                   <pre className="mt-2 p-4 bg-gray-50 rounded-lg text-xs overflow-x-auto">
-                    {JSON.stringify(JSON.parse(selectedAuditLog.oldValues), null, 2)}
+                    {JSON.stringify(
+                      JSON.parse(selectedAuditLog.oldValues),
+                      null,
+                      2,
+                    )}
                   </pre>
                 </div>
               )}
@@ -1864,7 +1915,11 @@ export default function Settings() {
                 <div>
                   <Label className="text-sm font-medium">New Values</Label>
                   <pre className="mt-2 p-4 bg-gray-50 rounded-lg text-xs overflow-x-auto">
-                    {JSON.stringify(JSON.parse(selectedAuditLog.newValues), null, 2)}
+                    {JSON.stringify(
+                      JSON.parse(selectedAuditLog.newValues),
+                      null,
+                      2,
+                    )}
                   </pre>
                 </div>
               )}
@@ -1873,9 +1928,13 @@ export default function Settings() {
                 <div>
                   <Label className="text-sm font-medium">Changed Fields</Label>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {JSON.parse(selectedAuditLog.changedFields).map((field: string) => (
-                      <Badge key={field} variant="outline">{field}</Badge>
-                    ))}
+                    {JSON.parse(selectedAuditLog.changedFields).map(
+                      (field: string) => (
+                        <Badge key={field} variant="outline">
+                          {field}
+                        </Badge>
+                      ),
+                    )}
                   </div>
                 </div>
               )}

@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Search, Plus, Trash2, Printer, X } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import type { Patient } from '@shared/schema';
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Search, Plus, Trash2, Printer, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Patient } from "@shared/schema";
 
 interface BillItem {
   id: string;
@@ -23,7 +28,7 @@ interface FakeBillDialogProps {
 
 export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showPatientSearch, setShowPatientSearch] = useState(false);
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [paid, setPaid] = useState<number>(0);
@@ -36,45 +41,51 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   });
 
   // Fetch hospital settings for bill generation
-  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading } = useQuery({
-    queryKey: ["/api/settings/hospital"],
-    queryFn: async () => {
-      const response = await fetch("/api/settings/hospital", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch hospital settings");
-      }
-      return response.json();
-    },
-    enabled: isOpen,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading } =
+    useQuery({
+      queryKey: ["/api/settings/hospital"],
+      queryFn: async () => {
+        const response = await fetch("/api/settings/hospital", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch hospital settings");
+        }
+        return response.json();
+      },
+      enabled: isOpen,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    });
 
   // Use hospital settings or fallback to defaults
-  const hospitalInfo = hospitalSettings ? {
-    name: hospitalSettings.name || "MedCare Pro Hospital",
-    address: hospitalSettings.address || "123 Healthcare Street, Medical District, City - 123456",
-    phone: hospitalSettings.phone || "+91 98765 43210",
-    email: hospitalSettings.email || "info@medcarepro.com",
-    registrationNumber: hospitalSettings.registrationNumber || "REG123456",
-    logoPath: hospitalSettings.logoPath || null
-  } : {
-    name: "MedCare Pro Hospital",
-    address: "123 Healthcare Street, Medical District, City - 123456",
-    phone: "+91 98765 43210",
-    email: "info@medcarepro.com",
-    registrationNumber: "REG123456",
-    logoPath: null
-  };
+  const hospitalInfo = hospitalSettings
+    ? {
+        name: hospitalSettings.name || "HMSync Hospital",
+        address:
+          hospitalSettings.address ||
+          "123 Healthcare Street, Medical District, City - 123456",
+        phone: hospitalSettings.phone || "+91 98765 43210",
+        email: hospitalSettings.email || "info@hmsync.com",
+        registrationNumber: hospitalSettings.registrationNumber || "REG123456",
+        logoPath: hospitalSettings.logoPath || null,
+      }
+    : {
+        name: "HMSync Hospital",
+        address: "123 Healthcare Street, Medical District, City - 123456",
+        phone: "+91 98765 43210",
+        email: "info@hmsync.com",
+        registrationNumber: "REG123456",
+        logoPath: null,
+      };
 
   // Filter patients based on search query
-  const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.phone.includes(searchQuery)
+  const filteredPatients = patients.filter(
+    (patient) =>
+      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.phone.includes(searchQuery),
   );
 
   // Calculate totals
@@ -82,25 +93,29 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   const balance = totalCharges - paid - discount;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const generateReceiptNumber = () => {
     const today = new Date();
-    const yymmdd = today.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+    const yymmdd = today
+      .toISOString()
+      .slice(2, 10)
+      .replace(/-/g, "")
+      .slice(0, 6);
     const timestamp = Date.now().toString().slice(-4);
     return `${yymmdd}-FAKE-${timestamp}`;
   };
@@ -108,58 +123,63 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   const addBillItem = () => {
     const newItem: BillItem = {
       id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0],
-      description: '',
+      date: new Date().toISOString().split("T")[0],
+      description: "",
       quantity: 1,
       rate: 0,
-      amount: 0
+      amount: 0,
     };
     setBillItems([...billItems, newItem]);
   };
 
-  const updateBillItem = (id: string, field: keyof BillItem, value: string | number) => {
+  const updateBillItem = (
+    id: string,
+    field: keyof BillItem,
+    value: string | number,
+  ) => {
     // Add basic validation for numeric fields
-    if (field === 'quantity' && typeof value === 'number') {
+    if (field === "quantity" && typeof value === "number") {
       value = Math.max(1, value);
     }
-    if (field === 'rate' && typeof value === 'number') {
+    if (field === "rate" && typeof value === "number") {
       value = Math.max(0, value);
     }
-    if (field === 'amount' && typeof value === 'number') {
+    if (field === "amount" && typeof value === "number") {
       value = Math.max(0, value);
     }
 
-    setBillItems(items =>
-      items.map(item => {
+    setBillItems((items) =>
+      items.map((item) => {
         if (item.id === id) {
           const updatedItem = { ...item, [field]: value };
           // Auto-calculate amount when rate or quantity changes
-          if (field === 'rate' || field === 'quantity') {
-            const rate = field === 'rate' ? value as number : item.rate;
-            const quantity = field === 'quantity' ? value as number : item.quantity;
+          if (field === "rate" || field === "quantity") {
+            const rate = field === "rate" ? (value as number) : item.rate;
+            const quantity =
+              field === "quantity" ? (value as number) : item.quantity;
             updatedItem.amount = rate * quantity;
           }
           return updatedItem;
         }
         return item;
-      })
+      }),
     );
   };
 
   const removeBillItem = (id: string) => {
-    setBillItems(items => items.filter(item => item.id !== id));
+    setBillItems((items) => items.filter((item) => item.id !== id));
   };
 
   const selectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
     setShowPatientSearch(false);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const handleClose = () => {
     // Reset all data when closing
     setSelectedPatient(null);
-    setSearchQuery('');
+    setSearchQuery("");
     setShowPatientSearch(false);
     setBillItems([]);
     setPaid(0);
@@ -170,13 +190,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   const handlePrint = () => {
     if (!selectedPatient) return;
 
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
     const receiptNumber = generateReceiptNumber();
 
     const escapeHtml = (text: string) => {
-      const div = document.createElement('div');
+      const div = document.createElement("div");
       div.textContent = text;
       return div.innerHTML;
     };
@@ -413,9 +433,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
           <!-- Page Header for printing -->
           <div class="page-header">
             <div class="hospital-info">
-              ${hospitalInfo.logoPath ? `
+              ${
+                hospitalInfo.logoPath
+                  ? `
                 <img src="${hospitalInfo.logoPath}" alt="Hospital Logo" class="hospital-logo">
-              ` : ''}
+              `
+                  : ""
+              }
               <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
             </div>
           </div>
@@ -423,16 +447,20 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
           <!-- Page Footer for printing -->
           <div class="page-footer">
             <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
-            <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+            <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ""}</div>
           </div>
 
           <div class="bill">
             <!-- Header -->
             <div class="header">
               <div class="hospital-info">
-                ${hospitalInfo.logoPath ? `
+                ${
+                  hospitalInfo.logoPath
+                    ? `
                   <img src="${hospitalInfo.logoPath}" alt="Hospital Logo" class="hospital-logo">
-                ` : ''}
+                `
+                    : ""
+                }
                 <div class="hospital-name">${escapeHtml(hospitalInfo.name)}</div>
               </div>
             </div>
@@ -446,15 +474,18 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 <div class="patient-detail">Age: ${selectedPatient.age}</div>
                 <div class="patient-detail">Gender: ${escapeHtml(selectedPatient.gender)}</div>
                 <div class="patient-detail">Phone: ${escapeHtml(selectedPatient.phone)}</div>
-                ${selectedPatient.address ? `<div class="patient-detail">Address: ${escapeHtml(selectedPatient.address)}</div>` : ''}
+                ${selectedPatient.address ? `<div class="patient-detail">Address: ${escapeHtml(selectedPatient.address)}</div>` : ""}
               </div>
               <div class="bill-meta">
                 <span>Receipt Number: <strong>${receiptNumber}</strong></span>
-                <span>Generated: <strong>${new Date().toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric'
-                })}</strong></span>
+                <span>Generated: <strong>${new Date().toLocaleDateString(
+                  "en-US",
+                  {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  },
+                )}</strong></span>
               </div>
             </div>
 
@@ -472,7 +503,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 </tr>
               </thead>
               <tbody>
-                ${billItems.map((item, index) => `
+                ${billItems
+                  .map(
+                    (item, index) => `
                   <tr>
                     <td>${index + 1}</td>
                     <td>${formatDate(item.date)}</td>
@@ -485,7 +518,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       ₹${item.amount.toLocaleString()}
                     </td>
                   </tr>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
 
                 <tr style="border-top: 2px solid #333;">
                   <td colspan="5" style="text-align: right; font-weight: bold; padding-top: 15px;">TOTAL CHARGES:</td>
@@ -501,7 +536,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 </tr>
                 <tr style="border-top: 2px solid #2563eb; background: #f0f9ff;">
                   <td colspan="5" style="text-align: right; font-weight: bold; font-size: 18px; color: #2563eb; padding: 10px;">BALANCE:</td>
-                  <td class="amount-cell ${balance >= 0 ? 'positive-amount' : 'negative-amount'}" style="font-weight: bold; font-size: 18px; padding: 10px;">
+                  <td class="amount-cell ${balance >= 0 ? "positive-amount" : "negative-amount"}" style="font-weight: bold; font-size: 18px; padding: 10px;">
                     ₹${balance.toLocaleString()}
                   </td>
                 </tr>
@@ -522,7 +557,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
             <!-- Footer -->
             <div class="footer">
               <div class="footer-line">Address: ${escapeHtml(hospitalInfo.address)}</div>
-              <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ''}</div>
+              <div class="footer-line">Phone: ${escapeHtml(hospitalInfo.phone)} | Email: ${escapeHtml(hospitalInfo.email)}${hospitalInfo.registrationNumber ? ` | Reg. No.: ${escapeHtml(hospitalInfo.registrationNumber)}` : ""}</div>
               <div class="bill-id">
                 Bill ID: ${receiptNumber} | Generated on ${new Date().toLocaleString()}
               </div>
@@ -546,7 +581,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
   useEffect(() => {
     if (isOpen) {
       setSelectedPatient(null);
-      setSearchQuery('');
+      setSearchQuery("");
       setShowPatientSearch(false);
       setBillItems([]);
       setPaid(0);
@@ -569,7 +604,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
               {selectedPatient ? (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{selectedPatient.name}</span>
-                  <span className="text-sm text-muted-foreground">({selectedPatient.patientId})</span>
+                  <span className="text-sm text-muted-foreground">
+                    ({selectedPatient.patientId})
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -615,7 +652,8 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                     >
                       <div className="font-medium">{patient.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {patient.patientId} • {patient.phone} • Age: {patient.age}
+                        {patient.patientId} • {patient.phone} • Age:{" "}
+                        {patient.age}
                       </div>
                     </div>
                   ))}
@@ -639,7 +677,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
             <>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-lg font-semibold">Service & Treatment Details</Label>
+                  <Label className="text-lg font-semibold">
+                    Service & Treatment Details
+                  </Label>
                   <Button
                     onClick={addBillItem}
                     className="flex items-center gap-2"
@@ -670,7 +710,9 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                             <Input
                               type="date"
                               value={item.date}
-                              onChange={(e) => updateBillItem(item.id, 'date', e.target.value)}
+                              onChange={(e) =>
+                                updateBillItem(item.id, "date", e.target.value)
+                              }
                               className="w-full"
                               data-testid={`input-date-${index}`}
                             />
@@ -679,7 +721,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                             <Input
                               placeholder="Enter description"
                               value={item.description}
-                              onChange={(e) => updateBillItem(item.id, 'description', e.target.value)}
+                              onChange={(e) =>
+                                updateBillItem(
+                                  item.id,
+                                  "description",
+                                  e.target.value,
+                                )
+                              }
                               className="w-full"
                               data-testid={`input-description-${index}`}
                             />
@@ -689,7 +737,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                               type="number"
                               min="1"
                               value={item.quantity}
-                              onChange={(e) => updateBillItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                              onChange={(e) =>
+                                updateBillItem(
+                                  item.id,
+                                  "quantity",
+                                  parseInt(e.target.value) || 1,
+                                )
+                              }
                               className="w-full"
                               data-testid={`input-quantity-${index}`}
                             />
@@ -700,7 +754,13 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                               min="0"
                               step="0.01"
                               value={item.rate}
-                              onChange={(e) => updateBillItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                updateBillItem(
+                                  item.id,
+                                  "rate",
+                                  parseFloat(e.target.value) || 0,
+                                )
+                              }
                               className="w-full"
                               data-testid={`input-rate-${index}`}
                             />
@@ -731,8 +791,12 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       ))}
                       {billItems.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                            No items added. Click "Add Item" to start building the bill.
+                          <td
+                            colSpan={6}
+                            className="p-8 text-center text-muted-foreground"
+                          >
+                            No items added. Click "Add Item" to start building
+                            the bill.
                           </td>
                         </tr>
                       )}
@@ -743,36 +807,56 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
 
               {/* Summary Section */}
               <div className="border-2 border-border p-4 rounded-lg bg-muted/30">
-                <Label className="text-lg font-semibold mb-4 block">Bill Summary</Label>
+                <Label className="text-lg font-semibold mb-4 block">
+                  Bill Summary
+                </Label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="total-charges" className="text-sm font-medium">Total Charges:</Label>
-                    <div className="text-2xl font-bold text-primary" data-testid="total-charges">
+                    <Label
+                      htmlFor="total-charges"
+                      className="text-sm font-medium"
+                    >
+                      Total Charges:
+                    </Label>
+                    <div
+                      className="text-2xl font-bold text-primary"
+                      data-testid="total-charges"
+                    >
                       {formatCurrency(totalCharges)}
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="paid" className="text-sm font-medium">Paid:</Label>
+                    <Label htmlFor="paid" className="text-sm font-medium">
+                      Paid:
+                    </Label>
                     <Input
                       id="paid"
                       type="number"
                       min="0"
                       step="0.01"
                       value={paid}
-                      onChange={(e) => setPaid(Math.max(0, parseFloat(e.target.value) || 0))}
+                      onChange={(e) =>
+                        setPaid(Math.max(0, parseFloat(e.target.value) || 0))
+                      }
                       className="mt-1"
                       data-testid="input-paid"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="discount" className="text-sm font-medium">Discount:</Label>
+                    <Label htmlFor="discount" className="text-sm font-medium">
+                      Discount:
+                    </Label>
                     <Input
                       id="discount"
                       type="number"
                       min="0"
                       step="0.01"
                       value={discount}
-                      onChange={(e) => setDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
+                      onChange={(e) =>
+                        setDiscount(
+                          Math.max(0, parseFloat(e.target.value) || 0),
+                        )
+                      }
                       className="mt-1"
                       data-testid="input-discount"
                     />
@@ -781,7 +865,10 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 <div className="mt-4 pt-4 border-t">
                   <div className="flex justify-between items-center">
                     <Label className="text-lg font-semibold">Balance:</Label>
-                    <div className={`text-2xl font-bold ${balance >= 0 ? 'text-red-600' : 'text-green-600'}`} data-testid="balance">
+                    <div
+                      className={`text-2xl font-bold ${balance >= 0 ? "text-red-600" : "text-green-600"}`}
+                      data-testid="balance"
+                    >
                       {formatCurrency(balance)}
                     </div>
                   </div>
@@ -800,11 +887,17 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                 <Button
                   onClick={handlePrint}
                   className="flex items-center gap-2"
-                  disabled={!selectedPatient || billItems.length === 0 || isHospitalSettingsLoading}
+                  disabled={
+                    !selectedPatient ||
+                    billItems.length === 0 ||
+                    isHospitalSettingsLoading
+                  }
                   data-testid="button-print-fake-bill"
                 >
                   <Printer className="h-4 w-4" />
-                  {isHospitalSettingsLoading ? "Loading..." : "Print/Download PDF"}
+                  {isHospitalSettingsLoading
+                    ? "Loading..."
+                    : "Print/Download PDF"}
                 </Button>
               </div>
             </>
