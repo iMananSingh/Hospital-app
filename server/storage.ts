@@ -2566,7 +2566,7 @@ export class SqliteStorage implements IStorage {
         userId,
         "service_created",
         "Service Created",
-        `${service.category} - ${service.name}`,
+        `${service.name} - ${service.category}`,
         created.id,
         "service",
         {
@@ -2653,7 +2653,7 @@ export class SqliteStorage implements IStorage {
       this.logActivity(
         userId,
         "service_deleted",
-        "Service deleted",
+        "Service Deleted",
         `${service.name} - ${service.category}`,
         id,
         "service",
@@ -2862,7 +2862,7 @@ export class SqliteStorage implements IStorage {
         this.logActivity(
           userId,
           "lab_test_ordered",
-          "Lab test ordered",
+          "Lab Test Ordered",
           `${generatedOrderId} for ${patient?.name || "Unknown Patient"}`,
           created.id,
           "pathology_order",
