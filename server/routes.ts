@@ -24,6 +24,7 @@ import {
   insertAdmissionSchema,
   insertPatientVisitSchema,
   insertPatientServiceSchema,
+  insertRoomSchema, // Import Room schema
 } from "@shared/schema";
 import {
   pathologyCatalog,
@@ -81,11 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(401)
           .json({ message: "Account has been deactivated" });
-      }
-
-      const isValid = await storage.verifyPassword(password, user.password);
-      if (!isValid) {
-        return res.status(401).json({ message: "Invalid credentials" });
       }
 
       const rolesArray = JSON.parse(user.roles);
@@ -3168,7 +3164,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/rooms", authenticateToken, async (req: any, res) => {
     try {
-      const room = await storage.createRoom(req.body, req.user.id);
+      const roomData = insertRoomSchema.parse(req.body);
+      const room = await storage.createRoom(roomData, req.user.id); // Pass userId
+
+      // Get room type details for activity log
+      const roomType = await storage.getRoomTypeById(room.roomTypeId);
+
+      // Create activity log
+      await storage.createActivity({
+        userId: req.user.id,
+        activityType: "room_created",
+        title: "Room Created",
+        description: `Room ${room.roomNumber} (${roomType?.name || "Unknown Type"}) created`,
+        entityId: room.id,
+        entityType: "room",
+        metadata: JSON.stringify({
+          roomNumber: room.roomNumber,
+          roomType: roomType?.name,
+          floor: room.floor,
+          building: room.building,
+        }),
+      });
 
       // Create audit log
       await storage.createAuditLog({
@@ -3185,8 +3201,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(room);
     } catch (error) {
-      console.error("Error creating room:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Create room error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.errors,
+        });
+      }
+      res.status(500).json({ message: "Failed to create room" });
     }
   });
 
@@ -3229,7 +3251,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get room data before deletion for audit log
       const roomToDelete = await storage.getRoomById(roomId); // Assuming getRoomById exists
 
-      await storage.deleteRoom(roomId, req.user.id);
+      // Get room type details for activity log
+      const roomType = roomToDelete
+        ? await storage.getRoomTypeById(roomToDelete.roomTypeId)
+        : null;
+
+      const deleted = await storage.deleteRoom(roomId, req.user.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Room not found" });
+      }
 
       // Create audit log
       if (roomToDelete) {
@@ -3243,6 +3273,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           newValues: null,
           ipAddress: req.ip,
           userAgent: req.get("user-agent"),
+        });
+      }
+
+      // Create activity log
+      if (roomToDelete) {
+        await storage.createActivity({
+          userId: req.user.id,
+          activityType: "room_deleted",
+          title: "Room Deleted",
+          description: `Room ${roomToDelete.roomNumber} (${roomType?.name || "Unknown Type"}) deleted`,
+          entityId: roomId,
+          entityType: "room",
+          metadata: JSON.stringify({
+            roomNumber: roomToDelete.roomNumber,
+            roomType: roomType?.name,
+            floor: roomToDelete.floor,
+            building: roomToDelete.building,
+          }),
         });
       }
 
