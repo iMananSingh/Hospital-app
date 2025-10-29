@@ -3443,7 +3443,7 @@ export default function PatientDetail() {
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
-                                          <span className="text-lg">
+                                          <span className="text-lg text-red-600 font-semibold">
                                             ₹{event.data.totalCost}
                                           </span>
                                         </div>
