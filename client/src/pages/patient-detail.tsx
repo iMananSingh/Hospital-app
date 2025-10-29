@@ -3729,7 +3729,7 @@ export default function PatientDetail() {
                                           <span className="font-medium">
                                             Amount:
                                           </span>{" "}
-                                          <span className="text-orange-600 font-semibold">
+                                          <span className="text-red-600 font-semibold">
                                             ₹{event.data.amount}
                                           </span>
                                         </div>
