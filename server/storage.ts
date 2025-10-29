@@ -2221,6 +2221,26 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  async getAdmissionsCount(): Promise<number> {
+    try {
+      const count = db.select().from(schema.admissions).all().length;
+      return count;
+    } catch (error) {
+      console.error("Error getting admissions count:", error);
+      return 0;
+    }
+  }
+
+  async getPaymentsCount(): Promise<number> {
+    try {
+      const count = db.select().from(schema.patientPayments).all().length;
+      return count;
+    } catch (error) {
+      console.error("Error getting payments count:", error);
+      return 0;
+    }
+  }
+
   async createPatient(
     patientData: InsertPatient,
     userId?: string,
