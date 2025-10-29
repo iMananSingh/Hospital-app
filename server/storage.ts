@@ -1380,6 +1380,7 @@ export interface IStorage {
 
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
+  getRoomTypeById(id: string): Promise<any | undefined>; // Added this line
 }
 
 export class SqliteStorage implements IStorage {
@@ -4285,6 +4286,14 @@ export class SqliteStorage implements IStorage {
     return db.select().from(schema.rooms).where(eq(schema.rooms.id, id)).get();
   }
 
+  async getRoomTypeById(id: string): Promise<any | undefined> {
+    return db
+      .select()
+      .from(schema.roomTypes)
+      .where(eq(schema.roomTypes.id, id))
+      .get();
+  }
+
   async getRoomsByType(roomTypeId: string): Promise<any[]> {
     return db
       .select()
@@ -4403,7 +4412,7 @@ export class SqliteStorage implements IStorage {
           typeof dischargeDateTime !== "string" ||
           dischargeDateTime.trim() === ""
         ) {
-          // No datetime provided, use current time (same as transferRoom)
+          // No discharge datetime provided, use current time (same as transferRoom)
           console.log(`No discharge datetime provided, using current time`);
           parsedDischargeDateTime = new Date().toISOString();
         } else if (
