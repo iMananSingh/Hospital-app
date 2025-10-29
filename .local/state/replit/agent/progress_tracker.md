@@ -11,6 +11,20 @@
 - **Verification**: Database initialized, backup scheduler running at 15:41 daily, MedCare Pro login page verified ✓
 - **Migration Status**: All items marked complete [x] ✓
 
+### Room Transfer Timeline Display Fix (October 29, 2025 at 5:41 AM)
+[x] Fixed "Previous Room" showing new room instead of previous room
+- **Issue**: In patient detail timeline, room transfer events showed the NEW room under "Previous Room" label
+- **Root Cause**: Code was displaying `event.data.admission?.currentRoomNumber` which is the updated/new room
+- **Analysis**: 
+  - Backend stores NEW room in `admission_events.roomNumber` field
+  - Previous room information is in `notes` field: "Patient transferred from [Ward] ([Room]) to [Ward] ([Room])"
+- **Solution**: 
+  - Parse the `notes` field using regex to extract both previous and new room
+  - Display both "Previous Room" and "New Room" separately for clarity
+  - Format: "Room Number (Ward Type)" e.g., "ICU-01 (ICU)"
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 3630-3673)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ## Migration Summary
 - All npm packages reinstalled successfully (565 packages including tsx)
 - Workflow "Start application" restarted and running successfully on port 5000
