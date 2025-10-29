@@ -66,9 +66,9 @@ export default function Billing() {
     enabled: leftActiveTab === "diagnostic",
   });
 
-  // Fetch inpatient services (procedures, operations, misc, admission services - excluding diagnostics)
+  // Fetch all patient services (we'll filter out diagnostics on the frontend)
   const { data: inpatientServicesApi = [] } = useQuery<any[]>({
-    queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}&serviceType=procedure,operation,misc,service,admission`],
+    queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}`],
     enabled: leftActiveTab === "inpatient",
   });
 
@@ -115,16 +115,15 @@ export default function Billing() {
     return serviceMatch && searchMatch;
   });
 
-  // Combine inpatient services and admissions - exclude diagnostic services
+  // Combine inpatient services and admissions - exclude ONLY diagnostic services
   const combinedInpatientData = [
-    // Map patient services for procedures, operations, misc (exclude diagnostic services)
+    // Map ALL patient services EXCEPT diagnostic services
     ...inpatientServicesApi
-      .filter((service: any) => 
-        service.serviceType !== 'diagnostic' && 
-        !['xray', 'usg', 'ecg', 'ultrasound', 'x-ray'].some(keyword => 
-          service.serviceName?.toLowerCase().includes(keyword)
-        )
-      )
+      .filter((service: any) => {
+        // Exclude only services with serviceType 'diagnostic'
+        const isDiagnostic = service.serviceType === 'diagnostic';
+        return !isDiagnostic;
+      })
       .map((service: any) => ({
         ...service,
         type: 'service',
@@ -154,7 +153,9 @@ export default function Billing() {
         const serviceType = (item.serviceType || '').toLowerCase();
         const serviceName = (item.serviceName || '').toLowerCase();
         
-        if (serviceType === 'procedure' || serviceName.includes('procedure')) {
+        if (serviceType === 'opd') {
+          serviceMatch = selectedService === "opd";
+        } else if (serviceType === 'procedure' || serviceName.includes('procedure')) {
           serviceMatch = selectedService === "procedures";
         } else if (serviceType === 'operation' || serviceName.includes('operation') || serviceName.includes('surgery')) {
           serviceMatch = selectedService === "operations";
@@ -531,6 +532,7 @@ export default function Billing() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Services</SelectItem>
+                            <SelectItem value="opd">OPD Consultations</SelectItem>
                             <SelectItem value="procedures">Medical Procedures</SelectItem>
                             <SelectItem value="operations">Surgical Operations</SelectItem>
                             <SelectItem value="misc">Miscellaneous Services</SelectItem>
