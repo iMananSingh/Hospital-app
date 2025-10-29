@@ -66,7 +66,7 @@ export default function Billing() {
     enabled: leftActiveTab === "diagnostic",
   });
 
-  // Fetch inpatient services (procedures, operations, misc, and custom services)
+  // Fetch inpatient services (procedures, operations, misc, and custom services - excluding diagnostics)
   const { data: inpatientServicesApi = [] } = useQuery<any[]>({
     queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}&serviceType=procedure,operation,misc,service`],
     enabled: leftActiveTab === "inpatient",
@@ -119,7 +119,12 @@ export default function Billing() {
   const combinedInpatientData = [
     // Map patient services for procedures, operations, misc (exclude diagnostic services)
     ...inpatientServicesApi
-      .filter((service: any) => service.serviceType !== 'diagnostic')
+      .filter((service: any) => 
+        service.serviceType !== 'diagnostic' && 
+        !['xray', 'usg', 'ecg', 'ultrasound', 'x-ray'].some(keyword => 
+          service.serviceName?.toLowerCase().includes(keyword)
+        )
+      )
       .map((service: any) => ({
         ...service,
         type: 'service',
