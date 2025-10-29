@@ -2453,7 +2453,7 @@ export class SqliteStorage implements IStorage {
 
     if (filters?.scheduledDate) {
       whereConditions.push(
-        eq(schema.patientVisits.scheduledDate, filters.scheduledDate),
+        sql`DATE(${schema.patientVisits.scheduledDate}) = DATE(${filters.scheduledDate})`,
       );
     }
 
@@ -2463,13 +2463,13 @@ export class SqliteStorage implements IStorage {
 
     if (filters?.fromDate) {
       whereConditions.push(
-        gte(schema.patientVisits.scheduledDate, filters.fromDate),
+        sql`DATE(${schema.patientVisits.scheduledDate}) >= DATE(${filters.fromDate})`,
       );
     }
 
     if (filters?.toDate) {
       whereConditions.push(
-        lte(schema.patientVisits.scheduledDate, filters.toDate),
+        sql`DATE(${schema.patientVisits.scheduledDate}) <= DATE(${filters.toDate})`,
       );
     }
 
@@ -2887,18 +2887,18 @@ export class SqliteStorage implements IStorage {
           eq(schema.pathologyOrders.doctorId, schema.doctors.id),
         );
 
-      // Apply date filters if provided
+      // Apply date filters if provided - use DATE() for proper comparison
       if (fromDate && toDate) {
         query = query.where(
           and(
-            gte(schema.pathologyOrders.orderedDate, fromDate),
-            lte(schema.pathologyOrders.orderedDate, toDate),
+            sql`DATE(${schema.pathologyOrders.orderedDate}) >= DATE(${fromDate})`,
+            sql`DATE(${schema.pathologyOrders.orderedDate}) <= DATE(${toDate})`,
           ),
         );
       } else if (fromDate) {
-        query = query.where(gte(schema.pathologyOrders.orderedDate, fromDate));
+        query = query.where(sql`DATE(${schema.pathologyOrders.orderedDate}) >= DATE(${fromDate})`);
       } else if (toDate) {
-        query = query.where(lte(schema.pathologyOrders.orderedDate, toDate));
+        query = query.where(sql`DATE(${schema.pathologyOrders.orderedDate}) <= DATE(${toDate})`);
       }
 
       return query.orderBy(desc(schema.pathologyOrders.createdAt)).all();
@@ -3444,13 +3444,13 @@ export class SqliteStorage implements IStorage {
 
       if (filters.fromDate) {
         whereConditions.push(
-          gte(schema.patientServices.scheduledDate, filters.fromDate),
+          sql`DATE(${schema.patientServices.scheduledDate}) >= DATE(${filters.fromDate})`,
         );
       }
 
       if (filters.toDate) {
         whereConditions.push(
-          lte(schema.patientServices.scheduledDate, filters.toDate),
+          sql`DATE(${schema.patientServices.scheduledDate}) <= DATE(${filters.toDate})`,
         );
       }
 

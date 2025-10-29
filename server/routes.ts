@@ -2889,11 +2889,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filters.status = status as string;
       }
 
-      if (fromDate) {
+      // If fromDate and toDate are provided, remove scheduledDate filter to use date range instead
+      if (fromDate && toDate) {
+        delete filters.scheduledDate;
         filters.fromDate = fromDate as string;
-      }
-
-      if (toDate) {
+        filters.toDate = toDate as string;
+      } else if (fromDate) {
+        filters.fromDate = fromDate as string;
+      } else if (toDate) {
         filters.toDate = toDate as string;
       }
 
