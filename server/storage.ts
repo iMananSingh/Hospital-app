@@ -2565,8 +2565,8 @@ export class SqliteStorage implements IStorage {
       this.logActivity(
         userId,
         "service_created",
-        "Service created",
-        `${service.name} - ${service.category}`,
+        "Service Created",
+        `${service.category} - ${service.name}`,
         created.id,
         "service",
         {
@@ -2901,9 +2901,13 @@ export class SqliteStorage implements IStorage {
           ),
         );
       } else if (fromDate) {
-        query = query.where(sql`DATE(${schema.pathologyOrders.orderedDate}) >= DATE(${fromDate})`);
+        query = query.where(
+          sql`DATE(${schema.pathologyOrders.orderedDate}) >= DATE(${fromDate})`,
+        );
       } else if (toDate) {
-        query = query.where(sql`DATE(${schema.pathologyOrders.orderedDate}) <= DATE(${toDate})`);
+        query = query.where(
+          sql`DATE(${schema.pathologyOrders.orderedDate}) <= DATE(${toDate})`,
+        );
       }
 
       return query.orderBy(desc(schema.pathologyOrders.createdAt)).all();
@@ -4281,7 +4285,10 @@ export class SqliteStorage implements IStorage {
 
   async deleteRoom(id: string): Promise<boolean> {
     try {
-      const result = db.delete(schema.rooms).where(eq(schema.rooms.id, id)).run();
+      const result = db
+        .delete(schema.rooms)
+        .where(eq(schema.rooms.id, id))
+        .run();
       return result.changes > 0;
     } catch (error) {
       console.error("Error in deleteRoom:", error);
