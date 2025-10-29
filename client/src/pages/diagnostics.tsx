@@ -28,7 +28,7 @@ export default function Diagnostics() {
   const [selectedDate, setSelectedDate] = useState<string>("");
 
   // Fetch all patient services
-  const { data: patientServices = [], isLoading: servicesLoading } = useQuery<PatientService[]>({
+  const { data: patientServices = [], isLoading } = useQuery({
     queryKey: ["/api/patient-services"],
     refetchInterval: 5000, // Refetch every 5 seconds
     refetchOnMount: true,
@@ -36,63 +36,50 @@ export default function Diagnostics() {
   });
 
   // Fetch patients for service details
-  const { data: patients = [], isLoading: patientsLoading } = useQuery<Patient[]>({
+  const { data: patients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
   // Fetch doctors for filtering
-  const { data: doctors = [], isLoading: doctorsLoading } = useQuery<Doctor[]>({
+  const { data: doctors = [] } = useQuery<Doctor[]>({
     queryKey: ["/api/doctors"],
   });
 
   // Fetch all services to get diagnostic services
-  const { data: allServices = [], isLoading: allServicesLoading } = useQuery<Service[]>({
+  const { data: allServices = [] } = useQuery<Service[]>({
     queryKey: ["/api/services"],
   });
 
-  const isLoading = servicesLoading || patientsLoading || doctorsLoading || allServicesLoading;
-
   // Filter diagnostic services (radiology category or services with diagnostic-related names)
   const diagnosticServices = useMemo(() => {
-    if (!allServices || allServices.length === 0) return [];
-    
     return allServices.filter(service => 
-      service.category?.toLowerCase() === 'radiology' || 
-      service.category?.toLowerCase() === 'diagnostic services' ||
-      service.category?.toLowerCase() === 'diagnostics' ||
+      service.category.toLowerCase() === 'radiology' || 
+      service.category.toLowerCase() === 'diagnostic services' ||
+      service.category.toLowerCase() === 'diagnostics' ||
       ['ecg', 'usg', 'x-ray', 'xray', 'ultrasound', 'electrocardiogram', 'endoscopy'].some(keyword => 
-        service.name?.toLowerCase().includes(keyword)
+        service.name.toLowerCase().includes(keyword)
       )
     );
   }, [allServices]);
 
   // Filter patient services to only diagnostic ones
   const diagnosticPatientServices = useMemo(() => {
-    if (!patientServices || patientServices.length === 0) return [];
-    
-    return patientServices.filter((service: PatientService) => {
+    return (patientServices as PatientService[]).filter((service: PatientService) => {
       // Check if the service name or type matches diagnostic services
-      const serviceName = service.serviceName?.toLowerCase() || '';
-      const serviceType = service.serviceType?.toLowerCase() || '';
-      
       return diagnosticServices.some(diagService => 
-        diagService.name?.toLowerCase() === serviceName
-      ) ||
-      serviceType === 'xray' ||
-      serviceType === 'ecg' ||
-      serviceType === 'ultrasound' ||
-      serviceType === 'diagnostic';
+        diagService.name.toLowerCase() === service.serviceName.toLowerCase() ||
+        service.serviceType === 'xray' ||
+        service.serviceType === 'ecg' ||
+        service.serviceType === 'ultrasound' ||
+        service.serviceType === 'diagnostic'
+      );
     });
   }, [patientServices, diagnosticServices]);
 
   // Group diagnostic services by service type
   const diagnosticsByService = useMemo(() => {
-    if (!diagnosticPatientServices || diagnosticPatientServices.length === 0) {
-      return {};
-    }
-    
     const filtered = diagnosticPatientServices.filter((service: PatientService) => {
-      const patient = patients?.find(p => p.id === service.patientId);
+      const patient = patients.find(p => p.id === service.patientId);
 
       const matchesSearch = searchQuery === "" || 
         service.serviceId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,7 +94,7 @@ export default function Diagnostics() {
       const matchesStatus = selectedStatus === "all" || service.status === selectedStatus;
       
       const matchesService = selectedService === "all" || 
-        service.serviceName?.toLowerCase() === selectedService.toLowerCase();
+        service.serviceName.toLowerCase() === selectedService.toLowerCase();
       
       const matchesDate = selectedDate === "" || service.scheduledDate === selectedDate;
 
@@ -115,7 +102,7 @@ export default function Diagnostics() {
     });
 
     const grouped = filtered.reduce((groups: Record<string, PatientService[]>, service: PatientService) => {
-      const serviceName = service.serviceName || "Unknown Service";
+      const serviceName = service.serviceName;
       if (!groups[serviceName]) {
         groups[serviceName] = [];
       }
