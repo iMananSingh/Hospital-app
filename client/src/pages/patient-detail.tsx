@@ -3620,7 +3620,9 @@ export default function PatientDetail() {
                                             <span className="font-medium">
                                               Initial Deposit:
                                             </span>{" "}
-                                            ₹{event.data.initialDeposit}
+                                            <span className="text-green-600 font-semibold">
+                                              ₹{event.data.initialDeposit}
+                                            </span>
                                           </div>
                                         )}
                                       </div>
