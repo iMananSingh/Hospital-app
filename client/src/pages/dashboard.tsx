@@ -753,7 +753,17 @@ export default function Dashboard() {
                             <Pencil className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_updated' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && activity.activityType !== 'hospital_info_changed' && activity.activityType !== 'backup_created' && activity.activityType !== 'room_created' && activity.activityType !== 'room_deleted' && (
+                        {activity.activityType === 'service_created' && (
+                          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                            <Pencil className="w-5 h-5 text-teal-700" />
+                          </div>
+                        )}
+                        {activity.activityType === 'service_deleted' && (
+                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                            <Pencil className="w-5 h-5 text-red-700" />
+                          </div>
+                        )}
+                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_updated' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && activity.activityType !== 'hospital_info_changed' && activity.activityType !== 'backup_created' && activity.activityType !== 'room_created' && activity.activityType !== 'room_deleted' && activity.activityType !== 'service_created' && activity.activityType !== 'service_deleted' && (
                           <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
                             <span className="text-white text-xs">{icon}</span>
                           </div>
