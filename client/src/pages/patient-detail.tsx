@@ -3486,9 +3486,9 @@ export default function PatientDetail() {
                                     return (
                                       <div className="space-y-1">
                                         <div className="font-medium">
-                                          Cost: ₹
+                                          Cost: <span className="text-red-600 font-semibold">₹
                                           {event.data.calculatedAmount ||
-                                            event.data.price}
+                                            event.data.price}</span>
                                         </div>
                                         {event.data.notes && (
                                           <div>
@@ -3535,7 +3535,7 @@ export default function PatientDetail() {
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
-                                          <span className="text-lg">
+                                          <span className="text-lg text-red-600 font-semibold">
                                             ₹{event.data.totalPrice}
                                           </span>
                                         </div>
