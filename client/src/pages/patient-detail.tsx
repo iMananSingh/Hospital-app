@@ -3629,36 +3629,17 @@ export default function PatientDetail() {
                                       <div className="space-y-1">
                                         {event.data.eventType ===
                                           "room_change" && (
-                                          <>
-                                            {(() => {
-                                              const notesText = event.data.notes || "";
-                                              const fromMatch = notesText.match(/from\s+([^(]+)\s+\(([^)]+)\)/);
-                                              const toMatch = notesText.match(/to\s+([^(]+)\s+\(([^)]+)\)/);
-                                              
-                                              return (
-                                                <>
-                                                  {fromMatch && (
-                                                    <div>
-                                                      <span className="font-medium">
-                                                        Previous Room:
-                                                      </span>{" "}
-                                                      {fromMatch[2]} ({fromMatch[1].trim()})
-                                                    </div>
-                                                  )}
-                                                  {toMatch && (
-                                                    <div>
-                                                      <span className="font-medium">
-                                                        New Room:
-                                                      </span>{" "}
-                                                      {toMatch[2]} ({toMatch[1].trim()})
-                                                    </div>
-                                                  )}
-                                                </>
-                                              );
-                                            })()}
-                                          </>
+                                          <div>
+                                            <span className="font-medium">
+                                              Previous Room:
+                                            </span>{" "}
+                                            {
+                                              event.data.admission
+                                                ?.currentRoomNumber
+                                            }
+                                          </div>
                                         )}
-                                        {event.data.eventType !== "room_change" && event.data.notes && (
+                                        {event.data.notes && (
                                           <div>
                                             <span className="font-medium">
                                               Notes:
