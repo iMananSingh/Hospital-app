@@ -3143,6 +3143,8 @@ export default function PatientDetail() {
                             // Merge admit event details if available
                             admitEventNotes: admitEvent?.notes,
                             admitEventTime: admitEvent?.eventTime,
+                            admitEventRoomNumber: admitEvent?.roomNumber,
+                            admitEventWardType: admitEvent?.wardType,
                             sortTimestamp: new Date(
                               admission.admissionDate,
                             ).getTime(),
@@ -3329,7 +3331,7 @@ export default function PatientDetail() {
                                     case "pathology":
                                       return `Pathology Tests - Order ${event.data.orderId}`;
                                     case "admission":
-                                      return `Patient Admitted - ${event.data.currentWardType} (${event.data.currentRoomNumber})`;
+                                      return `Patient Admitted - ${event.data.admitEventWardType || event.data.currentWardType} (${event.data.admitEventRoomNumber || event.data.currentRoomNumber})`;
                                     case "admission_event":
                                       if (
                                         event.data.eventType === "room_change"

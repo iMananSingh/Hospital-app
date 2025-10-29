@@ -25,6 +25,21 @@
 - **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 3630-3673)
 - **Status**: Application restarted successfully, fix deployed ✓
 
+### Admission Card Title Room Display Fix (October 29, 2025 at 5:45 AM)
+[x] Fixed "Patient Admitted" title showing current room instead of original admission room
+- **Issue**: "Patient Admitted - ICU (ICU-01)" title updates to show NEW room after room transfers
+- **Root Cause**: Title used `currentWardType` and `currentRoomNumber` from admission record, which gets updated during transfers
+- **Analysis**:
+  - Admission event merges admission record with admit event
+  - Original room info exists in `admitEvent.roomNumber` and `admitEvent.wardType`
+  - These fields were not being preserved in the merged event data
+- **Solution**:
+  - Store original room as `admitEventRoomNumber` and `admitEventWardType` when building timeline events
+  - Update title to use these original values with fallback to current values for backwards compatibility
+  - Title now shows: `Patient Admitted - ${admitEventWardType || currentWardType} (${admitEventRoomNumber || currentRoomNumber})`
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 3149-3150, 3337)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ## Migration Summary
 - All npm packages reinstalled successfully (565 packages including tsx)
 - Workflow "Start application" restarted and running successfully on port 5000
