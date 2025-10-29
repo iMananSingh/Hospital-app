@@ -40,6 +40,18 @@
 - **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 3149-3150, 3337)
 - **Status**: Application restarted successfully, fix deployed ✓
 
+### Discharge Card Room Information Enhancement (October 29, 2025 at 5:51 AM)
+[x] Added room information to discharge event notes
+- **Issue**: Discharge card notes showed generic "Patient discharged" without room information
+- **User Request**: Include the room patient was discharged from (their last room)
+- **Solution**:
+  - Updated backend `dischargePatient` function to include room in notes
+  - Notes now show: `Patient discharged from ${wardType} (${roomNumber})`
+  - Uses `admission.currentWardType` and `admission.currentRoomNumber` (the last room before discharge)
+- **Example**: "Patient discharged from ICU (ICU-01)"
+- **Files Modified**: `server/storage.ts` (line 4478)
+- **Status**: Application restarted successfully, enhancement deployed ✓
+
 ## Migration Summary
 - All npm packages reinstalled successfully (565 packages including tsx)
 - Workflow "Start application" restarted and running successfully on port 5000

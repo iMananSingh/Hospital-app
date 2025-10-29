@@ -4472,7 +4472,7 @@ export class SqliteStorage implements IStorage {
             admissionId: admission.id,
             eventType: "discharge",
             eventTime: parsedDischargeDateTime, // UTC ISO format
-            notes: "Patient discharged",
+            notes: `Patient discharged from ${admission.currentWardType} (${admission.currentRoomNumber})`,
             createdBy: userId,
             receiptNumber: dischargeReceiptNumber,
           })
