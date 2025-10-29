@@ -66,9 +66,9 @@ export default function Billing() {
     enabled: leftActiveTab === "diagnostic",
   });
 
-  // Fetch inpatient services (procedures, operations, misc, and custom services - excluding diagnostics)
+  // Fetch inpatient services (procedures, operations, misc, admission services - excluding diagnostics)
   const { data: inpatientServicesApi = [] } = useQuery<any[]>({
-    queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}&serviceType=procedure,operation,misc,service`],
+    queryKey: [`/api/patient-services?fromDate=${fromDate}&toDate=${toDate}&serviceType=procedure,operation,misc,service,admission`],
     enabled: leftActiveTab === "inpatient",
   });
 
