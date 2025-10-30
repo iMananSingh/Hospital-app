@@ -4557,17 +4557,30 @@ export class SqliteStorage implements IStorage {
             .from(schema.patients)
             .where(eq(schema.patients.id, admission.patientId))
             .get();
-          if (patient) {
+          
+          const doctor = db
+            .select()
+            .from(schema.doctors)
+            .where(eq(schema.doctors.id, admission.doctorId))
+            .get();
+          
+          if (patient && doctor) {
+            const roomNumber = admission.currentRoomNumber || 'N/A';
+            const wardType = admission.currentWardType || 'N/A';
+            
             this.logActivity(
               userId,
               "patient_discharged",
               "Patient Discharged",
-              `${patient.name} - ${admission.admissionId}`,
+              `${patient.name} under ${doctor.name} - discharged from ${roomNumber} (${wardType})`,
               admissionId,
               "admission",
               {
                 admissionId: admission.admissionId,
                 patientName: patient.name,
+                doctorName: doctor.name,
+                roomNumber: roomNumber,
+                wardType: wardType,
               },
             );
           }

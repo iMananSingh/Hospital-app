@@ -3,6 +3,19 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Updated Discharge Activity Description Format (October 30, 2025 at 4:49 PM)
+[x] Updated discharge activity description to show proper format with doctor and room details
+- **Issue**: Discharge activity was showing "{Patient Name} - {Admission ID}" instead of proper format
+- **User Request**: Should show "{Patient Name} under {Doctor Name} - discharged from {Room Number} ({Ward Type})"
+- **Example**: "Manan Singh under Dr. John Smith - discharged from 101 (General Ward)"
+- **Solution**:
+  - Added doctor lookup in discharge activity logging (lines 4564-4568)
+  - Added room number and ward type extraction from admission record
+  - Updated description format to match user request (line 4578)
+  - Added doctor name, room number, and ward type to activity metadata
+- **Files Modified**: `server/storage.ts` (lines 4556-4590)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Removed Duplicate Patient Admission Activity Cards (October 30, 2025 at 4:35 PM)
 [x] Removed duplicate "Patient Admitted" activity card without icon
 - **Issue**: Two "Patient Admitted" activity cards were being generated for each admission
