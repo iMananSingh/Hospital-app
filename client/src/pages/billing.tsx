@@ -44,7 +44,11 @@ export default function Billing() {
 
   // Diagnostic specific filters
   const [selectedDiagnosticService, setSelectedDiagnosticService] = useState<string>("all");
-  const [selectedService, setSelectedService] = useState<string>("all"); // For diagnostic filter
+  const [selectedDiagnosticDoctor, setSelectedDiagnosticDoctor] = useState<string>("all");
+  
+  // Inpatient specific filters
+  const [selectedService, setSelectedService] = useState<string>("all");
+  const [selectedInpatientDoctor, setSelectedInpatientDoctor] = useState<string>("all");
 
   const { data: doctorsFromApi = [] } = useQuery<any[]>({
     queryKey: ["/api/doctors"],
@@ -109,10 +113,11 @@ export default function Billing() {
 
   const filteredDiagnosticServices = diagnosticDataApi.filter((item: any) => {
     const serviceMatch = selectedDiagnosticService === "all" || item.serviceName === selectedDiagnosticService;
+    const doctorMatch = selectedDiagnosticDoctor === "all" || String(item.doctorId) === selectedDiagnosticDoctor;
     const searchMatch = diagnosticSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase()) ||
       item.serviceName?.toLowerCase().includes(diagnosticSearchQuery.toLowerCase());
-    return serviceMatch && searchMatch;
+    return serviceMatch && doctorMatch && searchMatch;
   });
 
   // Combine inpatient services and admissions - exclude ONLY diagnostic services
@@ -171,12 +176,14 @@ export default function Billing() {
       }
     }
 
+    const doctorMatch = selectedInpatientDoctor === "all" || String(item.doctorId) === selectedInpatientDoctor;
+
     const searchMatch = inpatientSearchQuery === "" ||
       item.patient?.name?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
       item.patientName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase()) ||
       item.serviceName?.toLowerCase().includes(inpatientSearchQuery.toLowerCase());
 
-    return serviceMatch && searchMatch;
+    return serviceMatch && doctorMatch && searchMatch;
   });
 
 
@@ -441,7 +448,7 @@ export default function Billing() {
 
                   {leftActiveTab === "diagnostic" && (
                     <div className="flex-1 flex flex-col mt-2">
-                      {/* Search and Service Filter for Diagnostic */}
+                      {/* Search and Filters for Diagnostic */}
                       <div className="flex items-center gap-2 flex-shrink-0 mb-2">
                         <Input
                           placeholder="Search patients or services..."
@@ -450,6 +457,20 @@ export default function Billing() {
                           className="flex-1"
                           data-testid="search-diagnostic"
                         />
+                        <Label htmlFor="diagnostic-doctor-filter">Doctor:</Label>
+                        <Select value={selectedDiagnosticDoctor} onValueChange={setSelectedDiagnosticDoctor}>
+                          <SelectTrigger className="w-48" data-testid="select-diagnostic-doctor">
+                            <SelectValue placeholder="Select doctor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Doctors</SelectItem>
+                            {doctorsFromApi.map((doctor: any) => (
+                              <SelectItem key={doctor.id} value={doctor.id}>
+                                {doctor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Label htmlFor="diagnostic-service-filter">Service:</Label>
                         <Select value={selectedDiagnosticService} onValueChange={setSelectedDiagnosticService}>
                           <SelectTrigger className="w-48" data-testid="select-diagnostic-service">
@@ -519,7 +540,7 @@ export default function Billing() {
 
                   {leftActiveTab === "inpatient" && (
                     <div className="flex-1 flex flex-col mt-2">
-                      {/* Search and Service Filter for Inpatient */}
+                      {/* Search and Filters for Inpatient */}
                       <div className="flex items-center gap-2 flex-shrink-0 mb-2">
                         <Input
                           placeholder="Search patients or services..."
@@ -528,6 +549,20 @@ export default function Billing() {
                           className="flex-1"
                           data-testid="search-inpatient"
                         />
+                        <Label htmlFor="inpatient-doctor-filter">Doctor:</Label>
+                        <Select value={selectedInpatientDoctor} onValueChange={setSelectedInpatientDoctor}>
+                          <SelectTrigger className="w-48" data-testid="select-inpatient-doctor">
+                            <SelectValue placeholder="Select doctor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Doctors</SelectItem>
+                            {doctorsFromApi.map((doctor: any) => (
+                              <SelectItem key={doctor.id} value={doctor.id}>
+                                {doctor.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Label htmlFor="inpatient-service-filter">Service:</Label>
                         <Select value={selectedService} onValueChange={setSelectedService}>
                           <SelectTrigger className="w-48" data-testid="select-inpatient-service">
