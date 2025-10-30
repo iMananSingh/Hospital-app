@@ -3148,6 +3148,7 @@ export default function PatientDetail() {
                             admitEventTime: admitEvent?.eventTime,
                             admitEventRoomNumber: admitEvent?.roomNumber,
                             admitEventWardType: admitEvent?.wardType,
+                            receiptNumber: admitEvent?.receiptNumber,
                             sortTimestamp: new Date(
                               admission.admissionDate,
                             ).getTime(),

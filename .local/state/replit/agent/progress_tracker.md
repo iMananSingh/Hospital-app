@@ -3,6 +3,22 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Admission Receipt Number Fix (October 30, 2025 at 8:29 AM)
+[x] Fixed "Receipt No: RECEIPT-NOT-FOUND" showing in Admission Receipt
+- **Issue**: Admission receipts were displaying "Receipt No: RECEIPT-NOT-FOUND" instead of the actual receipt number
+- **Root Cause**: When building the consolidated admission event on patient-detail page, the code merged admission record with admit event details but did NOT include the `receiptNumber` from the admitEvent
+- **Analysis**:
+  - Backend correctly generates receipt number: `${yymmdd}-ADM-${admissionCount}` (e.g., "251030-ADM-0001")
+  - Backend stores receipt number in admission_events table with eventType "admit" (line 3663)
+  - Frontend extracts admit event and merges it with admission data (lines 3141-3163)
+  - Frontend was copying admitEventNotes, admitEventTime, admitEventRoomNumber, admitEventWardType
+  - Frontend was NOT copying the receiptNumber from admitEvent
+- **Solution**:
+  - Added `receiptNumber: admitEvent?.receiptNumber` to the consolidated admission event data (line 3154)
+  - Now the receipt number from the admit event is properly passed through to the receipt generator
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (line 3154)
+- **Status**: Application restarted successfully, fix deployed and hot-reloaded ✓
+
 ### Package Reinstallation - Eleventh Occurrence (October 30, 2025 at 8:26 AM)
 [x] Resolved tsx not found error (eleventh time)
 - **Issue**: Workflow was failing with "tsx: not found" error after environment restart
