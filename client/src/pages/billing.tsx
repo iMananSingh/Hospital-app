@@ -28,8 +28,33 @@ export default function Billing() {
   const [mainActiveTab, setMainActiveTab] = useState("revenue");
   const [leftActiveTab, setLeftActiveTab] = useState("opd");
 
-  // Date filters - default to today
-  const today = new Date().toISOString().split('T')[0];
+  // Get system settings for timezone
+  const { data: systemSettings } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Get timezone-adjusted today date
+  const getTodayInTimezone = () => {
+    const timezone = systemSettings?.timezone || "UTC";
+    const now = new Date();
+    
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    
+    const parts = formatter.formatToParts(now);
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+    
+    return `${year}-${month}-${day}`;
+  };
+
+  // Date filters - default to timezone-adjusted today
+  const today = getTodayInTimezone();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
 
@@ -241,8 +266,9 @@ export default function Billing() {
         onFromDateChange={setFromDate}
         onToDateChange={setToDate}
         onTodayClick={() => {
-          setFromDate(today);
-          setToDate(today);
+          const todayDate = getTodayInTimezone();
+          setFromDate(todayDate);
+          setToDate(todayDate);
         }}
       />
 
