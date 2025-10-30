@@ -3854,13 +3854,70 @@ export class SqliteStorage implements IStorage {
     return created;
   }
 
-  async getPatientPayments(patientId: string): Promise<PatientPayment[]> {
-    return db
-      .select()
-      .from(schema.patientPayments)
-      .where(eq(schema.patientPayments.patientId, patientId))
-      .orderBy(desc(schema.patientPayments.paymentDate))
-      .all();
+  async getPatientPayments(
+    patientId?: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<any[]> {
+    try {
+      console.log(
+        `Fetching patient payments for patientId: ${patientId}, fromDate: ${fromDate}, toDate: ${toDate}`,
+      );
+
+      const whereConditions: any[] = [];
+
+      if (patientId) {
+        whereConditions.push(eq(schema.patientPayments.patientId, patientId));
+      }
+
+      if (fromDate) {
+        whereConditions.push(
+          sql`DATE(${schema.patientPayments.paymentDate}) >= DATE(${fromDate})`,
+        );
+      }
+
+      if (toDate) {
+        whereConditions.push(
+          sql`DATE(${schema.patientPayments.paymentDate}) <= DATE(${toDate})`,
+        );
+      }
+
+      const query = db
+        .select({
+          id: schema.patientPayments.id,
+          paymentId: schema.patientPayments.paymentId,
+          patientId: schema.patientPayments.patientId,
+          amount: schema.patientPayments.amount,
+          paymentMethod: schema.patientPayments.paymentMethod,
+          paymentDate: schema.patientPayments.paymentDate,
+          reason: schema.patientPayments.reason,
+          receiptNumber: schema.patientPayments.receiptNumber,
+          processedBy: schema.patientPayments.processedBy,
+          createdAt: schema.patientPayments.createdAt,
+          updatedAt: schema.patientPayments.updatedAt,
+          // Join with patient to get patient name
+          patientName: schema.patients.name,
+        })
+        .from(schema.patientPayments)
+        .leftJoin(
+          schema.patients,
+          eq(schema.patientPayments.patientId, schema.patients.id),
+        );
+
+      if (whereConditions.length > 0) {
+        query.where(and(...whereConditions));
+      }
+
+      const payments = query
+        .orderBy(desc(schema.patientPayments.paymentDate))
+        .all();
+
+      console.log(`Found ${payments.length} patient payments.`);
+      return payments;
+    } catch (error) {
+      console.error("Error fetching patient payments:", error);
+      return [];
+    }
   }
 
   async getPatientPaymentById(id: string): Promise<PatientPayment | undefined> {
@@ -4557,17 +4614,17 @@ export class SqliteStorage implements IStorage {
             .from(schema.patients)
             .where(eq(schema.patients.id, admission.patientId))
             .get();
-          
+
           const doctor = db
             .select()
             .from(schema.doctors)
             .where(eq(schema.doctors.id, admission.doctorId))
             .get();
-          
+
           if (patient && doctor) {
             const roomNumber = admission.currentRoomNumber || 'N/A';
             const wardType = admission.currentWardType || 'N/A';
-            
+
             this.logActivity(
               userId,
               "patient_discharged",
@@ -6208,7 +6265,7 @@ export class SqliteStorage implements IStorage {
 
       // 4. Admissions and associated events
       // Admissions themselves are not added as bill items, but their payments/discounts are.
-      // The charges for admission services are handled in `patientServices`.
+      // Thecharges for admission services are handled in `patientServices`.
 
       // 5. Patient Payments
       const payments = db

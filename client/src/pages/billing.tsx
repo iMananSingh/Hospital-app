@@ -37,19 +37,19 @@ export default function Billing() {
   const getTodayInTimezone = () => {
     const timezone = systemSettings?.timezone || "UTC";
     const now = new Date();
-    
+
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     });
-    
+
     const parts = formatter.formatToParts(now);
     const year = parts.find((p) => p.type === "year")?.value;
     const month = parts.find((p) => p.type === "month")?.value;
     const day = parts.find((p) => p.type === "day")?.value;
-    
+
     return `${year}-${month}-${day}`;
   };
 
@@ -87,7 +87,7 @@ export default function Billing() {
   // Diagnostic specific filters
   const [selectedDiagnosticService, setSelectedDiagnosticService] = useState<string>("all");
   const [selectedDiagnosticDoctor, setSelectedDiagnosticDoctor] = useState<string>("all");
-  
+
   // Inpatient specific filters
   const [selectedService, setSelectedService] = useState<string>("all");
   const [selectedInpatientDoctor, setSelectedInpatientDoctor] = useState<string>("all");
@@ -124,10 +124,15 @@ export default function Billing() {
     enabled: leftActiveTab === "inpatient",
   });
 
-  const { data: billsDataApi = [] } = useQuery<any[]>({
-    queryKey: [
-      `/api/bills?fromDate=${fromDate}&toDate=${toDate}&paymentStatus=paid`
-    ],
+  // Fetch bills data with date filters for the Credit/Payments tab
+  const { data: billsDataApi = [], isLoading: isBillsLoading } = useQuery<any[]>({
+    queryKey: ["/api/bills", { fromDate, toDate, paymentStatus: "paid" }],
+    enabled: mainActiveTab === "payments",
+  });
+
+  // Fetch patient payments data with date filters
+  const { data: patientPaymentsData = [], isLoading: isPaymentsLoading } = useQuery<any[]>({
+    queryKey: ["/api/patient-payments", { fromDate, toDate }],
     enabled: mainActiveTab === "payments",
   });
 
@@ -200,7 +205,7 @@ export default function Billing() {
         const serviceType = (item.serviceType || '').toLowerCase();
         const serviceName = (item.serviceName || '').toLowerCase();
         const category = (item.category || '').toLowerCase();
-        
+
         if (serviceType === 'opd') {
           serviceMatch = selectedService === "opd";
         } else if (serviceType === 'admission' || category === 'admissions') {
@@ -700,21 +705,21 @@ export default function Billing() {
                           </tr>
                         </thead>
                       <tbody>
-                        {billsDataApi.length === 0 ? (
+                        {patientPaymentsData.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="text-center py-4 text-muted-foreground">
                               No payment transactions found for the selected period
                             </td>
                           </tr>
                         ) : (
-                          billsDataApi.map((bill: any, index: number) => (
-                            <tr key={bill.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
+                          patientPaymentsData.map((payment: any, index: number) => (
+                            <tr key={payment.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
                               <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
-                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{bill.billNumber}</td>
-                              <td className="p-3" data-testid={`text-credit-patient-${index}`}>{bill.patient?.name || 'N/A'}</td>
-                              <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{bill.paymentMethod}</td>
+                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{payment.billNumber || 'N/A'}</td>
+                              <td className="p-3" data-testid={`text-credit-patient-${index}`}>{payment.patient?.name || 'N/A'}</td>
+                              <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{payment.paymentMethod}</td>
                               <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
-                                {formatCurrency(bill.totalAmount)}
+                                {formatCurrency(payment.amount)}
                               </td>
                             </tr>
                           ))
@@ -724,8 +729,8 @@ export default function Billing() {
                   </div>
                   <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                     <div className="flex justify-between font-semibold">
-                      <span>Count: {billsDataApi.length} | Total:</span>
-                      <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsDataApi))}</span>
+                      <span>Count: {patientPaymentsData.length} | Total:</span>
+                      <span data-testid="text-credit-total">{formatCurrency(patientPaymentsData.reduce((sum: number, payment: any) => sum + payment.amount, 0))}</span>
                     </div>
                   </div>
                 </div>
