@@ -4158,16 +4158,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { patientId, fromDate, toDate } = req.query;
 
-      console.log('Fetching patient payments for patientId:', patientId, 'fromDate:', fromDate, 'toDate:', toDate);
-
-      // Use the storage method that already exists in storage.ts
+      // Use the storage method that already exists
       const payments = await storage.getPatientPayments(
         patientId as string | undefined,
         fromDate as string | undefined,
         toDate as string | undefined
       );
-
-      console.log('Found', payments.length, 'patient payments.');
 
       res.json(payments);
     } catch (error) {
