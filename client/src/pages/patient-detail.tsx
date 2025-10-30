@@ -2176,6 +2176,11 @@ export default function PatientDetail() {
                             "admissionDate",
                             currentDateTime,
                           );
+                          
+                          // Refresh room availability and current admissions data
+                          queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+                          queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
+                          
                           setIsAdmissionDialogOpen(true);
                         }}
                         className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -2707,6 +2712,11 @@ export default function PatientDetail() {
                                 "admissionDate",
                                 currentDateTime,
                               );
+                              
+                              // Refresh room availability and current admissions data
+                              queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+                              queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
+                              
                               setIsAdmissionDialogOpen(true);
                             }}
                             size="sm"
