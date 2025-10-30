@@ -540,7 +540,6 @@ export default function Billing() {
                             <SelectItem value="procedures">Medical Procedures</SelectItem>
                             <SelectItem value="operations">Surgical Operations</SelectItem>
                             <SelectItem value="misc">Miscellaneous Services</SelectItem>
-                            <SelectItem value="admission">Admission Services</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
