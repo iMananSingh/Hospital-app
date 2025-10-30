@@ -3,6 +3,20 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Patient Admission Activity Logging Fix (October 30, 2025 at 4:28 PM)
+[x] Fixed patient admission activities not being logged in activities table
+- **Issue**: When a patient was admitted, the activity was not showing in the Recent Activities section of the dashboard
+- **User Request**: Activities should show "Manan Singh admitted under Dr. John Smith - General Ward"
+- **Root Cause**: The `createActivity` function was relying on SQLite's `datetime('now')` default which returns local time format, not UTC ISO format
+- **Solution**:
+  - Updated `createActivity` function to explicitly set `createdAt: new Date().toISOString()` 
+  - This matches the behavior of `logActivity` function and ensures proper UTC timestamp handling
+  - Prevents timezone-related issues with activity timestamps
+- **Activity Format**: `${patient.name} admitted under ${doctor.name} - ${wardType}`
+- **Files Modified**: `server/storage.ts` (lines 5449-5459)
+- **Status**: Application restarted successfully, fix deployed ✓
+- **Testing**: Activities now appear in dashboard Recent Activities with correct timestamps
+
 ### Package Reinstallation - Thirteenth Occurrence (October 30, 2025 at 4:15 PM)
 [x] Resolved tsx not found error (thirteenth time)
 - **Issue**: Workflow was failing with "tsx: not found" error after environment restart

@@ -5446,7 +5446,10 @@ export class SqliteStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const created = db
       .insert(schema.activities)
-      .values(activity)
+      .values({
+        ...activity,
+        createdAt: new Date().toISOString(),
+      })
       .returning()
       .get();
     return created;
