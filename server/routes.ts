@@ -42,6 +42,7 @@ import * as db from "./storage"; // Alias storage as db for brevity as seen in c
 import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
 import { eq, gte, lte, and, inArray, desc, sql } from "drizzle-orm"; // Import Drizzle ORM operators
 import { patientServices, patients } from "@shared/schema"; // Import necessary schemas
+import { queryClient } from "../react-query-client"; // Assuming queryClient is available
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
@@ -2581,7 +2582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.createAdmission(requestBody, req.user?.id);
+      const admission = await storage.createAdmission(requestBody, req.user.id);
 
       // Log activity for admission
       const patient = await storage.getPatientById(admission.patientId);
@@ -4590,7 +4591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         res.json({
-          message: `Successfully marked ${pendingBills.length} earnings as paid`,
+          message: `Successfully marked ${pendingEarnings.length} earnings as paid`,
           count: pendingEarnings.length,
           earnings: updatedEarnings, // Optionally return the updated earnings
         });

@@ -1218,7 +1218,7 @@ export interface IStorage {
   ): Promise<PatientService | undefined>;
 
   // Patient Admissions
-  createAdmission(admission: InsertAdmission): Promise<Admission>;
+  createAdmission(admission: InsertAdmission, userId?: string): Promise<Admission>;
   getAdmissions(
     patientId?: string,
     fromDate?: string,
@@ -3572,7 +3572,7 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async createAdmission(admission: InsertAdmission): Promise<Admission> {
+  async createAdmission(admission: InsertAdmission, userId?: string): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
     let admissionDate: string;
     let eventDate: string;
@@ -3688,6 +3688,24 @@ export class SqliteStorage implements IStorage {
             .where(eq(schema.roomTypes.id, roomType.id))
             .run();
         }
+      }
+
+      // Log activity for admission creation
+      if (userId) {
+        this.logActivity(
+          userId,
+          "admission_created",
+          "Patient Admitted",
+          `Patient admitted with Admission ID: ${newAdmission.admissionId}`,
+          newAdmission.id,
+          "admission",
+          {
+            patientId: newAdmission.patientId,
+            admissionId: newAdmission.admissionId,
+            roomNumber: newAdmission.currentRoomNumber,
+            wardType: newAdmission.currentWardType,
+          },
+        );
       }
 
       return newAdmission;
@@ -4412,6 +4430,22 @@ export class SqliteStorage implements IStorage {
         })
         .returning()
         .get();
+
+      // Log activity
+      this.logActivity(
+        userId,
+        "room_transfer",
+        "Room Transfer",
+        `Patient transferred to ${roomData.wardType} - Room ${roomData.roomNumber}`,
+        admissionId,
+        "admission",
+        {
+          fromRoom: currentAdmission.currentRoomNumber,
+          fromWard: currentAdmission.currentWardType,
+          toRoom: roomData.roomNumber,
+          toWard: roomData.wardType,
+        },
+      );
 
       return updated;
     });
