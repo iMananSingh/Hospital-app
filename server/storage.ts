@@ -2816,17 +2816,17 @@ export class SqliteStorage implements IStorage {
     const orderedDate =
       orderData.orderedDate || new Date().toISOString().split("T")[0];
 
-    // Generate proper receipt number for pathology
-    const count = await this.getDailyReceiptCount("pathology", orderedDate);
-    const dateObj = new Date(orderedDate);
-    const yymmdd = dateObj
-      .toISOString()
-      .slice(2, 10)
-      .replace(/-/g, "")
-      .slice(0, 6);
-    const receiptNumber = `${yymmdd}-PAT-${count.toString().padStart(4, "0")}`;
-
     return db.transaction((tx) => {
+      // Generate proper receipt number for pathology inside transaction
+      const count = this.getDailyReceiptCountSync("pathology", orderedDate);
+      const dateObj = new Date(orderedDate);
+      const yymmdd = dateObj
+        .toISOString()
+        .slice(2, 10)
+        .replace(/-/g, "")
+        .slice(0, 6);
+      const receiptNumber = `${yymmdd}-PAT-${count.toString().padStart(4, "0")}`;
+
       // Insert the order first
       const created = tx
         .insert(schema.pathologyOrders)

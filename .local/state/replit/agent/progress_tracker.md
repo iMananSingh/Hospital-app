@@ -3,6 +3,23 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Pathology Receipt Numbering Fix (October 30, 2025 at 9:17 AM)
+[x] Fixed all pathology receipts showing "PAT-0001" regardless of order sequence
+- **Issue**: All pathology test receipts were showing the same receipt number "PAT-0001" instead of incrementing properly (0001, 0002, 0003, etc.)
+- **Root Cause**: Race condition in receipt number generation
+  - The `createPathologyOrder` function was calling `await this.getDailyReceiptCount()` BEFORE the transaction
+  - The async count was retrieved, then the transaction started and inserted the record
+  - Multiple concurrent pathology orders would all get the same count because they checked before inserting
+  - This is different from how admission receipts work, which use `getDailyReceiptCountSync` INSIDE the transaction
+- **Solution**:
+  - Moved receipt number generation INSIDE the transaction (line 2822)
+  - Changed from async `getDailyReceiptCount()` to sync `getDailyReceiptCountSync()` (line 2824)
+  - Now the count is checked atomically within the same transaction as the insert
+  - This ensures accurate sequential numbering even with concurrent requests
+- **Files Modified**: `server/storage.ts` (lines 2822-2831)
+- **Status**: Application restarted successfully, fix deployed ✓
+- **Testing**: New pathology orders will now get proper sequential receipt numbers: 251030-PAT-0001, 251030-PAT-0002, 251030-PAT-0003, etc.
+
 ### Admission Receipt Number Fix (October 30, 2025 at 8:29 AM)
 [x] Fixed "Receipt No: RECEIPT-NOT-FOUND" showing in Admission Receipt
 - **Issue**: Admission receipts were displaying "Receipt No: RECEIPT-NOT-FOUND" instead of the actual receipt number
