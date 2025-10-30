@@ -3,6 +3,18 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Increased Recent Activities Limit from 5 to 100 (October 30, 2025 at 4:57 PM)
+[x] Increased backend limit to show up to 100 recent activities instead of only 5
+- **Issue**: Even though scrolling was enabled, backend was only returning 5 activities
+- **User Request**: "it is scrollable but it is only showing last 5 items. i want to be able to view all the cards ever created."
+- **Root Cause**: Backend API endpoint hardcoded to fetch only 5 activities: `storage.getRecentActivities(5)`
+- **Solution**: 
+  - Changed limit from 5 to 100 in `/api/dashboard/recent-activities` endpoint
+  - Now fetches up to 100 most recent activities
+- **Result**: Users can now scroll through up to 100 recent activities
+- **Files Modified**: `server/routes.ts` (line 454)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Made Recent Activity Section Scrollable (October 30, 2025 at 4:54 PM)
 [x] Added scrolling to Recent Activity card to show all activities
 - **Issue**: User could only see last 5 activities, unable to scroll to see more

@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/recent-activities", requireAuth, async (req, res) => {
     try {
       res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-      const activities = await storage.getRecentActivities(5);
+      const activities = await storage.getRecentActivities(100);
       res.json(activities);
     } catch (error) {
       console.error("Recent activities error:", error);
