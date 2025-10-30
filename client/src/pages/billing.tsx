@@ -53,10 +53,27 @@ export default function Billing() {
     return `${year}-${month}-${day}`;
   };
 
-  // Date filters - default to timezone-adjusted today
-  const today = getTodayInTimezone();
-  const [fromDate, setFromDate] = useState(today);
-  const [toDate, setToDate] = useState(today);
+  // Date filters - initialize with empty string and update when settings load
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  // Update dates when system settings are loaded
+  useEffect(() => {
+    if (systemSettings && (!fromDate || !toDate)) {
+      const today = getTodayInTimezone();
+      setFromDate(today);
+      setToDate(today);
+    }
+  }, [systemSettings]);
+
+  // Update dates when system settings are loaded
+  useEffect(() => {
+    if (systemSettings && (!fromDate || !toDate)) {
+      const today = getTodayInTimezone();
+      setFromDate(today);
+      setToDate(today);
+    }
+  }, [systemSettings]);
 
   // Search filters
   const [opdSearchQuery, setOpdSearchQuery] = useState<string>("");
