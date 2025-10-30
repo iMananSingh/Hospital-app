@@ -2818,14 +2818,16 @@ export class SqliteStorage implements IStorage {
 
     return db.transaction((tx) => {
       // Generate proper receipt number for pathology inside transaction
-      const count = this.getDailyReceiptCountSync("pathology", orderedDate);
-      const dateObj = new Date(orderedDate);
+      // Extract just the date part (YYYY-MM-DD) for accurate counting
+      const dateOnly = orderedDate.split("T")[0];
+      const count = this.getDailyReceiptCountSync("pathology", dateOnly);
+      const dateObj = new Date(dateOnly);
       const yymmdd = dateObj
         .toISOString()
         .slice(2, 10)
         .replace(/-/g, "")
         .slice(0, 6);
-      const receiptNumber = `${yymmdd}-PAT-${count.toString().padStart(4, "0")}`;
+      const receiptNumber = `${yymmdd}-PAT-${(count + 1).toString().padStart(4, "0")}`;
 
       // Insert the order first
       const created = tx
@@ -3635,7 +3637,7 @@ export class SqliteStorage implements IStorage {
         .slice(2, 10)
         .replace(/-/g, "")
         .slice(0, 6);
-      const receiptNumber = `${yymmdd}-ADM-${admissionCount.toString().padStart(4, "0")}`;
+      const receiptNumber = `${yymmdd}-ADM-${(admissionCount + 1).toString().padStart(4, "0")}`;
 
       // Create the admission episode
       const newAdmission = tx
@@ -4366,7 +4368,7 @@ export class SqliteStorage implements IStorage {
         .slice(2, 10)
         .replace(/-/g, "")
         .slice(0, 6);
-      const receiptNumber = `${yymmdd}-RMC-${transferCount.toString().padStart(4, "0")}`;
+      const receiptNumber = `${yymmdd}-RMC-${(transferCount + 1).toString().padStart(4, "0")}`;
 
       // Get current admission details BEFORE updating
       const currentAdmission = tx
@@ -4493,7 +4495,7 @@ export class SqliteStorage implements IStorage {
           .slice(2, 10)
           .replace(/-/g, "")
           .slice(0, 6);
-        const dischargeReceiptNumber = `${yymmdd}-DIS-${dischargeCount.toString().padStart(4, "0")}`;
+        const dischargeReceiptNumber = `${yymmdd}-DIS-${(dischargeCount + 1).toString().padStart(4, "0")}`;
 
         // Create discharge event with UTC timestamp (same as transferRoom)
         const dischargeEvent = tx
