@@ -4160,49 +4160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('Fetching patient payments for patientId:', patientId, 'fromDate:', fromDate, 'toDate:', toDate);
 
-      const whereConditions: any[] = [];
-
-      if (patientId) {
-        whereConditions.push(eq(schema.patientPayments.patientId, patientId as string));
-      }
-
-      if (fromDate) {
-        whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) >= DATE(${fromDate as string})`
-        );
-      }
-
-      if (toDate) {
-        whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) <= DATE(${toDate as string})`
-        );
-      }
-
-      const payments = storage.db
-        .select({
-          id: schema.patientPayments.id,
-          paymentId: schema.patientPayments.paymentId,
-          patientId: schema.patientPayments.patientId,
-          amount: schema.patientPayments.amount,
-          paymentMethod: schema.patientPayments.paymentMethod,
-          paymentDate: schema.patientPayments.paymentDate,
-          reason: schema.patientPayments.reason,
-          receiptNumber: schema.patientPayments.receiptNumber,
-          processedBy: schema.patientPayments.processedBy,
-          createdAt: schema.patientPayments.createdAt,
-          patient: {
-            id: schema.patients.id,
-            name: schema.patients.name,
-            patientId: schema.patients.patientId,
-            age: schema.patients.age,
-            gender: schema.patients.gender,
-          },
-        })
-        .from(schema.patientPayments)
-        .leftJoin(schema.patients, eq(schema.patientPayments.patientId, schema.patients.id))
-        .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-        .orderBy(desc(schema.patientPayments.paymentDate), desc(schema.patientPayments.createdAt))
-        .all();
+      // Use the storage method that already exists in storage.ts
+      const payments = await storage.getPatientPayments(
+        patientId as string | undefined,
+        fromDate as string | undefined,
+        toDate as string | undefined
+      );
 
       console.log('Found', payments.length, 'patient payments.');
 
