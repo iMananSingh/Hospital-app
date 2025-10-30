@@ -132,8 +132,22 @@ export default function Billing() {
 
   // Fetch patient payments data with date filters
   const { data: patientPaymentsData = [], isLoading: isPaymentsLoading } = useQuery<any[]>({
-    queryKey: ["/api/patient-payments", { fromDate, toDate }],
-    enabled: mainActiveTab === "payments",
+    queryKey: ["/api/patient-payments", fromDate, toDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (fromDate) params.append('fromDate', fromDate);
+      if (toDate) params.append('toDate', toDate);
+      
+      const response = await fetch(`/api/patient-payments?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      
+      if (!response.ok) throw new Error("Failed to fetch patient payments");
+      return response.json();
+    },
+    enabled: mainActiveTab === "payments" && !!fromDate && !!toDate,
   });
 
   // Filtered Data for display

@@ -4153,6 +4153,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get all patient payments with optional date filtering
+  app.get("/api/patient-payments", authenticateToken, async (req, res) => {
+    try {
+      const { fromDate, toDate } = req.query;
+
+      const whereConditions: any[] = [];
+
+      if (fromDate) {
+        whereConditions.push(
+          sql`DATE(${schema.patientPayments.paymentDate}) >= DATE(${fromDate as string})`
+        );
+      }
+
+      if (toDate) {
+        whereConditions.push(
+          sql`DATE(${schema.patientPayments.paymentDate}) <= DATE(${toDate as string})`
+        );
+      }
+
+      const query = db.db
+        .select({
+          id: schema.patientPayments.id,
+          paymentId: schema.patientPayments.paymentId,
+          patientId: schema.patientPayments.patientId,
+          amount: schema.patientPayments.amount,
+          paymentMethod: schema.patientPayments.paymentMethod,
+          paymentDate: schema.patientPayments.paymentDate,
+          reason: schema.patientPayments.reason,
+          receiptNumber: schema.patientPayments.receiptNumber,
+          processedBy: schema.patientPayments.processedBy,
+          createdAt: schema.patientPayments.createdAt,
+          patient: {
+            id: schema.patients.id,
+            name: schema.patients.name,
+            patientId: schema.patients.patientId,
+          },
+        })
+        .from(schema.patientPayments)
+        .leftJoin(schema.patients, eq(schema.patientPayments.patientId, schema.patients.id))
+        .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
+        .orderBy(desc(schema.patientPayments.paymentDate), desc(schema.patientPayments.createdAt));
+
+      const payments = query.all();
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching patient payments:", error);
+      res.status(500).json({ error: "Failed to fetch patient payments" });
+    }
+  });
+
   app.get(
     "/api/patients/:patientId/payments",
     authenticateToken,
