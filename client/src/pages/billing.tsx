@@ -152,14 +152,17 @@ export default function Billing() {
         // For patient services, check the service category/type
         const serviceType = (item.serviceType || '').toLowerCase();
         const serviceName = (item.serviceName || '').toLowerCase();
+        const category = (item.category || '').toLowerCase();
         
         if (serviceType === 'opd') {
           serviceMatch = selectedService === "opd";
+        } else if (serviceType === 'admission' || category === 'admissions') {
+          serviceMatch = selectedService === "admission";
         } else if (serviceType === 'procedure' || serviceName.includes('procedure')) {
           serviceMatch = selectedService === "procedures";
         } else if (serviceType === 'operation' || serviceName.includes('operation') || serviceName.includes('surgery')) {
           serviceMatch = selectedService === "operations";
-        } else if (serviceType === 'misc' || serviceType === 'service' || item.category === 'misc') {
+        } else if (serviceType === 'misc' || serviceType === 'service' || category === 'misc') {
           serviceMatch = selectedService === "misc";
         } else {
           // If no specific match, include it in misc category
@@ -532,6 +535,7 @@ export default function Billing() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Services</SelectItem>
+                            <SelectItem value="admission">Admission Services</SelectItem>
                             <SelectItem value="opd">OPD Consultations</SelectItem>
                             <SelectItem value="procedures">Medical Procedures</SelectItem>
                             <SelectItem value="operations">Surgical Operations</SelectItem>
