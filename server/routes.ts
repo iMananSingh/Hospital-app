@@ -4178,7 +4178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
-      const payments = db.db
+      const payments = storage.db
         .select({
           id: schema.patientPayments.id,
           paymentId: schema.patientPayments.paymentId,
