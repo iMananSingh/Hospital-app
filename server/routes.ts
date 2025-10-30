@@ -4156,44 +4156,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all patient payments with optional date filtering
   app.get("/api/patient-payments", authenticateToken, async (req, res) => {
     try {
-      const { fromDate, toDate } = req.query;
+      const { patientId, fromDate, toDate } = req.query;
 
-      const whereConditions: any[] = [];
-
-      if (fromDate) {
-        whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) >= DATE(${fromDate as string})`
-        );
-      }
-
-      if (toDate) {
-        whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) <= DATE(${toDate as string})`
-        );
-      }
-
-      const payments = db.select({
-        id: schema.patientPayments.id,
-        paymentId: schema.patientPayments.paymentId,
-        patientId: schema.patientPayments.patientId,
-        amount: schema.patientPayments.amount,
-        paymentMethod: schema.patientPayments.paymentMethod,
-        paymentDate: schema.patientPayments.paymentDate,
-        reason: schema.patientPayments.reason,
-        receiptNumber: schema.patientPayments.receiptNumber,
-        processedBy: schema.patientPayments.processedBy,
-        createdAt: schema.patientPayments.createdAt,
-        patient: {
-          id: schema.patients.id,
-          name: schema.patients.name,
-          patientId: schema.patients.patientId,
-        },
-      })
-      .from(schema.patientPayments)
-      .leftJoin(schema.patients, eq(schema.patientPayments.patientId, schema.patients.id))
-      .where(whereConditions.length > 0 ? and(...whereConditions) : sql`1=1`)
-      .orderBy(desc(schema.patientPayments.paymentDate), desc(schema.patientPayments.createdAt))
-      .all();
+      // Use the storage method that already exists
+      const payments = await storage.getPatientPayments(
+        patientId as string | undefined,
+        fromDate as string | undefined,
+        toDate as string | undefined
+      );
 
       res.json(payments);
     } catch (error) {
