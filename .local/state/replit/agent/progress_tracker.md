@@ -3,19 +3,38 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Fresh Admission Dialog Form Every Time (October 30, 2025 at 12:57 PM)
+[x] Fixed admission dialog retaining previously entered data
+- **Issue**: Opening admission dialog after previously closing it showed half-filled form with old data
+- **User Request**: Dialog should be completely fresh/empty every time "Admit Patient" is clicked
+- **Solution**:
+  - Added `admissionForm.reset()` to clear all form fields when opening dialog
+  - Clear selected services list: `setSelectedServices([])`
+  - Clear service search query: `setSelectedServiceSearchQuery("")`
+  - Then set fresh admission date/time to current moment
+  - Applied to both "Admit Patient" button (lines 2166-2168) and "New Admission" button (lines 2707-2709)
+- **Benefits**:
+  - No leftover data from previous attempts
+  - Clean slate every time you open the dialog
+  - Prevents accidental submission of old/incorrect data
+  - Better user experience with predictable form state
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 2166-2168, 2707-2709)
+- **Status**: Application restarted successfully, fix deployed ✓
+- **Testing**: Open dialog → Fill partially → Close → Reopen → Should be completely empty
+
 ### Fresh Room Availability When Opening Admission Dialog (October 30, 2025 at 12:49 PM)
 [x] Fixed stale room availability data in admission dialog
 - **Issue**: After discharging a patient from room GW-04, immediately trying to admit a new patient showed that room as greyed out/unavailable
 - **Root Cause**: Room availability and current admissions data were cached, not refreshing when dialog opened
 - **Solution**:
   - Added query invalidation for `/api/rooms` and `/api/inpatients/currently-admitted` when opening admission dialog
-  - Applied to both "Admit Patient" button (line 2184-2185) and "New Admission" button (line 2720-2721)
+  - Applied to both "Admit Patient" button (line 2189-2190) and "New Admission" button (line 2730-2731)
   - Fresh data is fetched every time the dialog opens
 - **Benefits**:
   - Room shows as available immediately after patient discharge
   - No need to manually refresh page to see updated room availability
   - Always shows real-time accurate room occupancy status
-- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 2184-2185, 2720-2721)
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 2189-2190, 2730-2731)
 - **Status**: Application restarted successfully, fix deployed ✓
 - **Testing Recommended**: Discharge patient → Open admission dialog → Room should be available
 

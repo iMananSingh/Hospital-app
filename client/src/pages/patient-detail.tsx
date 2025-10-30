@@ -2159,6 +2159,11 @@ export default function PatientDetail() {
                     return (
                       <Button
                         onClick={() => {
+                          // Reset form to fresh state
+                          admissionForm.reset();
+                          setSelectedServices([]);
+                          setSelectedServiceSearchQuery("");
+                          
                           // Set current LOCAL date and time when opening admission dialog
                           const now = new Date();
                           const currentDateTime =
@@ -2695,6 +2700,11 @@ export default function PatientDetail() {
                         !isBillingStaff && (
                           <Button
                             onClick={() => {
+                              // Reset form to fresh state
+                              admissionForm.reset();
+                              setSelectedServices([]);
+                              setSelectedServiceSearchQuery("");
+                              
                               // Set current LOCAL date and time when opening admission dialog
                               const now = new Date();
                               const currentDateTime =
