@@ -374,7 +374,7 @@ export default function Billing() {
                         </div>
                         <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                           <div className="flex justify-between font-semibold">
-                            <span>Total:</span>
+                            <span>Count: {filteredOpdServices.length} | Total:</span>
                             <span data-testid="text-opd-total">{formatCurrency(calculateOpdTotal(filteredOpdServices))}</span>
                           </div>
                         </div>
@@ -438,7 +438,7 @@ export default function Billing() {
                         </div>
                         <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                           <div className="flex justify-between font-semibold">
-                            <span>Total:</span>
+                            <span>Count: {filteredLabServices.length} | Total:</span>
                             <span data-testid="text-lab-total">{formatCurrency(calculateLabTotal(filteredLabServices))}</span>
                           </div>
                         </div>
@@ -530,7 +530,7 @@ export default function Billing() {
                         </div>
                         <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                           <div className="flex justify-between font-semibold">
-                            <span>Total:</span>
+                            <span>Count: {filteredDiagnosticServices.length} | Total:</span>
                             <span data-testid="text-diagnostic-total">{formatCurrency(calculateDiagnosticTotal(filteredDiagnosticServices))}</span>
                           </div>
                         </div>
@@ -624,7 +624,7 @@ export default function Billing() {
                         </div>
                         <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                           <div className="flex justify-between font-semibold">
-                            <span>Total:</span>
+                            <span>Count: {filteredInpatientServices.length} | Total:</span>
                             <span data-testid="text-inpatient-total">{formatCurrency(calculateInpatientTotal(filteredInpatientServices))}</span>
                           </div>
                         </div>
@@ -681,7 +681,7 @@ export default function Billing() {
                   </div>
                   <div className="border-t p-2 bg-muted/30 flex-shrink-0">
                     <div className="flex justify-between font-semibold">
-                      <span>Total:</span>
+                      <span>Count: {billsDataApi.length} | Total:</span>
                       <span data-testid="text-credit-total">{formatCurrency(calculateCreditTotal(billsDataApi))}</span>
                     </div>
                   </div>
