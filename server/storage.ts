@@ -6175,10 +6175,8 @@ export class SqliteStorage implements IStorage {
       });
 
       // 4. Admissions and associated events
-      patientAdmissions.forEach((admission) => {
-        // Discharge entries removed from comprehensive bill as they have no monetary value
-        // (bed charges and other admission services are now handled by patient services)
-      });
+      // Admissions themselves are not added as bill items, but their payments/discounts are.
+      // The charges for admission services are handled in `patientServices`.
 
       // 5. Patient Payments
       const payments = db
@@ -6206,7 +6204,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // Add admission payments (initial deposits and additional payments)
-      patientAdmissions.forEach((admission) => {
+      admissions.forEach((admission) => {
         if (admission.initialDeposit && admission.initialDeposit > 0) {
           billItems.push({
             type: "payment",
@@ -6267,7 +6265,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // Add admission discounts for backwards compatibility
-      patientAdmissions.forEach((admission) => {
+      admissions.forEach((admission) => {
         if (admission.totalDiscount && admission.totalDiscount > 0) {
           billItems.push({
             type: "discount",
@@ -6308,7 +6306,7 @@ export class SqliteStorage implements IStorage {
           .reduce((sum, item) => sum + item.amount, 0),
       );
 
-      const remainingBalance = totalCharges - totalPaid - totalDiscounts;
+      const remainingBalance = totalCharges - totalPayments - totalDiscounts;
 
       const lastPayment = billItems.find((item) => item.type === "payment");
       const lastDiscount = billItems.find((item) => item.type === "discount");
