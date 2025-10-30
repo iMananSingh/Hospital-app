@@ -5939,7 +5939,7 @@ export class SqliteStorage implements IStorage {
       totalDiscounts: number;
       remainingBalance: number;
       lastPaymentDate?: string;
-      lastDiscountDate>;
+      lastDiscountDate?: string;
     };
   }> {
     try {
