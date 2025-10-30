@@ -42,7 +42,6 @@ import * as db from "./storage"; // Alias storage as db for brevity as seen in c
 import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
 import { eq, gte, lte, and, inArray, desc, sql } from "drizzle-orm"; // Import Drizzle ORM operators
 import { patientServices, patients } from "@shared/schema"; // Import necessary schemas
-import { queryClient } from "../react-query-client"; // Assuming queryClient is available
 
 const JWT_SECRET = process.env.JWT_SECRET || "hospital-management-secret-key";
 
