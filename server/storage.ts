@@ -4089,7 +4089,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // 6. Include initial deposits and additional payments from admissions
-      const admissionDepositsAndPayments = db
+      const admissions = db
         .select({
           initialDeposit: schema.admissions.initialDeposit,
           additionalPayments: schema.admissions.additionalPayments,
@@ -4098,7 +4098,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
-      admissionDepositsAndPayments.forEach((admission) => {
+      admissions.forEach((admission) => {
         totalPaid += admission.initialDeposit || 0;
         totalPaid += admission.additionalPayments || 0;
       });
