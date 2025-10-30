@@ -564,7 +564,7 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {recentActivities.map((activity) => {
                     const getActivityIcon = (type: string) => {
                       switch (type) {

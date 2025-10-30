@@ -3,6 +3,18 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Made Recent Activity Section Scrollable (October 30, 2025 at 4:54 PM)
+[x] Added scrolling to Recent Activity card to show all activities
+- **Issue**: User could only see last 5 activities, unable to scroll to see more
+- **User Request**: "can you make this scrollable? im only able to see last 5 activities."
+- **Solution**: 
+  - Added `max-h-96` to set maximum height of 384px (96 * 0.25rem)
+  - Added `overflow-y-auto` to enable vertical scrolling
+  - Added `pr-2` for right padding to prevent scrollbar from overlapping content
+- **Result**: Recent Activity section now scrolls vertically when there are more than ~6-7 activities visible
+- **Files Modified**: `client/src/pages/dashboard.tsx` (line 570)
+- **Status**: Application restarted successfully, hot module reload verified ✓
+
 ### Updated Discharge Activity Description Format (October 30, 2025 at 4:49 PM)
 [x] Updated discharge activity description to show proper format with doctor and room details
 - **Issue**: Discharge activity was showing "{Patient Name} - {Admission ID}" instead of proper format
