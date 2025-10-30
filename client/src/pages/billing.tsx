@@ -261,8 +261,8 @@ export default function Billing() {
         </div>
 
         {mainActiveTab === "revenue" && (
-          <div className="h-full">
-            <Card className="flex-1 flex flex-col h-full">
+          <div className="h-full flex justify-end">
+            <Card className="flex-1 flex flex-col h-full w-[80%]">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Revenue</CardTitle>
               </CardHeader>
@@ -603,8 +603,8 @@ export default function Billing() {
         )}
 
         {mainActiveTab === "payments" && (
-          <div className="h-full">
-            <Card className="flex-1 flex flex-col h-full">
+          <div className="h-full flex justify-end">
+            <Card className="flex-1 flex flex-col h-full w-[80%]">
               <CardHeader className="flex-shrink-0">
                 <CardTitle>Payment Transactions</CardTitle>
               </CardHeader>
