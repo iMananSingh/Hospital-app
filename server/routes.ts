@@ -2581,7 +2581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const admission = await storage.createAdmission(requestBody, req.user.id);
+      const admission = await storage.createAdmission(requestBody, req.user?.id);
 
       // Log activity for admission
       const patient = await storage.getPatientById(admission.patientId);
@@ -4590,7 +4590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         res.json({
-          message: `Successfully marked ${pendingEarnings.length} earnings as paid`,
+          message: `Successfully marked ${pendingBills.length} earnings as paid`,
           count: pendingEarnings.length,
           earnings: updatedEarnings, // Optionally return the updated earnings
         });
