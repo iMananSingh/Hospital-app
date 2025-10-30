@@ -2821,6 +2821,7 @@ export class SqliteStorage implements IStorage {
       // Extract just the date part (YYYY-MM-DD) for accurate counting
       const dateOnly = orderedDate.split("T")[0];
       const count = this.getDailyReceiptCountSync("pathology", dateOnly);
+      console.log(`[PATHOLOGY] Date: ${dateOnly}, Count from DB: ${count}, Next receipt will be: ${count + 1}`);
       const dateObj = new Date(dateOnly);
       const yymmdd = dateObj
         .toISOString()
@@ -2828,6 +2829,7 @@ export class SqliteStorage implements IStorage {
         .replace(/-/g, "")
         .slice(0, 6);
       const receiptNumber = `${yymmdd}-PAT-${(count + 1).toString().padStart(4, "0")}`;
+      console.log(`[PATHOLOGY] Generated receipt number: ${receiptNumber}`);
 
       // Insert the order first
       const created = tx
@@ -3631,6 +3633,7 @@ export class SqliteStorage implements IStorage {
         "admission",
         eventDate,
       );
+      console.log(`[ADMISSION] Date: ${eventDate}, Count from DB: ${admissionCount}, Next receipt will be: ${admissionCount + 1}`);
       const dateObj = new Date(eventDate);
       const yymmdd = dateObj
         .toISOString()
@@ -3638,6 +3641,7 @@ export class SqliteStorage implements IStorage {
         .replace(/-/g, "")
         .slice(0, 6);
       const receiptNumber = `${yymmdd}-ADM-${(admissionCount + 1).toString().padStart(4, "0")}`;
+      console.log(`[ADMISSION] Generated receipt number: ${receiptNumber}`);
 
       // Create the admission episode
       const newAdmission = tx
