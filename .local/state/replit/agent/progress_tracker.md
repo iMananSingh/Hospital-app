@@ -3,6 +3,21 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Auto-Refresh After Patient Admission (October 30, 2025 at 12:37 PM)
+[x] Added automatic page refresh after successful patient admission
+- **User Request**: Auto-refresh page after admission is registered to show updated data
+- **Implementation**:
+  - Added `window.location.reload()` with 500ms delay after successful admission
+  - Delay allows success toast message to be visible before refresh
+  - Placed after all cache invalidation and dialog cleanup
+- **Benefits**:
+  - Page automatically shows newly created admission in timeline
+  - User doesn't need to manually refresh to see changes
+  - Clean user experience with visible success feedback
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 1479-1482)
+- **Status**: Application restarted successfully, feature deployed ✓
+- **No Breaking Changes**: All existing functionality preserved
+
 ### Package Reinstallation - Twelfth Occurrence (October 30, 2025 at 12:33 PM)
 [x] Resolved tsx not found error (twelfth time)
 - **Issue**: Workflow was failing with "tsx: not found" error after environment restart

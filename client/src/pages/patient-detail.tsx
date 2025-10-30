@@ -1472,6 +1472,11 @@ export default function PatientDetail() {
         title: "Admission created successfully",
         description: `Patient admitted${selectedServices.length > 0 ? ` with ${selectedServices.length} admission service(s)` : ""}.`,
       });
+
+      // Auto-refresh page after successful admission
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error("Admission creation error:", error);
 
