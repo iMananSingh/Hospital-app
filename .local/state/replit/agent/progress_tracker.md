@@ -3,6 +3,19 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Removed Duplicate Patient Admission Activity Cards (October 30, 2025 at 4:35 PM)
+[x] Removed duplicate "Patient Admitted" activity card without icon
+- **Issue**: Two "Patient Admitted" activity cards were being generated for each admission
+  - One with icon showing: "{Patient Name} admitted under {Doctor Name} - {Ward Type}" ✓ (correct)
+  - One without icon showing: "Patient admitted with Admission ID: ADM-2025-036" ✗ (duplicate)
+- **Root Cause**: Duplicate activity logging was happening in two places:
+  - `server/storage.ts` (lines 3693-3709) - created generic admission activity without proper formatting
+  - `server/routes.ts` (admission endpoint) - created detailed activity with patient/doctor names and icon
+- **Solution**: Removed the entire duplicate `logActivity` call from `server/storage.ts` (lines 3693-3709)
+- **Result**: Now only one activity card is generated with proper format and icon
+- **Files Modified**: `server/storage.ts` (removed lines 3693-3709)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Patient Admission Activity Logging Fix (October 30, 2025 at 4:28 PM)
 [x] Fixed patient admission activities not being logged in activities table
 - **Issue**: When a patient was admitted, the activity was not showing in the Recent Activities section of the dashboard

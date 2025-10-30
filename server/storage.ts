@@ -3690,24 +3690,6 @@ export class SqliteStorage implements IStorage {
         }
       }
 
-      // Log activity for admission creation
-      if (userId) {
-        this.logActivity(
-          userId,
-          "admission_created",
-          "Patient Admitted",
-          `Patient admitted with Admission ID: ${newAdmission.admissionId}`,
-          newAdmission.id,
-          "admission",
-          {
-            patientId: newAdmission.patientId,
-            admissionId: newAdmission.admissionId,
-            roomNumber: newAdmission.currentRoomNumber,
-            wardType: newAdmission.currentWardType,
-          },
-        );
-      }
-
       return newAdmission;
     });
   }
