@@ -98,13 +98,20 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
   // Reset form including password fields when dialog opens
   useEffect(() => {
     if (isOpen) {
-      form.reset({
+      // Reset with user data but keep password fields empty
+      const resetData = {
         username: user?.username || "",
         fullName: user?.fullName || "",
         profilePicture: user?.profilePicture || "",
         password: "",
         confirmPassword: "",
-      });
+      };
+      
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => {
+        form.reset(resetData);
+      }, 0);
+      
       setPreviewImage(user?.profilePicture || null);
     }
   }, [isOpen, user, form]);
