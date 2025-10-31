@@ -283,6 +283,7 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
                   {...field} 
                   type="password" 
                   placeholder="Leave blank to keep current password"
+                  autoComplete="new-password"
                   data-testid="input-password" 
                 />
               </FormControl>
@@ -302,6 +303,7 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
                   {...field} 
                   type="password" 
                   placeholder="Confirm new password"
+                  autoComplete="new-password"
                   data-testid="input-confirm-password" 
                 />
               </FormControl>
