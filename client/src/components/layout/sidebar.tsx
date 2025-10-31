@@ -144,8 +144,9 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
         title: "Profile updated",
         description: "Your profile has been updated successfully.",
       });
-      // Update the user data in cache
+      // Update the user data in cache and invalidate to trigger refetch
       queryClient.setQueryData(["/api/users/me"], updatedUser);
+      queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
       onSuccess();
       form.reset({
         username: updatedUser.username,
