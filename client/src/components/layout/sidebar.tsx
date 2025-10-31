@@ -14,7 +14,7 @@ import {
   Building2,
   UserCog,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -71,9 +71,10 @@ const profileEditSchema = z
 interface ProfileEditFormProps {
   user: any;
   onSuccess: () => void;
+  isOpen: boolean;
 }
 
-function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
+function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
   const { toast } = useToast();
   const { updateUser } = useAuth();
   const queryClient = useQueryClient();
@@ -93,6 +94,14 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       confirmPassword: "",
     },
   });
+
+  // Reset password fields when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      form.setValue("password", "");
+      form.setValue("confirmPassword", "");
+    }
+  }, [isOpen, form]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -523,7 +532,18 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         <Dialog
           open={isProfileDialogOpen}
-          onOpenChange={setIsProfileDialogOpen}
+          onOpenChange={(open) => {
+            setIsProfileDialogOpen(open);
+            // Reset password fields when dialog opens
+            if (open) {
+              setTimeout(() => {
+                const form = document.querySelector('[data-testid="input-password"]') as HTMLInputElement;
+                const confirmForm = document.querySelector('[data-testid="input-confirm-password"]') as HTMLInputElement;
+                if (form) form.value = "";
+                if (confirmForm) confirmForm.value = "";
+              }, 0);
+            }
+          }}
         >
           <DialogTrigger asChild>
             <div
@@ -570,6 +590,7 @@ export default function Sidebar() {
             <ProfileEditForm
               user={user}
               onSuccess={() => setIsProfileDialogOpen(false)}
+              isOpen={isProfileDialogOpen}
             />
           </DialogContent>
         </Dialog>
