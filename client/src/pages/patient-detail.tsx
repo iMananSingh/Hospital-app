@@ -3365,7 +3365,7 @@ export default function PatientDetail() {
                       return (
                         <div
                           key={`${event.type}-${index}`}
-                          className={`relative mb-6 border border-gray-300 rounded-lg ${eventColors.bgColor} border-l-4 ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
+                          className={`relative mb-6 border-2 border-gray-200 rounded-lg ${eventColors.bgColor} ${eventColors.borderColor} hover:shadow-md transition-shadow duration-200`}
                         >
                           {/* Timeline connector line */}
                           {index < allEvents.length - 1 && (
