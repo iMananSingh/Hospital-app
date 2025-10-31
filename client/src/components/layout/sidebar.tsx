@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 const profileEditSchema = z.object({
   username: z.string().min(1, "Username is required").trim(),
   fullName: z.string().min(1, "Full name is required").trim(),
+  profilePicture: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
   confirmPassword: z.string().optional(),
 }).refine((data) => {
@@ -62,16 +63,40 @@ interface ProfileEditFormProps {
 function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [previewImage, setPreviewImage] = useState<string | null>(user?.profilePicture || null);
 
   const form = useForm({
     resolver: zodResolver(profileEditSchema),
     defaultValues: {
       username: user?.username || "",
       fullName: user?.fullName || "",
+      profilePicture: user?.profilePicture || "",
       password: "",
       confirmPassword: "",
     },
   });
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreviewImage(base64String);
+      form.setValue("profilePicture", base64String);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -79,6 +104,10 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
         username: data.username,
         fullName: data.fullName,
       };
+
+      if (data.profilePicture) {
+        updateData.profilePicture = data.profilePicture;
+      }
 
       // Only include password if it's provided
       if (data.password && data.password.trim() !== "") {
@@ -112,9 +141,11 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       form.reset({
         username: updatedUser.username,
         fullName: updatedUser.fullName,
+        profilePicture: updatedUser.profilePicture || "",
         password: "",
         confirmPassword: "",
       });
+      setPreviewImage(updatedUser.profilePicture || null);
     },
     onError: (error: any) => {
       toast({
@@ -129,9 +160,46 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
     updateProfileMutation.mutate(data);
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-healthcare-green flex items-center justify-center">
+              {previewImage ? (
+                <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white font-medium text-2xl">
+                  {user ? getInitials(user.fullName) : "U"}
+                </span>
+              )}
+            </div>
+          </div>
+          <div>
+            <Input
+              id="picture-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              data-testid="input-profile-picture"
+            />
+            <label htmlFor="picture-upload">
+              <Button type="button" variant="outline" size="sm" asChild>
+                <span className="cursor-pointer">Upload Picture</span>
+              </Button>
+            </label>
+          </div>
+        </div>
+
         <FormField
           control={form.control}
           name="username"
@@ -297,10 +365,14 @@ export default function Sidebar() {
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
           <DialogTrigger asChild>
             <div className="flex items-center space-x-3 mb-3 cursor-pointer hover:bg-muted rounded-lg p-2 transition-colors" data-testid="profile-trigger">
-              <div className="w-10 h-10 bg-healthcare-green rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm" data-testid="user-initials">
-                  {user ? getInitials(user.fullName) : "U"}
-                </span>
+              <div className="w-10 h-10 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
+                {user?.profilePicture ? (
+                  <img src={user.profilePicture} alt={user.fullName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white font-medium text-sm" data-testid="user-initials">
+                    {user ? getInitials(user.fullName) : "U"}
+                  </span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-text-dark truncate" data-testid="user-name">

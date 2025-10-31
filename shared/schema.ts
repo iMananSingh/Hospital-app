@@ -17,6 +17,7 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
+  profilePicture: text("profile_picture"),
   roles: text("roles").notNull(), // JSON array: ["super_user", "admin", "doctor", "receptionist", "billing_staff"]
   primaryRole: text("primary_role").notNull(), // Primary role for display purposes
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
@@ -720,6 +721,7 @@ export const updateProfileSchema = z
   .object({
     username: z.string().min(1, "Username is required").trim(),
     fullName: z.string().min(1, "Full name is required").trim(),
+    profilePicture: z.string().optional(),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")

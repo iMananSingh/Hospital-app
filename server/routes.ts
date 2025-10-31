@@ -202,6 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
+        profilePicture: user.profilePicture,
         roles: user.rolesArray,
         role: user.rolesArray[0], // Use first role for backward compatibility
       });
@@ -240,6 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: updatedUser.id,
         username: updatedUser.username,
         fullName: updatedUser.fullName,
+        profilePicture: updatedUser.profilePicture,
         roles: updatedUser.rolesArray,
         role: updatedUser.rolesArray[0], // Use first role for backward compatibility
       });

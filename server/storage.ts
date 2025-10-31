@@ -753,6 +753,16 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
+    // Add profile_picture column to users table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE users ADD COLUMN profile_picture TEXT;
+      `);
+      console.log("Added profile_picture column to users table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
     // Add timezone columns to system_settings table if they don't exist
     try {
       db.$client.exec(`
