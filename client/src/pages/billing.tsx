@@ -714,6 +714,7 @@ export default function Billing() {
                             <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
                             <th className="text-left p-3 font-medium bg-background">Date</th>
                             <th className="text-left p-3 font-medium bg-background">Patient</th>
+                            <th className="text-left p-3 font-medium bg-background">Billable Item</th>
                             <th className="text-left p-3 font-medium bg-background">Payment Method</th>
                             <th className="text-right p-3 font-medium bg-background">Amount</th>
                           </tr>
@@ -721,7 +722,7 @@ export default function Billing() {
                       <tbody>
                         {patientPaymentsData.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="text-center py-4 text-muted-foreground">
+                            <td colSpan={6} className="text-center py-4 text-muted-foreground">
                               No payment transactions found for the selected period
                             </td>
                           </tr>
@@ -733,6 +734,7 @@ export default function Billing() {
                                 {payment.paymentDate ? format(new Date(payment.paymentDate), 'dd MMM yyyy') : 'N/A'}
                               </td>
                               <td className="p-3" data-testid={`text-credit-patient-${index}`}>{payment.patientName || 'N/A'}</td>
+                              <td className="p-3" data-testid={`text-credit-reason-${index}`}>{payment.reason || '-'}</td>
                               <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{payment.paymentMethod}</td>
                               <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
                                 {formatCurrency(payment.amount)}
