@@ -729,8 +729,8 @@ export default function Billing() {
                           patientPaymentsData.map((payment: any, index: number) => (
                             <tr key={payment.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
                               <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
-                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{payment.billNumber || 'N/A'}</td>
-                              <td className="p-3" data-testid={`text-credit-patient-${index}`}>{payment.patient?.name || 'N/A'}</td>
+                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{payment.receiptNumber || 'N/A'}</td>
+                              <td className="p-3" data-testid={`text-credit-patient-${index}`}>{payment.patientName || 'N/A'}</td>
                               <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{payment.paymentMethod}</td>
                               <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
                                 {formatCurrency(payment.amount)}
