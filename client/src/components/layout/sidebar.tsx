@@ -62,6 +62,7 @@ interface ProfileEditFormProps {
 
 function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
   const { toast } = useToast();
+  const { updateUser } = useAuth();
   const queryClient = useQueryClient();
   const [previewImage, setPreviewImage] = useState<string | null>(user?.profilePicture || null);
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
@@ -148,6 +149,8 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       queryClient.setQueryData(["/api/users/me"], updatedUser);
       queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      // Update auth context user state immediately
+      updateUser(updatedUser);
       onSuccess();
       form.reset({
         username: updatedUser.username,
@@ -371,6 +374,7 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const getInitials = (name: string) => {
     return name

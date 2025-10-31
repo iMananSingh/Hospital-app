@@ -17,6 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -69,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      updateUser,
       isAuthenticated: !!user,
     }}>
       {children}
