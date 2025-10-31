@@ -767,7 +767,7 @@ export default function Settings() {
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please select an image under 200KB.",
+        description: "Please select an image under 2MB.",
         variant: "destructive",
       });
       return;
@@ -1461,7 +1461,7 @@ export default function Settings() {
                                 : "Upload Hospital Logo"}
                             </Label>
                             <p className="text-xs text-gray-500 mt-1">
-                              PNG, JPG, GIF up to 200KB
+                              PNG, JPG, GIF up to 2MB
                             </p>
                           </div>
                         </div>
