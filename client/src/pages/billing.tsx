@@ -712,7 +712,7 @@ export default function Billing() {
                       <thead className="border-b bg-background sticky top-0 z-10">
                           <tr>
                             <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
-                            <th className="text-left p-3 font-medium bg-background">Bill No.</th>
+                            <th className="text-left p-3 font-medium bg-background">Date</th>
                             <th className="text-left p-3 font-medium bg-background">Patient</th>
                             <th className="text-left p-3 font-medium bg-background">Payment Method</th>
                             <th className="text-right p-3 font-medium bg-background">Amount</th>
@@ -729,7 +729,9 @@ export default function Billing() {
                           patientPaymentsData.map((payment: any, index: number) => (
                             <tr key={payment.id} className="border-b hover:bg-muted/50" data-testid={`row-credit-${index}`}>
                               <td className="py-3 pl-3 pr-0" data-testid={`text-credit-sno-${index}`}>{index + 1}</td>
-                              <td className="p-3" data-testid={`text-credit-bill-${index}`}>{payment.receiptNumber || 'N/A'}</td>
+                              <td className="p-3" data-testid={`text-credit-date-${index}`}>
+                                {payment.paymentDate ? format(new Date(payment.paymentDate), 'dd MMM yyyy') : 'N/A'}
+                              </td>
                               <td className="p-3" data-testid={`text-credit-patient-${index}`}>{payment.patientName || 'N/A'}</td>
                               <td className="p-3 capitalize" data-testid={`text-credit-method-${index}`}>{payment.paymentMethod}</td>
                               <td className="p-3 text-right" data-testid={`text-credit-amount-${index}`}>
