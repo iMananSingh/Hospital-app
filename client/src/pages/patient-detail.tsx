@@ -129,6 +129,8 @@ export default function PatientDetail() {
   const [isRoomUpdateDialogOpen, setIsRoomUpdateDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [selectedBillableItem, setSelectedBillableItem] = useState("");
   const [selectedAdmissionForPayment, setSelectedAdmissionForPayment] =
     useState("");
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
@@ -646,6 +648,21 @@ export default function PatientDetail() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch discounts");
+      return response.json();
+    },
+    enabled: !!patientId,
+  });
+
+  // Fetch billable items for payment dialog
+  const { data: billableItems = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "billable-items"],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/billable-items`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch billable items");
       return response.json();
     },
     enabled: !!patientId,
