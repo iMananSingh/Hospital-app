@@ -3361,6 +3361,7 @@ export default function PatientDetail() {
                       };
 
                       const eventColors = getEventColor(event.type, event.data);
+                      const circleBorderColor = eventColors.borderColor.replace("border-l-", "border-");
 
                       return (
                         <div
@@ -3374,7 +3375,7 @@ export default function PatientDetail() {
 
                           {/* Event icon circle */}
                           <div
-                            className={`absolute -left-3 top-4 w-6 h-6 rounded-full ${eventColors.bgColor} border-2 ${eventColors.borderColor.replace("border-l-", "border-")} flex items-center justify-center`}
+                            className={`absolute -left-3 top-4 w-6 h-6 rounded-full bg-white border-2 ${circleBorderColor} flex items-center justify-center`}
                           >
                             <div
                               className={`w-2 h-2 rounded-full ${eventColors.iconColor.replace("text-", "bg-")}`}
