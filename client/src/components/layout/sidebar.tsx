@@ -147,6 +147,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       // Update the user data in cache and invalidate to trigger refetch
       queryClient.setQueryData(["/api/users/me"], updatedUser);
       queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
       onSuccess();
       form.reset({
         username: updatedUser.username,
