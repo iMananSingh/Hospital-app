@@ -3874,6 +3874,10 @@ export class SqliteStorage implements IStorage {
         `Fetching patient payments for patientId: ${patientId}, fromDate: ${fromDate}, toDate: ${toDate}`,
       );
 
+      // Get system timezone offset for proper date filtering
+      const systemSettings = await this.getSystemSettings();
+      const timezoneOffset = systemSettings?.timezoneOffset || "+00:00";
+      
       const whereConditions: any[] = [];
 
       if (patientId) {
@@ -3882,13 +3886,13 @@ export class SqliteStorage implements IStorage {
 
       if (fromDate) {
         whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) >= DATE(${fromDate})`,
+          sql`DATE(${schema.patientPayments.paymentDate}, ${timezoneOffset}) >= ${fromDate}`,
         );
       }
 
       if (toDate) {
         whereConditions.push(
-          sql`DATE(${schema.patientPayments.paymentDate}) <= DATE(${toDate})`,
+          sql`DATE(${schema.patientPayments.paymentDate}, ${timezoneOffset}) <= ${toDate}`,
         );
       }
 
