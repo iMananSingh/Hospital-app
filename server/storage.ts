@@ -3928,6 +3928,127 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
+  async getPatientBillableItems(patientId: string): Promise<any[]> {
+    const billableItems: any[] = [];
+
+    // 1. Get all admissions
+    const admissions = db
+      .select({
+        id: schema.admissions.id,
+        admissionId: schema.admissions.admissionId,
+        admissionDate: schema.admissions.admissionDate,
+        status: schema.admissions.status,
+        dailyCost: schema.admissions.dailyCost,
+      })
+      .from(schema.admissions)
+      .where(eq(schema.admissions.patientId, patientId))
+      .orderBy(desc(schema.admissions.admissionDate))
+      .all();
+
+    admissions.forEach((admission) => {
+      billableItems.push({
+        type: "admission",
+        id: admission.id,
+        label: `Admission - ${admission.admissionId}`,
+        value: `Admission - ${admission.admissionId}`,
+        date: admission.admissionDate,
+      });
+    });
+
+    // 2. Get all pathology orders
+    const pathologyOrders = db
+      .select({
+        id: schema.pathologyOrders.id,
+        orderId: schema.pathologyOrders.orderId,
+        receiptNumber: schema.pathologyOrders.receiptNumber,
+        orderedDate: schema.pathologyOrders.orderedDate,
+        totalPrice: schema.pathologyOrders.totalPrice,
+      })
+      .from(schema.pathologyOrders)
+      .where(eq(schema.pathologyOrders.patientId, patientId))
+      .orderBy(desc(schema.pathologyOrders.orderedDate))
+      .all();
+
+    pathologyOrders.forEach((order) => {
+      const identifier = order.receiptNumber || order.orderId;
+      billableItems.push({
+        type: "pathology",
+        id: order.id,
+        label: `Pathology - ${identifier}`,
+        value: `Pathology - ${identifier}`,
+        date: order.orderedDate,
+      });
+    });
+
+    // 3. Get all service orders (grouped by orderId)
+    const serviceOrders = db
+      .select({
+        orderId: schema.patientServices.orderId,
+        receiptNumber: schema.patientServices.receiptNumber,
+        scheduledDate: schema.patientServices.scheduledDate,
+      })
+      .from(schema.patientServices)
+      .where(
+        and(
+          eq(schema.patientServices.patientId, patientId),
+          isNotNull(schema.patientServices.orderId)
+        )
+      )
+      .groupBy(schema.patientServices.orderId)
+      .orderBy(desc(schema.patientServices.scheduledDate))
+      .all();
+
+    serviceOrders.forEach((order) => {
+      if (order.orderId) {
+        const identifier = order.receiptNumber || order.orderId;
+        billableItems.push({
+          type: "service",
+          id: order.orderId,
+          label: `Service Order - ${identifier}`,
+          value: `Service Order - ${identifier}`,
+          date: order.scheduledDate,
+        });
+      }
+    });
+
+    // 4. Get all OPD visits
+    const opdVisits = db
+      .select({
+        id: schema.patientVisits.id,
+        visitId: schema.patientVisits.visitId,
+        scheduledDate: schema.patientVisits.scheduledDate,
+        consultationFee: schema.patientVisits.consultationFee,
+      })
+      .from(schema.patientVisits)
+      .where(
+        and(
+          eq(schema.patientVisits.patientId, patientId),
+          eq(schema.patientVisits.visitType, "opd")
+        )
+      )
+      .orderBy(desc(schema.patientVisits.scheduledDate))
+      .all();
+
+    opdVisits.forEach((visit) => {
+      billableItems.push({
+        type: "opd",
+        id: visit.id,
+        label: `OPD Visit - ${visit.visitId}`,
+        value: `OPD Visit - ${visit.visitId}`,
+        date: visit.scheduledDate,
+      });
+    });
+
+    // Sort all items by date (most recent first)
+    billableItems.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA;
+    });
+
+    return billableItems;
+  }
+
   // Patient Discount Methods
   async createPatientDiscount(
     discountData: InsertPatientDiscount,

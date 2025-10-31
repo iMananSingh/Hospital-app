@@ -4207,6 +4207,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.get(
+    "/api/patients/:patientId/billable-items",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const { patientId } = req.params;
+        const billableItems = await storage.getPatientBillableItems(patientId);
+        res.json(billableItems);
+      } catch (error) {
+        console.error("Error fetching billable items:", error);
+        res.status(500).json({ message: "Failed to fetch billable items" });
+      }
+    },
+  );
+
+  app.get(
     "/api/patients/:patientId/comprehensive-bill",
     authenticateToken,
     async (req, res) => {
