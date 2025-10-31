@@ -14,7 +14,7 @@ import {
   Building2,
   UserCog
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -58,9 +58,10 @@ const profileEditSchema = z.object({
 interface ProfileEditFormProps {
   user: any;
   onSuccess: () => void;
+  isOpen: boolean;
 }
 
-function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
+function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
   const { toast } = useToast();
   const { updateUser } = useAuth();
   const queryClient = useQueryClient();
@@ -78,6 +79,30 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       confirmPassword: "",
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      username: user?.username || "",
+      fullName: user?.fullName || "",
+      profilePicture: user?.profilePicture || "",
+      password: "",
+      confirmPassword: "",
+    });
+    setPreviewImage(user?.profilePicture || null);
+  }, [user]);
+
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        username: user?.username || "",
+        fullName: user?.fullName || "",
+        profilePicture: user?.profilePicture || "",
+        password: "",
+        confirmPassword: "",
+      });
+      setPreviewImage(user?.profilePicture || null);
+    }
+  }, [isOpen, user]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -462,7 +487,7 @@ export default function Sidebar() {
             <DialogHeader>
               <DialogTitle>Edit Profile</DialogTitle>
             </DialogHeader>
-            <ProfileEditForm user={user} onSuccess={() => setIsProfileDialogOpen(false)} />
+            <ProfileEditForm user={user} onSuccess={() => setIsProfileDialogOpen(false)} isOpen={isProfileDialogOpen} />
           </DialogContent>
         </Dialog>
         <Button
