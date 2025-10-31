@@ -1624,6 +1624,8 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
+      setPaymentMethod("cash");
+      setSelectedBillableItem("");
       setSelectedAdmissionForPayment("");
       toast({
         title: "Payment added successfully",
@@ -5373,30 +5375,49 @@ export default function PatientDetail() {
 
           <div className="py-4">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Payment Amount *</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="Enter payment amount"
-                  data-testid="input-payment-amount"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Payment Amount *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Enter payment amount"
+                    data-testid="input-payment-amount"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger data-testid="select-payment-method">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select defaultValue="cash">
-                  <SelectTrigger data-testid="select-payment-method">
-                    <SelectValue placeholder="Select payment method" />
+                <Label>Billable Item (Optional)</Label>
+                <Select value={selectedBillableItem} onValueChange={setSelectedBillableItem}>
+                  <SelectTrigger data-testid="select-billable-item">
+                    <SelectValue placeholder="Select a billable item (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="">None</SelectItem>
+                    {billableItems.map((item: any) => (
+                      <SelectItem key={item.id} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -5417,8 +5438,8 @@ export default function PatientDetail() {
                 if (amount > 0) {
                   addPaymentMutation.mutate({
                     amount: amount,
-                    paymentMethod: "cash", // Default to cash, can be extended with a dropdown
-                    reason: "Payment",
+                    paymentMethod: paymentMethod,
+                    reason: selectedBillableItem || "Payment",
                   });
                 }
               }}
@@ -5428,6 +5449,7 @@ export default function PatientDetail() {
                 parseFloat(paymentAmount) <= 0
               }
               className="bg-green-600 hover:bg-green-700 text-white"
+              data-testid="button-add-payment"
             >
               {addPaymentMutation.isPending
                 ? "Adding Payment..."
