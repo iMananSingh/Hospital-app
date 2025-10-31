@@ -104,6 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           username: user.username,
           fullName: user.fullName,
+          profilePicture: user.profilePicture,
           roles: rolesArray,
           role: rolesArray[0], // Use first role for backward compatibility
         },
