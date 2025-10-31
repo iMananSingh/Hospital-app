@@ -14,7 +14,7 @@ import {
   Building2,
   UserCog
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -64,6 +64,8 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [previewImage, setPreviewImage] = useState<string | null>(user?.profilePicture || null);
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm({
     resolver: zodResolver(profileEditSchema),
@@ -94,8 +96,15 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
       const base64String = reader.result as string;
       setPreviewImage(base64String);
       form.setValue("profilePicture", base64String);
+      setIsImageDialogOpen(false);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleDeleteImage = () => {
+    setPreviewImage(null);
+    form.setValue("profilePicture", "");
+    setIsImageDialogOpen(false);
   };
 
   const updateProfileMutation = useMutation({
@@ -105,7 +114,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
         fullName: data.fullName,
       };
 
-      if (data.profilePicture) {
+      if (data.profilePicture !== undefined) {
         updateData.profilePicture = data.profilePicture;
       }
 
@@ -172,7 +181,7 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="flex flex-col items-center space-y-3">
-          <div className="relative">
+          <div className="relative group cursor-pointer" onClick={() => setIsImageDialogOpen(true)}>
             <div className="w-24 h-24 rounded-full overflow-hidden bg-healthcare-green flex items-center justify-center">
               {previewImage ? (
                 <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
@@ -182,22 +191,27 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
                 </span>
               )}
             </div>
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
           </div>
-          <div>
-            <Input
-              id="picture-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-              data-testid="input-profile-picture"
-            />
-            <label htmlFor="picture-upload">
-              <Button type="button" variant="outline" size="sm" asChild>
-                <span className="cursor-pointer">Upload Picture</span>
-              </Button>
-            </label>
-          </div>
+          <Input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+            data-testid="input-profile-picture"
+          />
         </div>
 
         <FormField
@@ -283,6 +297,59 @@ function ProfileEditForm({ user, onSuccess }: ProfileEditFormProps) {
             Cancel
           </Button>
         </div>
+
+        {/* Image Management Dialog */}
+        <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Profile Picture</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 py-4">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-healthcare-green flex items-center justify-center">
+                {previewImage ? (
+                  <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white font-medium text-3xl">
+                    {user ? getInitials(user.fullName) : "U"}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {previewImage ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      data-testid="button-update-picture"
+                    >
+                      Update
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleDeleteImage}
+                      data-testid="button-delete-picture"
+                    >
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    data-testid="button-upload-picture"
+                  >
+                    Upload Picture
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG up to 2MB
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </form>
     </Form>
   );
