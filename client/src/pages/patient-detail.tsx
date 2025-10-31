@@ -1942,6 +1942,24 @@ export default function PatientDetail() {
     }
   };
 
+  // Helper function to format billable item labels
+  const formatBillableItemLabel = (item: any) => {
+    switch (item.type) {
+      case "admission":
+        return `Admission - ${item.value}`;
+      case "admission_service":
+        return `Admission Service - ${item.value}`;
+      case "service":
+        return `Service - ${item.value}`;
+      case "pathology":
+        return `Pathology - ${item.value}`;
+      case "opd_visit":
+        return `OPD Visit - ${item.value}`;
+      default:
+        return item.value; // Fallback to the raw value
+    }
+  };
+
   // Handler to open the payment dialog
   const handleOpenPaymentDialog = () => {
     setPaymentAmount(""); // Reset amount
@@ -5377,69 +5395,98 @@ export default function PatientDetail() {
             <DialogTitle>Add Payment</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="payment-amount">Amount *</Label>
-              <Input
-                id="payment-amount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder="Enter payment amount"
-                data-testid="input-payment-amount"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="paymentAmount">Payment Amount *</Label>
+                <Input
+                  id="paymentAmount"
+                  type="number"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div>
+                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="card">Card</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
             <div>
-              <Label htmlFor="payment-method">Payment Method *</Label>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger id="payment-method" data-testid="select-payment-method">
-                  <SelectValue />
+              <Label htmlFor="billableItem">Billable Item</Label>
+              <Select
+                value={selectedBillableItem}
+                onValueChange={setSelectedBillableItem}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select billable item (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="upi">UPI</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  {billableItems && billableItems.length > 0 ? (
+                    billableItems.map((item: any) => (
+                      <SelectItem key={item.id} value={item.value}>
+                        {formatBillableItemLabel(item)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No billable items available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+                    toast({
+                      title: "Invalid Amount",
+                      description: "Please enter a valid payment amount",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
 
-            <Button
-              onClick={() => {
-                const amount = parseFloat(paymentAmount);
+                  // Format reason based on selected billable item
+                  let reason = "Payment";
+                  if (selectedBillableItem && selectedBillableItem !== "none") {
+                    const selectedItem = billableItems?.find(
+                      (item: any) => item.value === selectedBillableItem
+                    );
+                    if (selectedItem) {
+                      reason = formatBillableItemLabel(selectedItem);
+                    }
+                  }
 
-                if (!paymentAmount || isNaN(amount) || amount <= 0) {
-                  toast({
-                    title: "Validation Error",
-                    description: "Please enter a valid payment amount greater than 0",
-                    variant: "destructive",
+                  addPaymentMutation.mutate({
+                    amount: parseFloat(paymentAmount),
+                    paymentMethod: paymentMethod,
+                    reason: reason,
                   });
-                  return;
-                }
-
-                if (!paymentMethod) {
-                  toast({
-                    title: "Validation Error",
-                    description: "Please select a payment method",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-
-                addPaymentMutation.mutate({
-                  amount: amount,
-                  paymentMethod,
-                  reason: "Payment",
-                });
-              }}
-              className="w-full"
-              disabled={addPaymentMutation.isPending}
-              data-testid="button-confirm-payment"
-            >
-              {addPaymentMutation.isPending ? "Processing..." : "Add Payment"}
-            </Button>
+                }}
+                disabled={addPaymentMutation.isPending}
+                data-testid="button-confirm-payment"
+              >
+                {addPaymentMutation.isPending ? "Processing..." : "Add Payment"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsPaymentDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -5548,8 +5595,7 @@ export default function PatientDetail() {
 
           <Form {...opdVisitForm}>
             <form
-              onSubmit={opdVisitForm.handleSubmit((data) => {
-                console.log("OPD form submitted with data:", data);
+              onSubmit={opdVisitForm.handleSubmit((data) => {                console.log("OPD form submitted with data:", data);
 
                 // Validate required fields
                 if (!data.doctorId) {
