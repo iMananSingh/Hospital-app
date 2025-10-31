@@ -95,13 +95,19 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
     },
   });
 
-  // Reset password fields when dialog opens
+  // Reset form including password fields when dialog opens
   useEffect(() => {
     if (isOpen) {
-      form.setValue("password", "");
-      form.setValue("confirmPassword", "");
+      form.reset({
+        username: user?.username || "",
+        fullName: user?.fullName || "",
+        profilePicture: user?.profilePicture || "",
+        password: "",
+        confirmPassword: "",
+      });
+      setPreviewImage(user?.profilePicture || null);
     }
-  }, [isOpen, form]);
+  }, [isOpen, user, form]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -532,18 +538,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         <Dialog
           open={isProfileDialogOpen}
-          onOpenChange={(open) => {
-            setIsProfileDialogOpen(open);
-            // Reset password fields when dialog opens
-            if (open) {
-              setTimeout(() => {
-                const form = document.querySelector('[data-testid="input-password"]') as HTMLInputElement;
-                const confirmForm = document.querySelector('[data-testid="input-confirm-password"]') as HTMLInputElement;
-                if (form) form.value = "";
-                if (confirmForm) confirmForm.value = "";
-              }, 0);
-            }
-          }}
+          onOpenChange={setIsProfileDialogOpen}
         >
           <DialogTrigger asChild>
             <div
