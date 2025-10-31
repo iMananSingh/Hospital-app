@@ -97,24 +97,18 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
 
   // Reset form including password fields when dialog opens
   useEffect(() => {
-    if (isOpen) {
-      // Reset with user data but keep password fields empty
-      const resetData = {
-        username: user?.username || "",
-        fullName: user?.fullName || "",
-        profilePicture: user?.profilePicture || "",
+    if (isOpen && user) {
+      // Reset form with user data, ensuring password fields are empty
+      form.reset({
+        username: user.username,
+        fullName: user.fullName,
+        profilePicture: user.profilePicture || "",
         password: "",
         confirmPassword: "",
-      };
-      
-      // Use setTimeout to ensure DOM is ready
-      setTimeout(() => {
-        form.reset(resetData);
-      }, 0);
-      
-      setPreviewImage(user?.profilePicture || null);
+      });
+      setPreviewImage(user.profilePicture || null);
     }
-  }, [isOpen, user, form]);
+  }, [isOpen]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
