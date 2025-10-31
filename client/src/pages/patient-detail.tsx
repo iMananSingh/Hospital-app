@@ -1622,6 +1622,7 @@ export default function PatientDetail() {
         queryKey: ["/api/patients", patientId, "payments"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/patient-payments"] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
       setPaymentMethod("cash");
