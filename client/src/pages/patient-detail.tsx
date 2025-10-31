@@ -1942,6 +1942,15 @@ export default function PatientDetail() {
     }
   };
 
+  // Handler to open the payment dialog
+  const handleOpenPaymentDialog = () => {
+    setPaymentAmount(""); // Reset amount
+    setPaymentMethod("cash"); // Reset method
+    setSelectedBillableItem(""); // Reset billable item
+    setIsPaymentDialogOpen(true);
+  };
+
+
   if (!patient) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -2182,7 +2191,7 @@ export default function PatientDetail() {
                           admissionForm.reset();
                           setSelectedServices([]);
                           setSelectedServiceSearchQuery("");
-                          
+
                           // Set current LOCAL date and time when opening admission dialog
                           const now = new Date();
                           const currentDateTime =
@@ -2200,11 +2209,11 @@ export default function PatientDetail() {
                             "admissionDate",
                             currentDateTime,
                           );
-                          
+
                           // Refresh room availability and current admissions data
                           queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
                           queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
-                          
+
                           setIsAdmissionDialogOpen(true);
                         }}
                         className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
@@ -2251,16 +2260,11 @@ export default function PatientDetail() {
                       Add Discount
                     </Button>
                     <Button
-                      size="sm"
-                      onClick={() => {
-                        setPaymentAmount("");
-                        setSelectedAdmissionForPayment("");
-                        setIsPaymentDialogOpen(true);
-                      }}
+                      onClick={handleOpenPaymentDialog}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                       data-testid="button-add-payment"
                     >
-                      <Plus className="h-4 w-4" />
+                      <CreditCard className="h-4 w-4" />
                       Add Payment
                     </Button>
                   </>
@@ -2723,7 +2727,7 @@ export default function PatientDetail() {
                               admissionForm.reset();
                               setSelectedServices([]);
                               setSelectedServiceSearchQuery("");
-                              
+
                               // Set current LOCAL date and time when opening admission dialog
                               const now = new Date();
                               const currentDateTime =
@@ -2741,11 +2745,11 @@ export default function PatientDetail() {
                                 "admissionDate",
                                 currentDateTime,
                               );
-                              
+
                               // Refresh room availability and current admissions data
                               queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
                               queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
-                              
+
                               setIsAdmissionDialogOpen(true);
                             }}
                             size="sm"
@@ -2840,7 +2844,7 @@ export default function PatientDetail() {
                             </div>
                             <div>
                               <span className="text-muted-foreground">
-                                {admission.status === "discharged"
+                                {admission.dischargeDate
                                   ? "Discharge Date:"
                                   : "Days Admitted:"}
                               </span>
@@ -3688,7 +3692,7 @@ export default function PatientDetail() {
                                               const notesText = event.data.notes || "";
                                               const fromMatch = notesText.match(/from\s+([^(]+)\s+\(([^)]+)\)/);
                                               const toMatch = notesText.match(/to\s+([^(]+)\s+\(([^)]+)\)/);
-                                              
+
                                               return (
                                                 <>
                                                   {fromMatch && (
@@ -5368,92 +5372,73 @@ export default function PatientDetail() {
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent>
+        <DialogContent data-testid="dialog-add-payment">
           <DialogHeader>
             <DialogTitle>Add Payment</DialogTitle>
           </DialogHeader>
-
-          <div className="py-4">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Payment Amount *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="Enter payment amount"
-                    data-testid="input-payment-amount"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Payment Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger data-testid="select-payment-method">
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                      <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Billable Item (Optional)</Label>
-                <Select value={selectedBillableItem} onValueChange={setSelectedBillableItem}>
-                  <SelectTrigger data-testid="select-billable-item">
-                    <SelectValue placeholder="Select a billable item (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {billableItems.map((item: any) => (
-                      <SelectItem key={item.id} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="payment-amount">Amount *</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="Enter payment amount"
+                data-testid="input-payment-amount"
+              />
             </div>
-          </div>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsPaymentDialogOpen(false)}
-            >
-              Cancel
-            </Button>
+            <div>
+              <Label htmlFor="payment-method">Payment Method *</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger id="payment-method" data-testid="select-payment-method">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               onClick={() => {
                 const amount = parseFloat(paymentAmount);
-                if (amount > 0) {
-                  addPaymentMutation.mutate({
-                    amount: amount,
-                    paymentMethod: paymentMethod,
-                    reason: selectedBillableItem || "Payment",
+
+                if (!paymentAmount || isNaN(amount) || amount <= 0) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Please enter a valid payment amount greater than 0",
+                    variant: "destructive",
                   });
+                  return;
                 }
+
+                if (!paymentMethod) {
+                  toast({
+                    title: "Validation Error",
+                    description: "Please select a payment method",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                addPaymentMutation.mutate({
+                  amount: amount,
+                  paymentMethod,
+                  reason: "Payment",
+                });
               }}
-              disabled={
-                addPaymentMutation.isPending ||
-                !paymentAmount ||
-                parseFloat(paymentAmount) <= 0
-              }
-              className="bg-green-600 hover:bg-green-700 text-white"
-              data-testid="button-add-payment"
+              className="w-full"
+              disabled={addPaymentMutation.isPending}
+              data-testid="button-confirm-payment"
             >
-              {addPaymentMutation.isPending
-                ? "Adding Payment..."
-                : "Add Payment"}
+              {addPaymentMutation.isPending ? "Processing..." : "Add Payment"}
             </Button>
           </div>
         </DialogContent>
