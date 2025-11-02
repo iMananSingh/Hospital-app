@@ -25,6 +25,7 @@ import Diagnostics from "@/pages/diagnostics";
 import PendingBills from "@/pages/pending-bills";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
+import Footer from "@/components/layout/footer";
 import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -48,8 +49,11 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <Component />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <div className="flex-1">
+          <Component />
+        </div>
+        <Footer />
       </main>
     </div>
   );
