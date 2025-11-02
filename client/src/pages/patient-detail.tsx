@@ -4005,11 +4005,17 @@ export default function PatientDetail() {
                 <Label>Scheduled Date & Time *</Label>
                 <Input
                   type="datetime-local"
-                  value={`${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`}
+                  value={
+                    serviceForm.watch("scheduledDate") && serviceForm.watch("scheduledTime")
+                      ? `${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`
+                      : ""
+                  }
                   onChange={(e) => {
-                    const [date, time] = e.target.value.split('T');
-                    serviceForm.setValue("scheduledDate", date);
-                    serviceForm.setValue("scheduledTime", time);
+                    if (e.target.value) {
+                      const [date, time] = e.target.value.split('T');
+                      serviceForm.setValue("scheduledDate", date);
+                      serviceForm.setValue("scheduledTime", time);
+                    }
                   }}
                   data-testid="input-scheduled-datetime"
                 />
