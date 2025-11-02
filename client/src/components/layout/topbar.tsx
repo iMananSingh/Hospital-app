@@ -37,12 +37,6 @@ export default function TopBar({
   onTodayClick,
   actions,
 }: TopBarProps) {
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
   return (
     <header className="bg-background border-b border-border px-6 sticky top-0 z-50 h-[84px] flex items-center">
       <div className="flex items-center justify-between w-full">
@@ -50,12 +44,6 @@ export default function TopBar({
           <h2 className="text-2xl font-bold text-text-dark" data-testid="page-title">
             {title}
           </h2>
-          <div className="flex items-center space-x-2 bg-muted px-3 py-1 rounded-full">
-            <div className="w-4 h-4 text-text-muted">📅</div>
-            <span className="text-sm text-text-muted" data-testid="current-date">
-              {currentDate}
-            </span>
-          </div>
         </div>
         
         <div className="flex items-center space-x-4">
