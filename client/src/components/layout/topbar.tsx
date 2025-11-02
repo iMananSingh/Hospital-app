@@ -44,7 +44,7 @@ export default function TopBar({
   });
 
   return (
-    <header className="bg-surface border-b border-border px-6 sticky top-0 z-50 h-[73px] flex items-center">
+    <header className="bg-surface border-b border-border px-6 sticky top-0 z-50 h-[91px] flex items-center">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center space-x-4">
           <h2 className="text-2xl font-bold text-text-dark" data-testid="page-title">
