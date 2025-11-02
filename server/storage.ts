@@ -119,6 +119,7 @@ async function initializeDatabase() {
         specialization TEXT NOT NULL,
         qualification TEXT NOT NULL,
         consultation_fee REAL NOT NULL,
+        profile_picture TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -763,6 +764,16 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
+    // Add profile_picture column to doctors table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctors ADD COLUMN profile_picture TEXT;
+      `);
+      console.log("Added profile_picture column to doctors table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
     // Add timezone columns to system_settings table if they don't exist
     try {
       db.$client.exec(`
@@ -1129,6 +1140,11 @@ export interface IStorage {
   updateDoctor(
     id: string,
     doctor: Partial<InsertDoctor>,
+  ): Promise<Doctor | undefined>;
+  updateDoctorProfilePicture(
+    id: string,
+    profilePicture: string,
+    userId?: string,
   ): Promise<Doctor | undefined>;
   deleteDoctor(id: string, userId?: string): Promise<Doctor | undefined>; // Added deleteDoctor
   restoreDoctor(id: string, userId?: string): Promise<Doctor | undefined>;
@@ -2026,6 +2042,36 @@ export class SqliteStorage implements IStorage {
           doctorName: updated.name,
           specialization: updated.specialization,
           changes: changes,
+        },
+      );
+    }
+
+    return updated;
+  }
+
+  async updateDoctorProfilePicture(
+    id: string,
+    profilePicture: string,
+    userId?: string,
+  ): Promise<Doctor | undefined> {
+    const updated = db
+      .update(schema.doctors)
+      .set({ profilePicture, updatedAt: new Date().toISOString() })
+      .where(eq(schema.doctors.id, id))
+      .returning()
+      .get();
+
+    if (updated && userId) {
+      this.logActivity(
+        userId,
+        "doctor_profile_updated",
+        "Doctor Profile Updated",
+        `Updated profile picture for ${updated.name}`,
+        updated.id,
+        "doctor",
+        {
+          doctorName: updated.name,
+          hasProfilePicture: !!profilePicture,
         },
       );
     }

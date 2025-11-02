@@ -39,6 +39,7 @@ export const doctors = sqliteTable("doctors", {
   specialization: text("specialization").notNull(),
   qualification: text("qualification").notNull(),
   consultationFee: real("consultation_fee").notNull(),
+  profilePicture: text("profile_picture"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()

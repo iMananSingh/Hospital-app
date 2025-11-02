@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Download, Stethoscope, IndianRupee, Calculator, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
@@ -18,6 +19,7 @@ interface Doctor {
   specialization: string;
   qualification: string;
   consultationFee: number;
+  profilePicture?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -49,6 +51,11 @@ export default function DoctorDetail() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch doctor details
   const { data: doctor, isLoading: isDoctorLoading } = useQuery({
@@ -67,6 +74,86 @@ export default function DoctorDetail() {
     queryKey: ["/api/doctors", doctorId, "salary-rates"],
     enabled: !!doctorId,
   });
+
+  // Sync preview image with doctor profile picture
+  useEffect(() => {
+    if (doctor?.profilePicture) {
+      setPreviewImage(doctor.profilePicture);
+    }
+  }, [doctor]);
+
+  // Mutation for updating profile picture
+  const updateProfilePictureMutation = useMutation({
+    mutationFn: async (profilePicture: string) => {
+      const response = await fetch(`/api/doctors/${doctorId}/profile-picture`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ profilePicture }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile picture");
+      }
+
+      return response.json();
+    },
+    onSuccess: (updatedDoctor) => {
+      toast({
+        title: "Profile picture updated",
+        description: "Doctor profile picture has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      setPreviewImage(updatedDoctor.profilePicture || null);
+      setIsImageDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile picture",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreviewImage(base64String);
+      updateProfilePictureMutation.mutate(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteImage = () => {
+    setPreviewImage(null);
+    updateProfilePictureMutation.mutate("");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .toUpperCase();
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -223,10 +310,37 @@ export default function DoctorDetail() {
         <Card>
           <CardHeader>
             <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-healthcare-green rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-lg">
-                  {doctor.name.split(' ').map((n: string) => n[0]).join('')}
-                </span>
+              <div 
+                className="relative group cursor-pointer" 
+                onClick={() => setIsImageDialogOpen(true)}
+                data-testid="doctor-profile-picture-trigger"
+              >
+                <div className="w-16 h-16 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
+                  {previewImage || doctor.profilePicture ? (
+                    <img 
+                      src={previewImage || doctor.profilePicture} 
+                      alt={doctor.name} 
+                      className="w-full h-full object-cover" 
+                      data-testid="doctor-profile-image"
+                    />
+                  ) : (
+                    <span className="text-white font-medium text-lg" data-testid="doctor-initials">
+                      {getInitials(doctor.name)}
+                    </span>
+                  )}
+                </div>
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
               </div>
               <div>
                 <CardTitle className="text-2xl">{doctor.name}</CardTitle>
@@ -424,6 +538,76 @@ export default function DoctorDetail() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Profile Picture Dialog */}
+        <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Doctor Profile Picture</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center space-y-4 py-4">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-healthcare-green flex items-center justify-center">
+                {previewImage || doctor.profilePicture ? (
+                  <img 
+                    src={previewImage || doctor.profilePicture} 
+                    alt={doctor.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <span className="text-white font-medium text-3xl">
+                    {getInitials(doctor.name)}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {previewImage || doctor.profilePicture ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={updateProfilePictureMutation.isPending}
+                      data-testid="button-update-doctor-picture"
+                    >
+                      {updateProfilePictureMutation.isPending ? "Updating..." : "Update"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleDeleteImage}
+                      disabled={updateProfilePictureMutation.isPending}
+                      data-testid="button-delete-doctor-picture"
+                    >
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={updateProfilePictureMutation.isPending}
+                    data-testid="button-upload-doctor-picture"
+                  >
+                    Upload Picture
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG up to 2MB
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className="hidden"
+          data-testid="input-doctor-profile-picture"
+        />
       </div>
     </div>
   );

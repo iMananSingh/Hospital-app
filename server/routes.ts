@@ -740,6 +740,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/doctors/:id/profile-picture", authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { profilePicture } = req.body;
+
+      const doctor = await storage.getDoctorById(id);
+      if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+
+      const updatedDoctor = await storage.updateDoctorProfilePicture(id, profilePicture, req.user?.id);
+      res.json(updatedDoctor);
+    } catch (error) {
+      console.error("Doctor profile picture update error:", error);
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update doctor profile picture" });
+    }
+  });
+
   // Added restore doctor route
   app.put(
     "/api/doctors/:id/restore",
