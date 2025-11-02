@@ -786,7 +786,7 @@ export default function Dashboard() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <button 
                   onClick={() => setIsFakeBillDialogOpen(true)}
                   className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" 
