@@ -878,6 +878,55 @@ export default function PatientDetail() {
     }
   }, [systemSettings?.timezone, isAdmissionDialogOpen]);
 
+  // Auto-open service dialog if hash is present
+  React.useEffect(() => {
+    if (window.location.hash === '#add-service') {
+      // Clear all service-related state first and close dialog to reset
+      setIsServiceDialogOpen(false);
+      setSelectedServices([]);
+      setSelectedServiceType("");
+      setSelectedServiceCategory("");
+      setSelectedServiceSearchQuery("");
+      setSelectedCatalogService(null);
+      setBillingPreview(null);
+
+      // Set current LOCAL date and time when opening service dialog
+      const now = new Date();
+      const currentDate =
+        now.getFullYear() +
+        "-" +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(now.getDate()).padStart(2, "0");
+      const currentTime =
+        String(now.getHours()).padStart(2, "0") +
+        ":" +
+        String(now.getMinutes()).padStart(2, "0");
+
+      // Reset form completely
+      serviceForm.reset({
+        patientId: patientId || "",
+        serviceType: "",
+        serviceName: "",
+        scheduledDate: currentDate,
+        scheduledTime: currentTime,
+        doctorId: "",
+        notes: "",
+        price: 0,
+        quantity: 1,
+        hours: 1,
+        distance: 0,
+      });
+
+      // Use setTimeout to ensure state is cleared before opening
+      setTimeout(() => {
+        setIsServiceDialogOpen(true);
+        // Clear the hash
+        window.history.replaceState(null, '', window.location.pathname);
+      }, 10);
+    }
+  }, []);
+
   // Update discharge date/time when system settings load or timezone changes
   React.useEffect(() => {
     if (systemSettings?.timezone && isDischargeDialogOpen) {

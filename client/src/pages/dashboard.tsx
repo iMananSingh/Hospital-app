@@ -49,10 +49,12 @@ export default function Dashboard() {
   const [isPathologyOrderOpen, setIsPathologyOrderOpen] = useState(false);
   const [isAccessDeniedPatientOpen, setIsAccessDeniedPatientOpen] = useState(false);
   const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] = useState(false);
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -887,6 +889,31 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">Check Beds</div>
                   </div>
                 </button>
+
+                <button 
+                  onClick={() => {
+                    const userRoles = user?.roles || [user?.role];
+                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+
+                    if (isBillingStaff) {
+                      toast({
+                        title: "Access Restricted",
+                        description: "Only administrators and super users can add services.",
+                        variant: "destructive",
+                      });
+                    } else {
+                      setSelectedPatientForService("");
+                      setIsServiceDialogOpen(true);
+                    }
+                  }}
+                  className="p-4 bg-indigo-500 text-white rounded-lg hover:bg-indigo-500/90 transition-colors" 
+                  data-testid="quick-add-service"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">Add Service</div>
+                    <div className="text-sm opacity-90">Schedule Service</div>
+                  </div>
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -1229,6 +1256,53 @@ export default function Dashboard() {
               title="Lab Test Ordering Restricted"
               description="Only administrators and super users can order lab tests."
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Service Dialog */}
+      <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Service for Patient</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="servicePatientId">Select Patient *</Label>
+              <PatientSearchCombobox
+                value={selectedPatientForService}
+                onValueChange={setSelectedPatientForService}
+                patients={patients || []}
+              />
+            </div>
+
+            {selectedPatientForService && (
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsServiceDialogOpen(false);
+                    setSelectedPatientForService("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
+                    if (selectedPatient) {
+                      setIsServiceDialogOpen(false);
+                      navigate(`/patients/${selectedPatient.id}#add-service`);
+                    }
+                  }}
+                  className="bg-medical-blue hover:bg-medical-blue/90"
+                >
+                  Continue to Add Service
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
