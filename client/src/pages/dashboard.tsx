@@ -1013,17 +1013,6 @@ export default function Dashboard() {
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <button 
-                  onClick={() => setIsFakeBillDialogOpen(true)}
-                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" 
-                  data-testid="quick-new-bill"
-                >
-                  <div className="text-center">
-                    <div className="text-lg font-semibold">New Bill</div>
-                    <div className="text-sm opacity-90">Create invoice</div>
-                  </div>
-                </button>
-
-                <button 
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
                     const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
@@ -1064,28 +1053,6 @@ export default function Dashboard() {
                 </button>
 
                 <button 
-                  onClick={() => navigate("/pending-bills")}
-                  className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" 
-                  data-testid="quick-view-pending"
-                >
-                  <div className="text-center">
-                    <div className="text-lg font-semibold">Pending</div>
-                    <div className="text-sm opacity-90">View bills</div>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => navigate("/bed-occupancy")}
-                  className="p-4 bg-teal-500 text-white rounded-lg hover:bg-teal-500/90 transition-colors" 
-                  data-testid="quick-bed-occupancy"
-                >
-                  <div className="text-center">
-                    <div className="text-lg font-semibold">Occupancy</div>
-                    <div className="text-sm opacity-90">Check Beds</div>
-                  </div>
-                </button>
-
-                <button 
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
                     const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
@@ -1111,6 +1078,17 @@ export default function Dashboard() {
                 </button>
 
                 <button 
+                  onClick={() => navigate("/bed-occupancy")}
+                  className="p-4 bg-teal-500 text-white rounded-lg hover:bg-teal-500/90 transition-colors" 
+                  data-testid="quick-bed-occupancy"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">Occupancy</div>
+                    <div className="text-sm opacity-90">Check Beds</div>
+                  </div>
+                </button>
+
+                <button 
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
                     const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
@@ -1132,6 +1110,28 @@ export default function Dashboard() {
                   <div className="text-center">
                     <div className="text-lg font-semibold">Admit Patient</div>
                     <div className="text-sm opacity-90">New Admission</div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => navigate("/pending-bills")}
+                  className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" 
+                  data-testid="quick-view-pending"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">Pending</div>
+                    <div className="text-sm opacity-90">View bills</div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => setIsFakeBillDialogOpen(true)}
+                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" 
+                  data-testid="quick-new-bill"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">New Bill</div>
+                    <div className="text-sm opacity-90">Create invoice</div>
                   </div>
                 </button>
               </div>
