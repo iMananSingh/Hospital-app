@@ -441,7 +441,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shadow-sm">
       {/* Logo and Hospital Name */}
-      <div className="px-6 border-b border-border h-[73px] flex items-center">
+      <div className="px-6 border-b border-border h-[91px] flex items-center">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-medical-blue rounded-lg flex items-center justify-center">
             <Hospital className="w-6 h-6 text-white" />
