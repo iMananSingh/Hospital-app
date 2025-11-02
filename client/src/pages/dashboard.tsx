@@ -50,11 +50,13 @@ export default function Dashboard() {
   const [isAccessDeniedPatientOpen, setIsAccessDeniedPatientOpen] = useState(false);
   const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] = useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
+  const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -914,6 +916,31 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">Schedule Service</div>
                   </div>
                 </button>
+
+                <button 
+                  onClick={() => {
+                    const userRoles = user?.roles || [user?.role];
+                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+
+                    if (isBillingStaff) {
+                      toast({
+                        title: "Access Restricted",
+                        description: "Only administrators and super users can admit patients.",
+                        variant: "destructive",
+                      });
+                    } else {
+                      setSelectedPatientForAdmission("");
+                      setIsAdmissionDialogOpen(true);
+                    }
+                  }}
+                  className="p-4 bg-green-600 text-white rounded-lg hover:bg-green-600/90 transition-colors" 
+                  data-testid="quick-admit-patient"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">Admit Patient</div>
+                    <div className="text-sm opacity-90">New Admission</div>
+                  </div>
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -1300,6 +1327,55 @@ export default function Dashboard() {
                   className="bg-medical-blue hover:bg-medical-blue/90"
                 >
                   Continue to Add Service
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admit Patient Dialog */}
+      <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Admit Patient</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="admissionPatientId">Select Patient *</Label>
+              <PatientSearchCombobox
+                value={selectedPatientForAdmission}
+                onValueChange={setSelectedPatientForAdmission}
+                patients={patients || []}
+              />
+            </div>
+
+            {selectedPatientForAdmission && (
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsAdmissionDialogOpen(false);
+                    setSelectedPatientForAdmission("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForAdmission);
+                    if (selectedPatient) {
+                      setIsAdmissionDialogOpen(false);
+                      navigate(`/patients/${selectedPatient.id}`);
+                      // The patient detail page will handle opening the admission dialog
+                      // We could add a hash like #admit-patient if needed
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-600/90"
+                >
+                  Continue to Admit Patient
                 </Button>
               </div>
             )}
