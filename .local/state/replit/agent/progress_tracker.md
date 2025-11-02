@@ -3,6 +3,15 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### TopBar Scrolling Overlap Fix (November 02, 2025 at 9:25 AM)
+[x] Fixed content overlapping with sticky navbar when scrolling
+- **Issue**: When scrolling pages, content would go up and overlap with the fixed TopBar navbar
+- **Root Cause**: TopBar was using `bg-surface` class which is not defined in Tailwind configuration, causing transparent/undefined background
+- **Solution**: Changed TopBar background from `bg-surface` to `bg-background` for proper solid background
+- **Files Modified**: `client/src/components/layout/topbar.tsx` (line 50)
+- **Result**: Content now properly disappears behind the navbar when scrolling instead of visually overlapping
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Package Reinstallation - Fifteenth Occurrence (November 02, 2025 at 9:22 AM)
 [x] Resolved tsx not found error (fifteenth time)
 - **Issue**: Workflow was failing with "tsx: not found" error after environment restart
