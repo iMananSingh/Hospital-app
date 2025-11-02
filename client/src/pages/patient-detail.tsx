@@ -3867,7 +3867,7 @@ export default function PatientDetail() {
 
       {/* Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedServiceType === "opd"
@@ -4003,7 +4003,7 @@ export default function PatientDetail() {
 
               <div className="space-y-2">
                 <Label>Scheduled Date & Time *</Label>
-                <Input
+                <input
                   type="datetime-local"
                   value={
                     serviceForm.watch("scheduledDate") && serviceForm.watch("scheduledTime")
@@ -4017,6 +4017,7 @@ export default function PatientDetail() {
                       serviceForm.setValue("scheduledTime", time);
                     }
                   }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   data-testid="input-scheduled-datetime"
                 />
                 {serviceForm.formState.errors.scheduledDate && (
@@ -5597,7 +5598,7 @@ export default function PatientDetail() {
         open={isOpdVisitDialogOpen}
         onOpenChange={setIsOpdVisitDialogOpen}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Schedule OPD Appointment</DialogTitle>
           </DialogHeader>
