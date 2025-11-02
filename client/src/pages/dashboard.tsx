@@ -1023,7 +1023,7 @@ export default function Dashboard() {
                       setIsNewPatientOpen(true);
                     }
                   }}
-                  className="p-4 bg-healthcare-green text-white rounded-lg hover:bg-healthcare-green/90 transition-colors" 
+                  className="p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm" 
                   data-testid="quick-new-patient"
                 >
                   <div className="text-center">
@@ -1043,7 +1043,7 @@ export default function Dashboard() {
                       setIsPathologyOrderOpen(true);
                     }
                   }}
-                  className="p-4 bg-purple-500 text-white rounded-lg hover:bg-purple-500/90 transition-colors" 
+                  className="p-4 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm" 
                   data-testid="quick-new-test"
                 >
                   <div className="text-center">
@@ -1068,7 +1068,7 @@ export default function Dashboard() {
                       setIsServiceDialogOpen(true);
                     }
                   }}
-                  className="p-4 bg-indigo-500 text-white rounded-lg hover:bg-indigo-500/90 transition-colors" 
+                  className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" 
                   data-testid="quick-add-service"
                 >
                   <div className="text-center">
@@ -1079,7 +1079,7 @@ export default function Dashboard() {
 
                 <button 
                   onClick={() => navigate("/bed-occupancy")}
-                  className="p-4 bg-teal-500 text-white rounded-lg hover:bg-teal-500/90 transition-colors" 
+                  className="p-4 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm" 
                   data-testid="quick-bed-occupancy"
                 >
                   <div className="text-center">
@@ -1104,7 +1104,7 @@ export default function Dashboard() {
                       setIsAdmissionDialogOpen(true);
                     }
                   }}
-                  className="p-4 bg-green-600 text-white rounded-lg hover:bg-green-600/90 transition-colors" 
+                  className="p-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm" 
                   data-testid="quick-admit-patient"
                 >
                   <div className="text-center">
@@ -1115,7 +1115,7 @@ export default function Dashboard() {
 
                 <button 
                   onClick={() => navigate("/pending-bills")}
-                  className="p-4 bg-alert-orange text-white rounded-lg hover:bg-alert-orange/90 transition-colors" 
+                  className="p-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm" 
                   data-testid="quick-view-pending"
                 >
                   <div className="text-center">
@@ -1126,7 +1126,7 @@ export default function Dashboard() {
 
                 <button 
                   onClick={() => setIsFakeBillDialogOpen(true)}
-                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-medical-blue/90 transition-colors" 
+                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" 
                   data-testid="quick-new-bill"
                 >
                   <div className="text-center">
