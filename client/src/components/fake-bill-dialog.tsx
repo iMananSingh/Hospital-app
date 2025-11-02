@@ -593,7 +593,7 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Fake Bill</DialogTitle>
+          <DialogTitle>Create Unrecorded Bill</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
