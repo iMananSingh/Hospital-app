@@ -107,6 +107,7 @@ export default function DoctorDetail() {
         description: "Doctor profile picture has been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
       setPreviewImage(updatedDoctor.profilePicture || null);
       setIsImageDialogOpen(false);
