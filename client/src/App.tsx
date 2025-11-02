@@ -26,6 +26,7 @@ import PendingBills from "@/pages/pending-bills";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/layout/sidebar";
 import { useEffect } from "react";
+import TopBar from "@/components/layout/topbar";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,9 +49,12 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <Component />
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-auto pt-[84px]">
+          <Component />
+        </main>
+      </div>
     </div>
   );
 }
