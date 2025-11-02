@@ -308,7 +308,7 @@ export default function Billing() {
         }}
       />
 
-      <div className="flex-1 p-6 overflow-hidden">
+      <div className="flex-1 px-6 pb-6 pt-4 overflow-hidden">
         {/* Main Navigation */}
         <div className="mb-6">
           <div className="grid w-full max-w-md grid-cols-2 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
