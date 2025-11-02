@@ -848,6 +848,17 @@ export default function Dashboard() {
                     <div className="text-sm opacity-90">View bills</div>
                   </div>
                 </button>
+
+                <button 
+                  onClick={() => navigate("/bed-occupancy")}
+                  className="p-4 bg-teal-500 text-white rounded-lg hover:bg-teal-500/90 transition-colors" 
+                  data-testid="quick-bed-occupancy"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">Occupancy</div>
+                    <div className="text-sm opacity-90">Check Beds</div>
+                  </div>
+                </button>
               </div>
             </CardContent>
           </Card>
