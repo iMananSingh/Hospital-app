@@ -57,7 +57,7 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
   const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
-  
+
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -219,7 +219,7 @@ export default function Dashboard() {
     },
   });
 
-  
+
 
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
@@ -245,7 +245,7 @@ export default function Dashboard() {
     },
   });
 
-  
+
 
   // Fetch system settings for timezone
   const { data: systemSettings } = useQuery({
@@ -281,7 +281,7 @@ export default function Dashboard() {
     }
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
 
-  
+
 
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
@@ -924,7 +924,6 @@ export default function Dashboard() {
                         variant: "destructive",
                       });
                     } else {
-                      setSelectedPatientForService("");
                       setIsServiceDialogOpen(true);
                     }
                   }}
