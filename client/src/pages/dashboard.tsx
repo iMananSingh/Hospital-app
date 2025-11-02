@@ -10,23 +10,79 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
 import AccessRestricted from "@/components/access-restricted";
-import { insertPatientSchema, insertPathologyOrderSchema, insertPatientServiceSchema } from "@shared/schema";
+import {
+  insertPatientSchema,
+  insertPathologyOrderSchema,
+  insertPatientServiceSchema,
+} from "@shared/schema";
 import { z } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, Calendar, X } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { TestTubeDiagonal, Search, Check, ChevronsUpDown, Eye, UserPlus, UserX, Stethoscope, ClipboardPlus, UserMinus, UserCheck, Trash2, UserPen, IndianRupee, CircleUser, BedSingle, ClipboardX, Settings, Building2, Database, DatabaseZap, Pencil } from "lucide-react";
+import {
+  TestTubeDiagonal,
+  Search,
+  Check,
+  ChevronsUpDown,
+  Eye,
+  UserPlus,
+  UserX,
+  Stethoscope,
+  ClipboardPlus,
+  UserMinus,
+  UserCheck,
+  Trash2,
+  UserPen,
+  IndianRupee,
+  CircleUser,
+  BedSingle,
+  ClipboardX,
+  Settings,
+  Building2,
+  Database,
+  DatabaseZap,
+  Pencil,
+} from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
 interface DashboardStats {
@@ -50,21 +106,27 @@ export default function Dashboard() {
   const [isFakeBillDialogOpen, setIsFakeBillDialogOpen] = useState(false);
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [isPathologyOrderOpen, setIsPathologyOrderOpen] = useState(false);
-  const [isAccessDeniedPatientOpen, setIsAccessDeniedPatientOpen] = useState(false);
-  const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] = useState(false);
+  const [isAccessDeniedPatientOpen, setIsAccessDeniedPatientOpen] =
+    useState(false);
+  const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] =
+    useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedCatalogTests, setSelectedCatalogTests] = useState<any[]>([]);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
-  const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
+  const [selectedPatientForService, setSelectedPatientForService] =
+    useState<string>("");
+  const [selectedPatientForAdmission, setSelectedPatientForAdmission] =
+    useState<string>("");
   const [selectedServiceType, setSelectedServiceType] = useState("");
   const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
-  const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] = useState("");
+  const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] =
+    useState("");
   const [selectedServices, setSelectedServices] = useState<any[]>([]);
-  const [selectedCatalogService, setSelectedCatalogService] = useState<any>(null);
+  const [selectedCatalogService, setSelectedCatalogService] =
+    useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -78,7 +140,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const response = await fetch("/api/dashboard/stats", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch dashboard stats");
@@ -86,35 +148,38 @@ export default function Dashboard() {
     },
   });
 
-  const { data: recentActivities = [], isLoading: activitiesLoading } = useQuery<Activity[]>({
-    queryKey: ["/api/dashboard/recent-activities"],
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    queryFn: async () => {
-      const response = await fetch("/api/dashboard/recent-activities", {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch recent activities");
-      return response.json();
-    },
-  });
+  const { data: recentActivities = [], isLoading: activitiesLoading } =
+    useQuery<Activity[]>({
+      queryKey: ["/api/dashboard/recent-activities"],
+      staleTime: 0,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      queryFn: async () => {
+        const response = await fetch("/api/dashboard/recent-activities", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch recent activities");
+        return response.json();
+      },
+    });
 
   const { data: combinedTestData } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
   });
 
   // Extract tests and categories from combined data
-  const testCatalog = combinedTestData?.categories?.flatMap(cat => 
-    cat.tests?.map(test => ({
-      ...test,
-      category: cat.name
-    })) || []
-  ) || [];
+  const testCatalog =
+    combinedTestData?.categories?.flatMap(
+      (cat) =>
+        cat.tests?.map((test) => ({
+          ...test,
+          category: cat.name,
+        })) || [],
+    ) || [];
 
-  const categories = combinedTestData?.categories?.map(cat => cat.name) || [];
+  const categories = combinedTestData?.categories?.map((cat) => cat.name) || [];
 
   const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients"],
@@ -134,7 +199,7 @@ export default function Dashboard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(patientData),
       });
@@ -147,7 +212,9 @@ export default function Dashboard() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
       setIsNewPatientOpen(false);
       form.reset({
         name: "",
@@ -181,7 +248,7 @@ export default function Dashboard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
@@ -196,7 +263,9 @@ export default function Dashboard() {
     },
     onSuccess: (createdOrder) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
       setIsPathologyOrderOpen(false);
       setSelectedCatalogTests([]);
       pathologyForm.reset();
@@ -280,27 +349,27 @@ export default function Dashboard() {
     if (systemSettings?.timezone && isPathologyOrderOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
-      const formatter = new Intl.DateTimeFormat('en-US', {
+
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
-      
+
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
-      
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
+
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
-      pathologyForm.setValue('orderedDate', currentDateTime);
+
+      pathologyForm.setValue("orderedDate", currentDateTime);
     }
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
 
@@ -342,12 +411,15 @@ export default function Dashboard() {
     // Create single order with multiple tests
     const orderData = {
       patientId: data.patientId,
-      doctorId: data.doctorId === "external" || data.doctorId === "" ? null : data.doctorId, // Make doctor optional
+      doctorId:
+        data.doctorId === "external" || data.doctorId === ""
+          ? null
+          : data.doctorId, // Make doctor optional
       orderedDate: data.orderedDate,
       remarks: data.remarks,
     };
 
-    const tests = selectedCatalogTests.map(test => ({
+    const tests = selectedCatalogTests.map((test) => ({
       testName: test.test_name,
       testCategory: test.category,
       price: test.price,
@@ -357,7 +429,11 @@ export default function Dashboard() {
   };
 
   // Patient Search Combobox Component for pathology
-  function PatientSearchCombobox({ value, onValueChange, patients }: {
+  function PatientSearchCombobox({
+    value,
+    onValueChange,
+    patients,
+  }: {
     value: string;
     onValueChange: (value: string) => void;
     patients: any[];
@@ -376,7 +452,9 @@ export default function Dashboard() {
       );
     });
 
-    const selectedPatient = patients?.find((patient: any) => patient.id === value);
+    const selectedPatient = patients?.find(
+      (patient: any) => patient.id === value,
+    );
 
     const formatPatientDisplay = (patient: any) => {
       return `${patient.name}, ${patient.age} ${patient.gender} (${patient.patientId})`;
@@ -391,14 +469,19 @@ export default function Dashboard() {
             aria-expanded={open}
             className="w-full justify-between text-left font-normal"
           >
-            {selectedPatient ? formatPatientDisplay(selectedPatient) : "Search and select patient..."}
+            {selectedPatient
+              ? formatPatientDisplay(selectedPatient)
+              : "Search and select patient..."}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+        <PopoverContent
+          className="w-full p-0"
+          style={{ width: "var(--radix-popover-trigger-width)" }}
+        >
           <Command shouldFilter={false}>
-            <CommandInput 
-              placeholder="Type to search patients..." 
+            <CommandInput
+              placeholder="Type to search patients..."
               value={searchValue}
               onValueChange={setSearchValue}
             />
@@ -424,7 +507,8 @@ export default function Dashboard() {
                     <div className="flex flex-col">
                       <span className="font-medium">{patient.name}</span>
                       <span className="text-sm text-muted-foreground">
-                        {patient.age} years, {patient.gender} • {patient.patientId}
+                        {patient.age} years, {patient.gender} •{" "}
+                        {patient.patientId}
                       </span>
                     </div>
                   </CommandItem>
@@ -438,13 +522,19 @@ export default function Dashboard() {
   }
 
   // Order Details Dialog Component
-  function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => void }) {
+  function OrderDetailsDialog({
+    order,
+    onClose,
+  }: {
+    order: any;
+    onClose: () => void;
+  }) {
     const { data: orderDetails } = useQuery({
       queryKey: ["/api/pathology", order.id],
       queryFn: async () => {
         const response = await fetch(`/api/pathology/${order.id}`, {
           headers: {
-            "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
           },
         });
         if (!response.ok) throw new Error("Failed to fetch order details");
@@ -454,16 +544,16 @@ export default function Dashboard() {
 
     const getStatusColor = (status: string) => {
       switch (status) {
-        case 'completed':
-          return 'bg-green-100 text-green-800';
-        case 'processing':
-          return 'bg-blue-100 text-blue-800';
-        case 'collected':
-          return 'bg-yellow-100 text-yellow-800';
-        case 'ordered':
-          return 'bg-orange-100 text-orange-800';
+        case "completed":
+          return "bg-green-100 text-green-800";
+        case "processing":
+          return "bg-blue-100 text-blue-800";
+        case "collected":
+          return "bg-yellow-100 text-yellow-800";
+        case "ordered":
+          return "bg-orange-100 text-orange-800";
         default:
-          return 'bg-gray-100 text-gray-800';
+          return "bg-gray-100 text-gray-800";
       }
     };
 
@@ -488,54 +578,83 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium">Patient</Label>
-                  <p className="text-sm text-muted-foreground">{orderDetails?.patient?.name || "Unknown Patient"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {orderDetails?.patient?.name || "Unknown Patient"}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Doctor</Label>
-                  <p className="text-sm text-muted-foreground">{orderDetails?.doctor?.name || "External Patient"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {orderDetails?.doctor?.name || "External Patient"}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Status</Label>
-                  <Badge className={getStatusColor(order.status)} variant="secondary">
+                  <Badge
+                    className={getStatusColor(order.status)}
+                    variant="secondary"
+                  >
                     {order.status}
                   </Badge>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Date Ordered</Label>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(order.orderedDate)}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Total Price</Label>
-                  <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
+                  <p className="text-sm text-muted-foreground">
+                    ₹{order.totalPrice}
+                  </p>
                 </div>
               </div>
               {order.remarks && (
                 <div>
                   <Label className="text-sm font-medium">Remarks</Label>
-                  <p className="text-sm text-muted-foreground">{order.remarks}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {order.remarks}
+                  </p>
                 </div>
               )}
 
               <div className="mt-6">
-                <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+                <Label className="text-sm font-medium">
+                  Tests in this Order ({orderDetails?.tests?.length || 0} tests)
+                </Label>
                 <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
                   <Table>
                     <TableHeader className="sticky top-0 bg-background z-10">
                       <TableRow>
-                        <TableHead className="bg-background">Test Name</TableHead>
-                        <TableHead className="bg-background">Category</TableHead>
+                        <TableHead className="bg-background">
+                          Test Name
+                        </TableHead>
+                        <TableHead className="bg-background">
+                          Category
+                        </TableHead>
                         <TableHead className="bg-background">Status</TableHead>
-                        <TableHead className="bg-background">Price (₹)</TableHead>
+                        <TableHead className="bg-background">
+                          Price (₹)
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {orderDetails?.tests ? (
                         orderDetails.tests.map((test: any, index: number) => (
-                          <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
-                            <TableCell className="font-medium">{test.testName}</TableCell>
+                          <TableRow
+                            key={test.id}
+                            className={index % 2 === 0 ? "bg-gray-50/50" : ""}
+                          >
+                            <TableCell className="font-medium">
+                              {test.testName}
+                            </TableCell>
                             <TableCell>{test.testCategory}</TableCell>
                             <TableCell>
-                              <Badge className={getStatusColor(test.status)} variant="secondary">
+                              <Badge
+                                className={getStatusColor(test.status)}
+                                variant="secondary"
+                              >
                                 {test.status}
                               </Badge>
                             </TableCell>
@@ -544,7 +663,10 @@ export default function Dashboard() {
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          <TableCell
+                            colSpan={4}
+                            className="text-center text-muted-foreground py-8"
+                          >
                             Loading test details...
                           </TableCell>
                         </TableRow>
@@ -561,11 +683,15 @@ export default function Dashboard() {
   }
 
   const toggleTestSelection = (test: any) => {
-    const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+    const isSelected = selectedCatalogTests.some(
+      (t) => t.test_name === test.test_name,
+    );
     if (isSelected) {
-      setSelectedCatalogTests(prev => prev.filter(t => t.test_name !== test.test_name));
+      setSelectedCatalogTests((prev) =>
+        prev.filter((t) => t.test_name !== test.test_name),
+      );
     } else {
-      setSelectedCatalogTests(prev => [...prev, test]);
+      setSelectedCatalogTests((prev) => [...prev, test]);
     }
   };
 
@@ -574,8 +700,11 @@ export default function Dashboard() {
   };
 
   const filteredCatalog = (testCatalog || []).filter((test: any) => {
-    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
-    const matchesSearch = test.test_name?.toLowerCase().includes(catalogSearchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || test.category === selectedCategory;
+    const matchesSearch = test.test_name
+      ?.toLowerCase()
+      .includes(catalogSearchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -601,9 +730,15 @@ export default function Dashboard() {
     }
 
     if (selectedServiceSearchQuery.trim()) {
-      filtered = filtered.filter((s: any) =>
-        s.name?.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
-        (s.description && s.description?.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
+      filtered = filtered.filter(
+        (s: any) =>
+          s.name
+            ?.toLowerCase()
+            .includes(selectedServiceSearchQuery.toLowerCase()) ||
+          (s.description &&
+            s.description
+              ?.toLowerCase()
+              .includes(selectedServiceSearchQuery.toLowerCase())),
       );
     }
 
@@ -635,7 +770,7 @@ export default function Dashboard() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
@@ -644,7 +779,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
       setIsServiceDialogOpen(false);
       setSelectedServiceType("");
       setSelectedServiceCategory("");
@@ -689,7 +826,7 @@ export default function Dashboard() {
       }
 
       const servicesToCreate = [];
-      
+
       if (selectedServices.length > 0) {
         selectedServices.forEach((service: any) => {
           servicesToCreate.push({
@@ -703,7 +840,8 @@ export default function Dashboard() {
             scheduledDate: data.scheduledDate,
             scheduledTime: data.scheduledTime,
             status: "scheduled",
-            doctorId: data.doctorId && data.doctorId !== "none" ? data.doctorId : null,
+            doctorId:
+              data.doctorId && data.doctorId !== "none" ? data.doctorId : null,
             billingType: service.billingType || "per_instance",
             calculatedAmount: service.price * (service.quantity || 1),
             billingQuantity: service.quantity || 1,
@@ -734,7 +872,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div>
-        <TopBar 
+        <TopBar
           title="Dashboard & Reports"
           showNotifications={true}
           notificationCount={3}
@@ -756,14 +894,23 @@ export default function Dashboard() {
 
   return (
     <div>
-      <TopBar 
+      <TopBar
         title="Dashboard & Reports"
         showNotifications={true}
         notificationCount={3}
       />
 
       <div className="px-6 pb-6 pt-4 space-y-6">
-        <StatsCards stats={stats || { opdPatients: 0, inpatients: 0, labTests: 0, diagnostics: 0 }} />
+        <StatsCards
+          stats={
+            stats || {
+              opdPatients: 0,
+              inpatients: 0,
+              labTests: 0,
+              diagnostics: 0,
+            }
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -774,7 +921,10 @@ export default function Dashboard() {
               {activitiesLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                    <div
+                      key={i}
+                      className="flex items-center space-x-3 p-3 bg-muted rounded-lg"
+                    >
                       <Skeleton className="w-8 h-8 rounded-full" />
                       <div className="flex-1 space-y-1">
                         <Skeleton className="h-4 w-full" />
@@ -793,211 +943,299 @@ export default function Dashboard() {
                   {recentActivities.map((activity) => {
                     const getActivityIcon = (type: string) => {
                       switch (type) {
-                        case 'bill_created':
-                          return { icon: 'B', color: 'bg-medical-blue' };
-                        case 'patient_registered':
-                          return { icon: 'patient_registered', color: 'bg-blue-700' };
-                        case 'lab_test_ordered':
-                          return { icon: 'lab_ordered', color: 'bg-pink-500' };
-                        case 'lab_test_completed':
-                          return { icon: 'T', color: 'bg-orange-500' };
-                        case 'opd_scheduled':
-                          return { icon: 'opd', color: 'bg-blue-500' };
-                        case 'service_scheduled':
-                          return { icon: 'service_scheduled', color: 'bg-purple-500' };
-                        case 'user_created':
-                          return { icon: 'U', color: 'bg-green-500' }; // Updated to green
-                        case 'user_updated':
-                          return { icon: 'user_updated', color: 'bg-amber-700' };
-                        case 'user_deleted':
-                          return { icon: 'X', color: 'bg-red-500' };
-                        case 'payment_added':
-                          return { icon: 'payment_added', color: 'bg-emerald-700' };
-                        case 'discount_added':
-                          return { icon: 'discount_added', color: 'bg-amber-700' };
-                        case 'doctor_created':
-                          return { icon: 'doctor_created', color: 'bg-green-800' };
-                        case 'doctor_deleted':
-                        case 'doctor_deactivated':
-                          return { icon: 'doctor_deactivated', color: 'bg-red-500' };
-                        case 'doctor_restored':
-                          return { icon: 'doctor_restored', color: 'bg-green-700' };
-                        case 'doctor_permanently_deleted':
-                          return { icon: 'doctor_permanently_deleted', color: 'bg-red-700' };
-                        case 'patient_admitted':
-                          return { icon: 'patient_admitted', color: 'bg-green-700' };
-                        case 'patient_discharged':
-                          return { icon: 'patient_discharged', color: 'bg-red-700' };
-                        case 'system_config_changed':
-                          return { icon: 'system_config_changed', color: 'bg-purple-700' };
-                        case 'hospital_info_changed':
-                          return { icon: 'hospital_info_changed', color: 'bg-teal-600' };
-                        case 'backup_created':
-                          return { icon: 'backup_created', color: 'bg-indigo-700' };
-                        case 'room_type_created':
-                        case 'room_type_updated':
-                        case 'room_type_deleted':
-                          return { icon: 'R', color: 'bg-indigo-600' };
-                        case 'room_created':
-                        case 'room_updated':
-                        case 'room_deleted':
-                          return { icon: 'R', color: 'bg-teal-500' };
-                        case 'service_created':
-                        case 'service_updated':
-                        case 'service_deleted':
-                          return { icon: 'SV', color: 'bg-pink-500' };
+                        case "bill_created":
+                          return { icon: "B", color: "bg-medical-blue" };
+                        case "patient_registered":
+                          return {
+                            icon: "patient_registered",
+                            color: "bg-blue-700",
+                          };
+                        case "lab_test_ordered":
+                          return { icon: "lab_ordered", color: "bg-pink-500" };
+                        case "lab_test_completed":
+                          return { icon: "T", color: "bg-orange-500" };
+                        case "opd_scheduled":
+                          return { icon: "opd", color: "bg-blue-500" };
+                        case "service_scheduled":
+                          return {
+                            icon: "service_scheduled",
+                            color: "bg-purple-500",
+                          };
+                        case "user_created":
+                          return { icon: "U", color: "bg-green-500" }; // Updated to green
+                        case "user_updated":
+                          return {
+                            icon: "user_updated",
+                            color: "bg-amber-700",
+                          };
+                        case "user_deleted":
+                          return { icon: "X", color: "bg-red-500" };
+                        case "payment_added":
+                          return {
+                            icon: "payment_added",
+                            color: "bg-emerald-700",
+                          };
+                        case "discount_added":
+                          return {
+                            icon: "discount_added",
+                            color: "bg-amber-700",
+                          };
+                        case "doctor_created":
+                          return {
+                            icon: "doctor_created",
+                            color: "bg-green-800",
+                          };
+                        case "doctor_deleted":
+                        case "doctor_deactivated":
+                          return {
+                            icon: "doctor_deactivated",
+                            color: "bg-red-500",
+                          };
+                        case "doctor_restored":
+                          return {
+                            icon: "doctor_restored",
+                            color: "bg-green-700",
+                          };
+                        case "doctor_permanently_deleted":
+                          return {
+                            icon: "doctor_permanently_deleted",
+                            color: "bg-red-700",
+                          };
+                        case "patient_admitted":
+                          return {
+                            icon: "patient_admitted",
+                            color: "bg-green-700",
+                          };
+                        case "patient_discharged":
+                          return {
+                            icon: "patient_discharged",
+                            color: "bg-red-700",
+                          };
+                        case "system_config_changed":
+                          return {
+                            icon: "system_config_changed",
+                            color: "bg-purple-700",
+                          };
+                        case "hospital_info_changed":
+                          return {
+                            icon: "hospital_info_changed",
+                            color: "bg-teal-600",
+                          };
+                        case "backup_created":
+                          return {
+                            icon: "backup_created",
+                            color: "bg-indigo-700",
+                          };
+                        case "room_type_created":
+                        case "room_type_updated":
+                        case "room_type_deleted":
+                          return { icon: "R", color: "bg-indigo-600" };
+                        case "room_created":
+                        case "room_updated":
+                        case "room_deleted":
+                          return { icon: "R", color: "bg-teal-500" };
+                        case "service_created":
+                        case "service_updated":
+                        case "service_deleted":
+                          return { icon: "SV", color: "bg-pink-500" };
                         default:
                           const firstLetter = type.charAt(0).toUpperCase();
-                          return { icon: firstLetter, color: 'bg-gray-600' };
+                          return { icon: firstLetter, color: "bg-gray-600" };
                       }
                     };
 
                     const formatTimeAgo = (dateString: string) => {
                       const now = new Date();
                       // Parse the UTC timestamp from backend - ensure it's treated as UTC
-                      const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-                      
+                      const date = new Date(
+                        dateString.endsWith("Z")
+                          ? dateString
+                          : dateString + "Z",
+                      );
+
                       // Calculate difference in milliseconds using current local time
                       const diffInMs = now.getTime() - date.getTime();
                       const diffInMins = Math.floor(diffInMs / (1000 * 60));
                       const diffInHours = Math.floor(diffInMins / 60);
                       const diffInDays = Math.floor(diffInHours / 24);
 
-                      if (diffInDays > 0) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
-                      if (diffInHours > 0) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-                      if (diffInMins > 0) return `${diffInMins} min${diffInMins > 1 ? 's' : ''} ago`;
-                      return 'Just now';
+                      if (diffInDays > 0)
+                        return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+                      if (diffInHours > 0)
+                        return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+                      if (diffInMins > 0)
+                        return `${diffInMins} min${diffInMins > 1 ? "s" : ""} ago`;
+                      return "Just now";
                     };
 
-                    const { icon, color } = getActivityIcon(activity.activityType);
+                    const { icon, color } = getActivityIcon(
+                      activity.activityType,
+                    );
 
                     return (
-                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                        {activity.activityType === 'user_created' && (
+                      <div
+                        key={activity.id}
+                        className="flex items-center space-x-3 p-3 bg-muted rounded-lg"
+                      >
+                        {activity.activityType === "user_created" && (
                           <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
                             <UserPlus className="w-5 h-5 text-green-700" />
                           </div>
                         )}
-                        {activity.activityType === 'user_deleted' && (
+                        {activity.activityType === "user_deleted" && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <UserX className="w-5 h-5 text-red-600" />
                           </div>
                         )}
-                        {activity.activityType === 'opd_scheduled' && (
+                        {activity.activityType === "opd_scheduled" && (
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                             <Stethoscope className="w-5 h-5 text-blue-600" />
                           </div>
                         )}
-                        {activity.activityType === 'lab_test_ordered' && (
+                        {activity.activityType === "lab_test_ordered" && (
                           <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
                             <TestTubeDiagonal className="w-5 h-5 text-pink-600" />
                           </div>
                         )}
-                        {activity.activityType === 'service_scheduled' && (
+                        {activity.activityType === "service_scheduled" && (
                           <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
                             <ClipboardPlus className="w-5 h-5 text-purple-600" />
                           </div>
                         )}
-                        {(activity.activityType === 'doctor_deleted' || activity.activityType === 'doctor_deactivated') && (
+                        {(activity.activityType === "doctor_deleted" ||
+                          activity.activityType === "doctor_deactivated") && (
                           <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
                             <UserMinus className="w-5 h-5 text-orange-600" />
                           </div>
                         )}
-                        {activity.activityType === 'doctor_restored' && (
+                        {activity.activityType === "doctor_restored" && (
                           <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                             <UserCheck className="w-5 h-5 text-green-600" />
                           </div>
                         )}
-                        {activity.activityType === 'doctor_created' && (
+                        {activity.activityType === "doctor_created" && (
                           <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
                             <UserStarIcon className="w-5 h-5 text-green-800" />
                           </div>
                         )}
-                        {activity.activityType === 'doctor_updated' && (
+                        {activity.activityType === "doctor_updated" && (
                           <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
                             <UserPen className="w-5 h-5 text-amber-700" />
                           </div>
                         )}
-                        {activity.activityType === 'doctor_permanently_deleted' && (
+                        {activity.activityType ===
+                          "doctor_permanently_deleted" && (
                           <div className="w-8 h-8 rounded-full bg-red-200 flex items-center justify-center">
                             <Trash2 className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType === 'user_updated' && (
+                        {activity.activityType === "user_updated" && (
                           <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
                             <UserPen className="w-5 h-5 text-amber-700" />
                           </div>
                         )}
-                        {activity.activityType === 'payment_added' && (
+                        {activity.activityType === "payment_added" && (
                           <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center">
                             <IndianRupee className="w-5 h-5 text-green-800" />
                           </div>
                         )}
-                        {activity.activityType === 'discount_added' && (
+                        {activity.activityType === "discount_added" && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <IndianRupee className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType === 'patient_registered' && (
+                        {activity.activityType === "patient_registered" && (
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                             <CircleUser className="w-5 h-5 text-blue-700" />
                           </div>
                         )}
-                        {activity.activityType === 'patient_admitted' && (
+                        {activity.activityType === "patient_admitted" && (
                           <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                             <BedSingle className="w-5 h-5 text-green-700" />
                           </div>
                         )}
-                        {activity.activityType === 'patient_discharged' && (
+                        {activity.activityType === "patient_discharged" && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <ClipboardX className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType === 'system_config_changed' && (
+                        {activity.activityType === "system_config_changed" && (
                           <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center">
                             <Settings className="w-5 h-5 text-white" />
                           </div>
                         )}
-                        {activity.activityType === 'hospital_info_changed' && (
+                        {activity.activityType === "hospital_info_changed" && (
                           <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center">
                             <Settings className="w-5 h-5 text-white" />
                           </div>
                         )}
-                        {activity.activityType === 'backup_created' && (
+                        {activity.activityType === "backup_created" && (
                           <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center">
                             <DatabaseZap className="w-5 h-5 text-white" />
                           </div>
                         )}
-                        {activity.activityType === 'room_created' && (
+                        {activity.activityType === "room_created" && (
                           <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
                             <Pencil className="w-5 h-5 text-teal-700" />
                           </div>
                         )}
-                        {activity.activityType === 'room_deleted' && (
+                        {activity.activityType === "room_deleted" && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <Pencil className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType === 'service_created' && (
+                        {activity.activityType === "service_created" && (
                           <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
                             <Pencil className="w-5 h-5 text-teal-700" />
                           </div>
                         )}
-                        {activity.activityType === 'service_deleted' && (
+                        {activity.activityType === "service_deleted" && (
                           <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
                             <Pencil className="w-5 h-5 text-red-700" />
                           </div>
                         )}
-                        {activity.activityType !== 'user_created' && activity.activityType !== 'user_updated' && activity.activityType !== 'user_deleted' && activity.activityType !== 'opd_scheduled' && activity.activityType !== 'lab_test_ordered' && activity.activityType !== 'service_scheduled' && activity.activityType !== 'doctor_deleted' && activity.activityType !== 'doctor_deactivated' && activity.activityType !== 'doctor_restored' && activity.activityType !== 'doctor_created' && activity.activityType !== 'doctor_updated' && activity.activityType !== 'doctor_permanently_deleted' && activity.activityType !== 'payment_added' && activity.activityType !== 'discount_added' && activity.activityType !== 'patient_registered' && activity.activityType !== 'patient_admitted' && activity.activityType !== 'patient_discharged' && activity.activityType !== 'system_config_changed' && activity.activityType !== 'hospital_info_changed' && activity.activityType !== 'backup_created' && activity.activityType !== 'room_created' && activity.activityType !== 'room_deleted' && activity.activityType !== 'service_created' && activity.activityType !== 'service_deleted' && (
-                          <div className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}>
-                            <span className="text-white text-xs">{icon}</span>
-                          </div>
-                        )}
+                        {activity.activityType !== "user_created" &&
+                          activity.activityType !== "user_updated" &&
+                          activity.activityType !== "user_deleted" &&
+                          activity.activityType !== "opd_scheduled" &&
+                          activity.activityType !== "lab_test_ordered" &&
+                          activity.activityType !== "service_scheduled" &&
+                          activity.activityType !== "doctor_deleted" &&
+                          activity.activityType !== "doctor_deactivated" &&
+                          activity.activityType !== "doctor_restored" &&
+                          activity.activityType !== "doctor_created" &&
+                          activity.activityType !== "doctor_updated" &&
+                          activity.activityType !==
+                            "doctor_permanently_deleted" &&
+                          activity.activityType !== "payment_added" &&
+                          activity.activityType !== "discount_added" &&
+                          activity.activityType !== "patient_registered" &&
+                          activity.activityType !== "patient_admitted" &&
+                          activity.activityType !== "patient_discharged" &&
+                          activity.activityType !== "system_config_changed" &&
+                          activity.activityType !== "hospital_info_changed" &&
+                          activity.activityType !== "backup_created" &&
+                          activity.activityType !== "room_created" &&
+                          activity.activityType !== "room_deleted" &&
+                          activity.activityType !== "service_created" &&
+                          activity.activityType !== "service_deleted" && (
+                            <div
+                              className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}
+                            >
+                              <span className="text-white text-xs">{icon}</span>
+                            </div>
+                          )}
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{activity.title}</p>
-                          <p className="text-xs text-text-muted">{activity.description}</p>
+                          <p className="text-sm font-medium">
+                            {activity.title}
+                          </p>
+                          <p className="text-xs text-text-muted">
+                            {activity.description}
+                          </p>
                         </div>
-                        <p className="text-xs text-text-muted">{formatTimeAgo(activity.createdAt)}</p>
+                        <p className="text-xs text-text-muted">
+                          {formatTimeAgo(activity.createdAt)}
+                        </p>
                       </div>
                     );
                   })}
@@ -1012,10 +1250,13 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
-                <button 
+                <button
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    const isBillingStaff =
+                      userRoles.includes("billing_staff") &&
+                      !userRoles.includes("admin") &&
+                      !userRoles.includes("super_user");
 
                     if (isBillingStaff) {
                       setIsAccessDeniedPatientOpen(true);
@@ -1023,7 +1264,7 @@ export default function Dashboard() {
                       setIsNewPatientOpen(true);
                     }
                   }}
-                  className="p-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm" 
+                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
                   data-testid="quick-new-patient"
                 >
                   <div className="text-center">
@@ -1032,10 +1273,13 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    const isBillingStaff =
+                      userRoles.includes("billing_staff") &&
+                      !userRoles.includes("admin") &&
+                      !userRoles.includes("super_user");
 
                     if (isBillingStaff) {
                       setIsAccessDeniedLabTestOpen(true);
@@ -1043,7 +1287,7 @@ export default function Dashboard() {
                       setIsPathologyOrderOpen(true);
                     }
                   }}
-                  className="p-4 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm" 
+                  className="p-4 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors shadow-sm"
                   data-testid="quick-new-test"
                 >
                   <div className="text-center">
@@ -1052,15 +1296,19 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    const isBillingStaff =
+                      userRoles.includes("billing_staff") &&
+                      !userRoles.includes("admin") &&
+                      !userRoles.includes("super_user");
 
                     if (isBillingStaff) {
                       toast({
                         title: "Access Restricted",
-                        description: "Only administrators and super users can add services.",
+                        description:
+                          "Only administrators and super users can add services.",
                         variant: "destructive",
                       });
                     } else {
@@ -1068,7 +1316,7 @@ export default function Dashboard() {
                       setIsServiceDialogOpen(true);
                     }
                   }}
-                  className="p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" 
+                  className="p-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm"
                   data-testid="quick-add-service"
                 >
                   <div className="text-center">
@@ -1077,9 +1325,9 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => navigate("/bed-occupancy")}
-                  className="p-4 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm" 
+                  className="p-4 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors shadow-sm"
                   data-testid="quick-bed-occupancy"
                 >
                   <div className="text-center">
@@ -1088,15 +1336,19 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff = userRoles.includes('billing_staff') && !userRoles.includes('admin') && !userRoles.includes('super_user');
+                    const isBillingStaff =
+                      userRoles.includes("billing_staff") &&
+                      !userRoles.includes("admin") &&
+                      !userRoles.includes("super_user");
 
                     if (isBillingStaff) {
                       toast({
                         title: "Access Restricted",
-                        description: "Only administrators and super users can admit patients.",
+                        description:
+                          "Only administrators and super users can admit patients.",
                         variant: "destructive",
                       });
                     } else {
@@ -1104,7 +1356,7 @@ export default function Dashboard() {
                       setIsAdmissionDialogOpen(true);
                     }
                   }}
-                  className="p-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors shadow-sm" 
+                  className="p-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm"
                   data-testid="quick-admit-patient"
                 >
                   <div className="text-center">
@@ -1113,9 +1365,9 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => navigate("/pending-bills")}
-                  className="p-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors shadow-sm" 
+                  className="p-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-sm"
                   data-testid="quick-view-pending"
                 >
                   <div className="text-center">
@@ -1124,9 +1376,9 @@ export default function Dashboard() {
                   </div>
                 </button>
 
-                <button 
+                <button
                   onClick={() => setIsFakeBillDialogOpen(true)}
-                  className="p-4 bg-medical-blue text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm" 
+                  className="p-4 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors shadow-sm"
                   data-testid="quick-new-bill"
                 >
                   <div className="text-center">
@@ -1141,7 +1393,7 @@ export default function Dashboard() {
       </div>
 
       {/* Fake Bill Dialog */}
-      <FakeBillDialog 
+      <FakeBillDialog
         isOpen={isFakeBillDialogOpen}
         onClose={() => setIsFakeBillDialogOpen(false)}
       />
@@ -1164,7 +1416,9 @@ export default function Dashboard() {
                   data-testid="input-patient-name"
                 />
                 {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.name.message}
+                  </p>
                 )}
               </div>
 
@@ -1178,7 +1432,9 @@ export default function Dashboard() {
                   data-testid="input-patient-age"
                 />
                 {form.formState.errors.age && (
-                  <p className="text-sm text-destructive">{form.formState.errors.age.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.age.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -1186,9 +1442,11 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender *</Label>
-                <Select 
+                <Select
                   value={form.watch("gender")}
-                  onValueChange={(value) => form.setValue("gender", value, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    form.setValue("gender", value, { shouldValidate: true })
+                  }
                 >
                   <SelectTrigger data-testid="select-patient-gender">
                     <SelectValue placeholder="Select gender" />
@@ -1200,7 +1458,9 @@ export default function Dashboard() {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.gender && (
-                  <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.gender.message}
+                  </p>
                 )}
               </div>
 
@@ -1213,7 +1473,9 @@ export default function Dashboard() {
                   data-testid="input-patient-phone"
                 />
                 {form.formState.errors.phone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.phone.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -1261,11 +1523,15 @@ export default function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={createPatientMutation.isPending || !form.formState.isValid}
+                disabled={
+                  createPatientMutation.isPending || !form.formState.isValid
+                }
                 className="bg-medical-blue hover:bg-medical-blue/90"
                 data-testid="button-save-patient"
               >
-                {createPatientMutation.isPending ? "Saving..." : "Register Patient"}
+                {createPatientMutation.isPending
+                  ? "Saving..."
+                  : "Register Patient"}
               </Button>
             </div>
           </form>
@@ -1273,37 +1539,53 @@ export default function Dashboard() {
       </Dialog>
 
       {/* Order Pathology Tests Dialog */}
-      <Dialog open={isPathologyOrderOpen} onOpenChange={setIsPathologyOrderOpen}>
+      <Dialog
+        open={isPathologyOrderOpen}
+        onOpenChange={setIsPathologyOrderOpen}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Order Pathology Tests</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={pathologyForm.handleSubmit(onPathologySubmit)} className="space-y-6">
+          <form
+            onSubmit={pathologyForm.handleSubmit(onPathologySubmit)}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
                 <PatientSearchCombobox
                   value={pathologyForm.watch("patientId")}
-                  onValueChange={(value) => pathologyForm.setValue("patientId", value)}
+                  onValueChange={(value) =>
+                    pathologyForm.setValue("patientId", value)
+                  }
                   patients={patients || []}
                 />
                 {pathologyForm.formState.errors.patientId && (
-                  <p className="text-sm text-red-500">{pathologyForm.formState.errors.patientId.message}</p>
+                  <p className="text-sm text-red-500">
+                    {pathologyForm.formState.errors.patientId.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
-                <Select 
-                  onValueChange={(value) => pathologyForm.setValue("doctorId", value)}
+                <Label htmlFor="doctorId">
+                  Doctor (Optional for External Patients)
+                </Label>
+                <Select
+                  onValueChange={(value) =>
+                    pathologyForm.setValue("doctorId", value)
+                  }
                   data-testid="select-doctor"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="external">External Patient (No Doctor)</SelectItem>
+                    <SelectItem value="external">
+                      External Patient (No Doctor)
+                    </SelectItem>
                     {(doctors || []).map((doctor: any) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
@@ -1327,14 +1609,19 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <Label>Select Tests from Catalog</Label>
                 <div className="flex items-center space-x-2">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                  >
                     <SelectTrigger className="w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {(categories || []).map((category: string) => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1368,9 +1655,11 @@ export default function Dashboard() {
                   </TableHeader>
                   <TableBody>
                     {filteredCatalog.map((test: any, index: number) => {
-                      const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+                      const isSelected = selectedCatalogTests.some(
+                        (t) => t.test_name === test.test_name,
+                      );
                       return (
-                        <TableRow 
+                        <TableRow
                           key={`${test.category}-${test.test_name}-${index}`}
                           className={isSelected ? "bg-blue-50" : ""}
                         >
@@ -1382,7 +1671,9 @@ export default function Dashboard() {
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{test.test_name}</TableCell>
+                          <TableCell className="font-medium">
+                            {test.test_name}
+                          </TableCell>
                           <TableCell>{test.category}</TableCell>
                           <TableCell>₹{test.price}</TableCell>
                         </TableRow>
@@ -1394,7 +1685,9 @@ export default function Dashboard() {
 
               {selectedCatalogTests.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Selected Tests ({selectedCatalogTests.length})</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Selected Tests ({selectedCatalogTests.length})
+                  </h4>
                   <div className="space-y-1">
                     {selectedCatalogTests.map((test, index) => (
                       <div key={index} className="flex justify-between text-sm">
@@ -1430,10 +1723,15 @@ export default function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={createOrderMutation.isPending || selectedCatalogTests.length === 0}
+                disabled={
+                  createOrderMutation.isPending ||
+                  selectedCatalogTests.length === 0
+                }
                 data-testid="button-order-tests"
               >
-                {createOrderMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
+                {createOrderMutation.isPending
+                  ? "Ordering..."
+                  : `Order ${selectedCatalogTests.length} Test(s)`}
               </Button>
             </div>
           </form>
@@ -1442,23 +1740,26 @@ export default function Dashboard() {
 
       {/* View Order Details Dialog */}
       {selectedOrder && (
-        <OrderDetailsDialog 
-          order={selectedOrder} 
+        <OrderDetailsDialog
+          order={selectedOrder}
           onClose={() => {
             setSelectedOrder(null);
             // No redirect needed since we're already on dashboard
-          }} 
+          }}
         />
       )}
 
       {/* Access Denied Dialogs for Billing Staff */}
-      <Dialog open={isAccessDeniedPatientOpen} onOpenChange={setIsAccessDeniedPatientOpen}>
+      <Dialog
+        open={isAccessDeniedPatientOpen}
+        onOpenChange={setIsAccessDeniedPatientOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Access Restricted</DialogTitle>
           </DialogHeader>
           <div className="p-4">
-            <AccessRestricted 
+            <AccessRestricted
               title="Patient Registration Restricted"
               description="Only administrators and super users can register new patients."
             />
@@ -1466,13 +1767,16 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isAccessDeniedLabTestOpen} onOpenChange={setIsAccessDeniedLabTestOpen}>
+      <Dialog
+        open={isAccessDeniedLabTestOpen}
+        onOpenChange={setIsAccessDeniedLabTestOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Access Restricted</DialogTitle>
           </DialogHeader>
           <div className="p-4">
-            <AccessRestricted 
+            <AccessRestricted
               title="Lab Test Ordering Restricted"
               description="Only administrators and super users can order lab tests."
             />
@@ -1487,11 +1791,14 @@ export default function Dashboard() {
             <DialogTitle>Schedule Patient Service</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = serviceForm.getValues();
-            onServiceSubmit(formData);
-          }} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = serviceForm.getValues();
+              onServiceSubmit(formData);
+            }}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
@@ -1509,7 +1816,9 @@ export default function Dashboard() {
                 <Label htmlFor="doctorId">Assigned Doctor (Optional)</Label>
                 <Select
                   value={serviceForm.watch("doctorId") || ""}
-                  onValueChange={(value) => serviceForm.setValue("doctorId", value)}
+                  onValueChange={(value) =>
+                    serviceForm.setValue("doctorId", value)
+                  }
                   data-testid="select-doctor"
                 >
                   <SelectTrigger>
@@ -1527,17 +1836,20 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduledDateTime">Scheduled Date & Time *</Label>
+                <Label htmlFor="scheduledDateTime">
+                  Scheduled Date & Time *
+                </Label>
                 <Input
                   type="datetime-local"
                   value={
-                    serviceForm.watch("scheduledDate") && serviceForm.watch("scheduledTime")
+                    serviceForm.watch("scheduledDate") &&
+                    serviceForm.watch("scheduledTime")
                       ? `${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`
                       : ""
                   }
                   onChange={(e) => {
                     if (e.target.value) {
-                      const [date, time] = e.target.value.split('T');
+                      const [date, time] = e.target.value.split("T");
                       serviceForm.setValue("scheduledDate", date);
                       serviceForm.setValue("scheduledTime", time);
                     }
@@ -1583,7 +1895,9 @@ export default function Dashboard() {
                     <Input
                       placeholder="Search services by name..."
                       value={selectedServiceSearchQuery}
-                      onChange={(e) => setSelectedServiceSearchQuery(e.target.value)}
+                      onChange={(e) =>
+                        setSelectedServiceSearchQuery(e.target.value)
+                      }
                       className="pl-10"
                       data-testid="search-services"
                     />
@@ -1599,72 +1913,104 @@ export default function Dashboard() {
                       <TableHead>Service Name</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead className="text-right">Price (₹)</TableHead>
-                      <TableHead className="text-right w-24">Quantity</TableHead>
+                      <TableHead className="text-right w-24">
+                        Quantity
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {getFilteredServices(selectedServiceCategory).length === 0 ? (
+                    {getFilteredServices(selectedServiceCategory).length ===
+                    0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No services found. Try adjusting your search or category filter.
+                        <TableCell
+                          colSpan={5}
+                          className="text-center text-muted-foreground py-8"
+                        >
+                          No services found. Try adjusting your search or
+                          category filter.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      getFilteredServices(selectedServiceCategory).map((service: any) => {
-                        const isSelected = selectedServices.some((s) => s.id === service.id);
-                        return (
-                          <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
-                            <TableCell>
-                              <Checkbox
-                                checked={isSelected}
-                                data-testid={`checkbox-service-${service.id}`}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedServices([...selectedServices, { ...service, quantity: 1 }]);
-                                  } else {
-                                    setSelectedServices(selectedServices.filter((s) => s.id !== service.id));
-                                  }
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium">{service.name}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">
-                                {serviceCategories.find((cat) => cat.key === service.category)?.label || service.category}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {service.price === 0 ? (
-                                <Badge variant="secondary">Variable</Badge>
-                              ) : (
-                                `₹${service.price}`
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {isSelected ? (
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  value={selectedServices.find((s) => s.id === service.id)?.quantity || 1}
-                                  onChange={(e) => {
-                                    const quantity = parseInt(e.target.value) || 1;
-                                    setSelectedServices(
-                                      selectedServices.map((s) =>
-                                        s.id === service.id ? { ...s, quantity } : s
-                                      )
-                                    );
+                      getFilteredServices(selectedServiceCategory).map(
+                        (service: any) => {
+                          const isSelected = selectedServices.some(
+                            (s) => s.id === service.id,
+                          );
+                          return (
+                            <TableRow
+                              key={service.id}
+                              className={isSelected ? "bg-blue-50" : ""}
+                            >
+                              <TableCell>
+                                <Checkbox
+                                  checked={isSelected}
+                                  data-testid={`checkbox-service-${service.id}`}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedServices([
+                                        ...selectedServices,
+                                        { ...service, quantity: 1 },
+                                      ]);
+                                    } else {
+                                      setSelectedServices(
+                                        selectedServices.filter(
+                                          (s) => s.id !== service.id,
+                                        ),
+                                      );
+                                    }
                                   }}
-                                  className="w-20 h-8"
-                                  placeholder="qty"
                                 />
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {service.name}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {serviceCategories.find(
+                                    (cat) => cat.key === service.category,
+                                  )?.label || service.category}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {service.price === 0 ? (
+                                  <Badge variant="secondary">Variable</Badge>
+                                ) : (
+                                  `₹${service.price}`
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {isSelected ? (
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={
+                                      selectedServices.find(
+                                        (s) => s.id === service.id,
+                                      )?.quantity || 1
+                                    }
+                                    onChange={(e) => {
+                                      const quantity =
+                                        parseInt(e.target.value) || 1;
+                                      setSelectedServices(
+                                        selectedServices.map((s) =>
+                                          s.id === service.id
+                                            ? { ...s, quantity }
+                                            : s,
+                                        ),
+                                      );
+                                    }}
+                                    className="w-20 h-8"
+                                    placeholder="qty"
+                                  />
+                                ) : (
+                                  <span className="text-gray-400">-</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        },
+                      )
                     )}
                   </TableBody>
                 </Table>
@@ -1672,17 +2018,28 @@ export default function Dashboard() {
 
               {selectedServices.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Selected Services ({selectedServices.length})</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Selected Services ({selectedServices.length})
+                  </h4>
                   <div className="space-y-1">
                     {selectedServices.map((service) => (
-                      <div key={service.id} className="flex justify-between text-sm">
-                        <span>{service.name} (x{service.quantity})</span>
+                      <div
+                        key={service.id}
+                        className="flex justify-between text-sm"
+                      >
+                        <span>
+                          {service.name} (x{service.quantity})
+                        </span>
                         <span>₹{service.price * service.quantity}</span>
                       </div>
                     ))}
                   </div>
                   <div className="border-t border-blue-200 mt-2 pt-2 font-medium text-blue-900">
-                    Total: ₹{selectedServices.reduce((total, s) => total + (s.price * s.quantity), 0)}
+                    Total: ₹
+                    {selectedServices.reduce(
+                      (total, s) => total + s.price * s.quantity,
+                      0,
+                    )}
                   </div>
                 </div>
               )}
@@ -1715,10 +2072,16 @@ export default function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={createServiceMutation.isPending || selectedServices.length === 0 || !selectedPatientForService}
+                disabled={
+                  createServiceMutation.isPending ||
+                  selectedServices.length === 0 ||
+                  !selectedPatientForService
+                }
                 data-testid="button-schedule-service"
               >
-                {createServiceMutation.isPending ? "Scheduling..." : `Schedule ${selectedServices.length} Service(s)`}
+                {createServiceMutation.isPending
+                  ? "Scheduling..."
+                  : `Schedule ${selectedServices.length} Service(s)`}
               </Button>
             </div>
           </form>
@@ -1726,7 +2089,10 @@ export default function Dashboard() {
       </Dialog>
 
       {/* Admit Patient Dialog */}
-      <Dialog open={isAdmissionDialogOpen} onOpenChange={setIsAdmissionDialogOpen}>
+      <Dialog
+        open={isAdmissionDialogOpen}
+        onOpenChange={setIsAdmissionDialogOpen}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Admit Patient</DialogTitle>
@@ -1756,7 +2122,9 @@ export default function Dashboard() {
                 </Button>
                 <Button
                   onClick={() => {
-                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForAdmission);
+                    const selectedPatient = patients?.find(
+                      (p: any) => p.id === selectedPatientForAdmission,
+                    );
                     if (selectedPatient) {
                       setIsAdmissionDialogOpen(false);
                       navigate(`/patients/${selectedPatient.id}`);
