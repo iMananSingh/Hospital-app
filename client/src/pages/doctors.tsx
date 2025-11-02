@@ -944,10 +944,18 @@ export default function Doctors() {
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center space-x-3">
-                              <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center">
-                                <span className="text-white font-medium text-sm">
-                                  {doctor.name.split(' ').map(n => n[0]).join('')}
-                                </span>
+                              <div className="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center overflow-hidden">
+                                {doctor.profilePicture ? (
+                                  <img 
+                                    src={doctor.profilePicture} 
+                                    alt={doctor.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <span className="text-white font-medium text-sm">
+                                    {doctor.name.split(' ').map(n => n[0]).join('')}
+                                  </span>
+                                )}
                               </div>
                               <div>
                                 <h3 className="font-semibold text-lg text-gray-600" data-testid={`deleted-doctor-name-${doctor.id}`}>
@@ -1580,19 +1588,29 @@ export default function Doctors() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {allDoctorEarnings.length > 0 ? allDoctorEarnings.map((doctorData: any) => (
+                          {allDoctorEarnings.length > 0 ? allDoctorEarnings.map((doctorData: any) => {
+                            const doctor = filteredDoctors.find((d: Doctor) => d.id === doctorData.doctorId);
+                            return (
                             <TableRow key={doctorData.doctorId}>
                               <TableCell>
                                 <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-medium">
-                                      {doctorData.doctorName.split(' ').map((n: string) => n[0]).join('')}
-                                    </span>
+                                  <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
+                                    {doctor?.profilePicture ? (
+                                      <img 
+                                        src={doctor.profilePicture} 
+                                        alt={doctorData.doctorName} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    ) : (
+                                      <span className="text-white text-xs font-medium">
+                                        {doctorData.doctorName.split(' ').map((n: string) => n[0]).join('')}
+                                      </span>
+                                    )}
                                   </div>
                                   <div>
                                     <p className="font-medium" data-testid={`salary-doctor-name-${doctorData.doctorId}`}>{doctorData.doctorName}</p>
                                     <p className="text-sm text-muted-foreground">
-                                      {filteredDoctors.find((d: Doctor) => d.id === doctorData.doctorId)?.specialization}
+                                      {doctor?.specialization}
                                     </p>
                                   </div>
                                 </div>
@@ -1637,7 +1655,8 @@ export default function Doctors() {
                                 </TooltipProvider>
                               </TableCell>
                             </TableRow>
-                          )) : (
+                          );
+                          }) : (
                             <TableRow>
                               <TableCell colSpan={6} className="text-center py-8">
                                 <div className="flex flex-col items-center space-y-2">
