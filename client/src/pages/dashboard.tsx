@@ -1306,8 +1306,13 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Service Scheduling Dialog - Full dialog like pathology */}
-      <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+      {/* Service Scheduling Dialog - Opens directly with all service options */}
+      <Dialog open={isServiceDialogOpen} onOpenChange={(open) => {
+        setIsServiceDialogOpen(open);
+        if (!open) {
+          setSelectedPatientForService("");
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Schedule Patient Service</DialogTitle>
@@ -1329,38 +1334,22 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Service Category</Label>
-              <div className="text-sm text-gray-600 mb-2">
-                Services will be available once you navigate to the patient detail page
+            {selectedPatientForService && (
+              <div className="text-center py-4">
+                <Button
+                  onClick={() => {
+                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
+                    if (selectedPatient) {
+                      setIsServiceDialogOpen(false);
+                      navigate(`/patients/${selectedPatient.id}#add-service`);
+                    }
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-600/90"
+                >
+                  Continue to Schedule Service
+                </Button>
               </div>
-            </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsServiceDialogOpen(false);
-                  setSelectedPatientForService("");
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
-                  if (selectedPatient) {
-                    setIsServiceDialogOpen(false);
-                    navigate(`/patients/${selectedPatient.id}#add-service`);
-                  }
-                }}
-                disabled={!selectedPatientForService}
-                className="bg-indigo-600 hover:bg-indigo-600/90"
-              >
-                Continue to Schedule Service
-              </Button>
-            </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
