@@ -249,7 +249,7 @@ export default function LabTests() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div>
           {Object.entries(labTestsByStatus).map(([status, orders]) => (
             <Card key={status}>
               <CardHeader>

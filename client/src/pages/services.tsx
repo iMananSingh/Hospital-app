@@ -46,9 +46,9 @@ export default function ServiceManagement() {
 
   if (!hasAccess) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Service Management" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <AccessRestricted 
             title="Access Restricted"
             description="Only administrators and super users can access service management."
@@ -840,12 +840,12 @@ export default function ServiceManagement() {
   const availableRooms = rooms.filter(room => !room.isOccupied && room.isActive).length;
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar
         title="Service Management"
       />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         {/* Service Category Navigation */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -1372,7 +1372,7 @@ export default function ServiceManagement() {
                   </div>
 
                   {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
-                    <div className="space-y-6">
+                    <div>
                       {/* Category Filter */}
                       <div className="flex gap-4 items-center">
                         <label className="text-sm font-medium">Filter by Category:</label>

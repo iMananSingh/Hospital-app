@@ -86,9 +86,9 @@ export default function DischargedTodayPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Patients Discharged Today" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -98,10 +98,10 @@ export default function DischargedTodayPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar title="Patients Discharged Today" />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         {/* Search and Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">

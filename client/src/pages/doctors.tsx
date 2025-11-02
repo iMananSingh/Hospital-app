@@ -46,9 +46,9 @@ export default function Doctors() {
 
   if (!hasAccess) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Doctor Management" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <AccessRestricted 
             title="Access Restricted"
             description="Only administrators, billing staff, and super users can access doctor management."
@@ -757,7 +757,7 @@ export default function Doctors() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar 
         title="Doctor Management"
         searchPlaceholder={hasAccess ? "Search doctors by name or specialization..." : undefined}
@@ -766,7 +766,7 @@ export default function Doctors() {
         newActionLabel={(isAdmin || isSuperUser) ? "Add Doctor" : undefined}
       />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         <Tabs defaultValue={isBillingStaff && !isAdmin && !isSuperUser ? "salary" : "all-doctors"} className="space-y-6">
           <TabsList>
             {(isAdmin || isSuperUser) && (

@@ -69,9 +69,9 @@ export default function AuditLogs() {
 
   if (!hasAccess) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Audit Logs" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <AccessRestricted
             title="Access Restricted"
             description="Only administrators and super users can view audit logs."
@@ -111,7 +111,7 @@ export default function AuditLogs() {
   const actions = ["all", "create", "update", "delete", "view"];
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar title="Audit Logs" />
 
       <div className="p-6 space-y-6">

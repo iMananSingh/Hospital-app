@@ -61,9 +61,9 @@ export default function CurrentlyAdmittedPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Currently Admitted Patients" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -73,10 +73,10 @@ export default function CurrentlyAdmittedPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar title="Currently Admitted Patients" />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         {/* Removed Summary Stats */}
 
         {/* Search and Filters */}

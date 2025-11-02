@@ -77,9 +77,9 @@ export default function BedOccupancyPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Bed Occupancy" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -90,10 +90,10 @@ export default function BedOccupancyPage() {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div>
         <TopBar title="Bed Occupancy" />
         
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           {/* Legend */}
           <div className="flex items-center gap-6 mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export default function BedOccupancyPage() {
           </div>
 
           {/* Room Types and Rooms */}
-          <div className="space-y-6">
+          <div>
             {bedOccupancy.map((roomType) => (
               <Card key={roomType.id}>
                 <CardHeader>

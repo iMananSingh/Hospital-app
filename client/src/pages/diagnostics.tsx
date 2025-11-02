@@ -313,7 +313,7 @@ export default function Diagnostics() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div>
           {Object.entries(diagnosticsByService).map(([serviceName, services]) => (
             <Card key={serviceName}>
               <CardHeader>

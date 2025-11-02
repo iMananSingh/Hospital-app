@@ -228,7 +228,7 @@ export default function OpdList() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div>
           {Object.entries(opdServicesByDoctor).map(([doctorId, services]) => (
             <Card key={doctorId}>
               <CardHeader>

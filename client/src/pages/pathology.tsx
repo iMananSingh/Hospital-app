@@ -504,7 +504,7 @@ export default function Pathology() {
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar
         title="Pathology Tests"
         searchPlaceholder="Search tests by name or ID..."
@@ -513,7 +513,7 @@ export default function Pathology() {
         newActionLabel={isBillingStaff ? undefined : "Order Test"}
       />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

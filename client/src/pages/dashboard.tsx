@@ -508,13 +508,13 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar 
           title="Dashboard & Reports"
           showNotifications={true}
           notificationCount={3}
         />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             {[...Array(4)].map((_, i) => (
               <Card key={i}>
@@ -530,14 +530,14 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar 
         title="Dashboard & Reports"
         showNotifications={true}
         notificationCount={3}
       />
 
-      <div className="p-6 space-y-6">
+      <div className="px-6 pb-6 pt-4 space-y-6">
         <StatsCards stats={stats || { opdPatients: 0, inpatients: 0, labTests: 0, diagnostics: 0 }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

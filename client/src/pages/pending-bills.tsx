@@ -71,9 +71,9 @@ export default function PendingBills() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Pending Bills" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="ml-3 text-muted-foreground">Loading pending bills...</p>
@@ -84,14 +84,14 @@ export default function PendingBills() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar 
         title="Pending Bills"
         searchPlaceholder="Search by patient name, ID, or phone..."
         onSearch={setSearchQuery}
       />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         {/* Summary Card */}
         <Card className="mb-6">
           <CardHeader>

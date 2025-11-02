@@ -1979,7 +1979,7 @@ export default function PatientDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar
         title={`Patient: ${patient.name}`}
         actions={
@@ -2005,7 +2005,7 @@ export default function PatientDetail() {
         }
       />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         {/* Patient Info Header */}
         <Card className="mb-6">
           <CardHeader>
@@ -2786,7 +2786,7 @@ export default function PatientDetail() {
               </CardHeader>
               <CardContent>
                 {admissions && admissions.length > 0 ? (
-                  <div className="space-y-6">
+                  <div>
                     {admissions.map((admission: any) => {
                       const events = admissionEventsMap[admission.id] || [];
                       const doctor = doctors.find(

@@ -969,9 +969,9 @@ export default function Settings() {
   // Only show settings if user has admin or super_user role
   if (!hasAccess) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="System Settings" />
-        <div className="p-6">
+        <div className="px-6 pb-6 pt-4">
           <AccessRestricted
             title="Access Restricted"
             description="Only administrators and super users can access system settings."
@@ -982,10 +982,10 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar title="System Settings" />
 
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
             <TabsTrigger value="users" data-testid="tab-users">
@@ -1689,7 +1689,7 @@ export default function Settings() {
           </TabsContent>
 
           <TabsContent value="audit">
-            <div className="space-y-6">
+            <div>
               {/* Filters */}
               <Card>
                 <CardHeader>

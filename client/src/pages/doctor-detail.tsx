@@ -168,7 +168,7 @@ export default function DoctorDetail() {
 
   if (isDoctorLoading) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Loading..." />
         <div className="p-6 flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue"></div>
@@ -179,7 +179,7 @@ export default function DoctorDetail() {
 
   if (!doctor) {
     return (
-      <div className="space-y-6">
+      <div>
         <TopBar title="Doctor Not Found" />
         <div className="p-6 text-center">
           <p className="text-muted-foreground">Doctor not found</p>
@@ -203,7 +203,7 @@ export default function DoctorDetail() {
   console.log("Total pending amount:", totalPendingEarnings);
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar title={`Dr. ${doctor.name}`} />
 
       <div className="p-6 space-y-6">
