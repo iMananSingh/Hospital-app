@@ -20,7 +20,7 @@ export default function RevenuePage() {
           showNotifications={true}
           notificationCount={3}
         />
-        <div className="flex-1 p-6">
+        <div className="flex-1 px-6 pb-6 pt-4">
           <AccessRestricted
             title="Access Restricted"
             description="Only administrators, billing staff, and super users can access revenue & payments."

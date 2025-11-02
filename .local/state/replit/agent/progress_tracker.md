@@ -9,12 +9,13 @@
 - **Changes Made**:
   - Removed `space-y-6` class from outer div on all pages (eliminated top margin between TopBar and content)
   - Changed `p-6` (24px all sides) to `px-6 pb-6 pt-4` (16px top, 24px sides and bottom) across all pages
-- **Pages Updated** (18 total):
+- **Pages Updated** (19 total):
   - patients.tsx, dashboard.tsx, doctors.tsx, pathology.tsx, pending-bills.tsx, admissions.tsx
   - admitted-today.tsx, audit-logs.tsx, bed-occupancy.tsx, currently-admitted.tsx, diagnostics.tsx, discharged-today.tsx
   - doctor-detail.tsx, lab-tests.tsx, opd-list.tsx, patient-detail.tsx, services.tsx, settings.tsx
-- **Result**: Consistent reduced vertical spacing throughout the entire application
-- **Status**: Application restarted successfully, all pages updated ✓
+  - revenue.tsx (updated separately after user feedback)
+- **Result**: Consistent reduced vertical spacing throughout the entire application, including Revenue page
+- **Status**: Application restarted successfully, all 19 pages updated ✓
 
 ### TopBar Scrolling Overlap Fix (November 02, 2025 at 9:25 AM)
 [x] Fixed content overlapping with sticky navbar when scrolling
