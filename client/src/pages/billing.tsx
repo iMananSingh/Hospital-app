@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, CalendarDays } from "lucide-react";
+import { Calendar, CalendarDays, Eye } from "lucide-react";
 import { format } from "date-fns";
 import {
   Table,
@@ -148,6 +148,14 @@ export default function Billing() {
       return response.json();
     },
     enabled: mainActiveTab === "payments" && !!fromDate && !!toDate,
+  });
+
+  // Fetch patients with pending bills
+  const { data: patientsWithPending = [], isLoading: isPendingLoading } = useQuery<any[]>({
+    queryKey: ["/api/patients/pending-bills/bulk"],
+    enabled: mainActiveTab === "pending",
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Filtered Data for display
@@ -311,7 +319,7 @@ export default function Billing() {
       <div className="flex-1 px-6 pb-6 pt-4 overflow-hidden">
         {/* Main Navigation */}
         <div className="mb-6">
-          <div className="grid w-full max-w-md grid-cols-2 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <div className="grid w-full max-w-2xl grid-cols-3 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
             <button
               onClick={() => setMainActiveTab("revenue")}
               className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${mainActiveTab === "revenue" ? "bg-background text-foreground shadow-sm" : ""}`}
@@ -325,6 +333,13 @@ export default function Billing() {
               data-testid="tab-payments"
             >
               Payments
+            </button>
+            <button
+              onClick={() => setMainActiveTab("pending")}
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${mainActiveTab === "pending" ? "bg-background text-foreground shadow-sm" : ""}`}
+              data-testid="tab-pending"
+            >
+              Pending Bills
             </button>
           </div>
         </div>
@@ -752,6 +767,80 @@ export default function Billing() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {mainActiveTab === "pending" && (
+          <div className="h-full">
+            <Card className="flex-1 flex flex-col h-full">
+              <CardHeader className="flex-shrink-0">
+                <CardTitle>Patients with Pending Bills</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {patientsWithPending.length} patient{patientsWithPending.length !== 1 ? 's' : ''} with outstanding payments
+                </p>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col overflow-hidden">
+                {isPendingLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p className="ml-3 text-muted-foreground">Loading pending bills...</p>
+                  </div>
+                ) : (
+                  <div className="border rounded-lg flex-1 flex flex-col min-h-0">
+                    <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                      <table className="w-full">
+                        <thead className="border-b bg-background sticky top-0 z-10">
+                          <tr>
+                            <th className="text-left font-medium bg-background w-10 pl-3 pr-0">S.No</th>
+                            <th className="text-left p-3 font-medium bg-background">Patient ID</th>
+                            <th className="text-left p-3 font-medium bg-background">Name</th>
+                            <th className="text-left p-3 font-medium bg-background">Age/Gender</th>
+                            <th className="text-left p-3 font-medium bg-background">Phone</th>
+                            <th className="text-right p-3 font-medium bg-background">Pending Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {patientsWithPending.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                No pending bills at this time
+                              </td>
+                            </tr>
+                          ) : (
+                            patientsWithPending.map((patient: any, index: number) => (
+                              <tr key={patient.id} className="border-b hover:bg-muted/50" data-testid={`row-pending-${index}`}>
+                                <td className="py-3 pl-3 pr-0">{index + 1}</td>
+                                <td className="p-3 font-medium" data-testid={`pending-patient-id-${index}`}>
+                                  {patient.patientId}
+                                </td>
+                                <td className="p-3">{patient.name}</td>
+                                <td className="p-3">
+                                  {patient.age}y, {patient.gender}
+                                </td>
+                                <td className="p-3">{patient.phone}</td>
+                                <td className="p-3 text-right" data-testid={`pending-amount-${index}`}>
+                                  <span className="font-semibold text-red-600">
+                                    {formatCurrency(patient.pendingAmount)}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="border-t p-2 bg-muted/30 flex-shrink-0">
+                      <div className="flex justify-between font-semibold">
+                        <span>Count: {patientsWithPending.length} | Total Pending:</span>
+                        <span className="text-red-600" data-testid="text-pending-total">
+                          {formatCurrency(patientsWithPending.reduce((sum: number, patient: any) => sum + patient.pendingAmount, 0))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
