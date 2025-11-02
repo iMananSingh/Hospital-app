@@ -19,7 +19,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
 import AccessRestricted from "@/components/access-restricted";
-import { insertPatientSchema, insertPathologyOrderSchema } from "@shared/schema";
+import { insertPatientSchema, insertPathologyOrderSchema, insertPatientServiceSchema } from "@shared/schema";
+import { z } from "zod";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Heart, Calendar, X } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -57,6 +60,12 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
   const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
+  const [selectedServiceType, setSelectedServiceType] = useState("");
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState("");
+  const [selectedServiceSearchQuery, setSelectedServiceSearchQuery] = useState("");
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [selectedCatalogService, setSelectedCatalogService] = useState<any>(null);
+  const [billingPreview, setBillingPreview] = useState<any>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -115,6 +124,10 @@ export default function Dashboard() {
     queryKey: ["/api/doctors"],
   });
 
+  const { data: allServices } = useQuery({
+    queryKey: ["/api/services"],
+  });
+
   const createPatientMutation = useMutation({
     mutationFn: async (patientData: any) => {
       const response = await fetch("/api/patients", {
@@ -123,7 +136,7 @@ export default function Dashboard() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
         },
-        body: JSON.JSON.stringify(patientData),
+        body: JSON.stringify(patientData),
       });
 
       if (!response.ok) {
@@ -226,6 +239,34 @@ export default function Dashboard() {
       doctorId: "",
       orderedDate: "", // Will be set by useEffect
       remarks: "",
+    },
+  });
+
+  const serviceForm = useForm({
+    resolver: zodResolver(
+      insertPatientServiceSchema.extend({
+        doctorId: z.string().optional(),
+        price: z.coerce.number().min(0, "Price must be positive"),
+        selectedServicesCount: z.number().default(0),
+        serviceId: z.string().optional(),
+        serviceType: z.string().optional(),
+        serviceName: z.string().optional(),
+      }),
+    ),
+    defaultValues: {
+      patientId: "",
+      serviceType: "",
+      serviceName: "",
+      doctorId: "",
+      price: 0,
+      quantity: 1,
+      hours: 1,
+      distance: 0,
+      notes: "",
+      scheduledDate: new Date().toISOString().split("T")[0],
+      scheduledTime: new Date().toTimeString().slice(0, 5),
+      serviceId: "",
+      selectedServicesCount: 0,
     },
   });
 
@@ -537,6 +578,158 @@ export default function Dashboard() {
     const matchesSearch = test.test_name?.toLowerCase().includes(catalogSearchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  // Service categories mapping
+  const serviceCategories = [
+    { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
+    { key: "procedures", label: "Medical Procedures", icon: Stethoscope },
+    { key: "operations", label: "Surgical Operations", icon: X },
+    { key: "consultation", label: "Consultation", icon: Calendar },
+    { key: "misc", label: "Miscellaneous Services", icon: Settings },
+  ];
+
+  // Filter services by category and search query
+  const getFilteredServices = (category: string) => {
+    if (!allServices) return [];
+
+    let filtered = allServices.filter((s: any) => s.isActive);
+    filtered = filtered.filter((s: any) => s.category !== "pathology");
+    filtered = filtered.filter((s: any) => s.category !== "admissions");
+
+    if (category && category !== "all") {
+      filtered = filtered.filter((s: any) => s.category === category);
+    }
+
+    if (selectedServiceSearchQuery.trim()) {
+      filtered = filtered.filter((s: any) =>
+        s.name?.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()) ||
+        (s.description && s.description?.toLowerCase().includes(selectedServiceSearchQuery.toLowerCase()))
+      );
+    }
+
+    return filtered;
+  };
+
+  // Map service categories to valid database service types
+  const mapCategoryToServiceType = (category: string) => {
+    switch (category) {
+      case "diagnostics":
+        return "diagnostic";
+      case "procedures":
+        return "procedure";
+      case "operations":
+        return "operation";
+      case "consultation":
+        return "opd";
+      case "misc":
+        return "service";
+      default:
+        return "service";
+    }
+  };
+
+  // Service creation mutation
+  const createServiceMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/patient-services/batch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to create service");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/patient-services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      setIsServiceDialogOpen(false);
+      setSelectedServiceType("");
+      setSelectedServiceCategory("");
+      setSelectedServices([]);
+      setSelectedCatalogService(null);
+      setBillingPreview(null);
+      setSelectedPatientForService("");
+      serviceForm.reset();
+      toast({
+        title: "Service scheduled successfully",
+        description: "The service has been added to the patient's schedule.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error scheduling service",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Service submission handler
+  const onServiceSubmit = async (data: any) => {
+    try {
+      if (!selectedPatientForService) {
+        toast({
+          title: "Error",
+          description: "Please select a patient",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data.scheduledDate || !data.scheduledTime) {
+        toast({
+          title: "Error",
+          description: "Please select date and time",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const servicesToCreate = [];
+      
+      if (selectedServices.length > 0) {
+        selectedServices.forEach((service: any) => {
+          servicesToCreate.push({
+            patientId: selectedPatientForService,
+            serviceType: mapCategoryToServiceType(service.category),
+            serviceName: service.name,
+            serviceId: service.id,
+            price: service.price * (service.quantity || 1),
+            quantity: service.quantity || 1,
+            notes: data.notes || "",
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            status: "scheduled",
+            doctorId: data.doctorId && data.doctorId !== "none" ? data.doctorId : null,
+            billingType: service.billingType || "per_instance",
+            calculatedAmount: service.price * (service.quantity || 1),
+            billingQuantity: service.quantity || 1,
+          });
+        });
+      }
+
+      if (servicesToCreate.length === 0) {
+        toast({
+          title: "Error",
+          description: "Please select at least one service",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      createServiceMutation.mutate(servicesToCreate);
+    } catch (error) {
+      console.error("Error in onServiceSubmit:", error);
+      toast({
+        title: "Form Submission Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -1287,50 +1480,248 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Service Dialog */}
+      {/* Schedule Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Service for Patient</DialogTitle>
+            <DialogTitle>Schedule Patient Service</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = serviceForm.getValues();
+            onServiceSubmit(formData);
+          }} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="patientId">Patient *</Label>
+                <PatientSearchCombobox
+                  value={selectedPatientForService}
+                  onValueChange={(value) => {
+                    setSelectedPatientForService(value);
+                    serviceForm.setValue("patientId", value);
+                  }}
+                  patients={patients || []}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="doctorId">Assigned Doctor (Optional)</Label>
+                <Select
+                  value={serviceForm.watch("doctorId") || ""}
+                  onValueChange={(value) => serviceForm.setValue("doctorId", value)}
+                  data-testid="select-doctor"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select doctor (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No doctor assigned</SelectItem>
+                    {(doctors || []).map((doctor: any) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name} - {doctor.specialization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="scheduledDateTime">Scheduled Date & Time *</Label>
+                <Input
+                  type="datetime-local"
+                  value={
+                    serviceForm.watch("scheduledDate") && serviceForm.watch("scheduledTime")
+                      ? `${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`
+                      : ""
+                  }
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [date, time] = e.target.value.split('T');
+                      serviceForm.setValue("scheduledDate", date);
+                      serviceForm.setValue("scheduledTime", time);
+                    }
+                  }}
+                  data-testid="input-scheduled-datetime"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Select Services from Catalog</Label>
+                <div className="flex items-center space-x-2">
+                  <Select
+                    value={selectedServiceCategory || "all"}
+                    onValueChange={(value) => {
+                      setSelectedServiceCategory(value === "all" ? "" : value);
+                      setSelectedServices([]);
+                    }}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {serviceCategories.map((category) => (
+                        <SelectItem key={category.key} value={category.key}>
+                          <div className="flex items-center gap-2">
+                            <category.icon className="h-4 w-4" />
+                            {category.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search services by name..."
+                      value={selectedServiceSearchQuery}
+                      onChange={(e) => setSelectedServiceSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="search-services"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">Select</TableHead>
+                      <TableHead>Service Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Price (₹)</TableHead>
+                      <TableHead className="text-right w-24">Quantity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getFilteredServices(selectedServiceCategory).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          No services found. Try adjusting your search or category filter.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      getFilteredServices(selectedServiceCategory).map((service: any) => {
+                        const isSelected = selectedServices.some((s) => s.id === service.id);
+                        return (
+                          <TableRow key={service.id} className={isSelected ? "bg-blue-50" : ""}>
+                            <TableCell>
+                              <Checkbox
+                                checked={isSelected}
+                                data-testid={`checkbox-service-${service.id}`}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedServices([...selectedServices, { ...service, quantity: 1 }]);
+                                  } else {
+                                    setSelectedServices(selectedServices.filter((s) => s.id !== service.id));
+                                  }
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{service.name}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {serviceCategories.find((cat) => cat.key === service.category)?.label || service.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {service.price === 0 ? (
+                                <Badge variant="secondary">Variable</Badge>
+                              ) : (
+                                `₹${service.price}`
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {isSelected ? (
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={selectedServices.find((s) => s.id === service.id)?.quantity || 1}
+                                  onChange={(e) => {
+                                    const quantity = parseInt(e.target.value) || 1;
+                                    setSelectedServices(
+                                      selectedServices.map((s) =>
+                                        s.id === service.id ? { ...s, quantity } : s
+                                      )
+                                    );
+                                  }}
+                                  className="w-20 h-8"
+                                  placeholder="qty"
+                                />
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedServices.length > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Selected Services ({selectedServices.length})</h4>
+                  <div className="space-y-1">
+                    {selectedServices.map((service) => (
+                      <div key={service.id} className="flex justify-between text-sm">
+                        <span>{service.name} (x{service.quantity})</span>
+                        <span>₹{service.price * service.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-blue-200 mt-2 pt-2 font-medium text-blue-900">
+                    Total: ₹{selectedServices.reduce((total, s) => total + (s.price * s.quantity), 0)}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="servicePatientId">Select Patient *</Label>
-              <PatientSearchCombobox
-                value={selectedPatientForService}
-                onValueChange={setSelectedPatientForService}
-                patients={patients || []}
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                {...serviceForm.register("notes")}
+                placeholder="Enter any additional notes or instructions"
+                data-testid="input-notes"
               />
             </div>
 
-            {selectedPatientForService && (
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsServiceDialogOpen(false);
-                    setSelectedPatientForService("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
-                    if (selectedPatient) {
-                      setIsServiceDialogOpen(false);
-                      navigate(`/patients/${selectedPatient.id}#add-service`);
-                    }
-                  }}
-                  className="bg-medical-blue hover:bg-medical-blue/90"
-                >
-                  Continue to Add Service
-                </Button>
-              </div>
-            )}
-          </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsServiceDialogOpen(false);
+                  setSelectedPatientForService("");
+                  setSelectedServices([]);
+                  setSelectedServiceCategory("");
+                  setSelectedServiceSearchQuery("");
+                  serviceForm.reset();
+                }}
+                data-testid="button-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={createServiceMutation.isPending || selectedServices.length === 0 || !selectedPatientForService}
+                data-testid="button-schedule-service"
+              >
+                {createServiceMutation.isPending ? "Scheduling..." : `Schedule ${selectedServices.length} Service(s)`}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
