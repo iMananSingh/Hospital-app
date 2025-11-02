@@ -57,7 +57,6 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
   const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
-
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -114,19 +113,6 @@ export default function Dashboard() {
 
   const { data: doctors } = useQuery({
     queryKey: ["/api/doctors"],
-  });
-
-  const { data: roomTypes = [] } = useQuery<any[]>({
-    queryKey: ["/api/room-types"],
-  });
-
-  const { data: rooms = [] } = useQuery<any[]>({
-    queryKey: ["/api/rooms"],
-  });
-
-  // Fetch all services for service selection
-  const { data: allServices } = useQuery({
-    queryKey: ["/api/services"],
   });
 
   const createPatientMutation = useMutation({
@@ -219,8 +205,6 @@ export default function Dashboard() {
     },
   });
 
-
-
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
@@ -245,8 +229,6 @@ export default function Dashboard() {
     },
   });
 
-
-
   // Fetch system settings for timezone
   const { data: systemSettings } = useQuery({
     queryKey: ["/api/settings/system"],
@@ -257,7 +239,7 @@ export default function Dashboard() {
     if (systemSettings?.timezone && isPathologyOrderOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-
+      
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -267,21 +249,19 @@ export default function Dashboard() {
         minute: '2-digit',
         hour12: false
       });
-
+      
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-
+      
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-
+      
       pathologyForm.setValue('orderedDate', currentDateTime);
     }
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
-
-
 
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
@@ -683,7 +663,7 @@ export default function Dashboard() {
                       const now = new Date();
                       // Parse the UTC timestamp from backend - ensure it's treated as UTC
                       const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-
+                      
                       // Calculate difference in milliseconds using current local time
                       const diffInMs = now.getTime() - date.getTime();
                       const diffInMins = Math.floor(diffInMs / (1000 * 60));
@@ -924,6 +904,7 @@ export default function Dashboard() {
                         variant: "destructive",
                       });
                     } else {
+                      setSelectedPatientForService("");
                       setIsServiceDialogOpen(true);
                     }
                   }}
@@ -1306,16 +1287,11 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Service Scheduling Dialog - Opens directly with all service options */}
-      <Dialog open={isServiceDialogOpen} onOpenChange={(open) => {
-        setIsServiceDialogOpen(open);
-        if (!open) {
-          setSelectedPatientForService("");
-        }
-      }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* Add Service Dialog */}
+      <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Schedule Patient Service</DialogTitle>
+            <DialogTitle>Add Service for Patient</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -1329,13 +1305,17 @@ export default function Dashboard() {
             </div>
 
             {selectedPatientForService && (
-              <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded">
-                Selected: {patients?.find((p: any) => p.id === selectedPatientForService)?.name}
-              </div>
-            )}
-
-            {selectedPatientForService && (
-              <div className="text-center py-4">
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsServiceDialogOpen(false);
+                    setSelectedPatientForService("");
+                  }}
+                >
+                  Cancel
+                </Button>
                 <Button
                   onClick={() => {
                     const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
@@ -1344,9 +1324,9 @@ export default function Dashboard() {
                       navigate(`/patients/${selectedPatient.id}#add-service`);
                     }
                   }}
-                  className="bg-indigo-600 hover:bg-indigo-600/90"
+                  className="bg-medical-blue hover:bg-medical-blue/90"
                 >
-                  Continue to Schedule Service
+                  Continue to Add Service
                 </Button>
               </div>
             )}
