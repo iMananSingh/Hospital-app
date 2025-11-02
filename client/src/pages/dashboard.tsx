@@ -115,6 +115,19 @@ export default function Dashboard() {
     queryKey: ["/api/doctors"],
   });
 
+  const { data: roomTypes = [] } = useQuery<any[]>({
+    queryKey: ["/api/room-types"],
+  });
+
+  const { data: rooms = [] } = useQuery<any[]>({
+    queryKey: ["/api/rooms"],
+  });
+
+  // Fetch all services for service selection
+  const { data: allServices } = useQuery({
+    queryKey: ["/api/services"],
+  });
+
   const createPatientMutation = useMutation({
     mutationFn: async (patientData: any) => {
       const response = await fetch("/api/patients", {
@@ -239,7 +252,7 @@ export default function Dashboard() {
     if (systemSettings?.timezone && isPathologyOrderOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
+
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         year: 'numeric',
@@ -249,16 +262,16 @@ export default function Dashboard() {
         minute: '2-digit',
         hour12: false
       });
-      
+
       const parts = formatter.formatToParts(now);
       const year = parts.find(p => p.type === 'year')?.value;
       const month = parts.find(p => p.type === 'month')?.value;
       const day = parts.find(p => p.type === 'day')?.value;
       const hour = parts.find(p => p.type === 'hour')?.value;
       const minute = parts.find(p => p.type === 'minute')?.value;
-      
+
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
+
       pathologyForm.setValue('orderedDate', currentDateTime);
     }
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
@@ -663,7 +676,7 @@ export default function Dashboard() {
                       const now = new Date();
                       // Parse the UTC timestamp from backend - ensure it's treated as UTC
                       const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-                      
+
                       // Calculate difference in milliseconds using current local time
                       const diffInMs = now.getTime() - date.getTime();
                       const diffInMins = Math.floor(diffInMs / (1000 * 60));
