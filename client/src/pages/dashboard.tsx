@@ -220,16 +220,44 @@ export default function Dashboard() {
     defaultValues: {
       patientId: "",
       doctorId: "",
-      orderedDate: (() => {
-        // Use local timezone for pathology order date
-        const now = new Date();
-        return now.getFullYear() + '-' + 
-          String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-          String(now.getDate()).padStart(2, '0');
-      })(),
+      orderedDate: "", // Will be set by useEffect
       remarks: "",
     },
   });
+
+  // Fetch system settings for timezone
+  const { data: systemSettings } = useQuery({
+    queryKey: ["/api/settings/system"],
+  });
+
+  // Update pathology form date/time when system settings load or timezone changes
+  React.useEffect(() => {
+    if (systemSettings?.timezone && isPathologyOrderOpen) {
+      const timezone = systemSettings.timezone;
+      const now = new Date();
+      
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      
+      const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
+      
+      pathologyForm.setValue('orderedDate', currentDateTime);
+    }
+  }, [systemSettings?.timezone, isPathologyOrderOpen]);
 
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
@@ -1005,7 +1033,7 @@ export default function Dashboard() {
           </DialogHeader>
 
           <form onSubmit={pathologyForm.handleSubmit(onPathologySubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="patientId">Patient *</Label>
                 <PatientSearchCombobox
@@ -1022,6 +1050,7 @@ export default function Dashboard() {
                 <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
                 <Select 
                   onValueChange={(value) => pathologyForm.setValue("doctorId", value)}
+                  data-testid="select-doctor"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select doctor (optional)" />
@@ -1035,6 +1064,15 @@ export default function Dashboard() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="orderedDate">Order Date & Time *</Label>
+                <Input
+                  type="datetime-local"
+                  {...pathologyForm.register("orderedDate")}
+                  data-testid="input-ordered-datetime"
+                />
               </div>
             </div>
 
@@ -1065,6 +1103,7 @@ export default function Dashboard() {
                       value={catalogSearchQuery}
                       onChange={(e) => setCatalogSearchQuery(e.target.value)}
                       className="pl-10"
+                      data-testid="search-catalog-tests"
                     />
                   </div>
                 </div>
@@ -1129,6 +1168,7 @@ export default function Dashboard() {
               <Textarea
                 {...pathologyForm.register("remarks")}
                 placeholder="Enter any additional remarks or instructions"
+                data-testid="input-remarks"
               />
             </div>
 
@@ -1137,12 +1177,14 @@ export default function Dashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsPathologyOrderOpen(false)}
+                data-testid="button-cancel"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={createOrderMutation.isPending || selectedCatalogTests.length === 0}
+                data-testid="button-order-tests"
               >
                 {createOrderMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
               </Button>
