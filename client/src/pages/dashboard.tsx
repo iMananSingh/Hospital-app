@@ -57,9 +57,7 @@ export default function Dashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedPatientForService, setSelectedPatientForService] = useState<string>("");
   const [selectedPatientForAdmission, setSelectedPatientForAdmission] = useState<string>("");
-  const [selectedServices, setSelectedServices] = useState<any[]>([]);
-  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
-  const [selectedServiceCategory, setSelectedServiceCategory] = useState<string>("all")
+  
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -221,51 +219,7 @@ export default function Dashboard() {
     },
   });
 
-  const createServiceMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const servicesWithReceipt = selectedServices.map(service => ({
-        patientId: data.patientId,
-        serviceId: service.id,
-        serviceName: service.name,
-        scheduledDate: data.scheduledDate,
-        scheduledTime: data.scheduledTime,
-        notes: data.notes,
-        price: service.price,
-        quantity: 1,
-        doctorId: data.doctorId || null,
-      }));
-
-      const response = await fetch("/api/patient-services/batch", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
-        },
-        body: JSON.stringify(servicesWithReceipt),
-      });
-      if (!response.ok) throw new Error("Failed to create service");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
-      setIsServiceDialogOpen(false);
-      setSelectedServices([]);
-      setServiceSearchQuery("");
-      setSelectedServiceCategory("all");
-      serviceForm.reset();
-      toast({
-        title: "Service scheduled successfully",
-        description: "The service has been added to the patient's schedule.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error scheduling service",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  
 
   const form = useForm({
     resolver: zodResolver(insertPatientSchema),
@@ -291,15 +245,7 @@ export default function Dashboard() {
     },
   });
 
-  const serviceForm = useForm({
-    defaultValues: {
-      patientId: "",
-      doctorId: "",
-      scheduledDate: "",
-      scheduledTime: "",
-      notes: "",
-    },
-  });
+  
 
   // Fetch system settings for timezone
   const { data: systemSettings } = useQuery({
@@ -335,36 +281,7 @@ export default function Dashboard() {
     }
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
 
-  // Update service form date/time when dialog opens
-  React.useEffect(() => {
-    if (systemSettings?.timezone && isServiceDialogOpen) {
-      const timezone = systemSettings.timezone;
-      const now = new Date();
-
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-
-      const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
-
-      const currentDate = `${year}-${month}-${day}`;
-      const currentTime = `${hour}:${minute}`;
-
-      serviceForm.setValue('scheduledDate', currentDate);
-      serviceForm.setValue('scheduledTime', currentTime);
-    }
-  }, [systemSettings?.timezone, isServiceDialogOpen]);
+  
 
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
@@ -1007,9 +924,7 @@ export default function Dashboard() {
                         variant: "destructive",
                       });
                     } else {
-                      setSelectedServices([]);
-                      setServiceSearchQuery("");
-                      setSelectedServiceCategory("all");
+                      setSelectedPatientForService("");
                       setIsServiceDialogOpen(true);
                     }
                   }}
@@ -1392,195 +1307,50 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Schedule Patient Service Dialog */}
+      {/* Service Dialog - Navigate to patient detail with hash */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Schedule Patient Service</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={serviceForm.handleSubmit((data) => {
-            if (selectedServices.length === 0) {
-              toast({
-                title: "No services selected",
-                description: "Please select at least one service from the catalog.",
-                variant: "destructive",
-              });
-              return;
-            }
-            createServiceMutation.mutate(data);
-          })} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="patientId">Patient *</Label>
-                <PatientSearchCombobox
-                  value={serviceForm.watch("patientId")}
-                  onValueChange={(value) => serviceForm.setValue("patientId", value)}
-                  patients={patients || []}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="doctorId">Doctor (Optional)</Label>
-                <Select 
-                  onValueChange={(value) => serviceForm.setValue("doctorId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select doctor (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(doctors || []).map((doctor: any) => (
-                      <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name} - {doctor.specialization}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduledDate">Scheduled Date *</Label>
-                <Input
-                  type="date"
-                  {...serviceForm.register("scheduledDate")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduledTime">Scheduled Time *</Label>
-                <Input
-                  type="time"
-                  {...serviceForm.register("scheduledTime")}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Select Services from Catalog</Label>
-                <Select value={selectedServiceCategory} onValueChange={setSelectedServiceCategory}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {Array.from(new Set((allServices || []).map((s: any) => s.category))).map((category: string) => (
-                      <SelectItem key={category} value={category}>{category}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search services by name..."
-                      value={serviceSearchQuery}
-                      onChange={(e) => setServiceSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border rounded-lg max-h-64 overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">Select</TableHead>
-                      <TableHead>Service Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price (₹)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(allServices || [])
-                      .filter((service: any) => {
-                        const matchesCategory = selectedServiceCategory === "all" || service.category === selectedServiceCategory;
-                        const matchesSearch = service.name?.toLowerCase().includes(serviceSearchQuery.toLowerCase());
-                        return matchesCategory && matchesSearch;
-                      })
-                      .map((service: any) => {
-                        const isSelected = selectedServices.some(s => s.id === service.id);
-                        return (
-                          <TableRow 
-                            key={service.id}
-                            className={isSelected ? "bg-blue-50" : ""}
-                          >
-                            <TableCell>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => {
-                                  if (isSelected) {
-                                    setSelectedServices(prev => prev.filter(s => s.id !== service.id));
-                                  } else {
-                                    setSelectedServices(prev => [...prev, service]);
-                                  }
-                                }}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                              />
-                            </TableCell>
-                            <TableCell className="font-medium">{service.name}</TableCell>
-                            <TableCell>{service.category}</TableCell>
-                            <TableCell>₹{service.price}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {selectedServices.length > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Selected Services ({selectedServices.length})</h4>
-                  <div className="space-y-1">
-                    {selectedServices.map((service, index) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{service.name}</span>
-                        <span>₹{service.price}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t border-blue-200 mt-2 pt-2 font-medium text-blue-900">
-                    Total: ₹{selectedServices.reduce((sum, s) => sum + s.price, 0)}
-                  </div>
-                </div>
-              )}
-            </div>
-
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                {...serviceForm.register("notes")}
-                placeholder="Enter any additional notes"
+              <Label htmlFor="servicePatientId">Select Patient *</Label>
+              <PatientSearchCombobox
+                value={selectedPatientForService}
+                onValueChange={setSelectedPatientForService}
+                patients={patients || []}
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsServiceDialogOpen(false);
-                  setSelectedServices([]);
-                  setServiceSearchQuery("");
-                  setSelectedServiceCategory("all");
-                  serviceForm.reset();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createServiceMutation.isPending || selectedServices.length === 0}
-              >
-                {createServiceMutation.isPending ? "Scheduling..." : `Schedule ${selectedServices.length} Service(s)`}
-              </Button>
-            </div>
-          </form>
+            {selectedPatientForService && (
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsServiceDialogOpen(false);
+                    setSelectedPatientForService("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const selectedPatient = patients?.find((p: any) => p.id === selectedPatientForService);
+                    if (selectedPatient) {
+                      setIsServiceDialogOpen(false);
+                      navigate(`/patients/${selectedPatient.id}#add-service`);
+                    }
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-600/90"
+                >
+                  Continue to Add Service
+                </Button>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
