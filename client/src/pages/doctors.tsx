@@ -825,10 +825,18 @@ export default function Doctors() {
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center space-x-3">
-                              <div className="w-12 h-12 bg-healthcare-green rounded-full flex items-center justify-center">
-                                <span className="text-white font-medium text-sm">
-                                  {doctor.name.split(' ').map(n => n[0]).join('')}
-                                </span>
+                              <div className="w-12 h-12 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
+                                {doctor.profilePicture ? (
+                                  <img 
+                                    src={doctor.profilePicture} 
+                                    alt={doctor.name} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                ) : (
+                                  <span className="text-white font-medium text-sm">
+                                    {doctor.name.split(' ').map(n => n[0]).join('')}
+                                  </span>
+                                )}
                               </div>
                               <div>
                                 <h3 className="font-semibold text-lg" data-testid={`doctor-name-${doctor.id}`}>
