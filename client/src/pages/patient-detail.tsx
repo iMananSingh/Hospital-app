@@ -3894,7 +3894,7 @@ export default function PatientDetail() {
               // Call our custom validation
               onServiceSubmit(formData);
             }}
-            className="space-y-6"
+            className="space-y-4"
           >
             {selectedServiceType === "opd" && (
               <div className="bg-blue-50 p-4 rounded-lg">
@@ -3928,6 +3928,16 @@ export default function PatientDetail() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Patient *</Label>
+                <Input
+                  value={patient?.name || ""}
+                  disabled
+                  className="bg-muted"
+                  data-testid="input-patient-name"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>
                   {selectedServiceType === "opd"
@@ -3992,30 +4002,22 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label>Scheduled Date *</Label>
+                <Label>Scheduled Date & Time *</Label>
                 <Input
-                  type="date"
-                  {...serviceForm.register("scheduledDate", {
-                    required: "Scheduled date is required",
-                  })}
-                  data-testid="input-service-date"
+                  type="datetime-local"
+                  value={`${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`}
+                  onChange={(e) => {
+                    const [date, time] = e.target.value.split('T');
+                    serviceForm.setValue("scheduledDate", date);
+                    serviceForm.setValue("scheduledTime", time);
+                  }}
+                  data-testid="input-scheduled-datetime"
                 />
                 {serviceForm.formState.errors.scheduledDate && (
                   <p className="text-sm text-red-600">
                     {serviceForm.formState.errors.scheduledDate.message}
                   </p>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Scheduled Time *</Label>
-                <Input
-                  type="time"
-                  {...serviceForm.register("scheduledTime", {
-                    required: "Scheduled time is required",
-                  })}
-                  data-testid="input-service-time"
-                />
                 {serviceForm.formState.errors.scheduledTime && (
                   <p className="text-sm text-red-600">
                     {serviceForm.formState.errors.scheduledTime.message}
