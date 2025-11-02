@@ -300,7 +300,7 @@ export default function Patients() {
 
 
   return (
-    <div className="space-y-6">
+    <div>
       <TopBar 
         title="Patient Registration"
         searchPlaceholder="Search patients by name, ID, or phone..."
@@ -309,7 +309,7 @@ export default function Patients() {
         newActionLabel={isBillingStaff ? undefined : "New Patient"}
       />
       
-      <div className="p-6">
+      <div className="px-6 pb-6 pt-4">
         <Card>
           <CardHeader>
             <CardTitle>All Patients</CardTitle>
