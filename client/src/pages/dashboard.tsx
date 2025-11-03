@@ -1099,7 +1099,7 @@ export default function Dashboard() {
         notificationCount={3}
       />
 
-      <div className="flex-1 flex flex-col px-6 pt-4 pb-6 overflow-hidden">
+      <div className="flex-1 flex flex-col px-6 pt-4 pb-16 overflow-hidden">
         {/* Greeting Header - Fixed Height */}
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <div>
