@@ -3,6 +3,20 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Admission Form Layout Reorganization (November 03, 2025 at 12:59 PM)
+[x] Reorganized admission dialog form with new Patient field and custom sizing
+- **User Request**: Add Patient field and reorganize form layout with specific sizing
+- **Changes Made**:
+  - Added "Patient *" field (read-only, displays current patient name) in first row
+  - First row now shows: Patient, Doctor, Admission Date & Time (equal 3-column grid)
+  - Second row now shows: Ward/Room Type (3/9), Room Number (2/9), Daily Cost (2/9), Initial Deposit (2/9)
+  - Used `grid-cols-9` with `col-span-3` and `col-span-2` for precise sizing control
+- **Files Modified**: `client/src/pages/patient-detail.tsx` (lines 4669-4883)
+- **Layout**: 
+  - Row 1: md:grid-cols-3 (Patient | Doctor | Admission Date & Time)
+  - Row 2: md:grid-cols-9 with col-span-3, col-span-2, col-span-2, col-span-2
+- **Status**: Application hot-reloaded successfully, form layout updated ✓
+
 ### Package Reinstallation - Eighteenth Occurrence (November 03, 2025 at 12:50 PM)
 [x] Resolved tsx not found error (eighteenth time)
 - **Issue**: Workflow was failing with "tsx: not found" error after environment restart

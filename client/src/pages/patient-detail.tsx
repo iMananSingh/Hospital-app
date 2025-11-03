@@ -4670,6 +4670,16 @@ export default function PatientDetail() {
             >
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
+                  <Label>Patient *</Label>
+                  <Input
+                    value={patient?.name || ""}
+                    readOnly
+                    className="bg-gray-50 dark:bg-gray-800"
+                    data-testid="input-admission-patient"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label>Doctor *</Label>
                   <Select
                     value={admissionForm.watch("doctorId")}
@@ -4692,20 +4702,29 @@ export default function PatientDetail() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Admission Date & Time *</Label>
+                  <Input
+                    type="datetime-local"
+                    {...admissionForm.register("admissionDate")}
+                    data-testid="input-admission-date"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-9 gap-4">
+                <div className="space-y-2 col-span-3">
                   <Label>Ward/Room Type *</Label>
                   <Select
                     value={admissionForm.watch("currentWardType")}
                     onValueChange={(value) => {
                       admissionForm.setValue("currentWardType", value);
-                      admissionForm.setValue("currentRoomNumber", ""); // Clear room selection when ward type changes
+                      admissionForm.setValue("currentRoomNumber", "");
 
-                      // Get selected room type details
                       const selectedRoomType = roomTypes.find(
                         (rt: any) => rt.name === value,
                       );
 
                       if (selectedRoomType) {
-                        // Update Bed Charges service price if it's selected
                         const updatedServices = selectedServices.map(
                           (service) => {
                             if (
@@ -4722,7 +4741,6 @@ export default function PatientDetail() {
                         );
                         setSelectedServices(updatedServices);
 
-                        // Calculate total daily cost from all selected services
                         const totalServicesCost = updatedServices.reduce(
                           (total, service) => {
                             return total + (service.price || 0);
@@ -4730,7 +4748,6 @@ export default function PatientDetail() {
                           0,
                         );
 
-                        // Set the daily cost to the total of all selected services
                         admissionForm.setValue("dailyCost", totalServicesCost);
                       }
                     }}
@@ -4750,7 +4767,7 @@ export default function PatientDetail() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <Label>Room Number *</Label>
                   <Select
                     value={admissionForm.watch("currentRoomNumber")}
@@ -4779,7 +4796,6 @@ export default function PatientDetail() {
 
                         if (!selectedRoomType) return null;
 
-                        // Get all rooms for this room type
                         const allRoomsForType = rooms.filter(
                           (room: any) =>
                             room.roomTypeId === selectedRoomType.id &&
@@ -4794,7 +4810,6 @@ export default function PatientDetail() {
                           );
                         }
 
-                        // Check which rooms are actually occupied based on current admissions
                         const occupiedRoomNumbers = new Set(
                           allCurrentAdmissions
                             .filter(
@@ -4833,19 +4848,8 @@ export default function PatientDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Admission Date & Time *</Label>
-                  <Input
-                    type="datetime-local"
-                    {...admissionForm.register("admissionDate")}
-                    data-testid="input-admission-date"
-                  />
-                </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <Label>Daily Cost (₹) *</Label>
                   <Input
                     type="number"
@@ -4862,7 +4866,7 @@ export default function PatientDetail() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                   <Label>Initial Deposit (₹)</Label>
                   <Input
                     type="number"
