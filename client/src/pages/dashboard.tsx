@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/popover";
 import { FakeBillDialog } from "@/components/fake-bill-dialog";
 import AccessRestricted from "@/components/access-restricted";
+import Footer from "@/components/layout/footer";
 import {
   insertPatientSchema,
   insertPathologyOrderSchema,
@@ -2833,6 +2834,7 @@ export default function Dashboard() {
           </form>
         </DialogContent>
       </Dialog>
+      <Footer />
     </div>
   );
 }
