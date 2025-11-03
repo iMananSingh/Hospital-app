@@ -1103,13 +1103,13 @@ export default function Dashboard() {
         {/* Greeting Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-text-dark">
+            <h1 className="text-xl font-bold text-text-dark">
               {getGreeting()}, {getFirstName()} 👋
             </h1>
-            <p className="text-text-muted mt-1">Here's today's overview.</p>
+            <p className="text-sm text-text-muted mt-0.5">Here's today's overview.</p>
           </div>
           <div className="text-right">
-            <p className="text-lg font-medium text-text-dark">
+            <p className="text-sm font-medium text-text-dark">
               {getCurrentDate()}
             </p>
           </div>
