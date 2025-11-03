@@ -1067,6 +1067,7 @@ export default function Dashboard() {
   // Get current greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours();
+    if (hour < 5) return "Good Evening";
     if (hour < 12) return "Good Morning";
     if (hour < 17) return "Good Afternoon";
     return "Good Evening";
@@ -1083,6 +1084,13 @@ export default function Dashboard() {
     });
   };
 
+  // Extract first name from full name
+  const getFirstName = () => {
+    if (!user?.fullName) return 'User';
+    const firstName = user.fullName.split(' ')[0];
+    return firstName || 'User';
+  };
+
   return (
     <div>
       <TopBar
@@ -1096,7 +1104,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-text-dark">
-              {getGreeting()}, {user?.name || 'User'} 👋
+              {getGreeting()}, {getFirstName()} 👋
             </h1>
             <p className="text-text-muted mt-1">Here's today's overview.</p>
           </div>
