@@ -1100,7 +1100,7 @@ export default function Dashboard() {
   return (
     <div
       className="flex flex-col overflow-hidden"
-      style={{ height: "calc(100vh - 36px)" }}
+      style={{ height: "calc(100vh)" }}
     >
       <TopBar
         title="Dashboard & Reports"
