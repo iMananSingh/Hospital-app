@@ -844,25 +844,15 @@ export default function ServiceManagement() {
       <TopBar
         title="Service Management"
         actions={
-          <>
-            <Button
-              onClick={() => openServiceDialog()}
-              className="flex items-center gap-2 bg-medical-blue hover:bg-medical-blue/90"
-              data-testid={`button-add-${activeTab}`}
-            >
-              <Plus className="h-4 w-4" />
-              Add Service
-            </Button>
-            <Button
-              onClick={() => openServiceCategoryDialog()}
-              variant="outline"
-              className="flex items-center gap-2"
-              data-testid="button-add-service-category"
-            >
-              <Plus className="h-4 w-4" />
-              Add Service Category
-            </Button>
-          </>
+          <Button
+            onClick={() => openServiceCategoryDialog()}
+            variant="outline"
+            className="flex items-center gap-2"
+            data-testid="button-add-service-category"
+          >
+            <Plus className="h-4 w-4" />
+            Add Service Category
+          </Button>
         }
       />
 
