@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Bed, Microscope, Stethoscope } from "lucide-react";
+import { Users, BedSingle, Microscope, Stethoscope } from "lucide-react";
 import { Link } from "wouter";
 
 interface StatsCardsProps {
@@ -23,19 +23,19 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       iconColor: "text-medical-blue",
       testId: "stat-opd",
       clickable: true,
-      linkTo: "/opd-list"
+      linkTo: "/opd-list",
     },
     {
       title: "In-patients",
       value: stats.inpatients.toString(),
       change: "Currently admitted",
       changeType: "neutral" as const,
-      icon: Bed,
+      icon: BedSingle,
       bgColor: "bg-healthcare-green/10",
       iconColor: "text-healthcare-green",
       testId: "stat-inpatients",
       clickable: true,
-      linkTo: "/admissions"
+      linkTo: "/admissions",
     },
     {
       title: "Lab Tests",
@@ -47,7 +47,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       iconColor: "text-purple-500",
       testId: "stat-labs",
       clickable: true,
-      linkTo: "/lab-tests"
+      linkTo: "/lab-tests",
     },
     {
       title: "Diagnostics",
@@ -59,40 +59,53 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       iconColor: "text-orange-500",
       testId: "stat-diagnostics",
       clickable: true,
-      linkTo: "/diagnostics"
+      linkTo: "/diagnostics",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {statsData.map((stat) => {
-        const CardWrapper = (stat as any).clickable ? 
-          ({ children, ...props }: any) => (
-            <Link href={(stat as any).linkTo}>
-              <Card {...props} className={`shadow-sm cursor-pointer hover:shadow-md transition-shadow ${props.className || ''}`}>
-                {children}
-              </Card>
-            </Link>
-          ) : 
-          ({ children, ...props }: any) => <Card {...props}>{children}</Card>;
+        const CardWrapper = (stat as any).clickable
+          ? ({ children, ...props }: any) => (
+              <Link href={(stat as any).linkTo}>
+                <Card
+                  {...props}
+                  className={`shadow-sm cursor-pointer hover:shadow-md transition-shadow ${props.className || ""}`}
+                >
+                  {children}
+                </Card>
+              </Link>
+            )
+          : ({ children, ...props }: any) => <Card {...props}>{children}</Card>;
 
         return (
           <CardWrapper key={stat.title} data-testid={stat.testId}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-text-muted text-sm font-medium">{stat.title}</p>
-                  <p className="text-2xl font-bold text-text-dark mt-1" data-testid={`${stat.testId}-value`}>
+                  <p className="text-text-muted text-sm font-medium">
+                    {stat.title}
+                  </p>
+                  <p
+                    className="text-2xl font-bold text-text-dark mt-1"
+                    data-testid={`${stat.testId}-value`}
+                  >
                     {stat.value}
                   </p>
-                  <p className={`text-sm font-medium mt-2 ${
-                    stat.changeType === "positive" ? "text-healthcare-green" :
-                    "text-medical-blue"
-                  }`}>
+                  <p
+                    className={`text-sm font-medium mt-2 ${
+                      stat.changeType === "positive"
+                        ? "text-healthcare-green"
+                        : "text-medical-blue"
+                    }`}
+                  >
                     {stat.change}
                   </p>
                 </div>
-                <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
+                <div
+                  className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}
+                >
                   <stat.icon className={`w-6 h-6 ${stat.iconColor}`} />
                 </div>
               </div>
