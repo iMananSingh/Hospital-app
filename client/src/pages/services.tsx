@@ -859,23 +859,19 @@ export default function ServiceManagement() {
       <div className="px-6 pb-6 pt-4">
         {/* Service Category Navigation */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Service Categories</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full grid-cols-7 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
             {serviceCategories.map((category) => {
               const Icon = category.icon;
               return (
                 <div key={category.key} className="relative group">
-                  <Button
+                  <button
                     onClick={() => setActiveTab(category.key)}
-                    variant={activeTab === category.key ? "default" : "outline"}
-                    className="flex items-center gap-2"
+                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === category.key ? "bg-background text-foreground shadow-sm" : ""}`}
                     data-testid={`tab-${category.key}`}
                   >
-                    <Icon className="h-4 w-4" />
-                    {category.label}
-                  </Button>
+                    <Icon className="h-4 w-4 mr-1" />
+                    {category.label.split(' ')[0]}
+                  </button>
                   {!category.isSystem && (
                     <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
