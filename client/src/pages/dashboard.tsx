@@ -1064,6 +1064,25 @@ export default function Dashboard() {
     );
   }
 
+  // Get current greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
+  // Get formatted current date
+  const getCurrentDate = () => {
+    const date = new Date();
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div>
       <TopBar
@@ -1073,6 +1092,21 @@ export default function Dashboard() {
       />
 
       <div className="px-6 pb-6 pt-4 space-y-6">
+        {/* Greeting Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-text-dark">
+              {getGreeting()}, {user?.name || 'User'} 👋
+            </h1>
+            <p className="text-text-muted mt-1">Here's today's overview.</p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-medium text-text-dark">
+              {getCurrentDate()}
+            </p>
+          </div>
+        </div>
+
         <StatsCards
           stats={
             stats || {
