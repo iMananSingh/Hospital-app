@@ -1435,7 +1435,7 @@ export class SqliteStorage implements IStorage {
   private generateVisitId(): string {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.patientVisits).all().length + 1;
-    return `VIS-${year}-${count.toString().padStart(3, "0")}`;
+    return `VIS-${year}-${count.toString().padStart(5, "0")}`;
   }
 
   private generateBillNumber(): string {
@@ -1447,7 +1447,7 @@ export class SqliteStorage implements IStorage {
   private generateOrderId(): string {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.pathologyOrders).all().length + 1;
-    return `LAB-${year}-${count.toString().padStart(3, "0")}`;
+    return `LAB-${year}-${count.toString().padStart(5, "0")}`;
   }
 
   private generateServiceOrderId(): string {
@@ -1463,15 +1463,15 @@ export class SqliteStorage implements IStorage {
     const uniqueOrderIds = new Set(existingOrderIds.map((row) => row.orderId));
     const count = uniqueOrderIds.size + 1;
 
-    // Use SER prefix and flexible padding (3 digits minimum, grows as needed)
-    return `SER-${year}-${count.toString().padStart(3, "0")}`;
+    // Use SER prefix with 5-digit padding (auto-expands beyond 99999)
+    return `SER-${year}-${count.toString().padStart(5, "0")}`;
   }
 
   private generateAdmissionId(): string {
     const year = new Date().getFullYear();
     try {
       const count = db.select().from(schema.admissions).all().length + 1;
-      return `ADM-${year}-${count.toString().padStart(3, "0")}`;
+      return `ADM-${year}-${count.toString().padStart(5, "0")}`;
     } catch (error) {
       console.error("Error querying admissions table:", error);
       // Fallback to timestamp-based ID if table query fails
@@ -1481,26 +1481,64 @@ export class SqliteStorage implements IStorage {
   }
 
   private generatePaymentId(): string {
-    const year = new Date().getFullYear();
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(-2);
+    const mm = (now.getMonth() + 1).toString().padStart(2, "0");
+    const yearMonth = `${yy}${mm}`;
+    
     try {
-      const count = db.select().from(schema.patientPayments).all().length + 1;
-      return `PAY-${year}-${count.toString().padStart(3, "0")}`;
+      // Count payments from current month only
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      
+      const monthlyPayments = db
+        .select()
+        .from(schema.patientPayments)
+        .where(
+          and(
+            gte(schema.patientPayments.paymentDate, startOfMonth),
+            lte(schema.patientPayments.paymentDate, endOfMonth)
+          )
+        )
+        .all();
+      
+      const count = monthlyPayments.length + 1;
+      return `PAY-${yearMonth}-${count.toString().padStart(5, "0")}`;
     } catch (error) {
       console.error("Error querying patient_payments table:", error);
       const timestamp = Date.now().toString().slice(-6);
-      return `PAY-${year}-${timestamp}`;
+      return `PAY-${yearMonth}-${timestamp}`;
     }
   }
 
   private generateDiscountId(): string {
-    const year = new Date().getFullYear();
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(-2);
+    const mm = (now.getMonth() + 1).toString().padStart(2, "0");
+    const yearMonth = `${yy}${mm}`;
+    
     try {
-      const count = db.select().from(schema.patientDiscounts).all().length + 1;
-      return `DISC-${year}-${count.toString().padStart(3, "0")}`;
+      // Count discounts from current month only
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      
+      const monthlyDiscounts = db
+        .select()
+        .from(schema.patientDiscounts)
+        .where(
+          and(
+            gte(schema.patientDiscounts.createdAt, startOfMonth),
+            lte(schema.patientDiscounts.createdAt, endOfMonth)
+          )
+        )
+        .all();
+      
+      const count = monthlyDiscounts.length + 1;
+      return `DISC-${yearMonth}-${count.toString().padStart(5, "0")}`;
     } catch (error) {
       console.error("Error querying patient_discounts table:", error);
       const timestamp = Date.now().toString().slice(-6);
-      return `DISC-${year}-${timestamp}`;
+      return `DISC-${yearMonth}-${timestamp}`;
     }
   }
 
