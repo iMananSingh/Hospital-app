@@ -910,6 +910,25 @@ export default function Dashboard() {
     }
   };
 
+  // Helper function for API requests
+  const apiRequest = async (url: string, options: any) => {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    return response.json();
+  };
+
   const onAdmissionSubmit = async (data: any) => {
     const requiredFields = [
       "patientId",
@@ -954,29 +973,39 @@ export default function Dashboard() {
 
       if (selectedAdmissionServices.length > 0) {
         const servicesToCreate = [];
+        const selectedDoctorId = data.doctorId;
+
         for (const service of selectedAdmissionServices) {
           servicesToCreate.push({
-            admissionId: admissionResult.id,
             patientId: data.patientId,
-            serviceId: service.id,
-            serviceName: service.name,
             serviceType: "admission",
+            serviceName: service.name,
+            serviceId: service.id,
             price: service.price,
             quantity: 1,
+            notes: `Admission service - ${service.name}`,
             scheduledDate: data.admissionDate.split("T")[0],
             scheduledTime: data.admissionDate.split("T")[1] || "00:00",
             status: "scheduled",
+            doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
             calculatedAmount: service.price,
             billingQuantity: 1,
           });
         }
 
-        for (const serviceData of servicesToCreate) {
-          await apiRequest("/api/patient-services", {
-            method: "POST",
-            body: serviceData,
-          });
+        if (servicesToCreate.length > 0) {
+          if (servicesToCreate.length === 1) {
+            await apiRequest("/api/patient-services", {
+              method: "POST",
+              body: servicesToCreate[0],
+            });
+          } else {
+            await apiRequest("/api/patient-services/batch", {
+              method: "POST",
+              body: servicesToCreate,
+            });
+          }
         }
       }
 
