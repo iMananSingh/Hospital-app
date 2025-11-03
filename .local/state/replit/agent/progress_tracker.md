@@ -3,6 +3,22 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### ID Format Updates (November 03, 2025 at 5:21 PM)
+[x] Updated ID generation formats across the system with 5-digit padding
+- **User Request**: Increase ID padding to 5 digits and implement monthly reset for payments/discounts
+- **Changes Made**:
+  1. Patient Visits (VIS): Changed from VIS-2025-001 to VIS-2025-00001 (5 digits)
+  2. Pathology Orders (LAB): Changed from LAB-2025-001 to LAB-2025-00001 (5 digits)
+  3. Services (SER): Changed from SER-2025-001 to SER-2025-00001 (5 digits)
+  4. Admissions (ADM): Changed from ADM-2025-001 to ADM-2025-00001 (5 digits)
+  5. Patient ID: Changed from PAT-2025-001 to PT-2025-00001 (new prefix + 5 digits)
+  6. Payments: Changed from PAY-2025-001 to PAY-YYMM-00001 (monthly reset, 5 digits)
+  7. Discounts: Changed from DISC-2025-001 to DISC-YYMM-00001 (monthly reset, 5 digits)
+- **Auto-Expansion**: All IDs will automatically expand beyond 99999 (e.g., 100000, 100001) - padStart only pads when number is shorter
+- **Monthly Reset Logic**: Payments and discounts now filter by current month before counting
+- **Files Modified**: `server/storage.ts` (ID generation functions), `shared/schema.ts` (comment update)
+- **Status**: Awaiting workflow restart and testing ✓
+
 ### Environment Migration Completed (November 03, 2025 at 5:13 PM)
 [x] Successfully migrated HMSync from Replit Agent to Replit environment
 - **Workflow Configuration**: Updated "Start application" with webview output type and port 5000
