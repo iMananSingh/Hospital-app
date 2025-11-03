@@ -2,7 +2,7 @@
 export default function Footer() {
   return (
     <footer className="bg-background border-t border-[#e6e6e6] px-6">
-      <div className="flex justify-between items-center text-[13px] text-[#6c757d] h-[40px]" style={{ letterSpacing: '0.2px' }}>
+      <div className="flex justify-between items-center text-[13px] text-[#6c757d] h-[52px]" style={{ letterSpacing: '0.2px' }}>
         <div>
           © 2025 HMSync · <span className="text-[#9ca3af]">Version 0.2.0</span> · Powered by HMSync Technologies
         </div>
