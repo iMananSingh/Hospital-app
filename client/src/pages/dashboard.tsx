@@ -128,8 +128,13 @@ export default function Dashboard() {
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
-  const [selectedAdmissionServices, setSelectedAdmissionServices] = useState<any[]>([]);
-  const [selectedAdmissionServiceSearchQuery, setSelectedAdmissionServiceSearchQuery] = useState("");
+  const [selectedAdmissionServices, setSelectedAdmissionServices] = useState<
+    any[]
+  >([]);
+  const [
+    selectedAdmissionServiceSearchQuery,
+    setSelectedAdmissionServiceSearchQuery,
+  ] = useState("");
   const [isCreatingAdmission, setIsCreatingAdmission] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -1076,23 +1081,26 @@ export default function Dashboard() {
   // Get formatted current date
   const getCurrentDate = () => {
     const date = new Date();
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   // Extract first name from full name
   const getFirstName = () => {
-    if (!user?.fullName) return 'User';
-    const firstName = user.fullName.split(' ')[0];
-    return firstName || 'User';
+    if (!user?.fullName) return "User";
+    const firstName = user.fullName.split(" ")[0];
+    return firstName || "User";
   };
 
   return (
-    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 52px)' }}>
+    <div
+      className="flex flex-col overflow-hidden"
+      style={{ height: "calc(100vh - 36px)" }}
+    >
       <TopBar
         title="Dashboard & Reports"
         showNotifications={true}
@@ -1106,7 +1114,9 @@ export default function Dashboard() {
             <h1 className="text-xl font-bold text-text-dark">
               {getGreeting()}, {getFirstName()} 👋
             </h1>
-            <p className="text-sm text-text-muted mt-0.5">Here's today's overview.</p>
+            <p className="text-sm text-text-muted mt-0.5">
+              Here's today's overview.
+            </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-text-dark">
@@ -2476,13 +2486,10 @@ export default function Dashboard() {
                         allCurrentAdmissions
                           .filter(
                             (admission: any) =>
-                              admission.currentWardType ===
-                                selectedWardType &&
+                              admission.currentWardType === selectedWardType &&
                               admission.status === "admitted",
                           )
-                          .map(
-                            (admission: any) => admission.currentRoomNumber,
-                          ),
+                          .map((admission: any) => admission.currentRoomNumber),
                       );
 
                       return allRoomsForType.map((room: any) => {
@@ -2654,8 +2661,7 @@ export default function Dashboard() {
                                     const currentWardType =
                                       admissionForm.watch("currentWardType");
                                     const selectedRoomType = roomTypes.find(
-                                      (rt: any) =>
-                                        rt.name === currentWardType,
+                                      (rt: any) => rt.name === currentWardType,
                                     );
 
                                     let serviceToAdd = {
@@ -2679,9 +2685,10 @@ export default function Dashboard() {
                                       serviceToAdd,
                                     ];
                                   } else {
-                                    updatedServices = selectedAdmissionServices.filter(
-                                      (s) => s.id !== service.id,
-                                    );
+                                    updatedServices =
+                                      selectedAdmissionServices.filter(
+                                        (s) => s.id !== service.id,
+                                      );
                                   }
 
                                   setSelectedAdmissionServices(updatedServices);
@@ -2817,9 +2824,7 @@ export default function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={
-                  isCreatingAdmission || !selectedPatientForAdmission
-                }
+                disabled={isCreatingAdmission || !selectedPatientForAdmission}
                 data-testid="button-admit"
               >
                 {isCreatingAdmission ? "Admitting..." : "Admit Patient"}
