@@ -128,6 +128,9 @@ export default function Dashboard() {
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
   const [billingPreview, setBillingPreview] = useState<any>(null);
+  const [selectedAdmissionServices, setSelectedAdmissionServices] = useState<any[]>([]);
+  const [selectedAdmissionServiceSearchQuery, setSelectedAdmissionServiceSearchQuery] = useState("");
+  const [isCreatingAdmission, setIsCreatingAdmission] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -191,6 +194,18 @@ export default function Dashboard() {
 
   const { data: allServices } = useQuery({
     queryKey: ["/api/services"],
+  });
+
+  const { data: roomTypes = [] } = useQuery<any[]>({
+    queryKey: ["/api/room-types"],
+  });
+
+  const { data: rooms = [] } = useQuery<any[]>({
+    queryKey: ["/api/rooms"],
+  });
+
+  const { data: allCurrentAdmissions = [] } = useQuery({
+    queryKey: ["/api/inpatients/currently-admitted"],
   });
 
   const createPatientMutation = useMutation({
@@ -338,6 +353,32 @@ export default function Dashboard() {
       selectedServicesCount: 0,
     },
   });
+
+  const admissionForm = useForm({
+    defaultValues: {
+      patientId: "",
+      doctorId: "",
+      currentWardType: "",
+      currentRoomNumber: "",
+      admissionDate: "",
+      dailyCost: 0,
+      initialDeposit: 0,
+      reason: "",
+    },
+  });
+
+  React.useEffect(() => {
+    if (isAdmissionDialogOpen) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+      admissionForm.setValue("admissionDate", currentDateTime);
+    }
+  }, [isAdmissionDialogOpen]);
 
   // Fetch system settings for timezone
   const { data: systemSettings } = useQuery({
@@ -866,6 +907,108 @@ export default function Dashboard() {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const onAdmissionSubmit = async (data: any) => {
+    const requiredFields = [
+      "patientId",
+      "doctorId",
+      "currentWardType",
+      "currentRoomNumber",
+      "admissionDate",
+      "dailyCost",
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !data[field] || data[field] === "",
+    );
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Required Fields",
+        description: `Please fill in all required fields: ${missingFields.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingAdmission(true);
+
+    try {
+      const selectedDate = new Date(data.admissionDate);
+      const now = new Date();
+      selectedDate.setSeconds(now.getSeconds());
+      selectedDate.setMilliseconds(now.getMilliseconds());
+      const utcAdmissionDate = selectedDate.toISOString();
+
+      const admissionData = {
+        ...data,
+        admissionId: `ADM-${Date.now()}`,
+        admissionDate: utcAdmissionDate,
+      };
+
+      const admissionResult = await apiRequest("/api/admissions", {
+        method: "POST",
+        body: admissionData,
+      });
+
+      if (selectedAdmissionServices.length > 0) {
+        const servicesToCreate = [];
+        for (const service of selectedAdmissionServices) {
+          servicesToCreate.push({
+            admissionId: admissionResult.id,
+            patientId: data.patientId,
+            serviceId: service.id,
+            serviceName: service.name,
+            serviceType: "admission",
+            price: service.price,
+            quantity: 1,
+            scheduledDate: data.admissionDate.split("T")[0],
+            scheduledTime: data.admissionDate.split("T")[1] || "00:00",
+            status: "scheduled",
+            billingType: service.billingType || "per_instance",
+            calculatedAmount: service.price,
+            billingQuantity: 1,
+          });
+        }
+
+        for (const serviceData of servicesToCreate) {
+          await apiRequest("/api/patient-services", {
+            method: "POST",
+            body: serviceData,
+          });
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/inpatients/currently-admitted"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+
+      setIsAdmissionDialogOpen(false);
+      setSelectedPatientForAdmission("");
+      setSelectedAdmissionServices([]);
+      setSelectedAdmissionServiceSearchQuery("");
+      admissionForm.reset();
+
+      toast({
+        title: "Patient Admitted Successfully",
+        description: `Patient admitted${selectedAdmissionServices.length > 0 ? ` with ${selectedAdmissionServices.length} admission service(s)` : ""}.`,
+      });
+    } catch (error) {
+      console.error("Error admitting patient:", error);
+      toast({
+        title: "Error Admitting Patient",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingAdmission(false);
     }
   };
 
@@ -2093,52 +2236,519 @@ export default function Dashboard() {
         open={isAdmissionDialogOpen}
         onOpenChange={setIsAdmissionDialogOpen}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Admit Patient</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = admissionForm.getValues();
+              formData.patientId = selectedPatientForAdmission;
+              onAdmissionSubmit(formData);
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Patient *</Label>
+                <PatientSearchCombobox
+                  value={selectedPatientForAdmission}
+                  onValueChange={(value) => {
+                    setSelectedPatientForAdmission(value);
+                    admissionForm.setValue("patientId", value);
+                  }}
+                  patients={patients || []}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Doctor *</Label>
+                <Select
+                  value={admissionForm.watch("doctorId")}
+                  onValueChange={(value) =>
+                    admissionForm.setValue("doctorId", value)
+                  }
+                  data-testid="select-admission-doctor"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select attending doctor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(doctors || []).map((doctor: any) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name} - {doctor.specialization}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Admission Date & Time *</Label>
+                <Input
+                  type="datetime-local"
+                  value={admissionForm.watch("admissionDate")}
+                  onChange={(e) =>
+                    admissionForm.setValue("admissionDate", e.target.value)
+                  }
+                  data-testid="input-admission-date"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-9 gap-4">
+              <div className="space-y-2 col-span-3">
+                <Label>Ward/Room Type *</Label>
+                <Select
+                  value={admissionForm.watch("currentWardType")}
+                  onValueChange={(value) => {
+                    admissionForm.setValue("currentWardType", value);
+                    admissionForm.setValue("currentRoomNumber", "");
+
+                    const selectedRoomType = roomTypes.find(
+                      (rt: any) => rt.name === value,
+                    );
+
+                    if (selectedRoomType) {
+                      const updatedServices = selectedAdmissionServices.map(
+                        (service) => {
+                          if (
+                            service.name === "Bed Charges" ||
+                            service.name.toLowerCase().includes("bed charges")
+                          ) {
+                            return {
+                              ...service,
+                              price: selectedRoomType.dailyCost,
+                            };
+                          }
+                          return service;
+                        },
+                      );
+                      setSelectedAdmissionServices(updatedServices);
+
+                      const totalServicesCost = updatedServices.reduce(
+                        (total, service) => {
+                          return total + (service.price || 0);
+                        },
+                        0,
+                      );
+
+                      admissionForm.setValue("dailyCost", totalServicesCost);
+                    }
+                  }}
+                  data-testid="select-ward-type"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ward/room type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roomTypes.map((roomType: any) => (
+                      <SelectItem key={roomType.id} value={roomType.name}>
+                        {roomType.name} ({roomType.category}) - ₹
+                        {roomType.dailyCost}/day
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label>Room Number *</Label>
+                <Select
+                  value={admissionForm.watch("currentRoomNumber")}
+                  onValueChange={(value) =>
+                    admissionForm.setValue("currentRoomNumber", value)
+                  }
+                  disabled={!admissionForm.watch("currentWardType")}
+                  data-testid="select-room-number"
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        admissionForm.watch("currentWardType")
+                          ? "Select available room"
+                          : "Select ward type first"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(() => {
+                      const selectedWardType =
+                        admissionForm.watch("currentWardType");
+                      const selectedRoomType = roomTypes.find(
+                        (rt: any) => rt.name === selectedWardType,
+                      );
+
+                      if (!selectedRoomType) return null;
+
+                      const allRoomsForType = rooms.filter(
+                        (room: any) =>
+                          room.roomTypeId === selectedRoomType.id &&
+                          room.isActive,
+                      );
+
+                      if (allRoomsForType.length === 0) {
+                        return (
+                          <SelectItem value="" disabled>
+                            No rooms available in {selectedWardType}
+                          </SelectItem>
+                        );
+                      }
+
+                      const occupiedRoomNumbers = new Set(
+                        allCurrentAdmissions
+                          .filter(
+                            (admission: any) =>
+                              admission.currentWardType ===
+                                selectedWardType &&
+                              admission.status === "admitted",
+                          )
+                          .map(
+                            (admission: any) => admission.currentRoomNumber,
+                          ),
+                      );
+
+                      return allRoomsForType.map((room: any) => {
+                        const isOccupied = occupiedRoomNumbers.has(
+                          room.roomNumber,
+                        );
+
+                        return (
+                          <SelectItem
+                            key={room.id}
+                            value={room.roomNumber}
+                            disabled={isOccupied}
+                            className={
+                              isOccupied
+                                ? "text-gray-500 bg-gray-200 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed opacity-60 hover:bg-gray-200 dark:hover:bg-gray-800"
+                                : ""
+                            }
+                          >
+                            {room.roomNumber}
+                            {isOccupied ? " (Occupied)" : ""}
+                          </SelectItem>
+                        );
+                      });
+                    })()}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label>Daily Cost (₹) *</Label>
+                <Input
+                  type="number"
+                  value={admissionForm.watch("dailyCost")}
+                  onChange={(e) =>
+                    admissionForm.setValue(
+                      "dailyCost",
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                  placeholder="Total cost of selected services"
+                  data-testid="input-daily-cost"
+                  readOnly={true}
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Automatically calculated from selected admission services
+                </p>
+              </div>
+
+              <div className="space-y-2 col-span-2">
+                <Label>Initial Deposit (₹)</Label>
+                <Input
+                  type="number"
+                  value={admissionForm.watch("initialDeposit")}
+                  onChange={(e) =>
+                    admissionForm.setValue(
+                      "initialDeposit",
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                  placeholder="Initial deposit amount"
+                  data-testid="input-initial-deposit"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-lg font-semibold">
+                  Select Admission Services
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Search admission services..."
+                    value={selectedAdmissionServiceSearchQuery}
+                    onChange={(e) => {
+                      setSelectedAdmissionServiceSearchQuery(e.target.value);
+                    }}
+                    className="w-64"
+                    data-testid="search-admission-services"
+                  />
+                </div>
+              </div>
+
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">Select</TableHead>
+                      <TableHead>Service Name</TableHead>
+                      <TableHead>Billing Type</TableHead>
+                      <TableHead className="text-right">Price (₹)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const admissionServices =
+                        allServices?.filter(
+                          (service: any) =>
+                            service.category === "admissions" &&
+                            service.isActive,
+                        ) || [];
+
+                      const filteredServices =
+                        selectedAdmissionServiceSearchQuery.trim()
+                          ? admissionServices.filter(
+                              (service: any) =>
+                                service.name
+                                  .toLowerCase()
+                                  .includes(
+                                    selectedAdmissionServiceSearchQuery.toLowerCase(),
+                                  ) ||
+                                (service.description &&
+                                  service.description
+                                    .toLowerCase()
+                                    .includes(
+                                      selectedAdmissionServiceSearchQuery.toLowerCase(),
+                                    )),
+                            )
+                          : admissionServices;
+
+                      if (filteredServices.length === 0) {
+                        return (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-muted-foreground py-8"
+                            >
+                              No admission services found.{" "}
+                              {selectedAdmissionServiceSearchQuery
+                                ? "Try adjusting your search."
+                                : "Create admission services in the Services page first."}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+
+                      return filteredServices.map((service: any) => {
+                        const isSelected = selectedAdmissionServices.some(
+                          (s) => s.id === service.id,
+                        );
+                        const selectedService = selectedAdmissionServices.find(
+                          (s) => s.id === service.id,
+                        );
+
+                        let displayPrice = service.price;
+                        if (
+                          (service.name === "Bed Charges" ||
+                            service.name
+                              .toLowerCase()
+                              .includes("bed charges")) &&
+                          selectedService
+                        ) {
+                          displayPrice = selectedService.price;
+                        }
+
+                        return (
+                          <TableRow
+                            key={service.id}
+                            className={isSelected ? "bg-blue-50" : ""}
+                          >
+                            <TableCell>
+                              <Checkbox
+                                checked={isSelected}
+                                data-testid={`checkbox-admission-service-${service.id}`}
+                                onCheckedChange={(checked) => {
+                                  let updatedServices;
+                                  if (checked) {
+                                    const currentWardType =
+                                      admissionForm.watch("currentWardType");
+                                    const selectedRoomType = roomTypes.find(
+                                      (rt: any) =>
+                                        rt.name === currentWardType,
+                                    );
+
+                                    let serviceToAdd = {
+                                      ...service,
+                                      quantity: 1,
+                                    };
+
+                                    if (
+                                      (service.name === "Bed Charges" ||
+                                        service.name
+                                          .toLowerCase()
+                                          .includes("bed charges")) &&
+                                      selectedRoomType
+                                    ) {
+                                      serviceToAdd.price =
+                                        selectedRoomType.dailyCost;
+                                    }
+
+                                    updatedServices = [
+                                      ...selectedAdmissionServices,
+                                      serviceToAdd,
+                                    ];
+                                  } else {
+                                    updatedServices = selectedAdmissionServices.filter(
+                                      (s) => s.id !== service.id,
+                                    );
+                                  }
+
+                                  setSelectedAdmissionServices(updatedServices);
+
+                                  const totalServicesCost =
+                                    updatedServices.reduce(
+                                      (total, selectedService) => {
+                                        return (
+                                          total + (selectedService.price || 0)
+                                        );
+                                      },
+                                      0,
+                                    );
+
+                                  admissionForm.setValue(
+                                    "dailyCost",
+                                    totalServicesCost,
+                                  );
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {service.name}
+                              {service.description && (
+                                <div className="text-sm text-muted-foreground">
+                                  {service.description}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  service.billingType === "per_date"
+                                    ? "bg-indigo-100 text-indigo-800"
+                                    : service.billingType === "per_24_hours"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-gray-100 text-gray-800"
+                                }
+                              >
+                                {service.billingType === "per_date"
+                                  ? "Per Date"
+                                  : service.billingType === "per_24_hours"
+                                    ? "Per 24 Hours"
+                                    : service.billingType || "Per Instance"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ₹{displayPrice}
+                              {(service.billingType === "per_date" ||
+                                service.billingType === "per_24_hours") && (
+                                <div className="text-xs text-muted-foreground">
+                                  Auto-billed during stay
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      });
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedAdmissionServices.length > 0 && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-medium mb-3">
+                    Selected Admission Services
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedAdmissionServices.map((service) => (
+                      <div
+                        key={service.id}
+                        className="flex justify-between items-center text-sm"
+                      >
+                        <span className="font-medium">{service.name}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {service.billingType === "per_date"
+                              ? "Per Date"
+                              : service.billingType === "per_24_hours"
+                                ? "Per 24 Hours"
+                                : service.billingType || "Per Instance"}
+                          </Badge>
+                          <span>₹{service.price}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
+                      <span>Total Daily Cost:</span>
+                      <span>
+                        ₹
+                        {selectedAdmissionServices.reduce(
+                          (total, service) => total + (service.price || 0),
+                          0,
+                        )}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      * Services with per_date/per_24_hours billing will be
+                      automatically charged during the admission period
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="admissionPatientId">Select Patient *</Label>
-              <PatientSearchCombobox
-                value={selectedPatientForAdmission}
-                onValueChange={setSelectedPatientForAdmission}
-                patients={patients || []}
+              <Label>Reason for Admission</Label>
+              <Input
+                value={admissionForm.watch("reason")}
+                onChange={(e) =>
+                  admissionForm.setValue("reason", e.target.value)
+                }
+                placeholder="Brief reason for admission (optional)"
+                data-testid="input-admission-reason"
               />
             </div>
 
-            {selectedPatientForAdmission && (
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAdmissionDialogOpen(false);
-                    setSelectedPatientForAdmission("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    const selectedPatient = patients?.find(
-                      (p: any) => p.id === selectedPatientForAdmission,
-                    );
-                    if (selectedPatient) {
-                      setIsAdmissionDialogOpen(false);
-                      navigate(`/patients/${selectedPatient.id}`);
-                      // The patient detail page will handle opening the admission dialog
-                      // We could add a hash like #admit-patient if needed
-                    }
-                  }}
-                  className="bg-green-600 hover:bg-green-600/90"
-                >
-                  Continue to Admit Patient
-                </Button>
-              </div>
-            )}
-          </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAdmissionDialogOpen(false);
+                  setSelectedPatientForAdmission("");
+                  setSelectedAdmissionServices([]);
+                  setSelectedAdmissionServiceSearchQuery("");
+                }}
+                data-testid="button-cancel-admission"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isCreatingAdmission}
+                data-testid="button-admit"
+              >
+                {isCreatingAdmission ? "Admitting..." : "Admit Patient"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
