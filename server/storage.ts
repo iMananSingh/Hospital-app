@@ -1429,7 +1429,7 @@ export class SqliteStorage implements IStorage {
   private generatePatientId(): string {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.patients).all().length + 1;
-    return `PAT-${year}-${count.toString().padStart(3, "0")}`;
+    return `PT-${year}-${count.toString().padStart(5, "0")}`;
   }
 
   private generateVisitId(): string {
@@ -2334,7 +2334,7 @@ export class SqliteStorage implements IStorage {
     const today = new Date();
     const year = today.getFullYear();
     const patientCount = await this.getDailyPatientCount();
-    const patientId = `PAT-${year}-${String(patientCount + 1).padStart(3, "0")}`;
+    const patientId = `PT-${year}-${String(patientCount + 1).padStart(5, "0")}`;
 
     // Don't set createdAt or updatedAt - let the database default handle it in UTC
     const patient = db

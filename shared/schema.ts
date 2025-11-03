@@ -54,7 +54,7 @@ export const patients = sqliteTable("patients", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
-  patientId: text("patient_id").notNull().unique(), // PAT-2024-001 format
+  patientId: text("patient_id").notNull().unique(), // PT-2025-00001 format
   name: text("name").notNull(),
   age: integer("age").notNull(),
   gender: text("gender").notNull(), // male, female, other
