@@ -1092,14 +1092,14 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 52px)' }}>
       <TopBar
         title="Dashboard & Reports"
         showNotifications={true}
         notificationCount={3}
       />
 
-      <div className="flex-1 flex flex-col px-6 pt-4 pb-16 overflow-hidden">
+      <div className="flex-1 flex flex-col px-6 pt-4 pb-6 overflow-hidden">
         {/* Greeting Header - Fixed Height */}
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <div>
