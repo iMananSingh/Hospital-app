@@ -1131,11 +1131,11 @@ export default function Dashboard() {
 
         {/* Recent Activity and Quick Actions - Flexible Height */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-          <Card className="flex flex-col h-full">
+          <Card className="flex flex-col h-full overflow-hidden">
             <CardHeader className="flex-shrink-0">
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-hidden flex flex-col">
+            <CardContent className="flex-1 min-h-0 flex flex-col">
               {activitiesLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -1157,7 +1157,7 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <div className="space-y-3 overflow-y-auto pr-2 flex-1">
+                <div className="space-y-3 overflow-y-auto pr-2 flex-1 min-h-0">
                   {recentActivities.map((activity) => {
                     const getActivityIcon = (type: string) => {
                       switch (type) {
