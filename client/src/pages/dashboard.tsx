@@ -2742,7 +2742,9 @@ export default function Dashboard() {
               </Button>
               <Button
                 type="submit"
-                disabled={isCreatingAdmission}
+                disabled={
+                  isCreatingAdmission || !selectedPatientForAdmission
+                }
                 data-testid="button-admit"
               >
                 {isCreatingAdmission ? "Admitting..." : "Admit Patient"}
