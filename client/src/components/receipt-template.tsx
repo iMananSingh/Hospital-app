@@ -111,71 +111,9 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const getReceiptNumber = () => {
-    // For services, always use the stored receiptNumber
-    if (receiptData.type === "service" && receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
-    }
-
-    // For pathology, try to get from order data
-    if (receiptData.type === "pathology") {
-      if (receiptData.details?.rawData?.order?.receiptNumber) {
-        return receiptData.details.rawData.order.receiptNumber;
-      }
-      if (receiptData.details?.order?.receiptNumber) {
-        return receiptData.details.order.receiptNumber;
-      }
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
-      }
-    }
-
-    // For admission events, try to get from admission event data
-    if (receiptData.type === "admission_event") {
-      if (receiptData.details?.rawData?.event?.receiptNumber) {
-        return receiptData.details.rawData.event.receiptNumber;
-      }
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
-      }
-    }
-
-    // For admission fallback, try to get from admission data
-    if (
-      receiptData.type === "admission" &&
-      receiptData.details?.rawData?.admission?.receiptNumber
-    ) {
-      return receiptData.details.rawData.admission.receiptNumber;
-    }
-    if (receiptData.type === "admission" && receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
-    }
-
-    // For OPD visits, try to get from visit data first
-    if (receiptData.type === "opd_visit") {
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
-      }
-      if (receiptData.details?.rawData?.visit?.receiptNumber) {
-        return receiptData.details.rawData.visit.receiptNumber;
-      }
-      // Check if receiptNumber is directly on the event
-      if (receiptData.receiptNumber) {
-        return receiptData.receiptNumber;
-      }
-      // Fallback to ID only if no receipt number found
-      if (receiptData.id) {
-        return `OPD-${receiptData.id}`;
-      }
-    }
-
-    // For other event types, try direct access
-    if (receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
-    }
-
-    return "RECEIPT-NOT-FOUND";
+    // Always use the stored receipt number
+    return receiptData.details?.receiptNumber || 'RECEIPT-NOT-GENERATED';
   };
-
 
   const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
@@ -634,7 +572,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     // For service receipts, show individual services if available
                     if (receiptData.type === 'service' && receiptData.details?.services && Array.isArray(receiptData.details.services)) {
                       const services = receiptData.details.services;
-
+                      
                       if (services.length > 0) {
                         return services.map((service, index) => {
                           const serviceName = service.serviceName || service.name || `Service ${index + 1}`;
@@ -664,7 +602,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       const doctorName = getDoctorName();
                       serviceDescription = `OPD Consultation - ${doctorName}`;
                     }
-
+                    
                     return `
                       <tr>
                         <td>${serviceDescription}</td>
