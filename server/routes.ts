@@ -2948,6 +2948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const visitData = insertPatientVisitSchema.parse({
         ...req.body,
         visitType: "opd",
+        visitDate: req.body.scheduledDate || new Date().toISOString().split('T')[0],
         status: req.body.status || "scheduled",
       });
 
