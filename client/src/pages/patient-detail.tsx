@@ -487,6 +487,7 @@ export default function PatientDetail() {
           : event.description || event.serviceName || event.testName || "",
       patientName: patient?.name || "Unknown Patient",
       patientId: patient?.patientId || "Unknown ID",
+      receiptNumber: getReceiptNumber(), // Add receipt number at the top level
       details: {
         ...event,
         patientAge: patient?.age,
