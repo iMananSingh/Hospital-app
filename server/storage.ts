@@ -157,6 +157,7 @@ async function initializeDatabase() {
         scheduled_date TEXT,
         scheduled_time TEXT DEFAULT '09:00',
         consultation_fee REAL NOT NULL DEFAULT 0,
+        receipt_number TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -750,6 +751,16 @@ async function initializeDatabase() {
         ALTER TABLE patient_visits ADD COLUMN consultation_fee REAL DEFAULT 0;
       `);
       console.log("Added consultation_fee column to patient_visits table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add receipt_number column to patient_visits table if it doesn't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_visits ADD COLUMN receipt_number TEXT;
+      `);
+      console.log("Added receipt_number column to patient_visits table");
     } catch (error) {
       // Column already exists, ignore error
     }
