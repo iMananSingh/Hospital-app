@@ -843,27 +843,6 @@ export default function ServiceManagement() {
     <div>
       <TopBar
         title="Service Management"
-        actions={
-          <>
-            <Button
-              onClick={() => openServiceDialog()}
-              className="flex items-center gap-2 bg-medical-blue hover:bg-medical-blue/90"
-              data-testid={`button-add-${activeTab}`}
-            >
-              <Plus className="h-4 w-4" />
-              Add Service
-            </Button>
-            <Button
-              onClick={() => openServiceCategoryDialog()}
-              variant="outline"
-              className="flex items-center gap-2"
-              data-testid="button-add-service-category"
-            >
-              <Plus className="h-4 w-4" />
-              Add Service Category
-            </Button>
-          </>
-        }
       />
 
       <div className="px-6 pb-6 pt-4">
@@ -871,6 +850,16 @@ export default function ServiceManagement() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Service Categories</h2>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => openServiceCategoryDialog()}
+                className="flex items-center gap-2"
+                data-testid="button-add-service-category"
+              >
+                <Plus className="h-4 w-4" />
+                Add Service Category
+              </Button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {serviceCategories.map((category) => {
@@ -1123,11 +1112,19 @@ export default function ServiceManagement() {
           </div>
         ) : activeTab !== 'pathology' ? (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 {getServiceCategoryIcon(activeTab)}
                 {serviceCategories.find(cat => cat.key === activeTab)?.label}
               </CardTitle>
+              <Button
+                onClick={() => openServiceDialog()}
+                className="flex items-center gap-2"
+                data-testid={`button-add-${activeTab}`}
+              >
+                <Plus className="h-4 w-4" />
+                Add Service
+              </Button>
             </CardHeader>
             <CardContent>
               {filteredServices.length > 0 ? (
