@@ -986,18 +986,18 @@ export default function ServiceManagement() {
       <div className="px-6 pb-6 pt-4">
         {/* Service Category Navigation */}
         <div className="mb-6">
-          <div className="grid w-full grid-cols-7 inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground">
+          <div className="flex flex-wrap gap-2 p-1">
             {serviceCategories.map((category) => {
               const Icon = category.icon;
               return (
                 <div key={category.key} className="relative group">
                   <button
                     onClick={() => setActiveTab(category.key)}
-                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === category.key ? "bg-background text-foreground shadow-sm" : ""}`}
+                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${activeTab === category.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted hover:bg-muted/80"}`}
                     data-testid={`tab-${category.key}`}
                   >
-                    <Icon className="h-4 w-4 mr-1" />
-                    {category.label.split(" ")[0]}
+                    <Icon className="h-4 w-4 mr-2" />
+                    {category.label}
                   </button>
                   {!category.isSystem && (
                     <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
