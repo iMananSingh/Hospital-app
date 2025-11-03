@@ -1092,16 +1092,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-screen overflow-hidden">
       <TopBar
         title="Dashboard & Reports"
         showNotifications={true}
         notificationCount={3}
       />
 
-      <div className="px-6 pb-6 pt-4 space-y-6">
-        {/* Greeting Header */}
-        <div className="flex justify-between items-center">
+      <div className="flex-1 flex flex-col px-6 pt-4 pb-6 overflow-hidden">
+        {/* Greeting Header - Fixed Height */}
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <div>
             <h1 className="text-xl font-bold text-text-dark">
               {getGreeting()}, {getFirstName()} 👋
@@ -1115,23 +1115,27 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <StatsCards
-          stats={
-            stats || {
-              opdPatients: 0,
-              inpatients: 0,
-              labTests: 0,
-              diagnostics: 0,
+        {/* Stats Cards - Fixed Height */}
+        <div className="mb-4 flex-shrink-0">
+          <StatsCards
+            stats={
+              stats || {
+                opdPatients: 0,
+                inpatients: 0,
+                labTests: 0,
+                diagnostics: 0,
+              }
             }
-          }
-        />
+          />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
+        {/* Recent Activity and Quick Actions - Flexible Height */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 overflow-hidden flex flex-col">
               {activitiesLoading ? (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -1153,7 +1157,7 @@ export default function Dashboard() {
                   <p>No recent activities</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                <div className="space-y-3 overflow-y-auto pr-2 flex-1">
                   {recentActivities.map((activity) => {
                     const getActivityIcon = (type: string) => {
                       switch (type) {
@@ -1458,12 +1462,12 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="flex flex-col h-full">
+            <CardHeader className="flex-shrink-0">
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+            <CardContent className="flex-1 overflow-auto">
+              <div className="grid grid-cols-3 gap-4 h-full content-start">
                 <button
                   onClick={() => {
                     const userRoles = user?.roles || [user?.role];
