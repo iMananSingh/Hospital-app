@@ -2945,46 +2945,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const visitData = req.body;
+      const visitData = insertPatientVisitSchema.parse({
+        ...req.body,
+        visitType: "opd",
+        visitDate: req.body.scheduledDate || new Date().toISOString().split('T')[0],
+        status: req.body.status || "scheduled",
+      });
 
-      // Validate required fields
-      if (!visitData.patientId) {
-        return res.status(400).json({ error: "Patient ID is required" });
-      }
+      // Generate receipt number for OPD visit
+      const scheduledDate = visitData.scheduledDate || new Date().toISOString().split('T')[0];
+      const dailyCount = await storage.getDailyReceiptCount("opd", scheduledDate);
 
-      if (!visitData.doctorId) {
-        return res
-          .status(400)
-          .json({ error: "Doctor is required for OPD consultation" });
-      }
+      // Format: YYMMDD-OPD-NNNN
+      const dateObj = new Date(scheduledDate);
+      const yymmdd = dateObj.toISOString().slice(2, 10).replace(/-/g, '').slice(0, 6);
+      const receiptNumber = `${yymmdd}-OPD-${String(dailyCount).padStart(4, '0')}`;
 
-      if (!visitData.scheduledDate) {
-        return res.status(400).json({ error: "Scheduled date is required" });
-      }
+      console.log(`[OPD] Date: ${scheduledDate}, Count from DB: ${dailyCount}, Receipt: ${receiptNumber}`);
 
-      // Ensure consultation fee is a valid number
-      const consultationFee =
-        typeof visitData.consultationFee === "number" &&
-        visitData.consultationFee >= 0
-          ? visitData.consultationFee
-          : 0;
+      const visit = await storage.createOpdVisit({
+        ...visitData,
+        receiptNumber,
+      });
 
-      // Create the OPD visit - storage will handle timestamps correctly
-      const opdVisit = await storage.createOpdVisit(
-        {
-          patientId: visitData.patientId,
-          doctorId: visitData.doctorId,
-          visitDate: visitData.scheduledDate,
-          scheduledDate: visitData.scheduledDate,
-          scheduledTime: visitData.scheduledTime || "09:00",
-          symptoms: visitData.symptoms || null,
-          diagnosis: visitData.diagnosis || null,
-          prescription: visitData.prescription || null,
-          consultationFee: consultationFee,
-          status: "scheduled",
-        },
-        req.user.id,
-      );
+      // Calculate OPD earning for the doctor if consultation fee exists
+      await storage.calculateOpdEarning(visit);
 
       // Log activity for OPD scheduling
       const patient = await storage.getPatientById(visitData.patientId);
@@ -2995,13 +2980,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activityType: "opd_scheduled",
         title: "OPD Appointment Scheduled",
         description: `${patient?.name || "Patient"} scheduled for consultation with ${doctor?.name || "Doctor"}`,
-        entityId: opdVisit.id,
+        entityId: visit.id,
         entityType: "patient_visit",
         metadata: JSON.stringify({
           patientId: visitData.patientId,
           doctorId: visitData.doctorId,
           scheduledDate: visitData.scheduledDate,
           scheduledTime: visitData.scheduledTime,
+          receiptNumber,
         }),
       });
 
@@ -3011,14 +2997,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: req.user.username,
         action: "create",
         tableName: "patient_visits", // Assuming patient_visits table for OPD
-        recordId: opdVisit.id,
+        recordId: visit.id,
         oldValues: null,
-        newValues: opdVisit,
+        newValues: visit,
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
       });
 
-      res.status(201).json(opdVisit);
+      res.status(201).json(visit);
     } catch (error) {
       console.error("Error creating OPD visit:", error);
       res.status(500).json({ error: "Internal server error" });
