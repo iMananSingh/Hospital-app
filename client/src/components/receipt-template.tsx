@@ -158,6 +158,10 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       if (receiptData.details?.rawData?.visit?.receiptNumber) {
         return receiptData.details.rawData.visit.receiptNumber;
       }
+      // Check if receiptNumber is directly on the event
+      if (receiptData.receiptNumber) {
+        return receiptData.receiptNumber;
+      }
       // Fallback to ID only if no receipt number found
       if (receiptData.id) {
         return `OPD-${receiptData.id}`;
