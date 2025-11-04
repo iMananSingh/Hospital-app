@@ -158,9 +158,6 @@ export default function LabTests() {
         title="Lab Tests"
         actions={
           <>
-            <div className="text-sm text-muted-foreground mr-2">
-              Manage and view all pathology orders by status
-            </div>
             <Badge variant="outline" className="px-3 py-1">
               <Calendar className="w-4 h-4 mr-1" />
               Today: {todayLabCount}
@@ -175,8 +172,11 @@ export default function LabTests() {
       <div className="container mx-auto p-6">
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 sticky top-[84px] z-40 bg-background">
           <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Manage and view all pathology orders by status
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
