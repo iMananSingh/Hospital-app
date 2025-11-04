@@ -114,6 +114,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     console.log('=== RECEIPT TEMPLATE GET RECEIPT NUMBER ===');
     console.log('Receipt data type:', receiptData.type);
     console.log('Receipt data details:', receiptData.details);
+    console.log('Receipt data full object:', receiptData);
     
     // Check both camelCase and snake_case versions
     const checkBothCases = (obj: any, key: string) => {
@@ -126,18 +127,26 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       return null;
     };
 
-    // For services (including OPD which comes as type "service"), check multiple locations
+    // First, try to get from the top-level details
     let receiptNum = checkBothCases(receiptData.details, 'receiptNumber');
     if (receiptNum) {
       console.log('Found receipt number in details:', receiptNum);
       return receiptNum;
     }
 
-    // For OPD visits, check the raw visit data
+    // For OPD visits, check the raw visit data and event data
     if (receiptData.type === "service" || receiptData.type === "opd_visit") {
+      // Check rawData.visit
       receiptNum = checkBothCases(receiptData.details?.rawData?.visit, 'receiptNumber');
       if (receiptNum) {
         console.log('Found receipt number in rawData.visit:', receiptNum);
+        return receiptNum;
+      }
+      
+      // Check the event itself (for OPD visits coming from patient_visits table)
+      receiptNum = checkBothCases(receiptData.details, 'receipt_number');
+      if (receiptNum) {
+        console.log('Found receipt number in details.receipt_number:', receiptNum);
         return receiptNum;
       }
     }

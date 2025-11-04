@@ -397,7 +397,7 @@ export default function PatientDetail() {
     const getReceiptNumber = () => {
       console.log('=== GET RECEIPT NUMBER DEBUG ===');
       console.log('Event type:', eventType);
-      console.log('Event object:', event);
+      console.log('Event object keys:', Object.keys(event));
       console.log('Event.receiptNumber:', event.receiptNumber);
       console.log('Event.receipt_number:', event.receipt_number);
       
