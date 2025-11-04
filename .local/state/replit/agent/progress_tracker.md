@@ -3,6 +3,19 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Service Order Receipt Number Fix (November 04, 2025 at 3:45 PM)
+[x] Fixed service order receipt numbers all showing 0001
+- **Issue**: All service order receipts showed "0001" regardless of how many orders were created
+- **Root Cause**: The `getDailyReceiptCountSync` function didn't have a case for "service" type, so it fell through to the default case which always returned `count = 0`, then added 1, always returning 1
+- **Solution**: Added a new case for "service" type (lines 5817-5828) that:
+  - Counts records from `patient_services` table
+  - Uses `DATE(scheduled_date) = DATE(?)` for proper date matching
+  - Only counts orders with non-null receipt numbers
+  - Includes debug logging
+- **Result**: Service order receipt numbers now increment correctly (0001, 0002, 0003, etc.)
+- **Files Modified**: `server/storage.ts` (lines 5817-5828)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Pathology Receipt Number Fix (November 04, 2025 at 3:28 PM)
 [x] Fixed pathology receipt numbers staying at 2 after first two orders
 - **Issue**: Pathology receipts incremented from 1 to 2, but then all subsequent receipts stayed at 2 instead of continuing to 3, 4, 5, etc.

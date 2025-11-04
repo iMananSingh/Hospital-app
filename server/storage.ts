@@ -5811,6 +5811,18 @@ export class SqliteStorage implements IStorage {
           `,
             )
             .get(`${dateStr}%`)?.count || 0;
+      } else if (serviceType === "service") {
+        count =
+          db.$client
+            .prepare(
+              `
+            SELECT COUNT(*) as count FROM patient_services
+            WHERE DATE(scheduled_date) = DATE(?)
+            AND receipt_number IS NOT NULL
+          `,
+            )
+            .get(dateStr)?.count || 0;
+        console.log(`[SERVICE COUNT] Found ${count} existing service orders for ${dateStr}`);
       } else {
         // Default case or other service types
         count = 0;
