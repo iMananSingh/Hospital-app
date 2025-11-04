@@ -3597,7 +3597,6 @@ export class SqliteStorage implements IStorage {
           calculatedAmount: schema.patientServices.calculatedAmount,
           receiptNumber: schema.patientServices.receiptNumber,
           createdAt: schema.patientServices.createdAt,
-          updatedAt: schema.patientServices.updatedAt,
           // Patient details
           patientName: schema.patients.name,
           patientPhone: schema.patients.phone,
@@ -5724,144 +5723,102 @@ export class SqliteStorage implements IStorage {
     serviceType: string,
     date: string,
   ): Promise<number> {
-    try {
-      let count = 0;
-
-      switch (serviceType) {
-        case "pathology":
-          count = db
-            .select()
-            .from(schema.pathologyOrders)
-            .where(eq(schema.pathologyOrders.orderedDate, date))
-            .all().length;
-          break;
-        case "admission":
-          count = db
-            .select()
-            .from(schema.admissionEvents)
-            .where(
-              and(
-                eq(schema.admissionEvents.eventType, "admit"),
-                like(schema.admissionEvents.eventTime, `${date}%`),
-              ),
-            )
-            .all().length;
-          break;
-        case "room_transfer":
-          count = db
-            .select()
-            .from(schema.admissionEvents)
-            .where(
-              and(
-                eq(schema.admissionEvents.eventType, "room_change"),
-                like(schema.admissionEvents.eventTime, `${date}%`),
-              ),
-            )
-            .all().length;
-          break;
-        case "discharge":
-          count = db
-            .select()
-            .from(schema.admissionEvents)
-            .where(
-              and(
-                eq(schema.admissionEvents.eventType, "discharge"),
-                like(schema.admissionEvents.eventTime, `${date}%`),
-              ),
-            )
-            .all().length;
-          break;
-        case "opd":
-          count = db
-            .select()
-            .from(schema.patientServices)
-            .where(
-              and(
-                eq(schema.patientServices.serviceType, "opd"),
-                eq(schema.patientServices.scheduledDate, date),
-              ),
-            )
-            .all().length;
-          break;
-        default:
-          count = 0;
-      }
-
-      return count + 1;
-    } catch (error) {
-      console.error("Error getting daily receipt count:", error);
-      return 1;
-    }
+    return this.getDailyReceiptCountSync(serviceType, date);
   }
 
   getDailyReceiptCountSync(serviceType: string, date: string): number {
     try {
+      console.log(`Getting daily receipt count for ${serviceType} on ${date}`);
+
+      // Parse the date to ensure we're using the correct format
+      const parsedDate = new Date(date);
+      const dateStr = parsedDate.toISOString().split("T")[0];
+
+      console.log(`Using date string: ${dateStr} for counting receipts`);
+
       let count = 0;
 
-      switch (serviceType) {
-        case "pathology":
-          count =
-            db.$client
-              .prepare(
-                `
+      // Count based on service type
+      if (serviceType === "opd") {
+        // Count OPD visits for the day by checking receipt numbers
+        const opdVisits = db
+          .select()
+          .from(schema.patientVisits)
+          .where(
+            and(
+              eq(schema.patientVisits.visitType, "opd"),
+              sql`DATE(${schema.patientVisits.scheduledDate}) = DATE(${dateStr})`,
+              isNotNull(schema.patientVisits.receiptNumber),
+            ),
+          )
+          .all();
+
+        // Find the highest receipt number for today
+        let maxNumber = 0;
+        const yymmdd = dateStr.slice(2).replace(/-/g, "").slice(0, 6);
+        const prefix = `${yymmdd}-OPD-`;
+
+        for (const visit of opdVisits) {
+          if (visit.receiptNumber && visit.receiptNumber.startsWith(prefix)) {
+            const numPart = visit.receiptNumber.split("-")[2];
+            const num = parseInt(numPart, 10);
+            if (!isNaN(num) && num > maxNumber) {
+              maxNumber = num;
+            }
+          }
+        }
+
+        count = maxNumber + 1; // Next number
+        console.log(`Found ${opdVisits.length} OPD visits for ${dateStr}, max number ${maxNumber}, returning ${count}`);
+      } else if (serviceType === "pathology") {
+        count =
+          db.$client
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM pathology_orders
             WHERE ordered_date = ?
           `,
-              )
-              .get(date)?.count || 0;
-          break;
-        case "admission":
-          count =
-            db.$client
-              .prepare(
-                `
+            )
+            .get(dateStr)?.count || 0;
+      } else if (serviceType === "admission") {
+        count =
+          db.$client
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'admit' AND event_time LIKE ?
           `,
-              )
-              .get(`${date}%`)?.count || 0;
-          break;
-        case "room_transfer":
-          count =
-            db.$client
-              .prepare(
-                `
+            )
+            .get(`${dateStr}%`)?.count || 0;
+      } else if (serviceType === "room_transfer") {
+        count =
+          db.$client
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'room_change' AND event_time LIKE ?
           `,
-              )
-              .get(`${date}%`)?.count || 0;
-          break;
-        case "discharge":
-          count =
-            db.$client
-              .prepare(
-                `
+            )
+            .get(`${dateStr}%`)?.count || 0;
+      } else if (serviceType === "discharge") {
+        count =
+          db.$client
+            .prepare(
+              `
             SELECT COUNT(*) as count FROM admission_events
             WHERE event_type = 'discharge' AND event_time LIKE ?
           `,
-              )
-              .get(`${date}%`)?.count || 0;
-          break;
-        case "opd":
-          count =
-            db.$client
-              .prepare(
-                `
-            SELECT COUNT(*) as count FROM patient_services
-            WHERE service_type = 'opd' AND scheduled_date = ?
-          `,
-              )
-              .get(date)?.count || 0;
-          break;
-        default:
-          count = 0;
+            )
+            .get(`${dateStr}%`)?.count || 0;
+      } else {
+        // Default case or other service types
+        count = 0;
       }
 
       return count + 1;
     } catch (error) {
       console.error("Error getting daily receipt count sync:", error);
-      return 1;
+      return 1; // Return 1 as a fallback to ensure a receipt is generated
     }
   }
 

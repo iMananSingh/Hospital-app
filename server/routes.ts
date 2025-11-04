@@ -1670,10 +1670,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { serviceType, date } = req.params;
         console.log(`Getting daily count for ${serviceType} on ${date}`);
-        
+
         const count = await storage.getDailyReceiptCount(serviceType, date);
         console.log(`Daily count result: ${count}`);
-        
+
         res.json({ count });
       } catch (error) {
         console.error("Error getting daily receipt count:", error);
@@ -2951,7 +2951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new OPD visit
-  app.post("/api/opd-visits", requireAuth, async (req: any, res) => {
+  app.post("/api/opd-visits", authenticateToken, async (req: any, res) => {
     try {
       // Check if user has billing staff role and restrict access
       const userRoles = req.user.roles || [req.user.role]; // Backward compatibility

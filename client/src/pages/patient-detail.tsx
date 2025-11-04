@@ -1191,6 +1191,7 @@ export default function PatientDetail() {
   const createOpdVisitMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log("Creating OPD visit with data:", data);
+      // Server will generate receipt number
       return apiRequest("/api/opd-visits", {
         method: "POST",
         body: data,
