@@ -14,10 +14,12 @@ import {
   Phone,
   MapPin,
   Filter,
-  Eye
+  Eye,
+  Notebook
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
+import TopBar from "@/components/TopBar"; // Assuming TopBar is in this path
 
 export default function LabTests() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,6 +144,7 @@ export default function LabTests() {
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
+        <TopBar />
         <div className="flex justify-center items-center h-64">
           <p>Loading lab tests...</p>
         </div>
@@ -150,193 +153,196 @@ export default function LabTests() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Lab Tests</h1>
-          <p className="text-muted-foreground">
-            Manage and view all pathology orders by status
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="px-3 py-1">
-            <Calendar className="w-4 h-4 mr-1" />
-            Today: {todayLabCount}
-          </Badge>
-          <Badge variant="outline" className="px-3 py-1">
-            <TestTube className="w-4 h-4 mr-1" />
-            Total: {totalLabCount}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by order ID, name, patient ID, or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="search-lab-tests"
-              />
-            </div>
-
-            <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-              <SelectTrigger data-testid="filter-doctor">
-                <SelectValue placeholder="Filter by doctor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Doctors</SelectItem>
-                {doctors.map((doctor: Doctor) => (
-                  <SelectItem key={doctor.id} value={doctor.id}>
-                    {doctor.name} - {doctor.specialization}
-                  </SelectItem>
-                ))}
-                <SelectItem value="external">External Patients</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger data-testid="filter-status">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="ordered">Ordered</SelectItem>
-                <SelectItem value="collected">Collected</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              data-testid="filter-date"
-            />
-
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedDoctor("all");
-                setSelectedStatus("all");
-                setSelectedDate("");
-              }}
-              data-testid="clear-filters"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
+    <>
+      <TopBar />
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Lab Tests</h1>
+            <p className="text-muted-foreground">
+              Manage and view all pathology orders by status
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="px-3 py-1">
+              <Calendar className="w-4 h-4 mr-1" />
+              Today: {todayLabCount}
+            </Badge>
+            <Badge variant="outline" className="px-3 py-1">
+              <TestTube className="w-4 h-4 mr-1" />
+              Total: {totalLabCount}
+            </Badge>
+          </div>
+        </div>
 
-      {/* Lab Tests by Status */}
-      {Object.keys(labTestsByStatus).length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <TestTube className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No lab tests found matching your criteria.</p>
-            <Link href="/pathology">
-              <Button className="mt-4">Order New Test</Button>
-            </Link>
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by order ID, name, patient ID, or phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="search-lab-tests"
+                />
+              </div>
+
+              <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                <SelectTrigger data-testid="filter-doctor">
+                  <SelectValue placeholder="Filter by doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Doctors</SelectItem>
+                  {doctors.map((doctor: Doctor) => (
+                    <SelectItem key={doctor.id} value={doctor.id}>
+                      {doctor.name} - {doctor.specialization}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="external">External Patients</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger data-testid="filter-status">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="collected">Collected</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                data-testid="filter-date"
+              />
+
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedDoctor("all");
+                  setSelectedStatus("all");
+                  setSelectedDate("");
+                }}
+                data-testid="clear-filters"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <div>
-          {Object.entries(labTestsByStatus).map(([status, orders]) => (
-            <Card key={status}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TestTube className="w-5 h-5" />
-                  {status.charAt(0).toUpperCase() + status.slice(1)} Tests
-                  <Badge variant="outline">{orders.length} orders</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Lab tests with {status} status
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {orders.map((orderData: any) => {
-                    const order = orderData.order;
-                    const patient = orderData.patient;
-                    const doctor = orderData.doctor;
-                    const orderedDate = new Date(order.orderedDate);
 
-                    return (
-                      <div
-                        key={order.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <User className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">
-                                {patient?.name || "Unknown Patient"}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {order.orderId}
-                              </Badge>
-                            </div>
+        {/* Lab Tests by Status */}
+        {Object.keys(labTestsByStatus).length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <TestTube className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No lab tests found matching your criteria.</p>
+              <Link href="/pathology">
+                <Button className="mt-4">Order New Test</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div>
+            {Object.entries(labTestsByStatus).map(([status, orders]) => (
+              <Card key={status}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TestTube className="w-5 h-5" />
+                    {status.charAt(0).toUpperCase() + status.slice(1)} Tests
+                    <Badge variant="outline">{orders.length} orders</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Lab tests with {status} status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {orders.map((orderData: any) => {
+                      const order = orderData.order;
+                      const patient = orderData.patient;
+                      const doctor = orderData.doctor;
+                      const orderedDate = new Date(order.orderedDate);
 
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {formatDate(order.orderedDate)}
+                      return (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <User className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-medium">
+                                  {patient?.name || "Unknown Patient"}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {order.orderId}
+                                </Badge>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <TestTube className="w-3 h-3" />
-                                {getDoctorName(order.doctorId)}
-                              </div>
-                              {patient?.phone && (
+
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
-                                  <Phone className="w-3 h-3" />
-                                  {patient.phone}
+                                  <Calendar className="w-3 h-3" />
+                                  {formatDate(order.orderedDate)}
                                 </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            className={getStatusColor(order.status)}
-                            variant="secondary"
-                            data-testid={`status-${order.id}`}
-                          >
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </Badge>
-
-                          <div className="text-right">
-                            <div className="font-medium">₹{order.totalPrice}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Total Amount
+                                <div className="flex items-center gap-1">
+                                  <TestTube className="w-3 h-3" />
+                                  {getDoctorName(order.doctorId)}
+                                </div>
+                                {patient?.phone && (
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    {patient.phone}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
-                          <Link href={`/pathology`}>
-                            <Button variant="outline" size="sm" data-testid={`view-order-${order.id}`}>
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </Link>
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              className={getStatusColor(order.status)}
+                              variant="secondary"
+                              data-testid={`status-${order.id}`}
+                            >
+                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            </Badge>
+
+                            <div className="text-right">
+                              <div className="font-medium">₹{order.totalPrice}</div>
+                              <div className="text-xs text-muted-foreground">
+                                Total Amount
+                              </div>
+                            </div>
+
+                            <Link href={`/pathology`}>
+                              <Button variant="outline" size="sm" data-testid={`view-order-${order.id}`}>
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

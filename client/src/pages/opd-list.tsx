@@ -17,6 +17,7 @@ import {
   Filter
 } from "lucide-react";
 import { Link } from "wouter";
+import TopBar from "@/components/layout/topbar";
 import type { PatientService, Patient, Doctor } from "@shared/schema";
 
 export default function OpdList() {
@@ -129,25 +130,26 @@ export default function OpdList() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">OPD Appointments</h1>
-          <p className="text-muted-foreground">
-            Manage and view all OPD consultations by doctor
-          </p>
+    <>
+      <TopBar title="OPD Appointments" />
+      <div className="container mx-auto p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <p className="text-muted-foreground">
+              Manage and view all OPD consultations by doctor
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Badge variant="outline" className="px-3 py-1">
+              <Calendar className="w-4 h-4 mr-1" />
+              Today: {todayOpdCount}
+            </Badge>
+            <Badge variant="outline" className="px-3 py-1">
+              <User className="w-4 h-4 mr-1" />
+              Total: {totalOpdCount}
+            </Badge>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="px-3 py-1">
-            <Calendar className="w-4 h-4 mr-1" />
-            Today: {todayOpdCount}
-          </Badge>
-          <Badge variant="outline" className="px-3 py-1">
-            <User className="w-4 h-4 mr-1" />
-            Total: {totalOpdCount}
-          </Badge>
-        </div>
-      </div>
 
       {/* Filters */}
       <Card className="mb-6">
@@ -316,6 +318,7 @@ export default function OpdList() {
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
