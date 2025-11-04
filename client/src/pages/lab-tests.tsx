@@ -196,7 +196,7 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -208,37 +208,41 @@ export default function LabTests() {
                 />
               </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal h-10"
-                    data-testid="filter-date-range"
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
-                        </>
-                      ) : (
-                        format(dateRange.from, "MMM dd, yyyy")
-                      )
-                    ) : (
-                      <span>Select date range</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={1}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="lg:col-span-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal h-10"
+                      data-testid="filter-date-range"
+                    >
+                      <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "MMM dd, yyyy")
+                          )
+                        ) : (
+                          "Select date range"
+                        )}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={1}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                 <SelectTrigger data-testid="filter-doctor">
@@ -270,7 +274,7 @@ export default function LabTests() {
 
               <Button 
                 variant="outline"
-                className="h-10 px-4 ml-auto w-fit"
+                className="h-10 px-4 w-fit justify-self-end"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedDoctor("all");
