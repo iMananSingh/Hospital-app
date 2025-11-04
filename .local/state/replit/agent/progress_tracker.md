@@ -3,6 +3,23 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### OPD Visit ID Format Update (November 04, 2025 at 8:13 AM)
+[x] Changed OPD visit ID format from VIS-YYMMDD-0001 to VIS-YYYY-000001
+- **User Request**: Remove daily reset and date/month elements from visit IDs
+- **Changes Made**:
+  1. **Updated createOpdVisit function** (lines 2503-2514 in server/storage.ts):
+     - Changed from daily count to yearly count using SQLite strftime('%Y', created_at)
+     - Changed format from VIS-YYMMDD-0001 to VIS-YYYY-000001
+     - Increased padding from 4 digits to 6 digits
+  2. **Removed unused code**:
+     - Deleted generateVisitId() function (~line 1435) - never called
+     - Deleted createPatientVisit() function (~line 2456) - never called
+     - Removed createPatientVisit from IStorage interface (line 1175)
+- **New Format**: VIS-2025-000001, VIS-2025-000002, etc. (yearly sequence, no resets)
+- **Files Modified**: `server/storage.ts` (createOpdVisit function, interface cleanup)
+- **Architect Review**: Passed with no issues ✓
+- **Status**: Application restarted successfully, all changes deployed ✓
+
 ### Environment Migration - November 04, 2025 at 4:27 AM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
