@@ -3,6 +3,20 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Pathology Receipt Number Fix (November 04, 2025 at 3:28 PM)
+[x] Fixed pathology receipt numbers staying at 2 after first two orders
+- **Issue**: Pathology receipts incremented from 1 to 2, but then all subsequent receipts stayed at 2 instead of continuing to 3, 4, 5, etc.
+- **Root Causes**:
+  1. Double increment: Line 2919 did `(count + 1)` when `count` already included +1 from `getDailyReceiptCountSync`
+  2. SQL query used exact string match `WHERE ordered_date = ?` which could fail with format mismatches
+- **Solutions**:
+  1. Changed line 2922 from `(count + 1)` to just `count` - removed double increment
+  2. Changed line 5782 to use `DATE(ordered_date) = DATE(?)` for better date matching
+  3. Added debug logging to track pathology order counts
+- **Result**: Pathology receipt numbers now increment correctly (0001, 0002, 0003, etc.)
+- **Files Modified**: `server/storage.ts` (lines 2922, 5782, 5786)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### OPD Receipt Number Increment Fix (November 04, 2025 at 3:19 PM)
 [x] Fixed OPD receipt numbers incrementing by 2 instead of 1
 - **Issue**: When scheduling OPD consultations, receipt count was increasing by 2 (e.g., 0001, 0003, 0005) instead of incrementing by 1

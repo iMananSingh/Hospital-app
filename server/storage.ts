@@ -2909,14 +2909,14 @@ export class SqliteStorage implements IStorage {
       // Extract just the date part (YYYY-MM-DD) for accurate counting
       const dateOnly = orderedDate.split("T")[0];
       const count = this.getDailyReceiptCountSync("pathology", dateOnly);
-      console.log(`[PATHOLOGY] Date: ${dateOnly}, Count from DB: ${count}, Next receipt will be: ${count + 1}`);
+      console.log(`[PATHOLOGY] Date: ${dateOnly}, Count from getDailyReceiptCountSync: ${count}`);
       const dateObj = new Date(dateOnly);
       const yymmdd = dateObj
         .toISOString()
         .slice(2, 10)
         .replace(/-/g, "")
         .slice(0, 6);
-      const receiptNumber = `${yymmdd}-PAT-${(count + 1).toString().padStart(4, "0")}`;
+      const receiptNumber = `${yymmdd}-PAT-${count.toString().padStart(4, "0")}`;
       console.log(`[PATHOLOGY] Generated receipt number: ${receiptNumber}`);
 
       // Insert the order first
@@ -5776,10 +5776,11 @@ export class SqliteStorage implements IStorage {
             .prepare(
               `
             SELECT COUNT(*) as count FROM pathology_orders
-            WHERE ordered_date = ?
+            WHERE DATE(ordered_date) = DATE(?)
           `,
             )
             .get(dateStr)?.count || 0;
+        console.log(`[PATHOLOGY COUNT] Found ${count} existing pathology orders for ${dateStr}`);
       } else if (serviceType === "admission") {
         count =
           db.$client
