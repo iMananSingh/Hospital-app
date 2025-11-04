@@ -196,7 +196,7 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -207,34 +207,6 @@ export default function LabTests() {
                   data-testid="search-lab-tests"
                 />
               </div>
-
-              <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                <SelectTrigger data-testid="filter-doctor">
-                  <SelectValue placeholder="Filter by doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Doctors</SelectItem>
-                  {doctors.map((doctor: Doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      {doctor.name} - {doctor.specialization}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="external">External Patients</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger data-testid="filter-status">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="ordered">Ordered</SelectItem>
-                  <SelectItem value="collected">Collected</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
 
               <Popover>
                 <PopoverTrigger asChild>
@@ -268,21 +240,47 @@ export default function LabTests() {
                 </PopoverContent>
               </Popover>
 
-              <div className="flex justify-end">
-                <Button 
-                  variant="outline"
-                  className="h-10 px-4"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedDoctor("all");
-                    setSelectedStatus("all");
-                    setDateRange(undefined);
-                  }}
-                  data-testid="clear-filters"
-                >
-                  Clear
-                </Button>
-              </div>
+              <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                <SelectTrigger data-testid="filter-doctor">
+                  <SelectValue placeholder="Filter by doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Doctors</SelectItem>
+                  {doctors.map((doctor: Doctor) => (
+                    <SelectItem key={doctor.id} value={doctor.id}>
+                      {doctor.name} - {doctor.specialization}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="external">External Patients</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger data-testid="filter-status">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="ordered">Ordered</SelectItem>
+                  <SelectItem value="collected">Collected</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button 
+                variant="outline"
+                className="h-10 px-4 ml-auto w-fit"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedDoctor("all");
+                  setSelectedStatus("all");
+                  setDateRange(undefined);
+                }}
+                data-testid="clear-filters"
+              >
+                Clear
+              </Button>
             </div>
           </CardContent>
         </Card>
