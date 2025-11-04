@@ -1662,6 +1662,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get daily receipt count for a specific service type and date
+  app.get(
+    "/api/receipts/daily-count/:serviceType/:date",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const { serviceType, date } = req.params;
+        console.log(`Getting daily count for ${serviceType} on ${date}`);
+        
+        const count = await storage.getDailyReceiptCount(serviceType, date);
+        console.log(`Daily count result: ${count}`);
+        
+        res.json({ count });
+      } catch (error) {
+        console.error("Error getting daily receipt count:", error);
+        res.status(500).json({ message: "Failed to get daily receipt count" });
+      }
+    },
+  );
+
   // Bulk upload pathology tests from JSON
   app.post(
     "/api/pathology-tests/bulk-upload",
