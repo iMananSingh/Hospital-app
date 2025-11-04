@@ -111,42 +111,71 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const getReceiptNumber = () => {
+    console.log('=== RECEIPT TEMPLATE GET RECEIPT NUMBER ===');
+    console.log('Receipt data type:', receiptData.type);
+    console.log('Receipt data details:', receiptData.details);
+    
+    // Check both camelCase and snake_case versions
+    const checkBothCases = (obj: any, key: string) => {
+      if (!obj) return null;
+      // Check camelCase version
+      if (obj[key]) return obj[key];
+      // Check snake_case version
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      if (obj[snakeKey]) return obj[snakeKey];
+      return null;
+    };
+
     // For services (including OPD which comes as type "service"), check multiple locations
-    if (receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
+    let receiptNum = checkBothCases(receiptData.details, 'receiptNumber');
+    if (receiptNum) {
+      console.log('Found receipt number in details:', receiptNum);
+      return receiptNum;
     }
 
     // For OPD visits, check the raw visit data
     if (receiptData.type === "service" || receiptData.type === "opd_visit") {
-      if (receiptData.details?.rawData?.visit?.receiptNumber) {
-        return receiptData.details.rawData.visit.receiptNumber;
+      receiptNum = checkBothCases(receiptData.details?.rawData?.visit, 'receiptNumber');
+      if (receiptNum) {
+        console.log('Found receipt number in rawData.visit:', receiptNum);
+        return receiptNum;
       }
     }
 
     // For pathology, try to get from order data
     if (receiptData.type === "pathology") {
-      if (receiptData.details?.rawData?.order?.receiptNumber) {
-        return receiptData.details.rawData.order.receiptNumber;
+      receiptNum = checkBothCases(receiptData.details?.rawData?.order, 'receiptNumber');
+      if (receiptNum) {
+        console.log('Found receipt number in rawData.order:', receiptNum);
+        return receiptNum;
       }
-      if (receiptData.details?.order?.receiptNumber) {
-        return receiptData.details.order.receiptNumber;
+      receiptNum = checkBothCases(receiptData.details?.order, 'receiptNumber');
+      if (receiptNum) {
+        console.log('Found receipt number in order:', receiptNum);
+        return receiptNum;
       }
     }
 
     // For admission events, try to get from admission event data
     if (receiptData.type === "admission_event") {
-      if (receiptData.details?.rawData?.event?.receiptNumber) {
-        return receiptData.details.rawData.event.receiptNumber;
+      receiptNum = checkBothCases(receiptData.details?.rawData?.event, 'receiptNumber');
+      if (receiptNum) {
+        console.log('Found receipt number in rawData.event:', receiptNum);
+        return receiptNum;
       }
     }
 
     // For admission fallback, try to get from admission data
     if (receiptData.type === "admission") {
-      if (receiptData.details?.rawData?.admission?.receiptNumber) {
-        return receiptData.details.rawData.admission.receiptNumber;
+      receiptNum = checkBothCases(receiptData.details?.rawData?.admission, 'receiptNumber');
+      if (receiptNum) {
+        console.log('Found receipt number in rawData.admission:', receiptNum);
+        return receiptNum;
       }
     }
 
+    console.log('No receipt number found - returning RECEIPT-NOT-FOUND');
+    console.log('=== END RECEIPT TEMPLATE GET RECEIPT NUMBER ===');
     return "RECEIPT-NOT-FOUND";
   };
 

@@ -395,66 +395,77 @@ export default function PatientDetail() {
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
+      console.log('=== GET RECEIPT NUMBER DEBUG ===');
+      console.log('Event type:', eventType);
+      console.log('Event object:', event);
+      console.log('Event.receiptNumber:', event.receiptNumber);
+      console.log('Event.receipt_number:', event.receipt_number);
+      
       // For OPD visits (which come as opd_visit type), try to get from visit data
       if (eventType === "opd_visit") {
-        // First check direct receipt number
-        if (event.receiptNumber) {
-          return event.receiptNumber;
-        }
-        // Then check rawData
-        if (event.rawData?.visit?.receiptNumber) {
-          return event.rawData.visit.receiptNumber;
-        }
-        // Check if it's directly on the event object (from patient_visits table)
-        if (event.receipt_number) {
-          return event.receipt_number;
+        // Check all possible locations for the receipt number
+        const receiptNum = event.receiptNumber || event.receipt_number || 
+                          event.rawData?.visit?.receiptNumber || 
+                          event.rawData?.visit?.receipt_number;
+        console.log('OPD visit receipt number found:', receiptNum);
+        if (receiptNum) {
+          return receiptNum;
         }
       }
 
       // For services, always use the stored receiptNumber
-      if (eventType === "service" && event.receiptNumber) {
-        return event.receiptNumber;
+      if (eventType === "service") {
+        const receiptNum = event.receiptNumber || event.receipt_number;
+        console.log('Service receipt number found:', receiptNum);
+        if (receiptNum) {
+          return receiptNum;
+        }
       }
 
       // For pathology, try to get from order data
       if (eventType === "pathology") {
-        if (event.rawData?.order?.receiptNumber) {
-          return event.rawData.order.receiptNumber;
-        }
-        if (event.order?.receiptNumber) {
-          return event.order.receiptNumber;
-        }
-        if (event.receiptNumber) {
-          return event.receiptNumber;
+        const receiptNum = event.receiptNumber || event.receipt_number ||
+                          event.rawData?.order?.receiptNumber || 
+                          event.rawData?.order?.receipt_number ||
+                          event.order?.receiptNumber || 
+                          event.order?.receipt_number;
+        console.log('Pathology receipt number found:', receiptNum);
+        if (receiptNum) {
+          return receiptNum;
         }
       }
 
       // For admission events, try to get from admission event data
       if (eventType === "admission_event") {
-        if (event.rawData?.event?.receiptNumber) {
-          return event.rawData.event.receiptNumber;
-        }
-        if (event.receiptNumber) {
-          return event.receiptNumber;
+        const receiptNum = event.receiptNumber || event.receipt_number ||
+                          event.rawData?.event?.receiptNumber || 
+                          event.rawData?.event?.receipt_number;
+        console.log('Admission event receipt number found:', receiptNum);
+        if (receiptNum) {
+          return receiptNum;
         }
       }
 
       // For admission fallback, try to get from admission data
-      if (
-        eventType === "admission" &&
-        event.rawData?.admission?.receiptNumber
-      ) {
-        return event.rawData.admission.receiptNumber;
-      }
-      if (eventType === "admission" && event.receiptNumber) {
-        return event.receiptNumber;
+      if (eventType === "admission") {
+        const receiptNum = event.receiptNumber || event.receipt_number ||
+                          event.rawData?.admission?.receiptNumber || 
+                          event.rawData?.admission?.receipt_number;
+        console.log('Admission receipt number found:', receiptNum);
+        if (receiptNum) {
+          return receiptNum;
+        }
       }
 
       // For other event types, try direct access
-      if (event.receiptNumber) {
-        return event.receiptNumber;
+      const receiptNum = event.receiptNumber || event.receipt_number;
+      console.log('Generic receipt number found:', receiptNum);
+      if (receiptNum) {
+        return receiptNum;
       }
 
+      console.log('No receipt number found - returning RECEIPT-NOT-FOUND');
+      console.log('=== END GET RECEIPT NUMBER DEBUG ===');
       return "RECEIPT-NOT-FOUND";
     };
 
