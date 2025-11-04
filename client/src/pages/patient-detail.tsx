@@ -3439,7 +3439,7 @@ export default function PatientDetail() {
                                 {(() => {
                                   switch (event.type) {
                                     case "opd_visit":
-                                      return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"}`;
+                                      return `OPD Consultation - ${doctors.find((d: Doctor) => d.id === event.data.doctorId)?.name || "Unknown Doctor"} (${event.data.visitId || ""})`;
                                     case "service_batch":
                                       const serviceCount =
                                         event.data.services.length;

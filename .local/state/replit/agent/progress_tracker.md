@@ -3,7 +3,7 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
-### OPD Visit ID Format Update (November 04, 2025 at 8:13 AM)
+### OPD Visit ID Format Update (November 04, 2025 at 12:25 PM)
 [x] Changed OPD visit ID format from VIS-YYMMDD-0001 to VIS-YYYY-000001
 - **User Request**: Remove daily reset and date/month elements from visit IDs
 - **Changes Made**:
@@ -15,8 +15,11 @@
      - Deleted generateVisitId() function (~line 1435) - never called
      - Deleted createPatientVisit() function (~line 2456) - never called
      - Removed createPatientVisit from IStorage interface (line 1175)
+  3. **Added visit ID display in timeline** (line 3445 in client/src/pages/patient-detail.tsx):
+     - Updated OPD consultation heading to show visit ID in parentheses
+     - Format: "OPD Consultation - Dr. Name (VIS-2025-000001)"
 - **New Format**: VIS-2025-000001, VIS-2025-000002, etc. (yearly sequence, no resets)
-- **Files Modified**: `server/storage.ts` (createOpdVisit function, interface cleanup)
+- **Files Modified**: `server/storage.ts` (createOpdVisit function, interface cleanup), `client/src/pages/patient-detail.tsx` (timeline display)
 - **Architect Review**: Passed with no issues ✓
 - **Status**: Application restarted successfully, all changes deployed ✓
 
