@@ -154,26 +154,25 @@ export default function LabTests() {
 
   return (
     <>
-      <TopBar />
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Lab Tests</h1>
-            <p className="text-muted-foreground">
+      <TopBar 
+        title="Lab Tests"
+        actions={
+          <>
+            <div className="text-sm text-muted-foreground mr-2">
               Manage and view all pathology orders by status
-            </p>
-          </div>
-          <div className="flex gap-2">
+            </div>
             <Badge variant="outline" className="px-3 py-1">
               <Calendar className="w-4 h-4 mr-1" />
               Today: {todayLabCount}
             </Badge>
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge variant="outline" className="px-3 py-1 ml-2">
               <TestTube className="w-4 h-4 mr-1" />
               Total: {totalLabCount}
             </Badge>
-          </div>
-        </div>
+          </>
+        }
+      />
+      <div className="container mx-auto p-6">
 
         {/* Filters */}
         <Card className="mb-6">
