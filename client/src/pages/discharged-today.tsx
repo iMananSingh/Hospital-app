@@ -19,6 +19,7 @@ import {
   TrendingUp,
   User
 } from "lucide-react";
+import { useTimezone } from "@/hooks/use-timezone";
 import type { Admission, Patient, Doctor } from "@shared/schema";
 
 interface AdmissionWithDetails extends Admission {
@@ -28,6 +29,7 @@ interface AdmissionWithDetails extends Admission {
 
 export default function DischargedTodayPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { formatTime, formatDate } = useTimezone();
 
   // Fetch today's discharges with IST timezone
   const { data: todayDischarges = [], isLoading } = useQuery<AdmissionWithDetails[]>({
@@ -53,16 +55,6 @@ export default function DischargedTodayPage() {
       );
     });
   }, [todayDischarges, searchQuery]);
-
-  const formatTime = (dateTimeString: string) => {
-    if (!dateTimeString) return 'N/A';
-    const date = new Date(dateTimeString);
-    return date.toLocaleTimeString('en-IN', { 
-      hour12: true, 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
 
   const calculateStayDuration = (admissionDate: string, dischargeDate: string) => {
     if (!dischargeDate) return 0;
@@ -167,7 +159,7 @@ export default function DischargedTodayPage() {
                           <div className="font-medium text-sm">{admission.admissionId}</div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(admission.admissionDate).toLocaleDateString('en-IN')} - {admission.dischargeDate ? new Date(admission.dischargeDate).toLocaleDateString('en-IN') : 'N/A'}
+                            {formatDate(admission.admissionDate)} - {admission.dischargeDate ? formatDate(admission.dischargeDate) : 'N/A'}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />

@@ -18,6 +18,7 @@ import {
   IndianRupee,
   User
 } from "lucide-react";
+import { useTimezone } from "@/hooks/use-timezone";
 import type { Admission, Patient, Doctor } from "@shared/schema";
 
 interface AdmissionWithDetails extends Admission {
@@ -27,6 +28,7 @@ interface AdmissionWithDetails extends Admission {
 
 export default function AdmittedTodayPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { formatTime, formatDate } = useTimezone();
 
   // Fetch today's admissions with IST timezone
   const { data: todayAdmissions = [], isLoading } = useQuery<AdmissionWithDetails[]>({
@@ -52,15 +54,6 @@ export default function AdmittedTodayPage() {
       );
     });
   }, [todayAdmissions, searchQuery]);
-
-  const formatTime = (dateTimeString: string) => {
-    const date = new Date(dateTimeString);
-    return date.toLocaleTimeString('en-IN', { 
-      hour12: true, 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
 
   const getTotalRevenue = () => {
     return todayAdmissions.reduce((sum, admission) => sum + (admission.initialDeposit || 0), 0);
@@ -149,7 +142,7 @@ export default function AdmittedTodayPage() {
                           <div className="font-medium text-sm">{admission.admissionId}</div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(admission.admissionDate).toLocaleDateString('en-IN')}
+                            {formatDate(admission.admissionDate)}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />

@@ -3,6 +3,25 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Timezone Display Fix for Admission Pages (November 04, 2025 at 4:00 PM)
+[x] Fixed time and date displays not respecting configured timezone settings
+- **Issue**: Time shown in "Admitted Today" and "Discharged Today" pages was not adjusted to the configured timezone in settings
+- **Root Cause**: Both pages had local `formatTime` functions that used hardcoded 'en-IN' locale instead of the timezone-aware `useTimezone` hook
+- **Solution**: Updated both pages to use the existing `useTimezone` hook which provides:
+  - `formatTime()` - Timezone-aware time formatting (e.g., "8:30 PM")
+  - `formatDate()` - Timezone-aware date formatting (e.g., "Oct 2, 2025")
+  - `formatDateTime()` - Combined date and time formatting
+- **Changes Made**:
+  1. Imported `useTimezone` hook in both pages
+  2. Replaced local `formatTime` functions with hook version
+  3. Updated date displays to use `formatDate()` instead of `toLocaleDateString()`
+  4. All times and dates now respect the timezone configured in System Settings
+- **Files Modified**: 
+  - `client/src/pages/admitted-today.tsx` (imports, lines 34, 148, 152)
+  - `client/src/pages/discharged-today.tsx` (imports, lines 35, 165, 169)
+- **Result**: All time and date displays now correctly show times adjusted to the hospital's configured timezone
+- **Status**: Application restarted successfully, changes hot-reloaded ✓
+
 ### Service Order Receipt Number Fix (November 04, 2025 at 3:45 PM)
 [x] Fixed service order receipt numbers all showing 0001
 - **Issue**: All service order receipts showed "0001" regardless of how many orders were created
