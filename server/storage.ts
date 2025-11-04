@@ -2501,6 +2501,7 @@ export class SqliteStorage implements IStorage {
           visitDate: data.scheduledDate || data.visitDate,
           status: "scheduled",
           consultationFee: data.consultationFee || 0,
+          receiptNumber: data.receiptNumber || null, // Include receiptNumber
           // Database defaults will handle createdAt/updatedAt in UTC
         })
         .returning()
@@ -2580,6 +2581,7 @@ export class SqliteStorage implements IStorage {
         prescription: schema.patientVisits.prescription,
         status: schema.patientVisits.status,
         consultationFee: schema.patientVisits.consultationFee,
+        receiptNumber: schema.patientVisits.receiptNumber, // Include receiptNumber
         createdAt: schema.patientVisits.createdAt,
         // Patient details
         patientName: schema.patients.name,
