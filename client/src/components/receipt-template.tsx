@@ -111,8 +111,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const getReceiptNumber = () => {
-    // For services, always use the stored receiptNumber
-    if (receiptData.type === "service" && receiptData.details?.receiptNumber) {
+    // For services (including OPD which comes as type "service"), always use the stored receiptNumber
+    if (receiptData.details?.receiptNumber) {
       return receiptData.details.receiptNumber;
     }
 
@@ -124,9 +124,6 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       if (receiptData.details?.order?.receiptNumber) {
         return receiptData.details.order.receiptNumber;
       }
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
-      }
     }
 
     // For admission events, try to get from admission event data
@@ -134,39 +131,13 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       if (receiptData.details?.rawData?.event?.receiptNumber) {
         return receiptData.details.rawData.event.receiptNumber;
       }
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
-      }
     }
 
     // For admission fallback, try to get from admission data
-    if (
-      receiptData.type === "admission" &&
-      receiptData.details?.rawData?.admission?.receiptNumber
-    ) {
-      return receiptData.details.rawData.admission.receiptNumber;
-    }
-    if (receiptData.type === "admission" && receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
-    }
-
-    // For OPD visits, try to get from visit data first
-    if (receiptData.type === "opd_visit") {
-      if (receiptData.details?.receiptNumber) {
-        return receiptData.details.receiptNumber;
+    if (receiptData.type === "admission") {
+      if (receiptData.details?.rawData?.admission?.receiptNumber) {
+        return receiptData.details.rawData.admission.receiptNumber;
       }
-      if (receiptData.details?.rawData?.visit?.receiptNumber) {
-        return receiptData.details.rawData.visit.receiptNumber;
-      }
-      // Fallback to ID only if no receipt number found
-      if (receiptData.id) {
-        return `OPD-${receiptData.id}`;
-      }
-    }
-
-    // For other event types, try direct access
-    if (receiptData.details?.receiptNumber) {
-      return receiptData.details.receiptNumber;
     }
 
     return "RECEIPT-NOT-FOUND";

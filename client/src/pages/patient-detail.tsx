@@ -395,6 +395,18 @@ export default function PatientDetail() {
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
+      // For OPD visits (which come as opd_visit type), try to get from visit data
+      if (eventType === "opd_visit") {
+        // First check direct receipt number
+        if (event.receiptNumber) {
+          return event.receiptNumber;
+        }
+        // Then check rawData
+        if (event.rawData?.visit?.receiptNumber) {
+          return event.rawData.visit.receiptNumber;
+        }
+      }
+
       // For services, always use the stored receiptNumber
       if (eventType === "service" && event.receiptNumber) {
         return event.receiptNumber;
@@ -432,11 +444,6 @@ export default function PatientDetail() {
       }
       if (eventType === "admission" && event.receiptNumber) {
         return event.receiptNumber;
-      }
-
-      // For OPD visits, use the ID as a temporary receipt reference if available
-      if (eventType === "opd_visit" && event.id) {
-        return `OPD-${event.id}`;
       }
 
       // For other event types, try direct access
