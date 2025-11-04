@@ -111,9 +111,16 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
   };
 
   const getReceiptNumber = () => {
-    // For services (including OPD which comes as type "service"), always use the stored receiptNumber
+    // For services (including OPD which comes as type "service"), check multiple locations
     if (receiptData.details?.receiptNumber) {
       return receiptData.details.receiptNumber;
+    }
+
+    // For OPD visits, check the raw visit data
+    if (receiptData.type === "service" || receiptData.type === "opd_visit") {
+      if (receiptData.details?.rawData?.visit?.receiptNumber) {
+        return receiptData.details.rawData.visit.receiptNumber;
+      }
     }
 
     // For pathology, try to get from order data

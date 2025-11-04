@@ -405,6 +405,10 @@ export default function PatientDetail() {
         if (event.rawData?.visit?.receiptNumber) {
           return event.rawData.visit.receiptNumber;
         }
+        // Check if it's directly on the event object (from patient_visits table)
+        if (event.receipt_number) {
+          return event.receipt_number;
+        }
       }
 
       // For services, always use the stored receiptNumber
@@ -508,6 +512,12 @@ export default function PatientDetail() {
               serviceName: "OPD Consultation",
               category: "OPD Consultation",
               type: "opd_visit",
+              rawData: {
+                visit: {
+                  receiptNumber: getReceiptNumber(),
+                  ...event,
+                },
+              },
             }
           : {}),
         // For pathology orders, ensure tests are accessible
