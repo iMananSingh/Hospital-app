@@ -1478,12 +1478,12 @@ export class SqliteStorage implements IStorage {
     const yy = now.getFullYear().toString().slice(-2);
     const mm = (now.getMonth() + 1).toString().padStart(2, "0");
     const yearMonth = `${yy}${mm}`;
-    
+
     try {
       // Count payments from current month only
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-      
+
       const monthlyPayments = db
         .select()
         .from(schema.patientPayments)
@@ -1494,7 +1494,7 @@ export class SqliteStorage implements IStorage {
           )
         )
         .all();
-      
+
       const count = monthlyPayments.length + 1;
       return `PAY-${yearMonth}-${count.toString().padStart(5, "0")}`;
     } catch (error) {
@@ -1509,12 +1509,12 @@ export class SqliteStorage implements IStorage {
     const yy = now.getFullYear().toString().slice(-2);
     const mm = (now.getMonth() + 1).toString().padStart(2, "0");
     const yearMonth = `${yy}${mm}`;
-    
+
     try {
       // Count discounts from current month only
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-      
+
       const monthlyDiscounts = db
         .select()
         .from(schema.patientDiscounts)
@@ -1525,7 +1525,7 @@ export class SqliteStorage implements IStorage {
           )
         )
         .all();
-      
+
       const count = monthlyDiscounts.length + 1;
       return `DISC-${yearMonth}-${count.toString().padStart(5, "0")}`;
     } catch (error) {
@@ -3953,7 +3953,7 @@ export class SqliteStorage implements IStorage {
       // Get system timezone offset for proper date filtering
       const systemSettings = await this.getSystemSettings();
       const timezoneOffset = systemSettings?.timezoneOffset || "+00:00";
-      
+
       const whereConditions: any[] = [];
 
       if (patientId) {
@@ -6516,8 +6516,7 @@ export class SqliteStorage implements IStorage {
             details: {
               admissionId: admission.admissionId,
               paymentMethod: "cash",
-              reason: "Initial admission deposit",
-              quantity: 1,
+              reason: "Initial admission deposit", quantity: 1,
             },
           });
         }
