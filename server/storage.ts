@@ -1172,7 +1172,6 @@ export interface IStorage {
   ): Promise<Patient | undefined>;
 
   // Patient visits
-  createPatientVisit(visit: InsertPatientVisit): Promise<PatientVisit>;
   getPatientVisits(patientId?: string): Promise<PatientVisit[]>;
   getPatientVisitById(id: string): Promise<PatientVisit | undefined>;
 
@@ -1430,12 +1429,6 @@ export class SqliteStorage implements IStorage {
     const year = new Date().getFullYear();
     const count = db.select().from(schema.patients).all().length + 1;
     return `PT-${year}-${count.toString().padStart(5, "0")}`;
-  }
-
-  private generateVisitId(): string {
-    const year = new Date().getFullYear();
-    const count = db.select().from(schema.patientVisits).all().length + 1;
-    return `VIS-${year}-${count.toString().padStart(5, "0")}`;
   }
 
   private generateBillNumber(): string {
@@ -2459,19 +2452,6 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async createPatientVisit(visit: InsertPatientVisit): Promise<PatientVisit> {
-    const visitId = this.generateVisitId();
-    const created = db
-      .insert(schema.patientVisits)
-      .values({
-        ...visit,
-        visitId,
-      })
-      .returning()
-      .get();
-    return created;
-  }
-
   async getPatientVisits(patientId?: string): Promise<PatientVisit[]> {
     if (patientId) {
       return db
@@ -2499,15 +2479,16 @@ export class SqliteStorage implements IStorage {
   // OPD-specific methods
   async createOpdVisit(data: InsertPatientVisit): Promise<PatientVisit> {
     try {
-      // Generate unique visit ID using total count instead of daily count to avoid duplicates
-      const totalVisitCount = await db
+      // Generate visit ID with yearly count: VIS-YYYY-000001
+      const year = new Date().getFullYear();
+      const yearlyVisitCount = await db
         .select({ count: sql`COUNT(*)` })
-        .from(schema.patientVisits);
+        .from(schema.patientVisits)
+        .where(sql`strftime('%Y', ${schema.patientVisits.createdAt}) = ${year.toString()}`);
 
-      const visitCount = totalVisitCount[0]?.count || 0;
-      const orderNumber = String(visitCount + 1).padStart(4, "0");
-      const today = new Date().toISOString().slice(2, 10).replace(/-/g, "");
-      const visitId = `VIS-${today}-${orderNumber}`;
+      const visitCount = yearlyVisitCount[0]?.count || 0;
+      const orderNumber = String(visitCount + 1).padStart(6, "0");
+      const visitId = `VIS-${year}-${orderNumber}`;
 
       // Store the data as-is without any timezone conversion
       const result = await db
