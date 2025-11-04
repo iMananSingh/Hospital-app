@@ -192,7 +192,7 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -232,21 +232,40 @@ export default function LabTests() {
                 </SelectContent>
               </Select>
 
-              <Input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                placeholder="From date"
-                data-testid="filter-from-date"
-              />
-
-              <Input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                placeholder="To date"
-                data-testid="filter-to-date"
-              />
+              <div className="relative">
+                <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10 pointer-events-none" />
+                <Input
+                  type="text"
+                  value={fromDate && toDate ? `${fromDate} to ${toDate}` : ''}
+                  onFocus={(e) => {
+                    e.target.type = 'date';
+                    e.target.value = fromDate;
+                  }}
+                  onBlur={(e) => {
+                    if (!fromDate && !toDate) {
+                      e.target.type = 'text';
+                    }
+                  }}
+                  onChange={(e) => {
+                    if (e.target.type === 'date') {
+                      if (!fromDate) {
+                        setFromDate(e.target.value);
+                        e.target.value = '';
+                        setTimeout(() => {
+                          e.target.focus();
+                        }, 0);
+                      } else if (!toDate) {
+                        setToDate(e.target.value);
+                        e.target.type = 'text';
+                        e.target.blur();
+                      }
+                    }
+                  }}
+                  placeholder="Select date range"
+                  className="pl-10"
+                  data-testid="filter-date-range"
+                />
+              </div>
 
               <div className="flex justify-end">
                 <Button 
