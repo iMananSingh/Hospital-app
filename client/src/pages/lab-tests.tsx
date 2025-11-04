@@ -193,7 +193,7 @@ export default function LabTests() {
               Manage and view all pathology orders by status
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div className="relative">
+              <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by order ID, name, patient ID, or phone..."
@@ -248,22 +248,22 @@ export default function LabTests() {
                 data-testid="filter-to-date"
               />
 
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-fit px-3"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedDoctor("all");
-                  setSelectedStatus("all");
-                  setFromDate("");
-                  setToDate("");
-                }}
-                data-testid="clear-filters"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
+              <div className="flex justify-end">
+                <Button 
+                  variant="outline"
+                  className="h-10 px-4"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedDoctor("all");
+                    setSelectedStatus("all");
+                    setFromDate("");
+                    setToDate("");
+                  }}
+                  data-testid="clear-filters"
+                >
+                  Clear
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
