@@ -25,7 +25,8 @@ export default function LabTests() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
   // Fetch all pathology orders
   const { data: pathologyOrders = [], isLoading } = useQuery({
@@ -59,9 +60,23 @@ export default function LabTests() {
       const matchesDoctor = selectedDoctor === "all" || order.doctorId === selectedDoctor || 
         (selectedDoctor === "external" && !order.doctorId);
       const matchesStatus = selectedStatus === "all" || order.status === selectedStatus;
-      const matchesDate = selectedDate === "" || order.orderedDate === selectedDate;
+      
+      const matchesDateRange = (() => {
+        if (!fromDate && !toDate) return true;
+        const orderDate = order.orderedDate;
+        if (!orderDate) return false;
+        
+        if (fromDate && toDate) {
+          return orderDate >= fromDate && orderDate <= toDate;
+        } else if (fromDate) {
+          return orderDate >= fromDate;
+        } else if (toDate) {
+          return orderDate <= toDate;
+        }
+        return true;
+      })();
 
-      return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
+      return matchesSearch && matchesDoctor && matchesStatus && matchesDateRange;
     });
 
     const grouped = filtered.reduce((groups, orderData) => {
@@ -84,7 +99,7 @@ export default function LabTests() {
     });
 
     return grouped;
-  }, [pathologyOrders, searchQuery, selectedDoctor, selectedStatus, selectedDate]);
+  }, [pathologyOrders, searchQuery, selectedDoctor, selectedStatus, fromDate, toDate]);
 
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
@@ -177,7 +192,7 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -219,18 +234,30 @@ export default function LabTests() {
 
               <Input
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                data-testid="filter-date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                placeholder="From date"
+                data-testid="filter-from-date"
+              />
+
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                placeholder="To date"
+                data-testid="filter-to-date"
               />
 
               <Button 
                 variant="outline" 
+                size="sm"
+                className="w-fit px-3"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedDoctor("all");
                   setSelectedStatus("all");
-                  setSelectedDate("");
+                  setFromDate("");
+                  setToDate("");
                 }}
                 data-testid="clear-filters"
               >
