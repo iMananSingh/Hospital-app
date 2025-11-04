@@ -3,6 +3,17 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### OPD Receipt Number Increment Fix (November 04, 2025 at 3:19 PM)
+[x] Fixed OPD receipt numbers incrementing by 2 instead of 1
+- **Issue**: When scheduling OPD consultations, receipt count was increasing by 2 (e.g., 0001, 0003, 0005) instead of incrementing by 1
+- **Root Cause**: The `getDailyReceiptCountSync` function was adding 1 twice:
+  - Line 5771: `count = maxNumber + 1`
+  - Line 5818: `return count + 1`
+- **Solution**: Changed line 5774 from `count = maxNumber + 1` to `count = maxNumber`
+- **Result**: Receipt numbers now increment correctly (0001, 0002, 0003, etc.)
+- **Files Modified**: `server/storage.ts` (line 5774)
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Environment Migration - November 04, 2025 at 3:12 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully

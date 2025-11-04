@@ -5768,8 +5768,8 @@ export class SqliteStorage implements IStorage {
           }
         }
 
-        count = maxNumber + 1; // Next number
-        console.log(`Found ${opdVisits.length} OPD visits for ${dateStr}, max number ${maxNumber}, returning ${count}`);
+        count = maxNumber;
+        console.log(`Found ${opdVisits.length} OPD visits for ${dateStr}, max number ${maxNumber}, returning ${count + 1}`);
       } else if (serviceType === "pathology") {
         count =
           db.$client
