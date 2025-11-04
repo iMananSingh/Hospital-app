@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PatientService, Patient, Doctor, Service } from "@shared/schema";
-import TopBar from "@/components/TopBar";
+import TopBar from "@/components/layout/topbar";
 
 export default function Diagnostics() {
   const [searchQuery, setSearchQuery] = useState("");

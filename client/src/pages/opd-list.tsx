@@ -53,7 +53,7 @@ export default function OpdList() {
         visit.patientName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         visit.patientPatientId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         visit.patientPhone?.includes(searchQuery);
-      
+
       const matchesDoctor = selectedDoctor === "all" || visit.doctorId === selectedDoctor;
       const matchesStatus = selectedStatus === "all" || visit.status === selectedStatus;
       const matchesDate = selectedDate === "" || visit.scheduledDate === selectedDate;
@@ -165,7 +165,7 @@ export default function OpdList() {
                 data-testid="search-opd-patients"
               />
             </div>
-            
+
             <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
               <SelectTrigger data-testid="filter-doctor">
                 <SelectValue placeholder="Filter by doctor" />
@@ -262,7 +262,7 @@ export default function OpdList() {
                                 {visit.patientPatientId || "N/A"}
                               </Badge>
                             </div>
-                            
+
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Calendar className="w-3 h-3" />
@@ -293,7 +293,7 @@ export default function OpdList() {
                           >
                             {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                           </Badge>
-                          
+
                           <div className="text-right">
                             <div className="font-medium">
                               ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
@@ -302,7 +302,7 @@ export default function OpdList() {
                               Consultation Fee
                             </div>
                           </div>
-                          
+
                           <Link href={`/patients/${visit.patientId}`}>
                             <Button variant="outline" size="sm" data-testid={`view-patient-${visit.id}`}>
                               View

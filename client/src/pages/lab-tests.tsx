@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
-import TopBar from "@/components/TopBar"; // Assuming TopBar is in this path
+import TopBar from "@/components/layout/topbar";
 
 export default function LabTests() {
   const [searchQuery, setSearchQuery] = useState("");
