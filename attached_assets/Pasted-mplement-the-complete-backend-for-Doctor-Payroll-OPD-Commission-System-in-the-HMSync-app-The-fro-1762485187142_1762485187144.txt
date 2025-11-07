@@ -1,0 +1,169 @@
+mplement the complete backend for Doctor Payroll / OPD Commission System in the HMSync app.
+
+The frontend already exists (salary configuration tab, rate form, earnings table). Backend must be built fully and connected.
+
+🔍 Current State & Root Issues
+
+The frontend calls these endpoints (404 errors — they don’t exist):
+
+GET /api/doctors/:doctorId/salary-rates
+PUT /api/doctors/:doctorId/salary-rates
+GET /api/doctors/:doctorId/earnings
+PUT /api/doctors/:doctorId/mark-paid
+GET /api/doctors/all-earnings
+
+
+Database tables doctor_service_rates and doctor_earnings exist but are unused.
+
+No backend logic exists for calculating or storing doctor commissions.
+
+The “OPD Consultation” service is a placeholder (not in services table) → needs special handling.
+
+In the frontend, “OPD Consultation” becomes unchecked because backend tries to remap placeholder IDs and mistakenly matches “Doctor Visit”.
+
+✅ Goal
+
+Build the complete backend to handle doctor commission workflow (starting with OPD consultations).
+Must include: storage layer, API routes, and automatic trigger via patient payments.
+
+🧩 Data Flow & Architecture
+1. Rate Configuration
+
+Stored in doctor_service_rates
+
+{
+  doctorId: "DOC-001",
+  serviceId: "opd_consultation_placeholder",
+  serviceName: "OPD Consultation",
+  serviceCategory: "opd",
+  rateType: "percentage" | "amount",
+  rateAmount: 40,
+  isActive: true
+}
+
+2. Trigger Logic
+
+A new payment is created in patient_payments.
+
+reason field looks like "OPD Visit - VIS-251103-0015".
+
+Backend parses visit ID "VIS-251103-0015".
+
+Update that visit in patient_visits:
+
+status: "completed"
+
+
+Then:
+
+Fetch the doctorId from that visit.
+
+Check if doctor has OPD commission rate in doctor_service_rates.
+
+Calculate commission using the visit’s consultationFee:
+
+If rateType == "percentage" → fee * (rateAmount / 100)
+
+If rateType == "amount" → flat rateAmount.
+
+Create record in doctor_earnings:
+
+{
+  doctorId: "DOC-001",
+  visitId: "VIS-251103-0015",
+  serviceName: "OPD Consultation",
+  serviceCategory: "opd",
+  servicePrice: 1000,
+  rateType: "percentage",
+  rateAmount: 40,
+  earnedAmount: 400,
+  status: "pending",
+  earnedDate: "2025-11-03"
+}
+
+3. Manual / Recalculate Option
+
+Optional: Add /api/doctors/recalculate/:doctorId route.
+
+Checks all patient_visits with status = 'completed' but not yet in doctor_earnings.
+
+4. Earnings View + Mark as Paid
+
+Endpoint to get doctor’s earnings → filter by doctorId.
+
+Endpoint to mark all doctor’s pending earnings as “paid”.
+
+⚙️ Implementation Tasks
+
+Add Status Column to patient_visits:
+
+status: "scheduled" | "completed" | "cancelled"
+
+Default: "scheduled".
+
+Storage Layer (server/storage.ts):
+
+getDoctorServiceRates(doctorId)
+
+saveDoctorServiceRates(doctorId, rates)
+
+getDoctorEarnings(doctorId)
+
+addDoctorEarning(earning)
+
+markDoctorEarningsPaid(doctorId)
+
+calculateDoctorEarningForVisit(visitId)
+(Handles OPD logic separately using patient_visits table)
+
+Routes (server/routes.ts):
+
+GET /api/doctors/:doctorId/salary-rates
+
+PUT /api/doctors/:doctorId/salary-rates
+
+GET /api/doctors/:doctorId/earnings
+
+PUT /api/doctors/:doctorId/mark-paid
+
+POST /api/payments → when payment created, trigger earning logic.
+
+Fix OPD Placeholder Handling:
+
+Never remap or search for similar names.
+
+Keep "opd_consultation_placeholder" as stored.
+
+Logic knows to look in patient_visits instead of patient_services.
+
+Ensure Automatic Trigger Works:
+
+When new payment added:
+
+Detect if reason starts with “OPD Visit - VIS-”
+
+Extract visit ID
+
+Update that visit’s status to "completed"
+
+Call earning calculation.
+
+Frontend Integration Check:
+
+Ensure doctor salary tab loads saved OPD commission rates correctly.
+
+Ensure saving rate updates backend.
+
+Ensure after payment → doctor’s earnings table reflects the new commission.
+
+💡 Future Extension (don’t implement now)
+
+Add commission handling for other services (Lab, Admission, Diagnostics) using patient_services table.
+
+Add separate “Recalculate” button for missed earnings.
+
+Handle partial payments for non-OPD services later.
+
+Goal for this session:
+Implement the entire OPD commission backend (end-to-end) including storage layer, routes, and payment trigger logic.
+Once it’s done, we’ll test by scheduling a visit → adding payment → verifying earning record appears for the correct doctor.
