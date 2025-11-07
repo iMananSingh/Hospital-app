@@ -762,6 +762,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Doctor Salary/Commission Routes
+  app.get("/api/doctors/:doctorId/salary-rates", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const rates = await storage.getDoctorServiceRates(doctorId);
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching doctor salary rates:", error);
+      res.status(500).json({ message: "Failed to fetch salary rates" });
+    }
+  });
+
+  app.put("/api/doctors/:doctorId/salary-rates", authenticateToken, async (req: any, res) => {
+    try {
+      const { doctorId } = req.params;
+      const { rates } = req.body;
+
+      if (!Array.isArray(rates)) {
+        return res.status(400).json({ message: "Rates must be an array" });
+      }
+
+      // Verify user ID exists
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      await storage.saveDoctorServiceRates(doctorId, rates, req.user.id);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "update",
+        tableName: "doctor_service_rates",
+        recordId: doctorId,
+        oldValues: null,
+        newValues: { rates },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({ message: "Salary rates saved successfully" });
+    } catch (error) {
+      console.error("Error saving doctor salary rates:", error);
+      res.status(500).json({ message: "Failed to save salary rates" });
+    }
+  });
+
+  app.get("/api/doctors/:doctorId/earnings", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const { status } = req.query;
+      const earnings = await storage.getDoctorEarnings(doctorId, status as string);
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error fetching doctor earnings:", error);
+      res.status(500).json({ message: "Failed to fetch earnings" });
+    }
+  });
+
+  app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req: any, res) => {
+    try {
+      const { doctorId } = req.params;
+      const count = await storage.markDoctorEarningsPaid(doctorId);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "update",
+        tableName: "doctor_earnings",
+        recordId: doctorId,
+        oldValues: null,
+        newValues: { status: "paid", count },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({ message: `${count} earnings marked as paid`, count });
+    } catch (error) {
+      console.error("Error marking earnings as paid:", error);
+      res.status(500).json({ message: "Failed to mark earnings as paid" });
+    }
+  });
+
+  app.get("/api/doctors/all-earnings", authenticateToken, async (req, res) => {
+    try {
+      const { status } = req.query;
+      const earnings = await storage.getDoctorEarnings(undefined, status as string);
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error fetching all doctor earnings:", error);
+      res.status(500).json({ message: "Failed to fetch earnings" });
+    }
+  });
+
   // Added restore doctor route
   app.put(
     "/api/doctors/:id/restore",
@@ -4168,6 +4264,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Log activity for payment
         const patient = await storage.getPatientById(patientId);
+
+        // Check if payment is for OPD visit and trigger commission calculation
+        if (reason && reason.startsWith("OPD Visit - VIS-")) {
+          try {
+            // Extract visit ID from reason (e.g., "OPD Visit - VIS-2025-000001")
+            const visitIdMatch = reason.match(/VIS-\d{4}-\d+/);
+            if (visitIdMatch) {
+              const visitId = visitIdMatch[0];
+              console.log(`Payment for OPD visit ${visitId}, calculating commission`);
+              
+              // Calculate and create doctor earning for this visit
+              // This method also updates the visit status to completed
+              const earning = await storage.calculateDoctorEarningForVisit(visitId);
+              if (earning) {
+                console.log(`Created doctor earning: ${earning.earningId} for ₹${earning.earnedAmount}`);
+              }
+            }
+          } catch (earningError) {
+            // Log error but don't fail the payment creation
+            console.error("Error calculating doctor earning:", earningError);
+          }
+        }
 
         res.json(payment);
       } catch (error: any) {

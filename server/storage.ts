@@ -1413,6 +1413,9 @@ export interface IStorage {
   recalculateDoctorEarnings(
     doctorId?: string,
   ): Promise<{ processed: number; created: number }>;
+  saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void>;
+  markDoctorEarningsPaid(doctorId: string): Promise<number>;
+  calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null>;
 
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
@@ -6921,6 +6924,167 @@ export class SqliteStorage implements IStorage {
       return updated;
     } catch (error) {
       console.error("Error updating doctor earning status:", error);
+      throw error;
+    }
+  }
+
+  // Batch save/update doctor service rates
+  async saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void> {
+    try {
+      console.log(`Saving ${rates.length} service rates for doctor ${doctorId}`);
+      
+      // Delete all existing rates for this doctor
+      db.delete(schema.doctorServiceRates)
+        .where(eq(schema.doctorServiceRates.doctorId, doctorId))
+        .run();
+      
+      // Insert new rates
+      for (const rate of rates) {
+        if (rate.isSelected && rate.salaryBasis) {
+          await this.createDoctorServiceRate({
+            doctorId,
+            serviceId: rate.serviceId,
+            serviceName: rate.serviceName,
+            serviceCategory: rate.serviceCategory,
+            rateType: rate.salaryBasis, // 'amount' or 'percentage'
+            rateAmount: rate.salaryBasis === 'amount' ? rate.amount : rate.percentage,
+            isActive: true,
+            createdBy: userId, // Use authenticated user ID
+          });
+        }
+      }
+      
+      console.log(`Successfully saved service rates for doctor ${doctorId}`);
+    } catch (error) {
+      console.error('Error saving doctor service rates:', error);
+      throw error;
+    }
+  }
+
+  // Mark all pending earnings for a doctor as paid
+  async markDoctorEarningsPaid(doctorId: string): Promise<number> {
+    try {
+      console.log(`Marking all pending earnings as paid for doctor ${doctorId}`);
+      
+      const result = db
+        .update(schema.doctorEarnings)
+        .set({
+          status: 'paid',
+          updatedAt: new Date().toISOString(),
+        })
+        .where(
+          and(
+            eq(schema.doctorEarnings.doctorId, doctorId),
+            eq(schema.doctorEarnings.status, 'pending')
+          )
+        )
+        .run();
+      
+      const count = result.changes || 0;
+      console.log(`Marked ${count} earnings as paid for doctor ${doctorId}`);
+      return count;
+    } catch (error) {
+      console.error('Error marking doctor earnings as paid:', error);
+      throw error;
+    }
+  }
+
+  // Calculate and create doctor earning for an OPD visit
+  async calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null> {
+    try {
+      console.log(`Calculating doctor earning for visit ${visitId}`);
+      
+      // Get the visit details by visitId string (e.g., "VIS-2025-000001")
+      const visit = db
+        .select()
+        .from(schema.patientVisits)
+        .where(eq(schema.patientVisits.visitId, visitId))
+        .get();
+      
+      if (!visit) {
+        console.log(`Visit ${visitId} not found`);
+        return null;
+      }
+      
+      // Check if visit is OPD
+      if (visit.visitType !== 'opd') {
+        console.log(`Visit ${visitId} is not an OPD visit (type: ${visit.visitType})`);
+        return null;
+      }
+      
+      // Update visit status to completed if not already
+      if (visit.status !== 'completed') {
+        await this.updateOpdVisitStatus(visit.id, 'completed');
+        console.log(`Updated visit ${visitId} status to completed`);
+      }
+      
+      // Check if earning already exists for this visit
+      const existingEarning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(
+          and(
+            eq(schema.doctorEarnings.doctorId, visit.doctorId),
+            sql`${schema.doctorEarnings.notes} LIKE ${'%' + visit.visitId + '%'}`
+          )
+        )
+        .get();
+      
+      if (existingEarning) {
+        console.log(`Earning already exists for visit ${visitId}`);
+        return existingEarning;
+      }
+      
+      // Get doctor service rate for OPD consultation
+      // Look for "opd_consultation_placeholder" or matching OPD service
+      const doctorRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, visit.doctorId),
+            eq(schema.doctorServiceRates.serviceCategory, 'opd'),
+            eq(schema.doctorServiceRates.isActive, true)
+          )
+        )
+        .get();
+      
+      if (!doctorRate) {
+        console.log(`No OPD commission rate found for doctor ${visit.doctorId}`);
+        return null;
+      }
+      
+      // Calculate earning amount
+      const consultationFee = visit.consultationFee || 0;
+      let earnedAmount = 0;
+      
+      if (doctorRate.rateType === 'percentage') {
+        earnedAmount = (consultationFee * doctorRate.rateAmount) / 100;
+      } else if (doctorRate.rateType === 'amount') {
+        earnedAmount = doctorRate.rateAmount;
+      }
+      
+      // Create earning record
+      const earning = await this.createDoctorEarning({
+        doctorId: visit.doctorId,
+        patientId: visit.patientId,
+        serviceId: doctorRate.serviceId,
+        patientServiceId: null,
+        serviceName: 'OPD Consultation',
+        serviceCategory: 'opd',
+        serviceDate: visit.visitDate,
+        rateType: doctorRate.rateType,
+        rateAmount: doctorRate.rateAmount,
+        servicePrice: consultationFee,
+        earnedAmount,
+        status: 'pending',
+        notes: `OPD Visit ${visit.visitId}`,
+      });
+      
+      console.log(`Created earning ${earning.earningId} for visit ${visitId}: ₹${earnedAmount}`);
+      return earning;
+    } catch (error) {
+      console.error('Error calculating doctor earning for visit:', error);
       throw error;
     }
   }
