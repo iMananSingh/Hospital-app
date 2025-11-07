@@ -34,6 +34,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 7, 2025** - Doctor Payroll & OPD Commission System Backend
+- Implemented complete backend for automatic doctor commission calculation system
+- Added three new storage methods:
+  - `saveDoctorServiceRates(doctorId, rates, userId)` - Batch save/update doctor service rates with proper user authentication
+  - `markDoctorEarningsPaid(doctorId)` - Mark all pending earnings as paid for payroll processing
+  - `calculateDoctorEarningForVisit(visitId)` - Automatically calculate and create doctor earnings for OPD visits
+- Created 5 new API endpoints:
+  - GET /api/doctors/:doctorId/salary-rates - Fetch doctor's commission configuration
+  - PUT /api/doctors/:doctorId/salary-rates - Save doctor's commission rates
+  - GET /api/doctors/:doctorId/earnings - Get doctor's earnings with optional status filter (pending/paid)
+  - PUT /api/doctors/:doctorId/mark-paid - Mark all pending earnings as paid
+  - GET /api/doctors/all-earnings - Get all doctors' earnings for administrative overview
+- Enhanced payment creation flow to automatically trigger commission calculations when OPD visit payments are received
+- System automatically updates visit status from "scheduled" to "completed" when payment is processed
+- Supports both percentage-based and fixed-amount commission rates per service
+- Includes duplicate earning prevention and proper foreign key constraints
+- All earnings tracked with earningId for payroll reconciliation
+
 **October 15, 2025** - Timezone Display Enhancement
 - Implemented centralized timezone-aware date/time formatting across the application
 - Created useTimezone hook with formatDateTime, formatDate, and formatTime utilities
