@@ -1643,7 +1643,11 @@ export default function Doctors() {
                             return (
                             <TableRow key={doctorData.doctorId}>
                               <TableCell>
-                                <div className="flex items-center space-x-3">
+                                <div 
+                                  className="flex items-center space-x-3 cursor-pointer hover:bg-blue-50 rounded-lg p-2 -m-2 transition-colors duration-200"
+                                  onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
+                                  data-testid={`clickable-doctor-${doctorData.doctorId}`}
+                                >
                                   <div className="w-8 h-8 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
                                     {doctor?.profilePicture ? (
                                       <img 
@@ -1658,7 +1662,7 @@ export default function Doctors() {
                                     )}
                                   </div>
                                   <div>
-                                    <p className="font-medium" data-testid={`salary-doctor-name-${doctorData.doctorId}`}>{doctorData.doctorName}</p>
+                                    <p className="font-medium text-medical-blue" data-testid={`salary-doctor-name-${doctorData.doctorId}`}>{doctorData.doctorName}</p>
                                     <p className="text-sm text-muted-foreground">
                                       {doctor?.specialization}
                                     </p>
