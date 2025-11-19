@@ -1634,15 +1634,6 @@ export default function Doctors() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
-                                    data-testid={`button-view-doctor-${doctorData.doctorId}`}
-                                  >
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View
-                                  </Button>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -1660,6 +1651,23 @@ export default function Doctors() {
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>{doctorData.totalPending > 0 ? "Mark as Paid" : "No pending earnings"}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
+                                          data-testid={`button-view-doctor-${doctorData.doctorId}`}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>View Doctor Details</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
