@@ -87,6 +87,16 @@
           "test_name": "Uric Acid",
           "price": 200,
           "subtests": []
+        },
+        {
+          "test_name": "testtest",
+          "price": 10,
+          "subtests": []
+        },
+        {
+          "test_name": "testtest",
+          "price": 10,
+          "subtests": []
         }
       ]
     },
