@@ -1415,7 +1415,7 @@ export interface IStorage {
   ): Promise<{ processed: number; created: number }>;
   saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void>;
   markDoctorEarningsPaid(doctorId: string, userId: string, paymentMethod?: string): Promise<number>;
-  markEarningAsPaid(earningId: string, userId: string): Promise<DoctorEarning | undefined>;
+  markEarningAsPaid(earningId: string, userId: string, paymentMethod?: string): Promise<DoctorEarning | undefined>;
   calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null>;
 
   // Doctor Payment Management
@@ -7045,7 +7045,7 @@ export class SqliteStorage implements IStorage {
   }
 
   // Mark a single earning as paid
-  async markEarningAsPaid(earningId: string, userId: string): Promise<DoctorEarning | undefined> {
+  async markEarningAsPaid(earningId: string, userId: string, paymentMethod: string = 'individual_earning'): Promise<DoctorEarning | undefined> {
     try {
       // Get the earning by earningId (human-readable ID like "EARN-2025-037")
       const earning = db
@@ -7065,6 +7065,27 @@ export class SqliteStorage implements IStorage {
         return earning;
       }
 
+      // Create payment record to track this individual earning payment
+      const paymentId = this.generateDoctorPaymentId();
+      const payment = db.insert(schema.doctorPayments)
+        .values({
+          paymentId,
+          doctorId: earning.doctorId,
+          paymentDate: new Date().toISOString().split('T')[0],
+          totalAmount: earning.earnedAmount,
+          paymentMethod,
+          earningsIncluded: JSON.stringify([earning.id]),
+          startDate: earning.serviceDate,
+          endDate: earning.serviceDate,
+          description: `Payment for 1 service: ${earning.serviceName} (${earning.earningId})`,
+          processedBy: userId,
+          notes: `Individual earning payment processed`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+        .returning()
+        .get();
+
       // Update the earning status to paid
       const updated = db.update(schema.doctorEarnings)
         .set({ 
@@ -7080,13 +7101,14 @@ export class SqliteStorage implements IStorage {
         userId,
         'earning_marked_paid',
         'Earning Marked as Paid',
-        `Earning ${earning.earningId} marked as paid`,
+        `Earning ${earning.earningId} marked as paid (Payment: ${paymentId})`,
         earning.id,
         'doctor_earning',
         {
           earningId: earning.earningId,
           doctorId: earning.doctorId,
-          amount: earning.earnedAmount
+          amount: earning.earnedAmount,
+          paymentId: paymentId
         }
       );
 
