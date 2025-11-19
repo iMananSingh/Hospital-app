@@ -1644,7 +1644,7 @@ export default function Doctors() {
                             <TableRow key={doctorData.doctorId}>
                               <TableCell>
                                 <div 
-                                  className="flex items-center space-x-3 cursor-pointer hover:bg-blue-50 rounded-lg p-2 -m-2 transition-colors duration-200"
+                                  className="flex items-center space-x-3 cursor-pointer bg-blue-50/50 hover:bg-blue-100 rounded-lg p-2 -m-2 transition-colors duration-200"
                                   onClick={() => setLocation(`/doctors/${doctorData.doctorId}`)}
                                   data-testid={`clickable-doctor-${doctorData.doctorId}`}
                                 >
