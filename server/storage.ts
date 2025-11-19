@@ -1254,7 +1254,10 @@ export interface IStorage {
   ): Promise<PatientService | undefined>;
 
   // Patient Admissions
-  createAdmission(admission: InsertAdmission, userId?: string): Promise<Admission>;
+  createAdmission(
+    admission: InsertAdmission,
+    userId?: string,
+  ): Promise<Admission>;
   getAdmissions(
     patientId?: string,
     fromDate?: string,
@@ -1413,10 +1416,24 @@ export interface IStorage {
   recalculateDoctorEarnings(
     doctorId?: string,
   ): Promise<{ processed: number; created: number }>;
-  saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void>;
-  markDoctorEarningsPaid(doctorId: string, userId: string, paymentMethod?: string): Promise<number>;
-  markEarningAsPaid(earningId: string, userId: string, paymentMethod?: string): Promise<DoctorEarning | undefined>;
-  calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null>;
+  saveDoctorServiceRates(
+    doctorId: string,
+    rates: any[],
+    userId: string,
+  ): Promise<void>;
+  markDoctorEarningsPaid(
+    doctorId: string,
+    userId: string,
+    paymentMethod?: string,
+  ): Promise<number>;
+  markEarningAsPaid(
+    earningId: string,
+    userId: string,
+    paymentMethod?: string,
+  ): Promise<DoctorEarning | undefined>;
+  calculateDoctorEarningForVisit(
+    visitId: string,
+  ): Promise<DoctorEarning | null>;
 
   // Doctor Payment Management
   getAllDoctorPayments(): Promise<DoctorPayment[]>;
@@ -1488,8 +1505,19 @@ export class SqliteStorage implements IStorage {
 
     try {
       // Count payments from current month only
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).toISOString();
+      const endOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+      ).toISOString();
 
       const monthlyPayments = db
         .select()
@@ -1497,8 +1525,8 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             gte(schema.patientPayments.paymentDate, startOfMonth),
-            lte(schema.patientPayments.paymentDate, endOfMonth)
-          )
+            lte(schema.patientPayments.paymentDate, endOfMonth),
+          ),
         )
         .all();
 
@@ -1519,8 +1547,19 @@ export class SqliteStorage implements IStorage {
 
     try {
       // Count discounts from current month only
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).toISOString();
+      const endOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+      ).toISOString();
 
       const monthlyDiscounts = db
         .select()
@@ -1528,8 +1567,8 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             gte(schema.patientDiscounts.createdAt, startOfMonth),
-            lte(schema.patientDiscounts.createdAt, endOfMonth)
-          )
+            lte(schema.patientDiscounts.createdAt, endOfMonth),
+          ),
         )
         .all();
 
@@ -2499,7 +2538,9 @@ export class SqliteStorage implements IStorage {
       const yearlyVisitCount = await db
         .select({ count: sql`COUNT(*)` })
         .from(schema.patientVisits)
-        .where(sql`strftime('%Y', ${schema.patientVisits.createdAt}) = ${year.toString()}`);
+        .where(
+          sql`strftime('%Y', ${schema.patientVisits.createdAt}) = ${year.toString()}`,
+        );
 
       const visitCount = yearlyVisitCount[0]?.count || 0;
       const orderNumber = String(visitCount + 1).padStart(6, "0");
@@ -2924,7 +2965,9 @@ export class SqliteStorage implements IStorage {
       // Extract just the date part (YYYY-MM-DD) for accurate counting
       const dateOnly = orderedDate.split("T")[0];
       const count = this.getDailyReceiptCountSync("pathology", dateOnly);
-      console.log(`[PATHOLOGY] Date: ${dateOnly}, Count from getDailyReceiptCountSync: ${count}`);
+      console.log(
+        `[PATHOLOGY] Date: ${dateOnly}, Count from getDailyReceiptCountSync: ${count}`,
+      );
       const dateObj = new Date(dateOnly);
       const yymmdd = dateObj
         .toISOString()
@@ -3674,7 +3717,10 @@ export class SqliteStorage implements IStorage {
     return updated;
   }
 
-  async createAdmission(admission: InsertAdmission, userId?: string): Promise<Admission> {
+  async createAdmission(
+    admission: InsertAdmission,
+    userId?: string,
+  ): Promise<Admission> {
     const admissionId = this.generateAdmissionId();
     let admissionDate: string;
     let eventDate: string;
@@ -3735,7 +3781,9 @@ export class SqliteStorage implements IStorage {
         "admission",
         eventDate,
       );
-      console.log(`[ADMISSION] Date: ${eventDate}, Count from DB: ${admissionCount}, Next receipt will be: ${admissionCount + 1}`);
+      console.log(
+        `[ADMISSION] Date: ${eventDate}, Count from DB: ${admissionCount}, Next receipt will be: ${admissionCount + 1}`,
+      );
       const dateObj = new Date(eventDate);
       const yymmdd = dateObj
         .toISOString()
@@ -4097,8 +4145,8 @@ export class SqliteStorage implements IStorage {
       .where(
         and(
           eq(schema.patientServices.patientId, patientId),
-          isNotNull(schema.patientServices.orderId)
-        )
+          isNotNull(schema.patientServices.orderId),
+        ),
       )
       .groupBy(schema.patientServices.orderId)
       .orderBy(desc(schema.patientServices.scheduledDate))
@@ -4129,8 +4177,8 @@ export class SqliteStorage implements IStorage {
       .where(
         and(
           eq(schema.patientVisits.patientId, patientId),
-          eq(schema.patientVisits.visitType, "opd")
-        )
+          eq(schema.patientVisits.visitType, "opd"),
+        ),
       )
       .orderBy(desc(schema.patientVisits.scheduledDate))
       .all();
@@ -4849,8 +4897,8 @@ export class SqliteStorage implements IStorage {
             .get();
 
           if (patient && doctor) {
-            const roomNumber = admission.currentRoomNumber || 'N/A';
-            const wardType = admission.currentWardType || 'N/A';
+            const roomNumber = admission.currentRoomNumber || "N/A";
+            const wardType = admission.currentWardType || "N/A";
 
             this.logActivity(
               userId,
@@ -5784,7 +5832,9 @@ export class SqliteStorage implements IStorage {
         }
 
         count = maxNumber;
-        console.log(`Found ${opdVisits.length} OPD visits for ${dateStr}, max number ${maxNumber}, returning ${count + 1}`);
+        console.log(
+          `Found ${opdVisits.length} OPD visits for ${dateStr}, max number ${maxNumber}, returning ${count + 1}`,
+        );
       } else if (serviceType === "pathology") {
         count =
           db.$client
@@ -5795,7 +5845,9 @@ export class SqliteStorage implements IStorage {
           `,
             )
             .get(dateStr)?.count || 0;
-        console.log(`[PATHOLOGY COUNT] Found ${count} existing pathology orders for ${dateStr}`);
+        console.log(
+          `[PATHOLOGY COUNT] Found ${count} existing pathology orders for ${dateStr}`,
+        );
       } else if (serviceType === "admission") {
         count =
           db.$client
@@ -5837,7 +5889,9 @@ export class SqliteStorage implements IStorage {
           `,
             )
             .get(dateStr)?.count || 0;
-        console.log(`[SERVICE COUNT] Found ${count} existing service orders for ${dateStr}`);
+        console.log(
+          `[SERVICE COUNT] Found ${count} existing service orders for ${dateStr}`,
+        );
       } else {
         // Default case or other service types
         count = 0;
@@ -6503,7 +6557,8 @@ export class SqliteStorage implements IStorage {
             details: {
               admissionId: admission.admissionId,
               paymentMethod: "cash",
-              reason: "Initial admission deposit", quantity: 1,
+              reason: "Initial admission deposit",
+              quantity: 1,
             },
           });
         }
@@ -6941,9 +6996,15 @@ export class SqliteStorage implements IStorage {
   }
 
   // Batch save/update doctor service rates
-  async saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void> {
+  async saveDoctorServiceRates(
+    doctorId: string,
+    rates: any[],
+    userId: string,
+  ): Promise<void> {
     try {
-      console.log(`Saving ${rates.length} service rates for doctor ${doctorId}`);
+      console.log(
+        `Saving ${rates.length} service rates for doctor ${doctorId}`,
+      );
 
       // Delete all existing rates for this doctor
       db.delete(schema.doctorServiceRates)
@@ -6959,7 +7020,8 @@ export class SqliteStorage implements IStorage {
             serviceName: rate.serviceName,
             serviceCategory: rate.serviceCategory,
             rateType: rate.salaryBasis, // 'amount' or 'percentage'
-            rateAmount: rate.salaryBasis === 'amount' ? rate.amount : rate.percentage,
+            rateAmount:
+              rate.salaryBasis === "amount" ? rate.amount : rate.percentage,
             isActive: true,
             createdBy: userId, // Use authenticated user ID
           });
@@ -6968,13 +7030,17 @@ export class SqliteStorage implements IStorage {
 
       console.log(`Successfully saved service rates for doctor ${doctorId}`);
     } catch (error) {
-      console.error('Error saving doctor service rates:', error);
+      console.error("Error saving doctor service rates:", error);
       throw error;
     }
   }
 
   // Mark all pending earnings for a doctor as paid
-  async markDoctorEarningsPaid(doctorId: string, userId: string, paymentMethod: string = 'cash'): Promise<number> {
+  async markDoctorEarningsPaid(
+    doctorId: string,
+    userId: string,
+    paymentMethod: string = "cash",
+  ): Promise<number> {
     try {
       const pendingEarnings = await this.getDoctorPendingEarnings(doctorId);
 
@@ -6982,21 +7048,29 @@ export class SqliteStorage implements IStorage {
         return 0;
       }
 
-      const totalAmount = pendingEarnings.reduce((sum, e) => sum + e.earnedAmount, 0);
-      const earningIds = pendingEarnings.map(e => e.id);
+      const totalAmount = pendingEarnings.reduce(
+        (sum, e) => sum + e.earnedAmount,
+        0,
+      );
+      const earningIds = pendingEarnings.map((e) => e.id);
 
       // Get date range of earnings
-      const dates = pendingEarnings.map(e => new Date(e.serviceDate));
-      const startDate = new Date(Math.min(...dates.map(d => d.getTime()))).toISOString().split('T')[0];
-      const endDate = new Date(Math.max(...dates.map(d => d.getTime()))).toISOString().split('T')[0];
+      const dates = pendingEarnings.map((e) => new Date(e.serviceDate));
+      const startDate = new Date(Math.min(...dates.map((d) => d.getTime())))
+        .toISOString()
+        .split("T")[0];
+      const endDate = new Date(Math.max(...dates.map((d) => d.getTime())))
+        .toISOString()
+        .split("T")[0];
 
       // Create payment record
       const paymentId = this.generateDoctorPaymentId();
-      const payment = db.insert(schema.doctorPayments)
+      const payment = db
+        .insert(schema.doctorPayments)
         .values({
           paymentId,
           doctorId,
-          paymentDate: new Date().toISOString().split('T')[0],
+          paymentDate: new Date().toISOString().split("T")[0],
           totalAmount,
           paymentMethod,
           earningsIncluded: JSON.stringify(earningIds),
@@ -7005,7 +7079,7 @@ export class SqliteStorage implements IStorage {
           description: `Payment for ${earningIds.length} service(s)`,
           processedBy: userId,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         })
         .returning()
         .get();
@@ -7013,9 +7087,9 @@ export class SqliteStorage implements IStorage {
       // Update all pending earnings to paid
       for (const earningId of earningIds) {
         db.update(schema.doctorEarnings)
-          .set({ 
-            status: 'paid',
-            updatedAt: new Date().toISOString()
+          .set({
+            status: "paid",
+            updatedAt: new Date().toISOString(),
           })
           .where(eq(schema.doctorEarnings.id, earningId))
           .run();
@@ -7024,17 +7098,17 @@ export class SqliteStorage implements IStorage {
       // Log activity
       await this.logActivity(
         userId,
-        'doctor_payment_made',
-        'Doctor Payment Made',
+        "doctor_payment_made",
+        "Doctor Payment Settlement Completed",
         `Payment of ₹${totalAmount} made to doctor`,
         payment.id,
-        'doctor_payment',
+        "doctor_payment",
         {
           doctorId,
           paymentId,
           amount: totalAmount,
-          earningsCount: earningIds.length
-        }
+          earningsCount: earningIds.length,
+        },
       );
 
       return earningIds.length;
@@ -7045,7 +7119,11 @@ export class SqliteStorage implements IStorage {
   }
 
   // Mark a single earning as paid
-  async markEarningAsPaid(earningId: string, userId: string, paymentMethod: string = 'individual_earning'): Promise<DoctorEarning | undefined> {
+  async markEarningAsPaid(
+    earningId: string,
+    userId: string,
+    paymentMethod: string = "individual_earning",
+  ): Promise<DoctorEarning | undefined> {
     try {
       // Get the earning by earningId (human-readable ID like "EARN-2025-037")
       const earning = db
@@ -7053,25 +7131,26 @@ export class SqliteStorage implements IStorage {
         .from(schema.doctorEarnings)
         .where(eq(schema.doctorEarnings.earningId, earningId))
         .get();
-      
+
       if (!earning) {
         console.log(`Earning ${earningId} not found`);
         return undefined;
       }
 
       // Check if already paid
-      if (earning.status === 'paid') {
+      if (earning.status === "paid") {
         console.log(`Earning ${earningId} is already marked as paid`);
         return earning;
       }
 
       // Create payment record to track this individual earning payment
       const paymentId = this.generateDoctorPaymentId();
-      const payment = db.insert(schema.doctorPayments)
+      const payment = db
+        .insert(schema.doctorPayments)
         .values({
           paymentId,
           doctorId: earning.doctorId,
-          paymentDate: new Date().toISOString().split('T')[0],
+          paymentDate: new Date().toISOString().split("T")[0],
           totalAmount: earning.earnedAmount,
           paymentMethod,
           earningsIncluded: JSON.stringify([earning.id]),
@@ -7081,16 +7160,17 @@ export class SqliteStorage implements IStorage {
           processedBy: userId,
           notes: `Individual earning payment processed`,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         })
         .returning()
         .get();
 
       // Update the earning status to paid
-      const updated = db.update(schema.doctorEarnings)
-        .set({ 
-          status: 'paid',
-          updatedAt: new Date().toISOString()
+      const updated = db
+        .update(schema.doctorEarnings)
+        .set({
+          status: "paid",
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.doctorEarnings.earningId, earningId))
         .returning()
@@ -7099,17 +7179,17 @@ export class SqliteStorage implements IStorage {
       // Log activity
       await this.logActivity(
         userId,
-        'earning_marked_paid',
-        'Earning Marked as Paid',
+        "earning_marked_paid",
+        "Earning Marked as Paid",
         `Earning ${earning.earningId} marked as paid (Payment: ${paymentId})`,
         earning.id,
-        'doctor_earning',
+        "doctor_earning",
         {
           earningId: earning.earningId,
           doctorId: earning.doctorId,
           amount: earning.earnedAmount,
-          paymentId: paymentId
-        }
+          paymentId: paymentId,
+        },
       );
 
       return updated as DoctorEarning;
@@ -7120,7 +7200,9 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate and create doctor earning for an OPD visit
-  async calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null> {
+  async calculateDoctorEarningForVisit(
+    visitId: string,
+  ): Promise<DoctorEarning | null> {
     try {
       console.log(`Calculating doctor earning for visit ${visitId}`);
 
@@ -7137,14 +7219,16 @@ export class SqliteStorage implements IStorage {
       }
 
       // Check if visit is OPD
-      if (visit.visitType !== 'opd') {
-        console.log(`Visit ${visitId} is not an OPD visit (type: ${visit.visitType})`);
+      if (visit.visitType !== "opd") {
+        console.log(
+          `Visit ${visitId} is not an OPD visit (type: ${visit.visitType})`,
+        );
         return null;
       }
 
       // Update visit status to completed if not already
-      if (visit.status !== 'completed') {
-        await this.updateOpdVisitStatus(visit.id, 'completed');
+      if (visit.status !== "completed") {
+        await this.updateOpdVisitStatus(visit.id, "completed");
         console.log(`Updated visit ${visitId} status to completed`);
       }
 
@@ -7155,8 +7239,8 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.doctorEarnings.doctorId, visit.doctorId),
-            sql`${schema.doctorEarnings.notes} LIKE ${'%' + visit.visitId + '%'}`
-          )
+            sql`${schema.doctorEarnings.notes} LIKE ${"%" + visit.visitId + "%"}`,
+          ),
         )
         .get();
 
@@ -7173,14 +7257,16 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.doctorServiceRates.doctorId, visit.doctorId),
-            eq(schema.doctorServiceRates.serviceCategory, 'opd'),
-            eq(schema.doctorServiceRates.isActive, true)
-          )
+            eq(schema.doctorServiceRates.serviceCategory, "opd"),
+            eq(schema.doctorServiceRates.isActive, true),
+          ),
         )
         .get();
 
       if (!doctorRate) {
-        console.log(`No OPD commission rate found for doctor ${visit.doctorId}`);
+        console.log(
+          `No OPD commission rate found for doctor ${visit.doctorId}`,
+        );
         return null;
       }
 
@@ -7188,9 +7274,9 @@ export class SqliteStorage implements IStorage {
       const consultationFee = visit.consultationFee || 0;
       let earnedAmount = 0;
 
-      if (doctorRate.rateType === 'percentage') {
+      if (doctorRate.rateType === "percentage") {
         earnedAmount = (consultationFee * doctorRate.rateAmount) / 100;
-      } else if (doctorRate.rateType === 'amount') {
+      } else if (doctorRate.rateType === "amount") {
         earnedAmount = doctorRate.rateAmount;
       }
 
@@ -7200,21 +7286,23 @@ export class SqliteStorage implements IStorage {
         patientId: visit.patientId,
         serviceId: doctorRate.serviceId,
         patientServiceId: null,
-        serviceName: 'OPD Consultation',
-        serviceCategory: 'opd',
+        serviceName: "OPD Consultation",
+        serviceCategory: "opd",
         serviceDate: visit.visitDate,
         rateType: doctorRate.rateType,
         rateAmount: doctorRate.rateAmount,
         servicePrice: consultationFee,
         earnedAmount,
-        status: 'pending',
+        status: "pending",
         notes: `OPD Visit ${visit.visitId}`,
       });
 
-      console.log(`Created earning ${earning.earningId} for visit ${visitId}: ₹${earnedAmount}`);
+      console.log(
+        `Created earning ${earning.earningId} for visit ${visitId}: ₹${earnedAmount}`,
+      );
       return earning;
     } catch (error) {
-      console.error('Error calculating doctor earning for visit:', error);
+      console.error("Error calculating doctor earning for visit:", error);
       throw error;
     }
   }
