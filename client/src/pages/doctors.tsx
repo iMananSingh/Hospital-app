@@ -127,8 +127,8 @@ export default function Doctors() {
   const paidThisMonth = calculatePaidThisMonth();
 
   // Fetch doctor earnings for all doctors
-  const { data: allDoctorEarnings = [] } = useQuery({
-    queryKey: ["/api/doctors/all-earnings"],
+  const { data: allDoctorEarnings = [], refetch: refetchAllEarnings } = useQuery({
+    queryKey: ["/api/doctors/all-earnings", allDoctorPayments],
     queryFn: async () => {
       const promises = filteredDoctors.map(async (doctor: Doctor) => {
         const response = await fetch(`/api/doctors/${doctor.id}/earnings?status=pending`, {
@@ -167,7 +167,7 @@ export default function Doctors() {
       });
       return Promise.all(promises);
     },
-    enabled: filteredDoctors.length > 0,
+    enabled: filteredDoctors.length > 0 && allDoctorPayments !== undefined,
   });
 
 
@@ -223,16 +223,16 @@ export default function Doctors() {
       return response.json();
     },
     onSuccess: async (data, doctorId) => {
-      // Invalidate all earnings-related queries to update the pending amounts
+      // First invalidate and refetch doctor payments to get the new payment record
+      await queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/doctors/payments"] });
+      
+      // Then invalidate earnings queries
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       
-      // Force refetch all queries to update immediately
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ["/api/doctors/all-earnings"] }),
-        queryClient.refetchQueries({ queryKey: ["/api/doctors/payments"] }),
-      ]);
+      // Finally refetch earnings with updated payment data
+      await queryClient.refetchQueries({ queryKey: ["/api/doctors/all-earnings"] });
       
       toast({
         title: "Payment Confirmed",
