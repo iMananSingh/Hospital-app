@@ -1422,16 +1422,8 @@ export interface IStorage {
 
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
-  getRoomTypeById(id: string): Promise<any | undefined>; // Added this line
-  deleteRoom(id: string): Promise<boolean>; // Added this line
-
-  async getAllDoctorPayments(): Promise<DoctorPayment[]> {
-    return db
-      .select()
-      .from(schema.doctorPayments)
-      .orderBy(desc(schema.doctorPayments.paymentDate))
-      .all();
-  }
+  getRoomTypeById(id: string): Promise<any | undefined>;
+  deleteRoom(id: string): Promise<boolean>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -2321,6 +2313,14 @@ export class SqliteStorage implements IStorage {
       console.error("Error permanently deleting doctor:", error);
       throw error;
     }
+  }
+
+  async getAllDoctorPayments(): Promise<DoctorPayment[]> {
+    return db
+      .select()
+      .from(schema.doctorPayments)
+      .orderBy(desc(schema.doctorPayments.paymentDate))
+      .all();
   }
 
   async getDailyPatientCount(): Promise<number> {
