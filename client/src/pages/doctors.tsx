@@ -139,13 +139,17 @@ export default function Doctors() {
         if (response.ok) {
           const earnings = await response.json();
           
-          // Find the most recent payment for this doctor from allDoctorPayments
-          const doctorPayments = allDoctorPayments.filter((payment: any) => payment.doctorId === doctor.id);
-          const mostRecentPayment = doctorPayments.length > 0 
-            ? doctorPayments.reduce((latest: any, current: any) => 
-                new Date(current.paymentDate) > new Date(latest.paymentDate) ? current : latest
-              )
-            : null;
+          // Find the most recent payment for this doctor by sorting by created_at DESC
+          const doctorPayments = allDoctorPayments
+            .filter((payment: any) => payment.doctorId === doctor.id)
+            .sort((a: any, b: any) => {
+              // Sort by created_at in descending order (most recent first)
+              const dateA = new Date(a.createdAt || a.paymentDate).getTime();
+              const dateB = new Date(b.createdAt || b.paymentDate).getTime();
+              return dateB - dateA;
+            });
+          
+          const mostRecentPayment = doctorPayments.length > 0 ? doctorPayments[0] : null;
           
           return {
             doctorId: doctor.id,
