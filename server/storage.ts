@@ -1417,10 +1417,21 @@ export interface IStorage {
   markDoctorEarningsPaid(doctorId: string, userId: string, paymentMethod?: string): Promise<number>;
   calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null>;
 
+  // Doctor Payment Management
+  getAllDoctorPayments(): Promise<DoctorPayment[]>;
+
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
   getRoomTypeById(id: string): Promise<any | undefined>; // Added this line
   deleteRoom(id: string): Promise<boolean>; // Added this line
+
+  async getAllDoctorPayments(): Promise<DoctorPayment[]> {
+    return db
+      .select()
+      .from(schema.doctorPayments)
+      .orderBy(desc(schema.doctorPayments.paymentDate))
+      .all();
+  }
 }
 
 export class SqliteStorage implements IStorage {

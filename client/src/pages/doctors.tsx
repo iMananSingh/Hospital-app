@@ -96,11 +96,35 @@ export default function Doctors() {
     enabled: !!selectedDoctorId,
   });
 
+  // Fetch all doctor payments to calculate paid this month
+  const { data: allDoctorPayments = [] } = useQuery({
+    queryKey: ["/api/doctors/payments"],
+  });
+
   const filteredDoctors = doctors?.filter((doctor: Doctor) =>
     doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doctor.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doctor.qualification.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+
+  // Calculate total paid this month from all doctor payments
+  const calculatePaidThisMonth = () => {
+    if (!allDoctorPayments || allDoctorPayments.length === 0) return 0;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return allDoctorPayments
+      .filter((payment: any) => {
+        const paymentDate = new Date(payment.paymentDate);
+        return paymentDate.getMonth() === currentMonth && 
+               paymentDate.getFullYear() === currentYear;
+      })
+      .reduce((sum: number, payment: any) => sum + payment.totalAmount, 0);
+  };
+
+  const paidThisMonth = calculatePaidThisMonth();
 
   // Fetch doctor earnings for all doctors
   const { data: allDoctorEarnings = [] } = useQuery({
@@ -1552,7 +1576,9 @@ export default function Doctors() {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Paid This Month</p>
-                          <p className="text-xl font-semibold text-blue-600">₹0</p>
+                          <p className="text-xl font-semibold text-blue-600">
+                            ₹{paidThisMonth.toFixed(2)}
+                          </p>
                         </div>
                       </div>
                     </Card>

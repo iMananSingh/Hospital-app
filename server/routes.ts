@@ -860,6 +860,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/doctors/payments", authenticateToken, async (req, res) => {
+    try {
+      const payments = await storage.getAllDoctorPayments();
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching all doctor payments:", error);
+      res.status(500).json({ message: "Failed to fetch doctor payments" });
+    }
+  });
+
   // Added restore doctor route
   app.put(
     "/api/doctors/:id/restore",
