@@ -825,17 +825,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req: any, res) => {
     try {
       const { doctorId } = req.params;
-      const count = await storage.markDoctorEarningsPaid(doctorId);
+      const { paymentMethod = 'cash' } = req.body;
+      
+      const count = await storage.markDoctorEarningsPaid(doctorId, req.user.id, paymentMethod);
 
       // Create audit log
       await storage.createAuditLog({
         userId: req.user.id,
         username: req.user.username,
         action: "update",
-        tableName: "doctor_earnings",
+        tableName: "doctor_payments",
         recordId: doctorId,
         oldValues: null,
-        newValues: { status: "paid", count },
+        newValues: { status: "paid", count, paymentMethod },
         ipAddress: req.ip,
         userAgent: req.get("user-agent"),
       });
