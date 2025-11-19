@@ -400,12 +400,12 @@ export default function PatientDetail() {
       console.log('Event object keys:', Object.keys(event));
       console.log('Event.receiptNumber:', event.receiptNumber);
       console.log('Event.receipt_number:', event.receipt_number);
-      
+
       // For OPD visits (which come as opd_visit type), try to get from visit data
       if (eventType === "opd_visit") {
         // Check all possible locations for the receipt number
-        const receiptNum = event.receiptNumber || event.receipt_number || 
-                          event.rawData?.visit?.receiptNumber || 
+        const receiptNum = event.receiptNumber || event.receipt_number ||
+                          event.rawData?.visit?.receiptNumber ||
                           event.rawData?.visit?.receipt_number;
         console.log('OPD visit receipt number found:', receiptNum);
         if (receiptNum) {
@@ -425,9 +425,9 @@ export default function PatientDetail() {
       // For pathology, try to get from order data
       if (eventType === "pathology") {
         const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.order?.receiptNumber || 
+                          event.rawData?.order?.receiptNumber ||
                           event.rawData?.order?.receipt_number ||
-                          event.order?.receiptNumber || 
+                          event.order?.receiptNumber ||
                           event.order?.receipt_number;
         console.log('Pathology receipt number found:', receiptNum);
         if (receiptNum) {
@@ -438,7 +438,7 @@ export default function PatientDetail() {
       // For admission events, try to get from admission event data
       if (eventType === "admission_event") {
         const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.event?.receiptNumber || 
+                          event.rawData?.event?.receiptNumber ||
                           event.rawData?.event?.receipt_number;
         console.log('Admission event receipt number found:', receiptNum);
         if (receiptNum) {
@@ -449,7 +449,7 @@ export default function PatientDetail() {
       // For admission fallback, try to get from admission data
       if (eventType === "admission") {
         const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.admission?.receiptNumber || 
+                          event.rawData?.admission?.receiptNumber ||
                           event.rawData?.admission?.receipt_number;
         console.log('Admission receipt number found:', receiptNum);
         if (receiptNum) {
@@ -1701,6 +1701,10 @@ export default function PatientDetail() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/patient-payments"] });
+      // Invalidate doctor earnings queries to update salary tab immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
       setPaymentMethod("cash");
@@ -1751,6 +1755,10 @@ export default function PatientDetail() {
         queryKey: ["/api/patients", patientId, "discounts"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      // Invalidate doctor earnings queries to update salary tab immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
       setDiscountReason("");
