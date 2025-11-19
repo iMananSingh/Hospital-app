@@ -138,12 +138,22 @@ export default function Doctors() {
         });
         if (response.ok) {
           const earnings = await response.json();
+          
+          // Find the most recent payment for this doctor from allDoctorPayments
+          const doctorPayments = allDoctorPayments.filter((payment: any) => payment.doctorId === doctor.id);
+          const mostRecentPayment = doctorPayments.length > 0 
+            ? doctorPayments.reduce((latest: any, current: any) => 
+                new Date(current.paymentDate) > new Date(latest.paymentDate) ? current : latest
+              )
+            : null;
+          
           return {
             doctorId: doctor.id,
             doctorName: doctor.name,
             earnings: earnings,
             totalPending: earnings.reduce((sum: number, earning: any) => sum + earning.earnedAmount, 0),
             servicesCount: earnings.length,
+            lastPayment: mostRecentPayment,
           };
         }
         return {
@@ -152,6 +162,7 @@ export default function Doctors() {
           earnings: [],
           totalPending: 0,
           servicesCount: 0,
+          lastPayment: null,
         };
       });
       return Promise.all(promises);
@@ -1651,10 +1662,18 @@ export default function Doctors() {
                                 <span className="font-medium text-green-600">₹{doctorData.totalPending.toFixed(2)}</span>
                               </TableCell>
                               <TableCell data-testid={`salary-last-payment-${doctorData.doctorId}`}>
-                                <span className="text-sm text-muted-foreground">No payments yet</span>
+                                {doctorData.lastPayment ? (
+                                  <span className="font-medium text-green-600">₹{doctorData.lastPayment.totalAmount.toFixed(2)}</span>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">No payments yet</span>
+                                )}
                               </TableCell>
                               <TableCell data-testid={`salary-last-payment-date-${doctorData.doctorId}`}>
-                                <span className="text-sm text-muted-foreground">-</span>
+                                {doctorData.lastPayment ? (
+                                  <span className="text-sm">{formatDate(doctorData.lastPayment.paymentDate)}</span>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">-</span>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <Badge 
