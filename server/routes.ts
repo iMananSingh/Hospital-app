@@ -860,21 +860,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all doctor payments (for salary dashboard)
-  app.get(
-    "/api/doctors/payments",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const payments = await storage.getAllDoctorPayments();
-        res.json(payments);
-      } catch (error) {
-        console.error("Get all doctor payments error:", error);
-        res.status(500).json({ message: "Failed to get doctor payments" });
-      }
-    },
-  );
-
   // Added restore doctor route
   app.put(
     "/api/doctors/:id/restore",
@@ -968,6 +953,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res
           .status(500)
           .json({ message: "Failed to permanently delete doctor" });
+      }
+    },
+  );
+
+  // Get all doctor payments (for salary dashboard) - MUST be before other doctor routes
+  app.get(
+    "/api/doctors/payments",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const payments = await storage.getAllDoctorPayments();
+        res.json(payments);
+      } catch (error) {
+        console.error("Get all doctor payments error:", error);
+        res.status(500).json({ message: "Failed to get doctor payments" });
       }
     },
   );
