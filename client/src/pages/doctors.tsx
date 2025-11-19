@@ -214,6 +214,7 @@ export default function Doctors() {
     onSuccess: (data, doctorId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       toast({
         title: "Payment Confirmed",
         description: `Successfully marked ${data.count} earnings as paid`,
