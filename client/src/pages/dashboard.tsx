@@ -83,7 +83,6 @@ import {
   Database,
   DatabaseZap,
   Pencil,
-  CheckCheck,
 } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
@@ -1365,8 +1364,8 @@ export default function Dashboard() {
                           </div>
                         )}
                         {activity.activityType === "payment_added" && (
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <CheckCheck className="w-5 h-5 text-green-700" />
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <IndianRupee className="w-5 h-5 text-emerald-700" />
                           </div>
                         )}
                         {activity.activityType === "discount_added" && (
