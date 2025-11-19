@@ -826,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { doctorId } = req.params;
       const { paymentMethod = 'cash' } = req.body;
-      
+
       const count = await storage.markDoctorEarningsPaid(doctorId, req.user.id, paymentMethod);
 
       // Create audit log
@@ -860,15 +860,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/doctors/payments", authenticateToken, async (req, res) => {
-    try {
-      const payments = await storage.getAllDoctorPayments();
-      res.json(payments);
-    } catch (error) {
-      console.error("Error fetching all doctor payments:", error);
-      res.status(500).json({ message: "Failed to fetch doctor payments" });
-    }
-  });
+  // Get all doctor payments (for salary dashboard)
+  app.get(
+    "/api/doctors/payments",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const payments = await storage.getAllDoctorPayments();
+        res.json(payments);
+      } catch (error) {
+        console.error("Get all doctor payments error:", error);
+        res.status(500).json({ message: "Failed to get doctor payments" });
+      }
+    },
+  );
 
   // Added restore doctor route
   app.put(
@@ -4285,7 +4290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (visitIdMatch) {
               const visitId = visitIdMatch[0];
               console.log(`Payment for OPD visit ${visitId}, calculating commission`);
-              
+
               // Calculate and create doctor earning for this visit
               // This method also updates the visit status to completed
               const earning = await storage.calculateDoctorEarningForVisit(visitId);
