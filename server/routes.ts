@@ -595,6 +595,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Doctor routes
+  // IMPORTANT: /api/doctors/payments MUST come before /api/doctors/:id routes
+  // to prevent :id from matching "payments" as a doctor ID
+  app.get(
+    "/api/doctors/payments",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const payments = await storage.getAllDoctorPayments();
+        res.json(payments);
+      } catch (error) {
+        console.error("Get all doctor payments error:", error);
+        res.status(500).json({ message: "Failed to get doctor payments" });
+      }
+    },
+  );
+
   app.get("/api/doctors", authenticateToken, async (req, res) => {
     try {
       const doctors = await storage.getDoctors();
@@ -953,21 +969,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res
           .status(500)
           .json({ message: "Failed to permanently delete doctor" });
-      }
-    },
-  );
-
-  // Get all doctor payments (for salary dashboard) - MUST be before other doctor routes
-  app.get(
-    "/api/doctors/payments",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const payments = await storage.getAllDoctorPayments();
-        res.json(payments);
-      } catch (error) {
-        console.error("Get all doctor payments error:", error);
-        res.status(500).json({ message: "Failed to get doctor payments" });
       }
     },
   );
