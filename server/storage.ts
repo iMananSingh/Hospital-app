@@ -7047,8 +7047,12 @@ export class SqliteStorage implements IStorage {
   // Mark a single earning as paid
   async markEarningAsPaid(earningId: string, userId: string): Promise<DoctorEarning | undefined> {
     try {
-      // Get the earning first
-      const earning = await this.getDoctorEarningById(earningId);
+      // Get the earning by earningId (human-readable ID like "EARN-2025-037")
+      const earning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(eq(schema.doctorEarnings.earningId, earningId))
+        .get();
       
       if (!earning) {
         console.log(`Earning ${earningId} not found`);
@@ -7067,7 +7071,7 @@ export class SqliteStorage implements IStorage {
           status: 'paid',
           updatedAt: new Date().toISOString()
         })
-        .where(eq(schema.doctorEarnings.id, earning.id))
+        .where(eq(schema.doctorEarnings.earningId, earningId))
         .returning()
         .get();
 
