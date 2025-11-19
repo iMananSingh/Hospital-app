@@ -121,6 +121,45 @@ export default function DoctorDetail() {
     },
   });
 
+  // Mutation for marking individual earning as paid
+  const markEarningAsPaidMutation = useMutation({
+    mutationFn: async (earningId: string) => {
+      const response = await fetch(`/api/doctors/earnings/${earningId}/mark-paid`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to mark earning as paid");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Earning marked as paid",
+        description: "The earning has been successfully marked as paid.",
+      });
+      // Invalidate all related queries to update pending amounts everywhere
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to mark as paid",
+        description: error.message || "An error occurred while marking the earning as paid",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -507,6 +546,7 @@ export default function DoctorDetail() {
                           <TableHead>Rate</TableHead>
                           <TableHead>Earned Amount</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -528,6 +568,20 @@ export default function DoctorDetail() {
                               <Badge variant={earning.status === 'pending' ? "default" : "secondary"}>
                                 {earning.status}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {earning.status === 'pending' ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => markEarningAsPaidMutation.mutate(earning.earningId)}
+                                  disabled={markEarningAsPaidMutation.isPending}
+                                  data-testid={`button-mark-paid-${earning.earningId}`}
+                                >
+                                  {markEarningAsPaidMutation.isPending ? "Marking..." : "Mark as Paid"}
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}

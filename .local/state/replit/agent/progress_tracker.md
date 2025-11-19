@@ -3,6 +3,31 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Individual Doctor Earning "Mark as Paid" Feature (November 19, 2025 at 6:20 PM)
+[x] Implemented individual earning payment functionality with async updates
+- **User Request**: Add "Action" column with "Mark as Paid" button for individual earnings
+- **Backend Changes**:
+  - Added `markEarningAsPaid(earningId, userId)` method to IStorage interface (line 1421)
+  - Implemented method in SqliteStorage class (lines 7050-7097) with validation, status update, and activity logging
+  - Created PUT endpoint `/api/doctors/earnings/:earningId/mark-paid` (lines 871-903) with authentication and audit logging
+- **Frontend Changes**:
+  - Added `markEarningAsPaidMutation` with proper auth headers and query invalidation (lines 127-164)
+  - Added "Action" column to Doctor Earnings table (line 552)
+  - Button only shows for pending earnings, displays "-" for paid earnings (lines 575-588)
+  - Mutation invalidates all related queries: doctor earnings, doctor details, all doctors, and dashboard activities
+- **Features**:
+  - Individual earning can be marked as paid asynchronously
+  - Pending earnings card updates immediately after marking an earning as paid
+  - Salary tab in doctor management page updates automatically
+  - Doctor Earnings table updates pending amounts in real-time
+  - All updates happen asynchronously with proper query invalidation
+- **Files Modified**: 
+  - `server/storage.ts` (interface and implementation)
+  - `server/routes.ts` (new API endpoint)
+  - `client/src/pages/doctor-detail.tsx` (mutation and UI updates)
+- **Architect Review**: Passed - Implementation correctly updates earnings and keeps dependent views in sync ✓
+- **Status**: Application running successfully, feature deployed and working ✓
+
 ### Environment Migration - November 19, 2025 at 1:48 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully

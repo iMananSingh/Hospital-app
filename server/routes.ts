@@ -865,6 +865,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/doctors/earnings/:earningId/mark-paid", authenticateToken, async (req: any, res) => {
+    try {
+      const { earningId } = req.params;
+
+      if (!req.user) {
+        return res.status(401).json({ message: "User authentication required" });
+      }
+
+      const updated = await storage.markEarningAsPaid(earningId, req.user.id);
+
+      if (!updated) {
+        return res.status(404).json({ message: "Earning not found" });
+      }
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "update",
+        tableName: "doctor_earnings",
+        recordId: earningId,
+        oldValues: { status: "pending" },
+        newValues: { status: "paid" },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({ message: "Earning marked as paid", earning: updated });
+    } catch (error) {
+      console.error("Error marking earning as paid:", error);
+      res.status(500).json({ message: "Failed to mark earning as paid" });
+    }
+  });
+
   app.get("/api/doctors/all-earnings", authenticateToken, async (req, res) => {
     try {
       const { status } = req.query;

@@ -1415,6 +1415,7 @@ export interface IStorage {
   ): Promise<{ processed: number; created: number }>;
   saveDoctorServiceRates(doctorId: string, rates: any[], userId: string): Promise<void>;
   markDoctorEarningsPaid(doctorId: string, userId: string, paymentMethod?: string): Promise<number>;
+  markEarningAsPaid(earningId: string, userId: string): Promise<DoctorEarning | undefined>;
   calculateDoctorEarningForVisit(visitId: string): Promise<DoctorEarning | null>;
 
   // Doctor Payment Management
@@ -7039,6 +7040,55 @@ export class SqliteStorage implements IStorage {
       return earningIds.length;
     } catch (error) {
       console.error("Error marking doctor earnings as paid:", error);
+      throw error;
+    }
+  }
+
+  // Mark a single earning as paid
+  async markEarningAsPaid(earningId: string, userId: string): Promise<DoctorEarning | undefined> {
+    try {
+      // Get the earning first
+      const earning = await this.getDoctorEarningById(earningId);
+      
+      if (!earning) {
+        console.log(`Earning ${earningId} not found`);
+        return undefined;
+      }
+
+      // Check if already paid
+      if (earning.status === 'paid') {
+        console.log(`Earning ${earningId} is already marked as paid`);
+        return earning;
+      }
+
+      // Update the earning status to paid
+      const updated = db.update(schema.doctorEarnings)
+        .set({ 
+          status: 'paid',
+          updatedAt: new Date().toISOString()
+        })
+        .where(eq(schema.doctorEarnings.id, earning.id))
+        .returning()
+        .get();
+
+      // Log activity
+      await this.logActivity(
+        userId,
+        'earning_marked_paid',
+        'Earning Marked as Paid',
+        `Earning ${earning.earningId} marked as paid`,
+        earning.id,
+        'doctor_earning',
+        {
+          earningId: earning.earningId,
+          doctorId: earning.doctorId,
+          amount: earning.earnedAmount
+        }
+      );
+
+      return updated as DoctorEarning;
+    } catch (error) {
+      console.error("Error marking earning as paid:", error);
       throw error;
     }
   }
