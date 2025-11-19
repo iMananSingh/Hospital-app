@@ -212,9 +212,14 @@ export default function Doctors() {
       return response.json();
     },
     onSuccess: (data, doctorId) => {
+      // Invalidate all earnings-related queries to update the pending amounts
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
+      
+      // Force refetch to update the pending amounts immediately
+      queryClient.refetchQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      
       toast({
         title: "Payment Confirmed",
         description: `Successfully marked ${data.count} earnings as paid`,
