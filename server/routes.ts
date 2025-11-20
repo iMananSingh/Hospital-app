@@ -1118,8 +1118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   continue; // Skip this rate if service creation fails
                 }
               }
-            } else if (rate.serviceId === "lab_tests_all") {
-              // Handle Lab Tests placeholder - create a generic lab service if none exists
+            } else if (rate.serviceId === "lab_tests_all" || rate.serviceId === "pathology_lab_representative") {
+              // Handle Lab Tests/Pathology Lab placeholder - create a generic lab service if none exists
               const services = await storage.getServices();
               let labService = services.find(
                 (s) =>
@@ -1136,7 +1136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Create a generic lab service record if none exists
                 try {
                   const newLabService = await storage.createService({
-                    name: "Lab Tests",
+                    name: "Pathology Lab (All Tests)",
                     category: "pathology",
                     price: 0, // Lab tests have variable pricing
                     description: "Pathology and laboratory testing services",
