@@ -3,27 +3,42 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
-### Pathology Lab Rate Saving Fix - November 20, 2025 at 7:33 PM
-[x] Fixed FOREIGN KEY constraint error when saving doctor rates for pathology lab tests
-- **Issue**: Attempting to save pathology lab test rates failed with "FOREIGN KEY constraint failed" error
-- **Root Cause**: 
-  - Pathology lab tests use a representative ID `pathology_lab_representative` that doesn't exist in the services table
-  - The `doctor_service_rates.service_id` column was NOT NULL with a foreign key to services(id)
+### Pathology Lab Rate Saving & Checkbox State Fix - November 20, 2025 at 8:11 PM
+[x] Fixed FOREIGN KEY constraint error and checkbox state persistence for pathology lab tests
+- **Issues**:
+  1. Attempting to save pathology lab test rates failed with "FOREIGN KEY constraint failed" error
+  2. After saving, the pathology lab checkbox reverted to unchecked state (unlike OPD which stayed checked)
+  
+- **Root Causes**: 
+  - Pathology lab tests use representative ID `pathology_lab_representative` that doesn't exist in services table
+  - The `doctor_service_rates.service_id` column was NOT NULL with foreign key to services(id)
   - When saving rates, it tried to insert the representative ID, which violated the constraint
   - Even after making column nullable, passing non-existent IDs still failed foreign key validation
-- **Solution (Two-Part Fix)**:
+  - **Checkbox state issue**: When rates were fetched back from DB, `serviceId` was `null`, but frontend expected "pathology_lab_representative"
+  
+- **Solution (Three-Part Fix)**:
   1. Made `service_id` nullable in `doctor_service_rates` table (both schema and database)
-  2. Added validation in `saveDoctorServiceRates` to check if service exists before inserting
-  3. Non-existent service IDs (placeholders) are now set to `null` automatically
+  2. Added backend validation in `saveDoctorServiceRates` to convert placeholder IDs to `null`
+  3. Added frontend mapping in `useEffect` to convert `null` serviceIds back to representative IDs based on serviceCategory
+  
 - **Changes Made**:
-  - Updated `shared/schema.ts` line 619: Changed `serviceId` from `.notNull()` to nullable
-  - Updated `server/storage.ts` line 513: Changed CREATE TABLE to make service_id nullable
-  - Added migration (lines 885-932) to recreate table for existing databases
-  - Added service existence validation (lines 7230-7245) in `saveDoctorServiceRates` method
-  - Placeholder IDs like "pathology_lab_representative" and "opd_consultation_placeholder" are now converted to `null`
+  - **Backend**:
+    - Updated `shared/schema.ts` line 619: Changed `serviceId` from `.notNull()` to nullable
+    - Updated `server/storage.ts` line 513: Changed CREATE TABLE to make service_id nullable
+    - Added migration (lines 885-932) to recreate table for existing databases
+    - Added service existence validation (lines 7230-7245) in `saveDoctorServiceRates` method
+    - Placeholder IDs are now automatically converted to `null` before saving
+  - **Frontend**:
+    - Updated `client/src/pages/doctors.tsx` lines 789-799: Added serviceId mapping logic
+    - When `serviceId` is `null` and `serviceCategory` is "pathology", maps to "pathology_lab_representative"
+    - When `serviceId` is `null` and `serviceCategory` is "opd", maps to "opd_consultation_placeholder"
+    
 - **Migration Result**: Successfully migrated doctor_service_rates table ✓
-- **Files Modified**: `shared/schema.ts`, `server/storage.ts`
-- **Status**: Application running successfully, pathology lab rates can now be saved ✓
+- **Files Modified**: `shared/schema.ts`, `server/storage.ts`, `client/src/pages/doctors.tsx`
+- **Status**: Application running successfully ✓
+  - Pathology lab rates save correctly
+  - Checkbox states persist after saving
+  - Both OPD and Pathology Lab representative entries work properly
 
 ### Environment Migration - November 20, 2025 at 7:15 PM
 [x] Successfully configured workflow with webview output type and port 5000

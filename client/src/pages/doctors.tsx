@@ -783,13 +783,27 @@ export default function Doctors() {
       const newSelections: typeof serviceSelections = {};
 
       doctorRates.forEach((rate: any) => {
-        const serviceId = rate.serviceId;
-        newSelections[serviceId] = {
-          isSelected: true,
-          salaryBasis: rate.rateType === "percentage" ? "percentage" : "amount",
-          amount: rate.rateType === "amount" ? rate.rateAmount : 0,
-          percentage: rate.rateType === "percentage" ? rate.rateAmount : 0,
-        };
+        // Handle null serviceId - map back to representative IDs
+        let serviceId = rate.serviceId;
+        
+        // If serviceId is null, determine the representative ID based on category
+        if (!serviceId) {
+          if (rate.serviceCategory === "pathology") {
+            serviceId = "pathology_lab_representative";
+          } else if (rate.serviceCategory === "opd") {
+            serviceId = "opd_consultation_placeholder";
+          }
+        }
+        
+        // Only add to selections if we have a valid serviceId
+        if (serviceId) {
+          newSelections[serviceId] = {
+            isSelected: true,
+            salaryBasis: rate.rateType === "percentage" ? "percentage" : "amount",
+            amount: rate.rateType === "amount" ? rate.rateAmount : 0,
+            percentage: rate.rateType === "percentage" ? rate.rateAmount : 0,
+          };
+        }
       });
 
       setServiceSelections(newSelections);
