@@ -745,6 +745,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get doctor payment history
+  app.get("/api/doctors/:id/payments", authenticateToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const payments = await storage.getDoctorPayments(id);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching doctor payments:", error);
+      res.status(500).json({ message: "Failed to fetch doctor payments" });
+    }
+  });
+
   app.get("/api/doctors/:id", authenticateToken, async (req, res) => {
     try {
       const doctor = await storage.getDoctorById(req.params.id);

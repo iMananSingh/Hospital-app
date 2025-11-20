@@ -298,6 +298,11 @@ export default function Doctors() {
         queryKey: ["/api/doctors/payments"],
       });
       await queryClient.refetchQueries({ queryKey: ["/api/doctors/payments"] });
+      
+      // Invalidate specific doctor's payment history
+      queryClient.invalidateQueries({
+        queryKey: ["/api/doctors", doctorId, "payments"],
+      });
 
       // Then invalidate earnings queries
       queryClient.invalidateQueries({

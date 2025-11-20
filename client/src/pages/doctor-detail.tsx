@@ -47,6 +47,24 @@ interface DoctorRate {
   isActive: boolean;
 }
 
+interface DoctorPayment {
+  id: string;
+  paymentId: string;
+  doctorId: string;
+  paymentDate: string;
+  totalAmount: number;
+  paymentMethod: string;
+  earningsIncluded: string;
+  startDate: string;
+  endDate: string;
+  description: string | null;
+  processedBy: string;
+  receiptNumber: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function DoctorDetail() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const [, setLocation] = useLocation();
@@ -72,6 +90,12 @@ export default function DoctorDetail() {
   // Fetch doctor salary rates
   const { data: salaryRates = [], isLoading: isRatesLoading } = useQuery({
     queryKey: ["/api/doctors", doctorId, "salary-rates"],
+    enabled: !!doctorId,
+  });
+
+  // Fetch doctor payment history
+  const { data: payments = [], isLoading: isPaymentsLoading } = useQuery<DoctorPayment[]>({
+    queryKey: ["/api/doctors", doctorId, "payments"],
     enabled: !!doctorId,
   });
 
@@ -473,8 +497,9 @@ export default function DoctorDetail() {
         {/* Detailed Information Tabs */}
         <Tabs defaultValue="salary-rates" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="salary-rates">Salary Rates</TabsTrigger>
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
+            <TabsTrigger value="salary-rates" data-testid="tab-salary-rates">Salary Rates</TabsTrigger>
+            <TabsTrigger value="earnings" data-testid="tab-earnings">Earnings</TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="salary-rates">
@@ -596,6 +621,74 @@ export default function DoctorDetail() {
                               ) : (
                                 <span className="text-muted-foreground text-sm">-</span>
                               )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isPaymentsLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading payment history...</p>
+                  </div>
+                ) : payments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <IndianRupee className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No payments recorded</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Payment ID</TableHead>
+                          <TableHead>Payment Date</TableHead>
+                          <TableHead>Period</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Payment Method</TableHead>
+                          <TableHead>Receipt Number</TableHead>
+                          <TableHead>Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payments.map((payment: DoctorPayment) => (
+                          <TableRow key={payment.id} data-testid={`row-payment-${payment.paymentId}`}>
+                            <TableCell className="font-medium" data-testid={`text-payment-id-${payment.paymentId}`}>
+                              {payment.paymentId}
+                            </TableCell>
+                            <TableCell data-testid={`text-payment-date-${payment.paymentId}`}>
+                              {formatDate(payment.paymentDate)}
+                            </TableCell>
+                            <TableCell data-testid={`text-payment-period-${payment.paymentId}`}>
+                              {formatDate(payment.startDate)} - {formatDate(payment.endDate)}
+                            </TableCell>
+                            <TableCell className="font-medium text-green-600" data-testid={`text-payment-amount-${payment.paymentId}`}>
+                              {formatCurrency(payment.totalAmount)}
+                            </TableCell>
+                            <TableCell data-testid={`text-payment-method-${payment.paymentId}`}>
+                              <Badge variant="outline">
+                                {payment.paymentMethod === 'cash' ? 'Cash' : 
+                                 payment.paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 
+                                 payment.paymentMethod === 'cheque' ? 'Cheque' : 
+                                 payment.paymentMethod}
+                              </Badge>
+                            </TableCell>
+                            <TableCell data-testid={`text-receipt-number-${payment.paymentId}`}>
+                              {payment.receiptNumber || '-'}
+                            </TableCell>
+                            <TableCell data-testid={`text-description-${payment.paymentId}`}>
+                              {payment.description || '-'}
                             </TableCell>
                           </TableRow>
                         ))}

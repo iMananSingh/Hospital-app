@@ -34,6 +34,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 20, 2025** - Doctor Payment History Tab
+- Added "Payments" tab to doctor detail page to display payment history
+- Implemented new backend storage method `getDoctorPayments(doctorId)` to filter payments by specific doctor
+- Created new API endpoint `/api/doctors/:id/payments` with proper routing precedence before generic :id route
+- Payment history table displays payment ID, date, amount, method, and related earnings with proper formatting
+- Configured asynchronous query invalidation to ensure payment history updates automatically when new payments are made
+- All interactive elements include proper data-testid attributes for testing (e.g., "tab-payments", "text-payment-id-{id}")
+- Follows existing patterns from earnings history for consistency across the application
+
 **November 7, 2025** - Doctor Payroll & OPD Commission System Backend
 - Implemented complete backend for automatic doctor commission calculation system
 - Added three new storage methods:

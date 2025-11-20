@@ -1437,6 +1437,7 @@ export interface IStorage {
 
   // Doctor Payment Management
   getAllDoctorPayments(): Promise<DoctorPayment[]>;
+  getDoctorPayments(doctorId: string): Promise<DoctorPayment[]>;
 
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
@@ -2359,6 +2360,15 @@ export class SqliteStorage implements IStorage {
     return db
       .select()
       .from(schema.doctorPayments)
+      .orderBy(desc(schema.doctorPayments.paymentDate))
+      .all();
+  }
+
+  async getDoctorPayments(doctorId: string): Promise<DoctorPayment[]> {
+    return db
+      .select()
+      .from(schema.doctorPayments)
+      .where(eq(schema.doctorPayments.doctorId, doctorId))
       .orderBy(desc(schema.doctorPayments.paymentDate))
       .all();
   }
