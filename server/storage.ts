@@ -2597,7 +2597,7 @@ export class SqliteStorage implements IStorage {
     fromDate?: string;
     toDate?: string;
   }): Promise<any[]> {
-    const whereConditions: any[] = [eq(schema.patientVisits.visitType, "opd")];
+    const whereConditions: any[] = eq(schema.patientVisits.visitType, "opd");
 
     if (filters?.doctorId && filters.doctorId !== "all") {
       whereConditions.push(eq(schema.patientVisits.doctorId, filters.doctorId));
@@ -4204,11 +4204,10 @@ export class SqliteStorage implements IStorage {
     });
 
     // Sort all items by date (most recent first)
-    billableItems.sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return dateB - dateA;
-    });
+    billableItems.sort(
+      (a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
     return billableItems;
   }
@@ -6065,7 +6064,8 @@ export class SqliteStorage implements IStorage {
 
 async function getCurrentlyAdmittedPatients(): Promise<any[]> {
   try {
-    const currentAdmissions = db
+    // Get all admissions with status 'admitted'
+    const admissions = db
       .select({
         admission: schema.admissions,
         patient: schema.patients,
@@ -6084,14 +6084,14 @@ async function getCurrentlyAdmittedPatients(): Promise<any[]> {
       .orderBy(desc(schema.admissions.admissionDate))
       .all();
 
-    return currentAdmissions.map((admission) => ({
-      ...admission.admission,
-      patient: admission.patient,
-      doctor: admission.doctor,
+    return admissions.map((row) => ({
+      ...row.admission,
+      patient: row.patient,
+      doctor: row.doctor,
     }));
   } catch (error) {
-    console.error("Error getting currently admitted patients:", error);
-    return [];
+    console.error("Error fetching currently admitted patients:", error);
+    throw error;
   }
 }
 
@@ -6247,7 +6247,6 @@ async generateComprehensiveBill(patientId: string): Promise<{
     description: string;
     amount: number;
     category: string;
-    quantity?: number;
     details: any;
   }>;
   summary: {
@@ -6336,8 +6335,8 @@ async generateComprehensiveBill(patientId: string): Promise<{
         eq(schema.patientServices.doctorId, schema.doctors.id),
       )
       .where(eq(schema.patientServices.patientId, patientId))
-      .orderBy(desc(schema.patientServices.scheduledDate))
-      .all();
+        .orderBy(desc(schema.patientServices.scheduledDate))
+        .all();
 
     // 3. Get admissions data for calculating admission service durations
     const admissions = db
@@ -6637,7 +6636,8 @@ async generateComprehensiveBill(patientId: string): Promise<{
 
     // Sort all items by date (oldest first)
     billItems.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      (a, b) =>
+        new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     // Calculate summary
