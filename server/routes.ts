@@ -1102,15 +1102,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Create a generic OPD service record if none exists
                 console.log("Creating new OPD Consultation service...");
                 try {
-                  const newOpdService = await storage.createService({
-                    name: "OPD Consultation",
-                    category: "consultation",
-                    price: 500, // Default consultation fee
-                    description: "General OPD consultation service",
-                    billingType: "per_instance",
-                    billingParameters: null,
-                    isActive: true,
-                  }, req.user.id);
+                  const newOpdService = await storage.createService(
+                    {
+                      name: "OPD Consultation",
+                      category: "consultation",
+                      price: 500, // Default consultation fee
+                      description: "General OPD consultation service",
+                      billingType: "per_instance",
+                      billingParameters: null,
+                      isActive: true,
+                    },
+                    req.user.id
+                  );
                   actualServiceId = newOpdService.id;
                   actualServiceName = newOpdService.name;
                   console.log(`✓ Created new OPD service: ${newOpdService.id} - ${newOpdService.name}`);
@@ -1140,15 +1143,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Create a generic lab service record if none exists
                 console.log("No existing pathology service found, creating new one...");
                 try {
-                  const newLabService = await storage.createService({
-                    name: "Pathology Lab (All Tests)",
-                    category: "pathology",
-                    price: 0, // Lab tests have variable pricing
-                    description: "Representative service for all pathology lab tests",
-                    billingType: "per_instance",
-                    billingParameters: null,
-                    isActive: true,
-                  }, req.user.id);
+                  const newLabService = await storage.createService(
+                    {
+                      name: "Pathology Lab (All Tests)",
+                      category: "pathology",
+                      price: 0, // Lab tests have variable pricing
+                      description: "Representative service for all pathology lab tests",
+                      billingType: "per_instance",
+                      billingParameters: null,
+                      isActive: true,
+                    },
+                    req.user.id
+                  );
                   actualServiceId = newLabService.id;
                   actualServiceName = newLabService.name;
                   console.log(`✓ Created new pathology service: ${newLabService.id} - ${newLabService.name}`);
