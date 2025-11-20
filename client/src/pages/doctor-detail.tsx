@@ -590,7 +590,11 @@ export default function DoctorDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {earnings.map((earning: DoctorEarning, index: number) => (
+                        {[...earnings]
+                          .sort((a: DoctorEarning, b: DoctorEarning) => 
+                            new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime()
+                          )
+                          .map((earning: DoctorEarning, index: number) => (
                           <TableRow key={earning.earningId}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell className="font-medium">{earning.serviceName}</TableCell>
@@ -664,7 +668,11 @@ export default function DoctorDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {payments.map((payment: DoctorPayment, index: number) => (
+                        {[...payments]
+                          .sort((a: DoctorPayment, b: DoctorPayment) => 
+                            new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+                          )
+                          .map((payment: DoctorPayment, index: number) => (
                           <TableRow key={payment.id} data-testid={`row-payment-${payment.paymentId}`}>
                             <TableCell>{index + 1}</TableCell>
                             <TableCell className="font-medium" data-testid={`text-payment-id-${payment.paymentId}`}>
