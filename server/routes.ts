@@ -1125,8 +1125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 (s) =>
                   s.category?.toLowerCase() === "pathology" ||
                   s.category?.toLowerCase() === "lab_tests" ||
-                  s.name?.toLowerCase().includes("lab") ||
-                  s.name?.toLowerCase().includes("pathology"),
+                  s.name?.toLowerCase().includes("pathology lab"),
               );
 
               if (labService) {
@@ -1140,8 +1139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     category: "pathology",
                     price: 0, // Lab tests have variable pricing
                     description: "Pathology and laboratory testing services",
+                    billingType: "per_instance",
+                    billingParameters: null,
                     isActive: true,
-                    createdBy: req.user.id,
                   });
                   actualServiceId = newLabService.id;
                   actualServiceName = newLabService.name;
