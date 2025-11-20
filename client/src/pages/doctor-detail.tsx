@@ -670,7 +670,7 @@ export default function DoctorDetail() {
                       <TableBody>
                         {[...payments]
                           .sort((a: DoctorPayment, b: DoctorPayment) => 
-                            new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+                            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                           )
                           .map((payment: DoctorPayment, index: number) => (
                           <TableRow key={payment.id} data-testid={`row-payment-${payment.paymentId}`}>
