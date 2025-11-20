@@ -1437,7 +1437,6 @@ export interface IStorage {
 
   // Doctor Payment Management
   getAllDoctorPayments(): Promise<DoctorPayment[]>;
-  getDoctorPayments(doctorId: string): Promise<DoctorPayment[]>; // Added to fetch payments for a specific doctor
 
   // Room management
   getRoomById(id: string): Promise<any | undefined>;
@@ -2364,15 +2363,6 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
-  async getDoctorPayments(doctorId: string): Promise<DoctorPayment[]> {
-    return db
-      .select()
-      .from(schema.doctorPayments)
-      .where(eq(schema.doctorPayments.doctorId, doctorId))
-      .orderBy(desc(schema.doctorPayments.paymentDate))
-      .all();
-  }
-
   async getDailyPatientCount(): Promise<number> {
     try {
       const count = db.select().from(schema.patients).all().length;
@@ -2597,7 +2587,7 @@ export class SqliteStorage implements IStorage {
     fromDate?: string;
     toDate?: string;
   }): Promise<any[]> {
-    const whereConditions: any[] = eq(schema.patientVisits.visitType, "opd");
+    const whereConditions: any[] = [eq(schema.patientVisits.visitType, "opd")];
 
     if (filters?.doctorId && filters.doctorId !== "all") {
       whereConditions.push(eq(schema.patientVisits.doctorId, filters.doctorId));
@@ -4204,10 +4194,11 @@ export class SqliteStorage implements IStorage {
     });
 
     // Sort all items by date (most recent first)
-    billableItems.sort(
-      (a, b) =>
-        new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+    billableItems.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA;
+    });
 
     return billableItems;
   }
@@ -6061,841 +6052,843 @@ export class SqliteStorage implements IStorage {
       return [];
     }
   }
-}
 
-async function getCurrentlyAdmittedPatients(): Promise<any[]> {
-  try {
-    // Get all admissions with status 'admitted'
-    const admissions = db
-      .select({
-        admission: schema.admissions,
-        patient: schema.patients,
-        doctor: schema.doctors,
-      })
-      .from(schema.admissions)
-      .leftJoin(
-        schema.patients,
-        eq(schema.admissions.patientId, schema.patients.id),
-      )
-      .leftJoin(
-        schema.doctors,
-        eq(schema.admissions.doctorId, schema.doctors.id),
-      )
-      .where(eq(schema.admissions.status, "admitted"))
-      .orderBy(desc(schema.admissions.admissionDate))
-      .all();
+  async getCurrentlyAdmittedPatients(): Promise<any[]> {
+    try {
+      const currentAdmissions = db
+        .select({
+          admission: schema.admissions,
+          patient: schema.patients,
+          doctor: schema.doctors,
+        })
+        .from(schema.admissions)
+        .leftJoin(
+          schema.patients,
+          eq(schema.admissions.patientId, schema.patients.id),
+        )
+        .leftJoin(
+          schema.doctors,
+          eq(schema.admissions.doctorId, schema.doctors.id),
+        )
+        .where(eq(schema.admissions.status, "admitted"))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
 
-    return admissions.map((row) => ({
-      ...row.admission,
-      patient: row.patient,
-      doctor: row.doctor,
-    }));
-  } catch (error) {
-    console.error("Error fetching currently admitted patients:", error);
-    throw error;
-  }
-}
-
-async function getTodayAdmissions(): Promise<any[]> {
-  try {
-    // Use local system time for date calculation
-    const now = new Date();
-    const today =
-      now.getFullYear() +
-      "-" +
-      String(now.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(now.getDate()).padStart(2, "0");
-
-    // Create start and end of today for range comparison
-    // Use SQL date function to extract just the date part for comparison
-    const todayAdmissions = db
-      .select({
-        admission: schema.admissions,
-        patient: schema.patients,
-        doctor: schema.doctors,
-      })
-      .from(schema.admissions)
-      .leftJoin(
-        schema.patients,
-        eq(schema.admissions.patientId, schema.patients.id),
-      )
-      .leftJoin(
-        schema.doctors,
-        eq(schema.admissions.doctorId, schema.doctors.id),
-      )
-      .where(sql`DATE(${schema.admissions.admissionDate}) = ${today}`)
-      .orderBy(desc(schema.admissions.createdAt))
-      .all();
-
-    return todayAdmissions.map((admission) => ({
-      ...admission.admission,
-      patient: admission.patient,
-      doctor: admission.doctor,
-    }));
-  } catch (error) {
-    console.error("Error getting today's admissions:", error);
-    return [];
-  }
-}
-
-async function getTodayDischarges(): Promise<any[]> {
-  try {
-    // Use local system time for date calculation
-    const now = new Date();
-    const today =
-      now.getFullYear() +
-      "-" +
-      String(now.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(now.getDate()).padStart(2, "0");
-
-    // Use SQL date function to extract just the date part for comparison
-    const todayDischarges = db
-      .select({
-        admission: schema.admissions,
-        patient: schema.patients,
-        doctor: schema.doctors,
-      })
-      .from(schema.admissions)
-      .leftJoin(
-        schema.patients,
-        eq(schema.admissions.patientId, schema.patients.id),
-      )
-      .leftJoin(
-        schema.doctors,
-        eq(schema.admissions.doctorId, schema.doctors.id),
-      )
-      .where(
-        and(
-          eq(schema.admissions.status, "discharged"),
-          isNotNull(schema.admissions.dischargeDate),
-          sql`DATE(${schema.admissions.dischargeDate}) = ${today}`,
-        ),
-      )
-      .orderBy(desc(schema.admissions.updatedAt))
-      .all();
-
-    return todayDischarges.map((admission) => ({
-      ...admission.admission,
-      patient: admission.patient,
-      doctor: admission.doctor,
-    }));
-  } catch (error) {
-    console.error("Error getting today's discharges:", error);
-    return [];
-  }
-}
-
-// Service Category Management
-async getServiceCategories(): Promise<ServiceCategory[]> {
-  return await db
-    .select()
-    .from(schema.serviceCategories)
-    .where(eq(schema.serviceCategories.isActive, true))
-    .orderBy(asc(schema.serviceCategories.name));
-}
-
-async createServiceCategory(
-  category: InsertServiceCategory,
-): Promise<ServiceCategory> {
-  const [serviceCategory] = await db
-    .insert(schema.serviceCategories)
-    .values(category)
-    .returning();
-  return serviceCategory;
-}
-
-async updateServiceCategory(
-  id: string,
-  category: Partial<InsertServiceCategory>,
-): Promise<ServiceCategory | undefined> {
-  const [updated] = await db
-    .update(schema.serviceCategories)
-    .set({ ...category, updatedAt: new Date().toISOString() })
-    .where(eq(schema.serviceCategories.id, id))
-    .returning();
-  return updated;
-}
-
-async deleteServiceCategory(id: string): Promise<boolean> {
-  // Check if category has services
-  const servicesInCategory = await db
-    .select()
-    .from(schema.services)
-    .where(eq(schema.services.category, id))
-    .limit(1);
-
-  if (servicesInCategory.length > 0) {
-    throw new Error("Cannot delete category that has services");
+      return currentAdmissions.map((admission) => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor,
+      }));
+    } catch (error) {
+      console.error("Error getting currently admitted patients:", error);
+      return [];
+    }
   }
 
-  const [deleted] = await db
-    .update(schema.serviceCategories)
-    .set({ isActive: false, updatedAt: new Date().toISOString() })
-    .where(eq(schema.serviceCategories.id, id))
-    .returning();
-  return !!deleted;
-}
+  async getTodayAdmissions(): Promise<any[]> {
+    try {
+      // Use local system time for date calculation
+      const now = new Date();
+      const today =
+        now.getFullYear() +
+        "-" +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(now.getDate()).padStart(2, "0");
 
-// Comprehensive Bill Generation
-async generateComprehensiveBill(patientId: string): Promise<{
-  patient: any;
-  billItems: Array<{
-    type: "service" | "pathology" | "admission" | "payment" | "discount";
-    id: string;
-    date: string;
-    description: string;
-    amount: number;
-    category: string;
-    details: any;
-  }>;
-  summary: {
-    totalCharges: number;
-    totalPayments: number;
-    totalDiscounts: number;
-    remainingBalance: number;
-    lastPaymentDate?: string;
-    lastDiscountDate?: string;
-  };
-}> {
-  try {
-    // Get patient details
-    const patient = await this.getPatientById(patientId);
-    if (!patient) {
-      throw new Error("Patient not found");
+      // Create start and end of today for range comparison
+      // Use SQL date function to extract just the date part for comparison
+      const todayAdmissions = db
+        .select({
+          admission: schema.admissions,
+          patient: schema.patients,
+          doctor: schema.doctors,
+        })
+        .from(schema.admissions)
+        .leftJoin(
+          schema.patients,
+          eq(schema.admissions.patientId, schema.patients.id),
+        )
+        .leftJoin(
+          schema.doctors,
+          eq(schema.admissions.doctorId, schema.doctors.id),
+        )
+        .where(sql`DATE(${schema.admissions.admissionDate}) = ${today}`)
+        .orderBy(desc(schema.admissions.createdAt))
+        .all();
+
+      return todayAdmissions.map((admission) => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor,
+      }));
+    } catch (error) {
+      console.error("Error getting today's admissions:", error);
+      return [];
+    }
+  }
+
+  async getTodayDischarges(): Promise<any[]> {
+    try {
+      // Use local system time for date calculation
+      const now = new Date();
+      const today =
+        now.getFullYear() +
+        "-" +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(now.getDate()).padStart(2, "0");
+
+      // Use SQL date function to extract just the date part for comparison
+      const todayDischarges = db
+        .select({
+          admission: schema.admissions,
+          patient: schema.patients,
+          doctor: schema.doctors,
+        })
+        .from(schema.admissions)
+        .leftJoin(
+          schema.patients,
+          eq(schema.admissions.patientId, schema.patients.id),
+        )
+        .leftJoin(
+          schema.doctors,
+          eq(schema.admissions.doctorId, schema.doctors.id),
+        )
+        .where(
+          and(
+            eq(schema.admissions.status, "discharged"),
+            isNotNull(schema.admissions.dischargeDate),
+            sql`DATE(${schema.admissions.dischargeDate}) = ${today}`,
+          ),
+        )
+        .orderBy(desc(schema.admissions.updatedAt))
+        .all();
+
+      return todayDischarges.map((admission) => ({
+        ...admission.admission,
+        patient: admission.patient,
+        doctor: admission.doctor,
+      }));
+    } catch (error) {
+      console.error("Error getting today's discharges:", error);
+      return [];
+    }
+  }
+
+  // Service Category Management
+  async getServiceCategories(): Promise<ServiceCategory[]> {
+    return await db
+      .select()
+      .from(schema.serviceCategories)
+      .where(eq(schema.serviceCategories.isActive, true))
+      .orderBy(schema.serviceCategories.name);
+  }
+
+  async createServiceCategory(
+    category: InsertServiceCategory,
+  ): Promise<ServiceCategory> {
+    const [serviceCategory] = await db
+      .insert(schema.serviceCategories)
+      .values(category)
+      .returning();
+    return serviceCategory;
+  }
+
+  async updateServiceCategory(
+    id: string,
+    category: Partial<InsertServiceCategory>,
+  ): Promise<ServiceCategory | undefined> {
+    const [updated] = await db
+      .update(schema.serviceCategories)
+      .set({ ...category, updatedAt: new Date().toISOString() })
+      .where(eq(schema.serviceCategories.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteServiceCategory(id: string): Promise<boolean> {
+    // Check if category has services
+    const servicesInCategory = await db
+      .select()
+      .from(schema.services)
+      .where(eq(schema.services.category, id))
+      .limit(1);
+
+    if (servicesInCategory.length > 0) {
+      throw new Error("Cannot delete category that has services");
     }
 
-    const billItems: Array<{
+    const [deleted] = await db
+      .update(schema.serviceCategories)
+      .set({ isActive: false, updatedAt: new Date().toISOString() })
+      .where(eq(schema.serviceCategories.id, id))
+      .returning();
+    return !!deleted;
+  }
+
+  // Comprehensive Bill Generation
+  async generateComprehensiveBill(patientId: string): Promise<{
+    patient: any;
+    billItems: Array<{
       type: "service" | "pathology" | "admission" | "payment" | "discount";
       id: string;
       date: string;
       description: string;
       amount: number;
       category: string;
+      quantity?: number;
       details: any;
-    }> = [];
+    }>;
+    summary: {
+      totalCharges: number;
+      totalPayments: number;
+      totalDiscounts: number;
+      remainingBalance: number;
+      lastPaymentDate?: string;
+      lastDiscountDate?: string;
+    };
+  }> {
+    try {
+      // Get patient details
+      const patient = await this.getPatientById(patientId);
+      if (!patient) {
+        throw new Error("Patient not found");
+      }
 
-    // 1. OPD Visits (consultation fees from patient_visits table)
-    const opdVisits = db
-      .select({
-        id: schema.patientVisits.id,
-        visitId: schema.patientVisits.visitId,
-        patientId: schema.patientVisits.patientId,
-        doctorId: schema.patientVisits.doctorId,
-        visitType: schema.patientVisits.visitType,
-        scheduledDate: schema.patientVisits.scheduledDate,
-        scheduledTime: schema.patientVisits.scheduledTime,
-        consultationFee: schema.patientVisits.consultationFee,
-        symptoms: schema.patientVisits.symptoms,
-        diagnosis: schema.patientVisits.diagnosis,
-        createdAt: schema.patientVisits.createdAt,
-        // Doctor info
-        doctorName: schema.doctors.name,
-        doctorSpecialization: schema.doctors.specialization,
-        doctorConsultationFee: schema.doctors.consultationFee,
-      })
-      .from(schema.patientVisits)
-      .leftJoin(
-        schema.doctors,
-        eq(schema.patientVisits.doctorId, schema.doctors.id),
-      )
-      .where(
-        and(
-          eq(schema.patientVisits.patientId, patientId),
-          eq(schema.patientVisits.visitType, "opd"),
-        ),
-      )
-      .orderBy(desc(schema.patientVisits.scheduledDate))
-      .all();
+      const billItems: Array<{
+        type: "service" | "pathology" | "admission" | "payment" | "discount";
+        id: string;
+        date: string;
+        description: string;
+        amount: number;
+        category: string;
+        details: any;
+      }> = [];
 
-    // 2. Patient Services (all types except pathology which is handled separately)
-    const patientServices = db
-      .select({
-        id: schema.patientServices.id,
-        serviceId: schema.patientServices.serviceId,
-        patientId: schema.patientServices.patientId,
-        doctorId: schema.patientServices.doctorId,
-        serviceType: schema.patientServices.serviceType,
-        serviceName: schema.patientServices.serviceName,
-        scheduledDate: schema.patientServices.scheduledDate,
-        scheduledTime: schema.patientServices.scheduledTime,
-        price: schema.patientServices.price,
-        calculatedAmount: schema.patientServices.calculatedAmount,
-        billingQuantity: schema.patientServices.billingQuantity,
-        billingType: schema.patientServices.billingType,
-        notes: schema.patientServices.notes,
-        createdAt: schema.patientServices.createdAt,
-        // Doctor info
-        doctorName: schema.doctors.name,
-        doctorSpecialization: schema.doctors.specialization,
-      })
-      .from(schema.patientServices)
-      .leftJoin(
-        schema.doctors,
-        eq(schema.patientServices.doctorId, schema.doctors.id),
-      )
-      .where(eq(schema.patientServices.patientId, patientId))
-      .orderBy(desc(schema.patientServices.scheduledDate))
-      .all();
-
-    // 3. Get admissions data for calculating admission service durations
-    const admissions = db
-      .select()
-      .from(schema.admissions)
-      .where(eq(schema.admissions.patientId, patientId))
-      .orderBy(desc(schema.admissions.admissionDate))
-      .all();
-
-    // Get admission doctors for context
-    const admissionDoctorIds = admissions
-      .map((a) => a.doctorId)
-      .filter(Boolean) as string[];
-    const admissionDoctors = new Map<string, string>();
-    if (admissionDoctorIds.length > 0) {
-      const doctors = db
-        .select()
-        .from(schema.doctors)
-        .where(inArray(schema.doctors.id, admissionDoctorIds))
+      // 1. OPD Visits (consultation fees from patient_visits table)
+      const opdVisits = db
+        .select({
+          id: schema.patientVisits.id,
+          visitId: schema.patientVisits.visitId,
+          patientId: schema.patientVisits.patientId,
+          doctorId: schema.patientVisits.doctorId,
+          visitType: schema.patientVisits.visitType,
+          scheduledDate: schema.patientVisits.scheduledDate,
+          scheduledTime: schema.patientVisits.scheduledTime,
+          consultationFee: schema.patientVisits.consultationFee,
+          symptoms: schema.patientVisits.symptoms,
+          diagnosis: schema.patientVisits.diagnosis,
+          createdAt: schema.patientVisits.createdAt,
+          // Doctor info
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+          doctorConsultationFee: schema.doctors.consultationFee,
+        })
+        .from(schema.patientVisits)
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientVisits.doctorId, schema.doctors.id),
+        )
+        .where(
+          and(
+            eq(schema.patientVisits.patientId, patientId),
+            eq(schema.patientVisits.visitType, "opd"),
+          ),
+        )
+        .orderBy(desc(schema.patientVisits.scheduledDate))
         .all();
-      doctors.forEach((doctor) => {
-        admissionDoctors.set(doctor.id, doctor.name);
-      });
-    }
 
-    // Add OPD visits as bill items
-    opdVisits.forEach((visit) => {
-      const amount =
-        visit.consultationFee || visit.doctorConsultationFee || 0;
-      if (amount > 0) {
-        // Handle doctor name to avoid duplicate "Dr." prefix
-        const doctorName = visit.doctorName || "Unknown Doctor";
-        const formattedDoctorName = doctorName.startsWith("Dr.")
-          ? doctorName
-          : `Dr. ${doctorName}`;
+      // 2. Patient Services (all types except pathology which is handled separately)
+      const patientServices = db
+        .select({
+          id: schema.patientServices.id,
+          serviceId: schema.patientServices.serviceId,
+          patientId: schema.patientServices.patientId,
+          doctorId: schema.patientServices.doctorId,
+          serviceType: schema.patientServices.serviceType,
+          serviceName: schema.patientServices.serviceName,
+          scheduledDate: schema.patientServices.scheduledDate,
+          scheduledTime: schema.patientServices.scheduledTime,
+          price: schema.patientServices.price,
+          calculatedAmount: schema.patientServices.calculatedAmount,
+          billingQuantity: schema.patientServices.billingQuantity,
+          billingType: schema.patientServices.billingType,
+          notes: schema.patientServices.notes,
+          createdAt: schema.patientServices.createdAt,
+          // Doctor info
+          doctorName: schema.doctors.name,
+          doctorSpecialization: schema.doctors.specialization,
+        })
+        .from(schema.patientServices)
+        .leftJoin(
+          schema.doctors,
+          eq(schema.patientServices.doctorId, schema.doctors.id),
+        )
+        .where(eq(schema.patientServices.patientId, patientId))
+        .orderBy(desc(schema.patientServices.scheduledDate))
+        .all();
 
-        billItems.push({
-          type: "service",
-          id: visit.id,
-          date: visit.scheduledDate || visit.createdAt,
-          description: `OPD Consultation - ${formattedDoctorName}${visit.symptoms ? ` (${visit.symptoms})` : ""}`,
-          amount: amount,
-          category: "OPD Consultation",
-          details: {
-            visitId: visit.visitId,
-            doctorName: visit.doctorName,
-            doctorSpecialization: visit.doctorSpecialization,
-            scheduledTime: visit.scheduledTime,
-            symptoms: visit.symptoms,
-            diagnosis: visit.diagnosis,
-            consultationFee: visit.consultationFee,
-            quantity: 1,
-            billingQuantity: 1,
-          },
+      // 3. Get admissions data for calculating admission service durations
+      const admissions = db
+        .select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .orderBy(desc(schema.admissions.admissionDate))
+        .all();
+
+      // Get admission doctors for context
+      const admissionDoctorIds = admissions
+        .map((a) => a.doctorId)
+        .filter(Boolean) as string[];
+      const admissionDoctors = new Map<string, string>();
+      if (admissionDoctorIds.length > 0) {
+        const doctors = db
+          .select()
+          .from(schema.doctors)
+          .where(inArray(schema.doctors.id, admissionDoctorIds))
+          .all();
+        doctors.forEach((doctor) => {
+          admissionDoctors.set(doctor.id, doctor.name);
         });
       }
-    });
 
-    // Add patient services with daily calculation for admission services
-    patientServices.forEach((ps) => {
-      let serviceAmount =
-        (ps.calculatedAmount as number) || (ps.price as number) || 0;
-      let serviceQuantity = ps.billingQuantity || 1;
+      // Add OPD visits as bill items
+      opdVisits.forEach((visit) => {
+        const amount =
+          visit.consultationFee || visit.doctorConsultationFee || 0;
+        if (amount > 0) {
+          // Handle doctor name to avoid duplicate "Dr." prefix
+          const doctorName = visit.doctorName || "Unknown Doctor";
+          const formattedDoctorName = doctorName.startsWith("Dr.")
+            ? doctorName
+            : `Dr. ${doctorName}`;
 
-      // For admission services, calculate based on patient's stay duration
-      if (ps.serviceType === "admission") {
-        // Find the admission for this patient to get stay duration
-        const patientAdmissions = admissions.filter(
-          (admission) => admission.patientId === patientId,
-        );
-
-        if (patientAdmissions.length > 0) {
-          // Use the most recent admission or find matching admission by date
-          let relevantAdmission = patientAdmissions[0];
-
-          // Try to find admission that matches the service date
-          const matchingAdmission = patientAdmissions.find((admission) => {
-            const admissionDate = new Date(
-              admission.admissionDate,
-            ).toDateString();
-            const serviceDate = new Date(
-              ps.scheduledDate || ps.createdAt,
-            ).toDateString();
-            return admissionDate === serviceDate;
+          billItems.push({
+            type: "service",
+            id: visit.id,
+            date: visit.scheduledDate || visit.createdAt,
+            description: `OPD Consultation - ${formattedDoctorName}${visit.symptoms ? ` (${visit.symptoms})` : ""}`,
+            amount: amount,
+            category: "OPD Consultation",
+            details: {
+              visitId: visit.visitId,
+              doctorName: visit.doctorName,
+              doctorSpecialization: visit.doctorSpecialization,
+              scheduledTime: visit.scheduledTime,
+              symptoms: visit.symptoms,
+              diagnosis: visit.diagnosis,
+              consultationFee: visit.consultationFee,
+              quantity: 1,
+              billingQuantity: 1,
+            },
           });
+        }
+      });
 
-          if (matchingAdmission) {
-            relevantAdmission = matchingAdmission;
-          }
+      // Add patient services with daily calculation for admission services
+      patientServices.forEach((ps) => {
+        let serviceAmount =
+          (ps.calculatedAmount as number) || (ps.price as number) || 0;
+        let serviceQuantity = ps.billingQuantity || 1;
 
-          // Calculate stay duration using the calculateStayDays function
-          const endDate =
-            relevantAdmission.dischargeDate || new Date().toISOString();
-          const stayDuration = calculateStayDays(
-            relevantAdmission.admissionDate,
-            endDate,
+        // For admission services, calculate based on patient's stay duration
+        if (ps.serviceType === "admission") {
+          // Find the admission for this patient to get stay duration
+          const patientAdmissions = admissions.filter(
+            (admission) => admission.patientId === patientId,
           );
 
-          if (stayDuration > 0) {
-            if (ps.serviceName.toLowerCase().includes("bed charges")) {
-              // Bed charges: charge for each completed 24-hour period
-              serviceQuantity = stayDuration;
-              serviceAmount = (ps.price || 0) * serviceQuantity;
-            } else if (
-              ps.serviceName.toLowerCase().includes("doctor charges") ||
-              ps.serviceName.toLowerCase().includes("nursing charges") ||
-              ps.serviceName.toLowerCase().includes("rmo charges")
-            ) {
-              // Other admission services: charge for each calendar day
-              serviceQuantity = stayDuration;
-              serviceAmount = (ps.price || 0) * serviceQuantity;
+          if (patientAdmissions.length > 0) {
+            // Use the most recent admission or find matching admission by date
+            let relevantAdmission = patientAdmissions[0];
+
+            // Try to find admission that matches the service date
+            const matchingAdmission = patientAdmissions.find((admission) => {
+              const admissionDate = new Date(
+                admission.admissionDate,
+              ).toDateString();
+              const serviceDate = new Date(
+                ps.scheduledDate || ps.createdAt,
+              ).toDateString();
+              return admissionDate === serviceDate;
+            });
+
+            if (matchingAdmission) {
+              relevantAdmission = matchingAdmission;
+            }
+
+            // Calculate stay duration using the calculateStayDays function
+            const endDate =
+              relevantAdmission.dischargeDate || new Date().toISOString();
+            const stayDuration = calculateStayDays(
+              relevantAdmission.admissionDate,
+              endDate,
+            );
+
+            if (stayDuration > 0) {
+              if (ps.serviceName.toLowerCase().includes("bed charges")) {
+                // Bed charges: charge for each completed 24-hour period
+                serviceQuantity = stayDuration;
+                serviceAmount = (ps.price || 0) * serviceQuantity;
+              } else if (
+                ps.serviceName.toLowerCase().includes("doctor charges") ||
+                ps.serviceName.toLowerCase().includes("nursing charges") ||
+                ps.serviceName.toLowerCase().includes("rmo charges")
+              ) {
+                // Other admission services: charge for each calendar day
+                serviceQuantity = stayDuration;
+                serviceAmount = (ps.price || 0) * serviceQuantity;
+              }
             }
           }
         }
-      }
 
-      if (serviceAmount > 0) {
-        billItems.push({
-          type: "service",
-          id: ps.id,
-          date: ps.scheduledDate || ps.createdAt,
-          description: ps.serviceName,
-          amount: serviceAmount,
-          category: "service",
-          details: {
-            serviceId: ps.serviceId,
-            serviceName: ps.serviceName,
-            serviceType: ps.serviceType,
-            billingType: ps.billingType,
-            billingQuantity: ps.billingQuantity,
-            unitPrice: ps.price,
-            calculatedAmount: serviceAmount,
-            notes: ps.notes,
-            quantity: serviceQuantity,
-          },
-        });
-      }
-    });
-
-    // 3. Pathology Orders
-    const pathologyOrders = db
-      .select({
-        order: schema.pathologyOrders,
-        doctor: schema.doctors,
-      })
-      .from(schema.pathologyOrders)
-      .leftJoin(
-        schema.doctors,
-        eq(schema.pathologyOrders.doctorId, schema.doctors.id),
-      )
-      .where(eq(schema.pathologyOrders.patientId, patientId))
-      .all();
-
-    pathologyOrders.forEach((po) => {
-      if (po.order.totalPrice > 0) {
-        // Get tests for this order
-        const tests = db
-          .select()
-          .from(schema.pathologyTests)
-          .where(eq(schema.pathologyTests.orderId, po.order.id))
-          .all();
-
-        billItems.push({
-          type: "pathology",
-          id: po.order.id,
-          date: po.order.orderedDate,
-          description: `Pathology Tests - Order ${po.order.orderId}`,
-          amount: po.order.totalPrice,
-          category: "pathology",
-          details: {
-            doctor:
-              po.doctor?.name ||
-              (po.order.doctorId ? "Unknown Doctor" : "No Doctor Assigned"),
-            receiptNumber: po.order.receiptNumber,
-            status: po.order.status,
-            testsCount: tests.length,
-            quantity: 1, // Always 1 for pathology orders (one order)
-            tests: tests.map((t) => ({
-              name: t.testName,
-              category: t.testCategory,
-              price: t.price,
-            })),
-          },
-        });
-      }
-    });
-
-    // 4. Admissions and associated events
-    // Admissions themselves are not added as bill items, but their payments/discounts are.
-    // Thecharges for admission services are handled in `patientServices`.
-
-    // 5. Patient Payments
-    const payments = db
-      .select()
-      .from(schema.patientPayments)
-      .where(eq(schema.patientPayments.patientId, patientId))
-      .all();
-
-    payments.forEach((payment) => {
-      billItems.push({
-        type: "payment",
-        id: payment.id,
-        date: payment.paymentDate,
-        description: `Payment - ${payment.paymentMethod.toUpperCase()}`,
-        amount: -payment.amount, // Negative for payments
-        category: "payment",
-        details: {
-          paymentId: payment.paymentId,
-          paymentMethod: payment.paymentMethod,
-          receiptNumber: payment.receiptNumber,
-          reason: payment.reason,
-          quantity: 1,
-        },
+        if (serviceAmount > 0) {
+          billItems.push({
+            type: "service",
+            id: ps.id,
+            date: ps.scheduledDate || ps.createdAt,
+            description: ps.serviceName,
+            amount: serviceAmount,
+            category: "service",
+            details: {
+              serviceId: ps.serviceId,
+              serviceName: ps.serviceName,
+              serviceType: ps.serviceType,
+              billingType: ps.billingType,
+              billingQuantity: ps.billingQuantity,
+              unitPrice: ps.price,
+              calculatedAmount: serviceAmount,
+              notes: ps.notes,
+              quantity: serviceQuantity,
+            },
+          });
+        }
       });
-    });
 
-    // Add admission payments (initial deposits and additional payments)
-    admissions.forEach((admission) => {
-      if (admission.initialDeposit && admission.initialDeposit > 0) {
+      // 3. Pathology Orders
+      const pathologyOrders = db
+        .select({
+          order: schema.pathologyOrders,
+          doctor: schema.doctors,
+        })
+        .from(schema.pathologyOrders)
+        .leftJoin(
+          schema.doctors,
+          eq(schema.pathologyOrders.doctorId, schema.doctors.id),
+        )
+        .where(eq(schema.pathologyOrders.patientId, patientId))
+        .all();
+
+      pathologyOrders.forEach((po) => {
+        if (po.order.totalPrice > 0) {
+          // Get tests for this order
+          const tests = db
+            .select()
+            .from(schema.pathologyTests)
+            .where(eq(schema.pathologyTests.orderId, po.order.id))
+            .all();
+
+          billItems.push({
+            type: "pathology",
+            id: po.order.id,
+            date: po.order.orderedDate,
+            description: `Pathology Tests - Order ${po.order.orderId}`,
+            amount: po.order.totalPrice,
+            category: "pathology",
+            details: {
+              doctor:
+                po.doctor?.name ||
+                (po.order.doctorId ? "Unknown Doctor" : "No Doctor Assigned"),
+              receiptNumber: po.order.receiptNumber,
+              status: po.order.status,
+              testsCount: tests.length,
+              quantity: 1, // Always 1 for pathology orders (one order)
+              tests: tests.map((t) => ({
+                name: t.testName,
+                category: t.testCategory,
+                price: t.price,
+              })),
+            },
+          });
+        }
+      });
+
+      // 4. Admissions and associated events
+      // Admissions themselves are not added as bill items, but their payments/discounts are.
+      // Thecharges for admission services are handled in `patientServices`.
+
+      // 5. Patient Payments
+      const payments = db
+        .select()
+        .from(schema.patientPayments)
+        .where(eq(schema.patientPayments.patientId, patientId))
+        .all();
+
+      payments.forEach((payment) => {
         billItems.push({
           type: "payment",
-          id: `${admission.id}-initial-deposit`,
-          date: admission.admissionDate,
-          description: `Initial Deposit - ${admission.admissionId}`,
-          amount: -admission.initialDeposit, // Negative for payments
+          id: payment.id,
+          date: payment.paymentDate,
+          description: `Payment - ${payment.paymentMethod.toUpperCase()}`,
+          amount: -payment.amount, // Negative for payments
           category: "payment",
           details: {
-            admissionId: admission.admissionId,
-            paymentMethod: "cash",
-            reason: "Initial admission deposit",
+            paymentId: payment.paymentId,
+            paymentMethod: payment.paymentMethod,
+            receiptNumber: payment.receiptNumber,
+            reason: payment.reason,
             quantity: 1,
           },
         });
-      }
-
-      if (admission.additionalPayments && admission.additionalPayments > 0) {
-        billItems.push({
-          type: "payment",
-          id: `${admission.id}-additional-payments`,
-          date: admission.lastPaymentDate || admission.updatedAt,
-          description: `Additional Payments - ${admission.admissionId}`,
-          amount: -admission.additionalPayments, // Negative for payments
-          category: "payment",
-          details: {
-            admissionId: admission.admissionId,
-            paymentMethod: "cash",
-            reason: "Additional admission payments",
-            quantity: 1,
-          },
-        });
-      }
-    });
-
-    // 6. Patient Discounts
-    const discounts = db
-      .select()
-      .from(schema.patientDiscounts)
-      .where(eq(schema.patientDiscounts.patientId, patientId))
-      .all();
-
-    discounts.forEach((discount) => {
-      billItems.push({
-        type: "discount",
-        id: discount.id,
-        date: discount.discountDate,
-        description: `Discount - ${discount.discountType.replace("_", " ").toUpperCase()}`,
-        amount: -discount.amount, // Negative for discounts
-        category: "discount",
-        details: {
-          discountId: discount.discountId,
-          discountType: discount.discountType,
-          reason: discount.reason,
-          quantity: 1,
-        },
       });
-    });
 
-    // Add admission discounts for backwards compatibility
-    admissions.forEach((admission) => {
-      if (admission.totalDiscount && admission.totalDiscount > 0) {
+      // Add admission payments (initial deposits and additional payments)
+      admissions.forEach((admission) => {
+        if (admission.initialDeposit && admission.initialDeposit > 0) {
+          billItems.push({
+            type: "payment",
+            id: `${admission.id}-initial-deposit`,
+            date: admission.admissionDate,
+            description: `Initial Deposit - ${admission.admissionId}`,
+            amount: -admission.initialDeposit, // Negative for payments
+            category: "payment",
+            details: {
+              admissionId: admission.admissionId,
+              paymentMethod: "cash",
+              reason: "Initial admission deposit",
+              quantity: 1,
+            },
+          });
+        }
+
+        if (admission.additionalPayments && admission.additionalPayments > 0) {
+          billItems.push({
+            type: "payment",
+            id: `${admission.id}-additional-payments`,
+            date: admission.lastPaymentDate || admission.updatedAt,
+            description: `Additional Payments - ${admission.admissionId}`,
+            amount: -admission.additionalPayments, // Negative for payments
+            category: "payment",
+            details: {
+              admissionId: admission.admissionId,
+              paymentMethod: "cash",
+              reason: "Additional admission payments",
+              quantity: 1,
+            },
+          });
+        }
+      });
+
+      // 6. Patient Discounts
+      const discounts = db
+        .select()
+        .from(schema.patientDiscounts)
+        .where(eq(schema.patientDiscounts.patientId, patientId))
+        .all();
+
+      discounts.forEach((discount) => {
         billItems.push({
           type: "discount",
-          id: `${admission.id}-discount`,
-          date: admission.lastDiscountDate || admission.updatedAt,
-          description: `Admission Discount - ${admission.admissionId}`,
-          amount: -admission.totalDiscount, // Negative for discounts
+          id: discount.id,
+          date: discount.discountDate,
+          description: `Discount - ${discount.discountType.replace("_", " ").toUpperCase()}`,
+          amount: -discount.amount, // Negative for discounts
           category: "discount",
           details: {
-            admissionId: admission.admissionId,
-            discountType: "admission",
-            reason: admission.lastDiscountReason || "Admission discount",
+            discountId: discount.discountId,
+            discountType: discount.discountType,
+            reason: discount.reason,
             quantity: 1,
           },
         });
-      }
-    });
+      });
 
-    // Sort all items by date (oldest first)
-    billItems.sort(
-      (a, b) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
+      // Add admission discounts for backwards compatibility
+      admissions.forEach((admission) => {
+        if (admission.totalDiscount && admission.totalDiscount > 0) {
+          billItems.push({
+            type: "discount",
+            id: `${admission.id}-discount`,
+            date: admission.lastDiscountDate || admission.updatedAt,
+            description: `Admission Discount - ${admission.admissionId}`,
+            amount: -admission.totalDiscount, // Negative for discounts
+            category: "discount",
+            details: {
+              admissionId: admission.admissionId,
+              discountType: "admission",
+              reason: admission.lastDiscountReason || "Admission discount",
+              quantity: 1,
+            },
+          });
+        }
+      });
 
-    // Calculate summary
-    const totalCharges = billItems
-      .filter((item) => item.amount > 0)
-      .reduce((sum, item) => sum + item.amount, 0);
+      // Sort all items by date (oldest first)
+      billItems.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
 
-    const totalPayments = Math.abs(
-      billItems
-        .filter((item) => item.type === "payment")
-        .reduce((sum, item) => sum + item.amount, 0),
-    );
+      // Calculate summary
+      const totalCharges = billItems
+        .filter((item) => item.amount > 0)
+        .reduce((sum, item) => sum + item.amount, 0);
 
-    const totalDiscounts = Math.abs(
-      billItems
-        .filter((item) => item.type === "discount")
-        .reduce((sum, item) => sum + item.amount, 0),
-    );
+      const totalPayments = Math.abs(
+        billItems
+          .filter((item) => item.type === "payment")
+          .reduce((sum, item) => sum + item.amount, 0),
+      );
 
-    const remainingBalance = totalCharges - totalPaid - totalDiscounts;
+      const totalDiscounts = Math.abs(
+        billItems
+          .filter((item) => item.type === "discount")
+          .reduce((sum, item) => sum + item.amount, 0),
+      );
 
-    const lastPayment = billItems.find((item) => item.type === "payment");
-    const lastDiscount = billItems.find((item) => item.type === "discount");
+      const remainingBalance = totalCharges - totalPaid - totalDiscounts;
 
-    return {
-      patient,
-      billItems,
-      summary: {
-        totalCharges,
-        totalPayments,
-        totalDiscounts,
-        remainingBalance,
-        lastPaymentDate: lastPayment?.date,
-        lastDiscountDate: lastDiscount?.date,
-      },
-    };
-  } catch (error) {
-    console.error("Error generating comprehensive bill:", error);
-    throw error;
+      const lastPayment = billItems.find((item) => item.type === "payment");
+      const lastDiscount = billItems.find((item) => item.type === "discount");
+
+      return {
+        patient,
+        billItems,
+        summary: {
+          totalCharges,
+          totalPayments,
+          totalDiscounts,
+          remainingBalance,
+          lastPaymentDate: lastPayment?.date,
+          lastDiscountDate: lastDiscount?.date,
+        },
+      };
+    } catch (error) {
+      console.error("Error generating comprehensive bill:", error);
+      throw error;
+    }
   }
-}
 
-// Doctor Service Rate Management
-async createDoctorServiceRate(
-  rate: InsertDoctorServiceRate,
-): Promise<DoctorServiceRate> {
-  const created = db
-    .insert(schema.doctorServiceRates)
-    .values(rate)
-    .returning()
-    .get();
-  return created;
-}
+  // Doctor Service Rate Management
+  async createDoctorServiceRate(
+    rate: InsertDoctorServiceRate,
+  ): Promise<DoctorServiceRate> {
+    const created = db
+      .insert(schema.doctorServiceRates)
+      .values(rate)
+      .returning()
+      .get();
+    return created;
+  }
 
-async getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]> {
-  const query = db.select().from(schema.doctorServiceRates);
-  if (doctorId) {
-    return query
-      .where(eq(schema.doctorServiceRates.doctorId, doctorId))
+  async getDoctorServiceRates(doctorId?: string): Promise<DoctorServiceRate[]> {
+    const query = db.select().from(schema.doctorServiceRates);
+    if (doctorId) {
+      return query
+        .where(eq(schema.doctorServiceRates.doctorId, doctorId))
+        .all();
+    }
+    return query.all();
+  }
+
+  async getDoctorServiceRateById(
+    id: string,
+  ): Promise<DoctorServiceRate | undefined> {
+    return db
+      .select()
+      .from(schema.doctorServiceRates)
+      .where(eq(schema.doctorServiceRates.id === id, id))
+      .get();
+  }
+
+  async updateDoctorServiceRate(
+    id: string,
+    rate: Partial<InsertDoctorServiceRate>,
+  ): Promise<DoctorServiceRate | undefined> {
+    const updated = db
+      .update(schema.doctorServiceRates)
+      .set({ ...rate, updatedAt: new Date().toISOString() })
+      .where(eq(schema.doctorServiceRates.id, id))
+      .returning()
+      .get();
+    return updated;
+  }
+
+  async deleteDoctorServiceRate(id: string): Promise<boolean> {
+    const deleted = db
+      .delete(schema.doctorServiceRates)
+      .where(eq(schema.doctorServiceRates.id, id))
+      .returning()
+      .get();
+    return !!deleted;
+  }
+
+  async getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]> {
+    return db
+      .select()
+      .from(schema.doctorEarnings)
+      .where(
+        and(
+          eq(schema.doctorEarnings.doctorId, doctorId),
+          eq(schema.doctorEarnings.status, "pending"),
+        ),
+      )
+      .orderBy(desc(schema.doctorEarnings.serviceDate))
       .all();
   }
-  return query.all();
-}
 
-async getDoctorServiceRateById(
-  id: string,
-): Promise<DoctorServiceRate | undefined> {
-  return db
-    .select()
-    .from(schema.doctorServiceRates)
-    .where(eq(schema.doctorServiceRates.id === id, id))
-    .get();
-}
-
-async updateDoctorServiceRate(
-  id: string,
-  rate: Partial<InsertDoctorServiceRate>,
-): Promise<DoctorServiceRate | undefined> {
-  const updated = db
-    .update(schema.doctorServiceRates)
-    .set({ ...rate, updatedAt: new Date().toISOString() })
-    .where(eq(schema.doctorServiceRates.id, id))
-    .returning()
-    .get();
-  return updated;
-}
-
-async deleteDoctorServiceRate(id: string): Promise<boolean> {
-  const deleted = db
-    .delete(schema.doctorServiceRates)
-    .where(eq(schema.doctorServiceRates.id, id))
-    .returning()
-    .get();
-  return !!deleted;
-}
-
-async getDoctorPendingEarnings(doctorId: string): Promise<DoctorEarning[]> {
-  return db
-    .select()
-    .from(schema.doctorEarnings)
-    .where(
-      and(
-        eq(schema.doctorEarnings.doctorId, doctorId),
-        eq(schema.doctorEarnings.status, "pending"),
-      ),
-    )
-    .orderBy(desc(schema.doctorEarnings.serviceDate))
-    .all();
-}
-
-// Recalculate doctor earnings for services that have doctors assigned but no earnings
-async recalculateDoctorEarnings(
-  doctorId?: string,
-): Promise<{ processed: number; created: number }> {
-  console.log(
-    `Starting recalculation of doctor earnings${doctorId ? ` for doctor ${doctorId}` : " for all doctors"}`,
-  );
-
-  let processed = 0;
-  let created = 0;
-
-  try {
-    // Get all patient services that have a doctor assigned
-    let patientServicesQuery = db
-      .select()
-      .from(schema.patientServices)
-      .where(isNotNull(schema.patientServices.doctorId));
-
-    if (doctorId) {
-      patientServicesQuery = patientServicesQuery.where(
-        eq(schema.patientServices.doctorId, doctorId),
-      );
-    }
-
-    const patientServices = patientServicesQuery.all();
+  // Recalculate doctor earnings for services that have doctors assigned but no earnings
+  async recalculateDoctorEarnings(
+    doctorId?: string,
+  ): Promise<{ processed: number; created: number }> {
     console.log(
-      `Found ${patientServices.length} patient services to process`,
+      `Starting recalculation of doctor earnings${doctorId ? ` for doctor ${doctorId}` : " for all doctors"}`,
     );
 
-    for (const patientService of patientServices) {
-      processed++;
+    let processed = 0;
+    let created = 0;
 
-      // Check if earning already exists for this patient service
-      const existingEarning = db
+    try {
+      // Get all patient services that have a doctor assigned
+      let patientServicesQuery = db
         .select()
-        .from(schema.doctorEarnings)
-        .where(eq(schema.doctorEarnings.patientServiceId, patientService.id))
-        .get();
+        .from(schema.patientServices)
+        .where(isNotNull(schema.patientServices.doctorId));
 
-      if (existingEarning) {
-        console.log(
-          `Earning already exists for patient service ${patientService.id}`,
+      if (doctorId) {
+        patientServicesQuery = patientServicesQuery.where(
+          eq(schema.patientServices.doctorId, doctorId),
         );
-        continue;
       }
 
-      // Get service details
-      const service = db
-        .select()
-        .from(schema.services)
-        .where(eq(schema.services.id, patientService.serviceId))
-        .get();
+      const patientServices = patientServicesQuery.all();
+      console.log(
+        `Found ${patientServices.length} patient services to process`,
+      );
 
-      if (!service) {
-        console.log(
-          `Service not found for patient service ${patientService.id}`,
-        );
-        continue;
-      }
+      for (const patientService of patientServices) {
+        processed++;
 
-      // Find doctor service rate - check by service ID or by service name for flexible matching
-      let doctorRate = db
-        .select()
-        .from(schema.doctorServiceRates)
-        .where(
-          and(
-            eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
-            eq(schema.doctorServiceRates.serviceId, service.id),
-            eq(schema.doctorServiceRates.isActive, true),
-          ),
-        )
-        .get();
+        // Check if earning already exists for this patient service
+        const existingEarning = db
+          .select()
+          .from(schema.doctorEarnings)
+          .where(eq(schema.doctorEarnings.patientServiceId, patientService.id))
+          .get();
 
-      // If no rate found by service ID, try matching by service name (for flexible matching)
-      if (!doctorRate) {
-        doctorRate = db
+        if (existingEarning) {
+          console.log(
+            `Earning already exists for patient service ${patientService.id}`,
+          );
+          continue;
+        }
+
+        // Get service details
+        const service = db
+          .select()
+          .from(schema.services)
+          .where(eq(schema.services.id, patientService.serviceId))
+          .get();
+
+        if (!service) {
+          console.log(
+            `Service not found for patient service ${patientService.id}`,
+          );
+          continue;
+        }
+
+        // Find doctor service rate - check by service ID or by service name for flexible matching
+        let doctorRate = db
           .select()
           .from(schema.doctorServiceRates)
           .where(
             and(
-              eq(
-                schema.doctorServiceRates.doctorId,
-                patientService.doctorId!,
-              ),
-              eq(schema.doctorServiceRates.serviceName, service.name),
+              eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
+              eq(schema.doctorServiceRates.serviceId, service.id),
               eq(schema.doctorServiceRates.isActive, true),
             ),
           )
           .get();
+
+        // If no rate found by service ID, try matching by service name (for flexible matching)
+        if (!doctorRate) {
+          doctorRate = db
+            .select()
+            .from(schema.doctorServiceRates)
+            .where(
+              and(
+                eq(
+                  schema.doctorServiceRates.doctorId,
+                  patientService.doctorId!,
+                ),
+                eq(schema.doctorServiceRates.serviceName, service.name),
+                eq(schema.doctorServiceRates.isActive, true),
+              ),
+            )
+            .get();
+        }
+
+        if (!doctorRate) {
+          console.log(
+            `No salary rate found for doctor ${patientService.doctorId} and service ${service.id} (${service.name})`,
+          );
+          continue;
+        }
+
+        // Calculate earning amount based on rate type
+        let earnedAmount = 0;
+        const servicePrice =
+          patientService.calculatedAmount ||
+          patientService.price ||
+          service.price;
+
+        if (doctorRate.rateType === "percentage") {
+          earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
+        } else if (doctorRate.rateType === "amount") {
+          earnedAmount = doctorRate.rateAmount;
+        } else if (doctorRate.rateType === "fixed_daily") {
+          earnedAmount = doctorRate.rateAmount;
+        }
+
+        // Create doctor earning record using storage interface method
+        try {
+          await this.createDoctorEarning({
+            doctorId: patientService.doctorId!,
+            patientId: patientService.patientId,
+            serviceId: service.id,
+            patientServiceId: patientService.id,
+            serviceName: service.name,
+            serviceCategory: doctorRate.serviceCategory,
+            serviceDate: patientService.scheduledDate,
+            rateType: doctorRate.rateType,
+            rateAmount: doctorRate.rateAmount,
+            servicePrice,
+            earnedAmount,
+            status: "pending",
+            notes: `Recalculation for ${service.name}`,
+          });
+
+          created++;
+          console.log(
+            `Created earning for doctor ${patientService.doctorId}: ₹${earnedAmount}`,
+          );
+        } catch (error) {
+          console.error(
+            `Error creating earning for patient service ${patientService.id}:`,
+            error,
+          );
+        }
       }
 
-      if (!doctorRate) {
-        console.log(
-          `No salary rate found for doctor ${patientService.doctorId} and service ${service.id} (${service.name})`,
-        );
-        continue;
-      }
-
-      // Calculate earning amount based on rate type
-      let earnedAmount = 0;
-      const servicePrice =
-        patientService.calculatedAmount ||
-        patientService.price ||
-        service.price;
-
-      if (doctorRate.rateType === "percentage") {
-        earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
-      } else if (doctorRate.rateType === "amount") {
-        earnedAmount = doctorRate.rateAmount;
-      } else if (doctorRate.rateType === "fixed_daily") {
-        earnedAmount = doctorRate.rateAmount;
-      }
-
-      // Create doctor earning record using the storage interface method
-      try {
-        await this.createDoctorEarning({
-          doctorId: patientService.doctorId!,
-          patientId: patientService.patientId,
-          serviceId: service.id,
-          patientServiceId: patientService.id,
-          serviceName: service.name,
-          serviceCategory: doctorRate.serviceCategory,
-          serviceDate: patientService.scheduledDate,
-          rateType: doctorRate.rateType,
-          rateAmount: doctorRate.rateAmount,
-          servicePrice,
-          earnedAmount,
-          status: "pending",
-          notes: `Recalculation for ${service.name}`,
-        });
-
-        created++;
-        console.log(
-          `Created earning for doctor ${patientService.doctorId}: ₹${earnedAmount}`,
-        );
-      } catch (error) {
-        console.error(
-          `Error creating earning for patient service ${patientService.id}:`,
-          error,
-        );
-      }
+      console.log(
+        `Recalculation complete: processed ${processed} services, created ${created} new earnings`,
+      );
+      return { processed, created };
+    } catch (error) {
+      console.error("Error recalculating doctor earnings:", error);
+      throw error;
     }
-
-    console.log(
-      `Recalculation complete: processed ${processed} services, created ${created} new earnings`,
-    );
-    return { processed, created };
   }
 
   // Get doctor earnings by doctor ID and optional status filter
