@@ -6061,6 +6061,7 @@ export class SqliteStorage implements IStorage {
     return [];
   }
 }
+}
 
 async function getCurrentlyAdmittedPatients(): Promise<any[]> {
   try {
