@@ -208,6 +208,7 @@ export const pathologyTests = sqliteTable("pathology_tests", {
   orderId: text("order_id")
     .notNull()
     .references(() => pathologyOrders.id),
+  serviceId: text("service_id").references(() => services.id), // Link to services for doctor rate lookup (nullable for existing tests)
   testName: text("test_name").notNull(),
   testCategory: text("test_category").notNull(),
   status: text("status").notNull().default("ordered"), // ordered, collected, processing, completed

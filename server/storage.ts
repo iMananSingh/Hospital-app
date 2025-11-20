@@ -225,6 +225,7 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS pathology_tests (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         order_id TEXT NOT NULL REFERENCES pathology_orders(id),
+        service_id TEXT REFERENCES services(id),
         test_name TEXT NOT NULL,
         test_category TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'ordered',
@@ -864,6 +865,16 @@ async function initializeDatabase() {
         ALTER TABLE audit_log ADD COLUMN changed_fields TEXT;
       `);
       console.log("Added changed_fields column to audit_log table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add service_id column to pathology_tests table for doctor rate lookup
+    try {
+      db.$client.exec(`
+        ALTER TABLE pathology_tests ADD COLUMN service_id TEXT REFERENCES services(id);
+      `);
+      console.log("Added service_id column to pathology_tests table");
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -1817,6 +1828,120 @@ export class SqliteStorage implements IStorage {
       );
     } catch (error) {
       console.error("Error calculating OPD earning:", error);
+    }
+  }
+
+  // Calculate and create doctor earning for pathology lab test completion
+  private async calculatePathologyEarning(
+    pathologyTest: PathologyTest,
+    pathologyOrder: PathologyOrder,
+  ): Promise<void> {
+    try {
+      if (!pathologyOrder.doctorId || !pathologyTest.price || pathologyTest.price === 0) {
+        console.log(
+          `Skipping pathology earning - no doctor or zero price for test ${pathologyTest.testName}`,
+        );
+        return;
+      }
+
+      console.log(
+        `Starting pathology earnings calculation for doctor ${pathologyOrder.doctorId}, test ${pathologyTest.testName}`,
+      );
+
+      // Check if earning already exists for this test to prevent duplicates
+      const existingEarning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(
+          eq(
+            schema.doctorEarnings.notes,
+            `Pathology test - ${pathologyTest.testName} (${pathologyOrder.orderId})`,
+          ),
+        )
+        .get();
+
+      if (existingEarning) {
+        console.log(
+          `Earning already exists for test ${pathologyTest.testName}, skipping creation`,
+        );
+        return;
+      }
+
+      // If test doesn't have a serviceId, we can't look up rates
+      if (!pathologyTest.serviceId) {
+        console.log(
+          `⚠️  Pathology test ${pathologyTest.testName} has no linked service - cannot calculate doctor earning`,
+        );
+        return;
+      }
+
+      // Find doctor rate for this specific pathology service
+      const pathologyRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, pathologyOrder.doctorId),
+            eq(schema.doctorServiceRates.serviceId, pathologyTest.serviceId),
+            eq(schema.doctorServiceRates.isActive, true),
+          ),
+        )
+        .get();
+
+      if (!pathologyRate) {
+        console.log(
+          `No pathology rate found for doctor ${pathologyOrder.doctorId}, service ${pathologyTest.serviceId}`,
+        );
+        return;
+      }
+
+      console.log(
+        `Found pathology rate: ${pathologyRate.rateType} = ${pathologyRate.rateAmount}`,
+      );
+
+      // Calculate earning amount based on rate type
+      let earnedAmount = 0;
+      const testPrice = pathologyTest.price;
+
+      if (pathologyRate.rateType === "percentage") {
+        earnedAmount = (testPrice * pathologyRate.rateAmount) / 100;
+      } else if (pathologyRate.rateType === "per_instance") {
+        earnedAmount = pathologyRate.rateAmount;
+      }
+
+      console.log(
+        `Calculated pathology earning: ₹${earnedAmount} (${pathologyRate.rateType} of ₹${testPrice})`,
+      );
+
+      // Get patient info for the earning record
+      const patient = db
+        .select()
+        .from(schema.patients)
+        .where(eq(schema.patients.id, pathologyOrder.patientId))
+        .get();
+
+      // Create doctor earning record
+      await this.createDoctorEarning({
+        doctorId: pathologyOrder.doctorId,
+        patientId: pathologyOrder.patientId,
+        serviceId: pathologyTest.serviceId,
+        patientServiceId: null,
+        serviceName: pathologyTest.testName,
+        serviceCategory: "pathology",
+        serviceDate: pathologyOrder.orderedDate,
+        rateType: pathologyRate.rateType,
+        rateAmount: pathologyRate.rateAmount,
+        servicePrice: testPrice,
+        earnedAmount,
+        status: "pending",
+        notes: `Pathology test - ${pathologyTest.testName} (${pathologyOrder.orderId})`,
+      });
+
+      console.log(
+        `✓ Created pathology earning for doctor ${pathologyOrder.doctorId} amount ₹${earnedAmount}`,
+      );
+    } catch (error) {
+      console.error("Error calculating pathology earning:", error);
     }
   }
 
@@ -3001,12 +3126,33 @@ export class SqliteStorage implements IStorage {
 
       // Insert all tests for this order
       tests.forEach((test) => {
+        // Try to find matching service for doctor rate lookup
+        // Match by name and pathology category
+        const matchingService = tx
+          .select()
+          .from(schema.services)
+          .where(
+            and(
+              eq(schema.services.name, test.testName),
+              eq(schema.services.category, "pathology"),
+              eq(schema.services.isActive, true),
+            ),
+          )
+          .get();
+
+        if (!matchingService) {
+          console.log(
+            `⚠️  No matching service found for pathology test: ${test.testName} (${test.testCategory})`,
+          );
+        }
+
         tx.insert(schema.pathologyTests)
           .values({
             testName: test.testName,
             testCategory: test.testCategory,
             price: test.price,
             orderId: created.id, // Use the actual database ID, not the generated order ID
+            serviceId: matchingService?.id || null, // Link to service for doctor rate lookup
             status: "ordered",
           })
           .run();
@@ -3176,7 +3322,7 @@ export class SqliteStorage implements IStorage {
       .returning()
       .get();
 
-    // Log activity when test is completed
+    // Log activity and calculate doctor earning when test is completed
     if (status === "completed" && userId) {
       const test = db
         .select()
@@ -3203,6 +3349,11 @@ export class SqliteStorage implements IStorage {
         "pathology_test",
         { testName: test?.testName, patientName: patient?.name },
       );
+
+      // Calculate doctor earning for this pathology test if doctor is assigned
+      if (test && order) {
+        await this.calculatePathologyEarning(test, order);
+      }
     }
 
     return updated;

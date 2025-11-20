@@ -3,6 +3,41 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Pathology Lab Test Earnings Implementation - November 20, 2025 at 3:08 PM
+[x] Implemented automatic doctor earnings calculation for pathology lab tests
+- **User Request**: Automatically calculate and track doctor earnings when pathology tests are completed, similar to OPD consultation earnings
+- **Schema Changes** (shared/schema.ts line 214):
+  - Added `serviceId` field to `pathologyTests` table (nullable foreign key to services)
+  - Links pathology tests to services for doctor rate lookup
+- **Database Migration** (server/storage.ts):
+  - Updated CREATE TABLE for pathology_tests to include service_id column (lines 228-240)
+  - Added ALTER TABLE migration for existing databases (lines 875-883)
+  - Migration runs successfully: "Added service_id column to pathology_tests table" ✓
+- **Service Lookup** (server/storage.ts lines 3007-3037):
+  - `createPathologyOrder` now looks up matching service by test name + "pathology" category
+  - Populates serviceId when creating each test
+  - Logs warning when no matching service found
+- **Earning Calculation** (server/storage.ts lines 1827-1938):
+  - Created `calculatePathologyEarning(pathologyTest, pathologyOrder)` method
+  - Validates: doctor assigned, test price > 0, serviceId exists
+  - Prevents duplicate earnings by checking existing records
+  - Looks up doctor service rate using serviceId
+  - Calculates earnings based on rate type (percentage or per_instance)
+  - Creates doctor earning record with status="pending"
+- **Integration** (server/storage.ts lines 3345-3348):
+  - `updatePathologyTestStatus` calls `calculatePathologyEarning` when test status = "completed"
+  - Only creates earnings if doctor is assigned to the order
+- **Frontend Display** (client/src/pages/doctors.tsx lines 1470-1619):
+  - Lab Tests section already properly categorized between OPD Consultation and Diagnostic
+  - Shows configured rates with proper formatting
+- **System Flow**:
+  1. User creates pathology order → serviceId populated for each test
+  2. Doctor marks test as "completed" → system calculates earning if rate configured
+  3. Earning appears in doctor's Earnings tab as "pending"
+  4. Administrator can mark earnings as "paid" individually or in batch
+- **Architect Review**: Critical issue identified and fixed - DDL migration needed ✓
+- **Status**: Application running successfully on port 5000, migration applied ✓
+
 ### Environment Migration - November 20, 2025 at 2:37 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
