@@ -1124,30 +1124,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
               let labService = services.find(
                 (s) =>
                   s.category?.toLowerCase() === "pathology" ||
-                  s.category?.toLowerCase() === "lab_tests" ||
                   s.name?.toLowerCase().includes("pathology lab"),
               );
 
               if (labService) {
                 actualServiceId = labService.id;
                 actualServiceName = labService.name;
+                console.log(`✓ Found existing pathology service: ${labService.id} - ${labService.name}`);
               } else {
                 // Create a generic lab service record if none exists
+                console.log("Creating new Pathology Lab service...");
                 try {
                   const newLabService = await storage.createService({
                     name: "Pathology Lab (All Tests)",
                     category: "pathology",
                     price: 0, // Lab tests have variable pricing
-                    description: "Pathology and laboratory testing services",
+                    description: "Representative service for all pathology lab tests",
                     billingType: "per_instance",
                     billingParameters: null,
                     isActive: true,
-                  });
+                  }, req.user.id);
                   actualServiceId = newLabService.id;
                   actualServiceName = newLabService.name;
+                  console.log(`✓ Created new pathology service: ${newLabService.id} - ${newLabService.name}`);
                 } catch (serviceCreationError) {
                   console.error(
-                    "Failed to create Lab service:",
+                    "Failed to create Pathology Lab service:",
                     serviceCreationError,
                   );
                   continue; // Skip this rate if service creation fails
