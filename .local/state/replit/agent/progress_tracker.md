@@ -3,21 +3,24 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
-### Pathology Lab Rate Saving Fix - November 20, 2025 at 7:26 PM
+### Pathology Lab Rate Saving Fix - November 20, 2025 at 7:33 PM
 [x] Fixed FOREIGN KEY constraint error when saving doctor rates for pathology lab tests
 - **Issue**: Attempting to save pathology lab test rates failed with "FOREIGN KEY constraint failed" error
 - **Root Cause**: 
   - Pathology lab tests use a representative ID `pathology_lab_representative` that doesn't exist in the services table
   - The `doctor_service_rates.service_id` column was NOT NULL with a foreign key to services(id)
-  - When saving rates for pathology tests, it tried to insert the representative ID, which violated the constraint
-- **Solution**:
-  - Made `service_id` nullable in `doctor_service_rates` table (both schema and database)
-  - Added migration to recreate existing tables with the nullable column
-  - This supports representative entries like "pathology_lab_representative" and "opd_consultation_placeholder"
+  - When saving rates, it tried to insert the representative ID, which violated the constraint
+  - Even after making column nullable, passing non-existent IDs still failed foreign key validation
+- **Solution (Two-Part Fix)**:
+  1. Made `service_id` nullable in `doctor_service_rates` table (both schema and database)
+  2. Added validation in `saveDoctorServiceRates` to check if service exists before inserting
+  3. Non-existent service IDs (placeholders) are now set to `null` automatically
 - **Changes Made**:
   - Updated `shared/schema.ts` line 619: Changed `serviceId` from `.notNull()` to nullable
   - Updated `server/storage.ts` line 513: Changed CREATE TABLE to make service_id nullable
   - Added migration (lines 885-932) to recreate table for existing databases
+  - Added service existence validation (lines 7230-7245) in `saveDoctorServiceRates` method
+  - Placeholder IDs like "pathology_lab_representative" and "opd_consultation_placeholder" are now converted to `null`
 - **Migration Result**: Successfully migrated doctor_service_rates table ✓
 - **Files Modified**: `shared/schema.ts`, `server/storage.ts`
 - **Status**: Application running successfully, pathology lab rates can now be saved ✓

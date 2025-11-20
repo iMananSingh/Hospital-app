@@ -7224,9 +7224,26 @@ export class SqliteStorage implements IStorage {
       // Insert new rates
       for (const rate of rates) {
         if (rate.isSelected && rate.salaryBasis) {
+          // Check if serviceId is a placeholder (doesn't exist in services table)
+          // Representative entries like pathology_lab_representative and opd_consultation_placeholder
+          // should have null service_id since they don't exist in the services table
+          let serviceId: string | null = rate.serviceId;
+          if (serviceId) {
+            const serviceExists = db
+              .select()
+              .from(schema.services)
+              .where(eq(schema.services.id, serviceId))
+              .get();
+            
+            if (!serviceExists) {
+              // Service doesn't exist in the table - it's a placeholder, use null
+              serviceId = null;
+            }
+          }
+
           await this.createDoctorServiceRate({
             doctorId,
-            serviceId: rate.serviceId,
+            serviceId, // Now properly handles null for placeholder entries
             serviceName: rate.serviceName,
             serviceCategory: rate.serviceCategory,
             rateType: rate.salaryBasis, // 'amount' or 'percentage'
