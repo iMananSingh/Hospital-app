@@ -1071,8 +1071,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             rate.salaryBasis &&
             (rate.amount > 0 || rate.percentage > 0)
           ) {
-            let actualServiceId = rate.serviceId;
-            let actualServiceName = rate.serviceName;
+            let actualServiceId: string | null = null;
+            let actualServiceName: string = rate.serviceName;
 
             // Handle special service IDs that might need mapping
             if (
@@ -1097,19 +1097,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (opdService) {
                 actualServiceId = opdService.id;
                 actualServiceName = opdService.name;
+                console.log(`✓ Found existing OPD service: ${opdService.id} - ${opdService.name}`);
               } else {
                 // Create a generic OPD service record if none exists
+                console.log("Creating new OPD Consultation service...");
                 try {
                   const newOpdService = await storage.createService({
                     name: "OPD Consultation",
                     category: "consultation",
                     price: 500, // Default consultation fee
                     description: "General OPD consultation service",
+                    billingType: "per_instance",
+                    billingParameters: null,
                     isActive: true,
-                    createdBy: req.user.id,
-                  });
+                  }, req.user.id);
                   actualServiceId = newOpdService.id;
                   actualServiceName = newOpdService.name;
+                  console.log(`✓ Created new OPD service: ${newOpdService.id} - ${newOpdService.name}`);
                 } catch (serviceCreationError) {
                   console.error(
                     "Failed to create OPD service:",
@@ -1119,7 +1123,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
             } else if (rate.serviceId === "lab_tests_all" || rate.serviceId === "pathology_lab_representative") {
-              // Handle Lab Tests/Pathology Lab placeholder - create a generic lab service if none exists
+              // Handle Lab Tests/Pathology Lab placeholder - ALWAYS find or create service
+              console.log(`Handling pathology placeholder: ${rate.serviceId}`);
               const services = await storage.getServices();
               let labService = services.find(
                 (s) =>
@@ -1133,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`✓ Found existing pathology service: ${labService.id} - ${labService.name}`);
               } else {
                 // Create a generic lab service record if none exists
-                console.log("Creating new Pathology Lab service...");
+                console.log("No existing pathology service found, creating new one...");
                 try {
                   const newLabService = await storage.createService({
                     name: "Pathology Lab (All Tests)",
@@ -1167,13 +1172,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Use the service that was found
               actualServiceId = service.id;
               actualServiceName = service.name;
+              console.log(`✓ Found regular service: ${service.id} - ${service.name}`);
             }
 
             // Verify we have a valid service ID before proceeding
             if (!actualServiceId) {
-              console.error(`No valid service ID found for rate:`, rate);
+              console.error(`❌ No valid service ID found for rate:`, rate);
               continue;
             }
+
+            console.log(`✓ Proceeding with serviceId: ${actualServiceId}, serviceName: ${actualServiceName}`);
 
             const rateData = {
               doctorId,
