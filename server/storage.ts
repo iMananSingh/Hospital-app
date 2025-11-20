@@ -507,7 +507,7 @@ async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS doctor_service_rates (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         doctor_id TEXT NOT NULL REFERENCES doctors(id),
-        service_id TEXT NOT NULL REFERENCES services(id),
+        service_id TEXT REFERENCES services(id),
         service_name TEXT NOT NULL,
         service_category TEXT NOT NULL,
         rate_type TEXT NOT NULL DEFAULT 'per_instance',
@@ -877,6 +877,55 @@ async function initializeDatabase() {
       console.log("Added service_id column to pathology_tests table");
     } catch (error) {
       // Column already exists, ignore error
+    }
+
+    // Migration: Make service_id nullable in doctor_service_rates table
+    // This supports representative entries like pathology_lab_representative and opd_consultation_placeholder
+    try {
+      // Check if the table needs migration by checking the schema
+      const tableInfo = db.$client.prepare(
+        "PRAGMA table_info(doctor_service_rates);"
+      ).all() as Array<{ name: string; notnull: number }>;
+      
+      const serviceIdColumn = tableInfo.find(col => col.name === 'service_id');
+      
+      // If service_id is NOT NULL (notnull === 1), we need to recreate the table
+      if (serviceIdColumn && serviceIdColumn.notnull === 1) {
+        console.log("Migrating doctor_service_rates table to make service_id nullable...");
+        
+        db.$client.exec(`
+          -- Create new table with nullable service_id
+          CREATE TABLE doctor_service_rates_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            doctor_id TEXT NOT NULL REFERENCES doctors(id),
+            service_id TEXT REFERENCES services(id),
+            service_name TEXT NOT NULL,
+            service_category TEXT NOT NULL,
+            rate_type TEXT NOT NULL DEFAULT 'per_instance',
+            rate_amount REAL NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            notes TEXT,
+            created_by TEXT NOT NULL REFERENCES users(id),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+          );
+          
+          -- Copy existing data
+          INSERT INTO doctor_service_rates_new 
+          SELECT * FROM doctor_service_rates;
+          
+          -- Drop old table
+          DROP TABLE doctor_service_rates;
+          
+          -- Rename new table
+          ALTER TABLE doctor_service_rates_new RENAME TO doctor_service_rates;
+        `);
+        
+        console.log("Successfully migrated doctor_service_rates table - service_id is now nullable");
+      }
+    } catch (error) {
+      console.error("Error migrating doctor_service_rates table:", error);
+      // Don't throw - allow app to continue even if migration fails
     }
 
     // Create indexes for audit_log table for better query performance

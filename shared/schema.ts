@@ -613,9 +613,7 @@ export const doctorServiceRates = sqliteTable("doctor_service_rates", {
   doctorId: text("doctor_id")
     .notNull()
     .references(() => doctors.id),
-  serviceId: text("service_id")
-    .notNull()
-    .references(() => services.id),
+  serviceId: text("service_id").references(() => services.id), // Nullable to support representative entries (e.g., pathology_lab_representative, opd_consultation_placeholder)
   serviceName: text("service_name").notNull(), // Denormalized for easier querying
   serviceCategory: text("service_category").notNull(), // opd, diagnostics, lab_tests, admission, pathology
   rateType: text("rate_type").notNull().default("per_instance"), // per_instance, percentage, fixed_daily
