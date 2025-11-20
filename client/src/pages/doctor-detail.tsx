@@ -654,7 +654,6 @@ export default function DoctorDetail() {
                         <TableRow>
                           <TableHead>Payment ID</TableHead>
                           <TableHead>Payment Date</TableHead>
-                          <TableHead>Period</TableHead>
                           <TableHead>Amount</TableHead>
                           <TableHead>Payment Method</TableHead>
                           <TableHead>Receipt Number</TableHead>
@@ -669,9 +668,6 @@ export default function DoctorDetail() {
                             </TableCell>
                             <TableCell data-testid={`text-payment-date-${payment.paymentId}`}>
                               {formatDate(payment.paymentDate)}
-                            </TableCell>
-                            <TableCell data-testid={`text-payment-period-${payment.paymentId}`}>
-                              {formatDate(payment.startDate)} - {formatDate(payment.endDate)}
                             </TableCell>
                             <TableCell className="font-medium text-green-600" data-testid={`text-payment-amount-${payment.paymentId}`}>
                               {formatCurrency(payment.totalAmount)}
