@@ -139,17 +139,31 @@ export default function DoctorDetail() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Earning marked as paid",
         description: "The earning has been successfully marked as paid.",
       });
+      
       // Invalidate all related queries to update pending amounts everywhere
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      
+      // Invalidate all earnings queries (including those with payment dependencies)
+      await queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && 
+                 (key[0] === "/api/doctors/all-earnings" || key[1] === "earnings" || key[0] === "/api/doctors/payments");
+        }
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      
+      // Refetch to ensure immediate update
+      await queryClient.refetchQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      await refetchEarnings();
     },
     onError: (error: any) => {
       toast({
