@@ -1467,11 +1467,11 @@ export default function Doctors() {
                           </div>
                         )}
 
-                        {/* Lab Tests */}
+                        {/* Pathology Lab */}
                         {categorizedServices.labTests.length > 0 && (
                           <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                              Lab Tests
+                              Pathology Lab
                             </h3>
                             <div className="space-y-3">
                               {categorizedServices.labTests.map(
