@@ -578,6 +578,7 @@ export default function DoctorDetail() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>S.No</TableHead>
                           <TableHead>Service</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Date</TableHead>
@@ -589,8 +590,9 @@ export default function DoctorDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {earnings.map((earning: DoctorEarning) => (
+                        {earnings.map((earning: DoctorEarning, index: number) => (
                           <TableRow key={earning.earningId}>
+                            <TableCell>{index + 1}</TableCell>
                             <TableCell className="font-medium">{earning.serviceName}</TableCell>
                             <TableCell>
                               <Badge variant="outline">{earning.serviceCategory}</Badge>
@@ -652,6 +654,7 @@ export default function DoctorDetail() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>S.No</TableHead>
                           <TableHead>Payment ID</TableHead>
                           <TableHead>Payment Date</TableHead>
                           <TableHead>Amount</TableHead>
@@ -661,8 +664,9 @@ export default function DoctorDetail() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {payments.map((payment: DoctorPayment) => (
+                        {payments.map((payment: DoctorPayment, index: number) => (
                           <TableRow key={payment.id} data-testid={`row-payment-${payment.paymentId}`}>
+                            <TableCell>{index + 1}</TableCell>
                             <TableCell className="font-medium" data-testid={`text-payment-id-${payment.paymentId}`}>
                               {payment.paymentId}
                             </TableCell>
