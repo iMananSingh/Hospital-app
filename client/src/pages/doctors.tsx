@@ -672,41 +672,13 @@ export default function Doctors() {
       });
     }
 
-    // Add pathology services from the services array
-    if (services && services.length > 0) {
-      const pathologyServices = services.filter(
-        (service) =>
-          service.category?.toLowerCase() === "pathology" ||
-          service.name?.toLowerCase().includes("pathology") ||
-          service.name?.toLowerCase().includes("lab") ||
-          service.name?.toLowerCase().includes("test"),
-      );
-
-      categories.labTests.push(
-        ...pathologyServices.map((service) => ({
-          id: service.id,
-          name: service.name,
-          category: "pathology",
-          price: service.price || 0,
-        })),
-      );
-    }
-
-    // Add pathology tests from pathologyData
-    if (pathologyData?.categories && pathologyData.categories.length > 0) {
-      pathologyData.categories.forEach((category: any) => {
-        if (category.tests && category.tests.length > 0) {
-          category.tests.forEach((test: any) => {
-            categories.labTests.push({
-              id: test.id || `pathology-${test.testName}`,
-              name: test.testName,
-              category: "pathology",
-              price: test.price || 0,
-            });
-          });
-        }
-      });
-    }
+    // Add a single representative entry for all Pathology Lab tests
+    categories.labTests.push({
+      id: "pathology_lab_representative",
+      name: "Pathology Lab (All Tests)",
+      category: "pathology",
+      price: 0,
+    });
 
     // Categorize remaining services based on their category field
     // Exclude services that are already categorized as OPD or pathology
