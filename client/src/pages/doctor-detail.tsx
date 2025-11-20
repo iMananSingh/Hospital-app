@@ -36,6 +36,7 @@ interface DoctorEarning {
   servicePrice: number;
   rateType: string;
   rateAmount: number;
+  createdAt: string;
 }
 
 interface DoctorRate {
@@ -592,7 +593,7 @@ export default function DoctorDetail() {
                       <TableBody>
                         {[...earnings]
                           .sort((a: DoctorEarning, b: DoctorEarning) => 
-                            new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime()
+                            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                           )
                           .map((earning: DoctorEarning, index: number) => (
                           <TableRow key={earning.earningId}>
