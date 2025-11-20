@@ -1164,6 +1164,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 );
                 continue;
               }
+              // Use the service that was found
+              actualServiceId = service.id;
+              actualServiceName = service.name;
+            }
+
+            // Verify we have a valid service ID before proceeding
+            if (!actualServiceId) {
+              console.error(`No valid service ID found for rate:`, rate);
+              continue;
             }
 
             const rateData = {
@@ -1182,12 +1191,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               createdBy: req.user.id,
             };
 
+            console.log(`Creating rate with serviceId: ${actualServiceId} (from placeholder: ${rate.serviceId})`);
+
             try {
               const validatedData =
                 insertDoctorServiceRateSchema.parse(rateData);
               const created =
                 await storage.createDoctorServiceRate(validatedData);
               createdRates.push(created);
+              console.log(`✓ Successfully created rate for ${actualServiceName}`);
             } catch (createError) {
               console.error(
                 `Failed to create rate for service ${rate.serviceId}:`,
