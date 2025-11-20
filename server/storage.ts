@@ -6022,7 +6022,7 @@ export class SqliteStorage implements IStorage {
               admission.admission.currentRoomNumber === room.roomNumber,
           );
 
-          return{
+          return {
             ...room,
             isOccupied: !!occupyingAdmission,
             occupyingPatient: occupyingAdmission
@@ -6034,33 +6034,33 @@ export class SqliteStorage implements IStorage {
           };
         });
 
-      // Calculate actual occupied beds from rooms that are occupied
-      const actualOccupiedBeds = roomsWithOccupancy.filter(
-        (room) => room.isOccupied,
-      ).length;
+        // Calculate actual occupied beds from rooms that are occupied
+        const actualOccupiedBeds = roomsWithOccupancy.filter(
+          (room) => room.isOccupied,
+        ).length;
 
-      // Calculate total beds from all active rooms for this room type
-      const totalBeds = rooms.reduce(
-        (sum, room) => sum + (room.capacity || 1),
-        0,
-      );
+        // Calculate total beds from all active rooms for this room type
+        const totalBeds = rooms.reduce(
+          (sum, room) => sum + (room.capacity || 1),
+          0,
+        );
 
-      return {
-        ...roomType,
-        rooms: roomsWithOccupancy,
-        occupiedBeds: actualOccupiedBeds,
-        totalBeds: totalBeds,
-        // Keep these for backwards compatibility
-        actualOccupiedBeds: actualOccupiedBeds,
-      };
-    });
+        return {
+          ...roomType,
+          rooms: roomsWithOccupancy,
+          occupiedBeds: actualOccupiedBeds,
+          totalBeds: totalBeds,
+          // Keep these for backwards compatibility
+          actualOccupiedBeds: actualOccupiedBeds,
+        };
+      });
 
-    return bedOccupancyData;
-  } catch (error) {
-    console.error("Error getting bed occupancy details:", error);
-    return [];
+      return bedOccupancyData;
+    } catch (error) {
+      console.error("Error getting bed occupancy details:", error);
+      return [];
+    }
   }
-}
 }
 
 async function getCurrentlyAdmittedPatients(): Promise<any[]> {
@@ -6193,7 +6193,7 @@ async getServiceCategories(): Promise<ServiceCategory[]> {
     .select()
     .from(schema.serviceCategories)
     .where(eq(schema.serviceCategories.isActive, true))
-    .orderBy(schema.serviceCategories.name);
+    .orderBy(asc(schema.serviceCategories.name));
 }
 
 async createServiceCategory(
@@ -6336,8 +6336,8 @@ async generateComprehensiveBill(patientId: string): Promise<{
         eq(schema.patientServices.doctorId, schema.doctors.id),
       )
       .where(eq(schema.patientServices.patientId, patientId))
-        .orderBy(desc(schema.patientServices.scheduledDate))
-        .all();
+      .orderBy(desc(schema.patientServices.scheduledDate))
+      .all();
 
     // 3. Get admissions data for calculating admission service durations
     const admissions = db
@@ -6862,7 +6862,7 @@ async recalculateDoctorEarnings(
         earnedAmount = doctorRate.rateAmount;
       }
 
-      // Create doctor earning record using storage interface method
+      // Create doctor earning record using the storage interface method
       try {
         await this.createDoctorEarning({
           doctorId: patientService.doctorId!,
