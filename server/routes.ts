@@ -838,6 +838,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/doctors/:doctorId/payments", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const payments = await storage.getDoctorPayments(doctorId);
+      res.json(payments);
+    } catch (error) {
+      console.error("Error fetching doctor payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
   app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req: any, res) => {
     try {
       const { doctorId } = req.params;

@@ -75,6 +75,23 @@ export default function DoctorDetail() {
     enabled: !!doctorId,
   });
 
+  // Fetch doctor payments
+  const { data: payments = [], isLoading: isPaymentsLoading } = useQuery({
+    queryKey: ["/api/doctors", doctorId, "payments"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/payments`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch doctor payments");
+      }
+      return response.json();
+    },
+    enabled: !!doctorId,
+  });
+
   // Sync preview image with doctor profile picture
   useEffect(() => {
     if (doctor?.profilePicture) {
@@ -149,6 +166,7 @@ export default function DoctorDetail() {
       await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
       await queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "payments"] });
       
       // Invalidate all earnings queries (including those with payment dependencies)
       await queryClient.invalidateQueries({ 
@@ -462,8 +480,10 @@ export default function DoctorDetail() {
                   <IndianRupee className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Salary Rates</p>
-                  <p className="text-xl font-semibold text-purple-600">{salaryRates.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Payments</p>
+                  <p className="text-xl font-semibold text-purple-600">
+                    {formatCurrency(payments.reduce((sum, p) => sum + p.totalAmount, 0))}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -475,6 +495,7 @@ export default function DoctorDetail() {
           <TabsList>
             <TabsTrigger value="salary-rates">Salary Rates</TabsTrigger>
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="salary-rates">
@@ -597,6 +618,59 @@ export default function DoctorDetail() {
                                 <span className="text-muted-foreground text-sm">-</span>
                               )}
                             </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {payments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No payments recorded</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Payment ID</TableHead>
+                          <TableHead>Payment Date</TableHead>
+                          <TableHead>Period</TableHead>
+                          <TableHead>Total Amount</TableHead>
+                          <TableHead>Payment Method</TableHead>
+                          <TableHead>Receipt Number</TableHead>
+                          <TableHead>Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payments.map((payment: any) => (
+                          <TableRow key={payment.paymentId}>
+                            <TableCell className="font-medium">{payment.paymentId}</TableCell>
+                            <TableCell>{formatDate(payment.paymentDate)}</TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(payment.startDate)} - {formatDate(payment.endDate)}
+                            </TableCell>
+                            <TableCell className="font-medium text-green-600">
+                              {formatCurrency(payment.totalAmount)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {payment.paymentMethod.replace('_', ' ').toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{payment.receiptNumber || '-'}</TableCell>
+                            <TableCell className="text-sm">{payment.description || '-'}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
