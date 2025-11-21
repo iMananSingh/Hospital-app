@@ -1991,7 +1991,7 @@ export class SqliteStorage implements IStorage {
       await this.createDoctorEarning({
         doctorId: pathologyOrder.doctorId,
         patientId: pathologyOrder.patientId,
-        serviceId: "pathology-lab",
+        serviceId: "pathology_test_placeholder",
         patientServiceId: null,
         serviceName: pathologyRate.serviceName || "Pathology Lab (All Tests)",
         serviceCategory: "pathology",
@@ -7245,8 +7245,7 @@ export class SqliteStorage implements IStorage {
       for (const rate of rates) {
         if (rate.isSelected && rate.salaryBasis) {
           // Check if serviceId is a placeholder (doesn't exist in services table)
-          // Representative entries like pathology_lab_representative and opd_consultation_placeholder
-          // should have null service_id since they don't exist in the services table
+          // Representative entries like opd_consultation_placeholder and pathology_test_placeholder
           let serviceId: string | null = rate.serviceId;
           if (serviceId) {
             const serviceExists = db
@@ -7256,14 +7255,21 @@ export class SqliteStorage implements IStorage {
               .get();
             
             if (!serviceExists) {
-              // Service doesn't exist in the table - it's a placeholder, use null
-              serviceId = null;
+              // Service doesn't exist in the table - it's a placeholder
+              // For pathology, use pathology_test_placeholder; for OPD, use opd_consultation_placeholder
+              if (rate.serviceCategory === "pathology") {
+                serviceId = "pathology_test_placeholder";
+              } else if (rate.serviceCategory === "opd") {
+                serviceId = "opd_consultation_placeholder";
+              } else {
+                serviceId = null;
+              }
             }
           }
 
           await this.createDoctorServiceRate({
             doctorId,
-            serviceId, // Now properly handles null for placeholder entries
+            serviceId,
             serviceName: rate.serviceName,
             serviceCategory: rate.serviceCategory,
             rateType: rate.salaryBasis, // 'amount' or 'percentage'
