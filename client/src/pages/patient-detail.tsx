@@ -422,16 +422,12 @@ export default function PatientDetail() {
         }
       }
 
-      // For pathology, try to get from order data
+      // For pathology, return the orderId (not receiptNumber) so backend can match LAB-XXXX pattern
       if (eventType === "pathology") {
-        const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.order?.receiptNumber ||
-                          event.rawData?.order?.receipt_number ||
-                          event.order?.receiptNumber ||
-                          event.order?.receipt_number;
-        console.log('Pathology receipt number found:', receiptNum);
-        if (receiptNum) {
-          return receiptNum;
+        const orderId = event.orderId || event.rawData?.order?.orderId;
+        console.log('Pathology orderId found:', orderId);
+        if (orderId) {
+          return orderId;
         }
       }
 
