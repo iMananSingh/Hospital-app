@@ -1194,6 +1194,29 @@ async function createDemoData() {
       }
     }
 
+    // Check and create pathology_test_placeholder service (for doctor earnings)
+    const existingPathologyService = db
+      .select()
+      .from(schema.services)
+      .where(eq(schema.services.id, "pathology_test_placeholder"))
+      .get();
+    if (!existingPathologyService) {
+      db.insert(schema.services)
+        .values({
+          id: "pathology_test_placeholder",
+          name: "Pathology Lab (All Tests)",
+          category: "pathology",
+          price: 0,
+          description:
+            "Placeholder for doctor-specific pathology lab fees",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+      console.log("Created pathology_test_placeholder service");
+    }
+
     console.log("Demo data verification completed");
   } catch (error) {
     console.error("Error creating demo data:", error);
