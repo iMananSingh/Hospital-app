@@ -1674,6 +1674,8 @@ export default function PatientDetail() {
       amount: number;
       paymentMethod: string;
       reason?: string;
+      billableType?: string;
+      billableId?: string;
     }) => {
       const response = await fetch(`/api/patients/${patientId}/payments`, {
         method: "POST",
@@ -1686,6 +1688,8 @@ export default function PatientDetail() {
           paymentMethod: data.paymentMethod,
           reason: data.reason || "Payment",
           paymentDate: new Date().toISOString(),
+          billableType: data.billableType,
+          billableId: data.billableId,
         }),
       });
 
@@ -5560,12 +5564,27 @@ export default function PatientDetail() {
 
                   // Format reason based on selected billable item
                   let reason = "Payment";
+                  let billableType: string | undefined = undefined;
+                  let billableId: string | undefined = undefined;
+                  
                   if (selectedBillableItem && selectedBillableItem !== "none") {
                     const selectedItem = billableItems?.find(
                       (item: any) => item.value === selectedBillableItem
                     );
                     if (selectedItem) {
                       reason = formatBillableItemLabel(selectedItem);
+                      billableId = selectedItem.value;
+                      
+                      // Map item type to billableType
+                      if (selectedItem.type === "pathology") {
+                        billableType = "pathology_order";
+                      } else if (selectedItem.type === "admission") {
+                        billableType = "admission";
+                      } else if (selectedItem.type === "service") {
+                        billableType = "service";
+                      } else if (selectedItem.type === "opd_visit") {
+                        billableType = "opd_visit";
+                      }
                     }
                   }
 
@@ -5573,6 +5592,8 @@ export default function PatientDetail() {
                     amount: parseFloat(paymentAmount),
                     paymentMethod: paymentMethod,
                     reason: reason,
+                    billableType: billableType,
+                    billableId: billableId,
                   });
                 }}
                 disabled={addPaymentMutation.isPending}
