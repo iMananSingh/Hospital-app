@@ -1971,7 +1971,7 @@ export class SqliteStorage implements IStorage {
         return;
       }
 
-      // Find doctor rate for pathology representative service (category='pathology', serviceId IS NULL)
+      // Find doctor rate for pathology representative service (category='pathology', serviceId IS NULL or 'pathology_test_placeholder')
       const pathologyRate = db
         .select()
         .from(schema.doctorServiceRates)
@@ -1979,7 +1979,10 @@ export class SqliteStorage implements IStorage {
           and(
             eq(schema.doctorServiceRates.doctorId, pathologyOrder.doctorId),
             eq(schema.doctorServiceRates.serviceCategory, "pathology"),
-            isNull(schema.doctorServiceRates.serviceId),
+            or(
+              isNull(schema.doctorServiceRates.serviceId),
+              eq(schema.doctorServiceRates.serviceId, "pathology_test_placeholder"),
+            ),
             eq(schema.doctorServiceRates.isActive, true),
           ),
         )
