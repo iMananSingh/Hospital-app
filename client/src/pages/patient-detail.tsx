@@ -142,6 +142,9 @@ export default function PatientDetail() {
   const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState("cash");
+  const [selectedRefundBillableItem, setSelectedRefundBillableItem] = useState("");
+  const [selectedDiscountBillableItem, setSelectedDiscountBillableItem] = useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
