@@ -553,6 +553,8 @@ export const patientPayments = sqliteTable("patient_payments", {
   paymentDate: text("payment_date").notNull(),
   reason: text("reason"), // Optional reason/notes for payment
   receiptNumber: text("receipt_number"),
+  billableType: text("billable_type"), // pathology_order, admission, service, opd_visit
+  billableId: text("billable_id"), // ID of the billable item
   processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
