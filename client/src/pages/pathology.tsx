@@ -608,7 +608,7 @@ export default function Pathology() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ordered" disabled={order.status === "paid"}>Ordered</SelectItem>
+                                <SelectItem value="ordered" disabled={order.status !== "ordered"}>Ordered</SelectItem>
                                 <SelectItem value="collected">Collected</SelectItem>
                                 <SelectItem value="processing">Processing</SelectItem>
                                 <SelectItem value="completed">Completed</SelectItem>
