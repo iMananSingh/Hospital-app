@@ -4292,7 +4292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
       try {
         const { patientId } = req.params;
-        const { amount, paymentMethod, reason, paymentDate } = req.body;
+        const { amount, paymentMethod, reason, paymentDate, billableType, billableId } = req.body;
 
         // Verify user ID exists
         if (!req.user?.id) {
@@ -4309,6 +4309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             reason: reason || "Payment",
             paymentDate: paymentDate || new Date().toISOString(),
             processedBy: req.user.id,
+            billableType,
+            billableId,
           },
           req.user.id,
         );

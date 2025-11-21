@@ -1902,7 +1902,7 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate and create doctor earning for pathology order (order-level, not per-test)
-  private async calculatePathologyOrderEarning(
+  async calculatePathologyOrderEarning(
     pathologyOrderId: string,
   ): Promise<void> {
     try {
