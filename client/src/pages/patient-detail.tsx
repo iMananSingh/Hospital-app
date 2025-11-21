@@ -2403,11 +2403,11 @@ export default function PatientDetail() {
                         setRefundReason("");
                         setIsRefundDialogOpen(true);
                       }}
-                      className="relative w-12 h-12 bg-red-600 hover:bg-red-700 text-white p-0"
+                      className="relative w-14 h-14 bg-red-600 hover:bg-red-700 text-white p-0 rounded-lg"
                       data-testid="button-add-refund"
                     >
-                      <TicketX className="h-10 w-10 absolute inset-0 m-auto" />
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+                      <TicketX className="h-full w-full p-1" />
+                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold pointer-events-none">
                         Refund
                       </span>
                     </Button>
