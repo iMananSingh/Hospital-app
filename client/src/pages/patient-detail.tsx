@@ -2118,29 +2118,6 @@ export default function PatientDetail() {
     setIsPaymentDialogOpen(true);
   };
 
-  // Handler for changing billable item selection in payment dialog
-  const handleBillableItemChange = (value: string) => {
-    setSelectedBillableItem(value);
-
-    // Find the selected billable item
-    const item = billableItems.find((i: any) => i.id === value); // Use item.id for lookup
-
-    if (item) {
-      // Use the pendingAmount from the backend if available, otherwise use the full amount
-      const pendingAmount = item.pendingAmount !== undefined && item.pendingAmount !== null 
-        ? item.pendingAmount 
-        : (item.amount || 0);
-      
-      console.log('Selected billable item:', item);
-      console.log('Pending amount:', pendingAmount);
-      
-      setPaymentAmount(pendingAmount.toString());
-    } else {
-      // If no item is selected or found, reset amount
-      setPaymentAmount("");
-    }
-  };
-
   if (!patient) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -5211,13 +5188,16 @@ export default function PatientDetail() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline" className={
-                                  service.billingType === "per_date"
-                                    ? "bg-indigo-100 text-indigo-800"
-                                    : service.billingType === "per_24_hours"
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-gray-100 text-gray-800"
-                                }>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    service.billingType === "per_date"
+                                      ? "bg-indigo-100 text-indigo-800"
+                                      : service.billingType === "per_24_hours"
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-gray-100 text-gray-800"
+                                  }
+                                >
                                   {service.billingType === "per_date"
                                     ? "Per Date"
                                     : service.billingType === "per_24_hours"
@@ -5649,10 +5629,20 @@ export default function PatientDetail() {
               <div className="space-y-2">
                 <Label htmlFor="billableItem">Billable Item *</Label>
                 <Select
-                    value={selectedBillableItem}
-                    onValueChange={handleBillableItemChange} // Use the new handler
-                    data-testid="select-billable-item"
-                  >
+                  value={selectedBillableItem}
+                  onValueChange={(value) => {
+                    setSelectedBillableItem(value);
+                    // Auto-populate amount from selected billable item
+                    if (value && value !== "none") {
+                      const selectedItem = billableItems?.find(
+                        (item: any) => item.value === value,
+                      );
+                      if (selectedItem && selectedItem.amount) {
+                        setPaymentAmount(selectedItem.amount.toString());
+                      }
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select billable item *" />
                   </SelectTrigger>
@@ -5661,11 +5651,11 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.id} // Use item.id as the value
+                          value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
-                          {formatBillableItemLabel(item)} - ₹{item.pendingAmount !== undefined ? item.pendingAmount : item.amount} pending
+                          {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
                     ) : (
@@ -5710,7 +5700,7 @@ export default function PatientDetail() {
                 // Format reason based on selected billable item
                 let reason = "Payment";
                 const selectedItem = billableItems?.find(
-                  (item: any) => item.id === selectedBillableItem, // Use item.id for lookup
+                  (item: any) => item.value === selectedBillableItem,
                 );
                 if (selectedItem) {
                   reason = formatBillableItemLabel(selectedItem);
@@ -5786,7 +5776,7 @@ export default function PatientDetail() {
                     // Auto-populate amount from selected billable item
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
-                        (item: any) => item.id === value, // Use item.id for lookup
+                        (item: any) => item.value === value,
                       );
                       if (selectedItem && selectedItem.amount) {
                         setRefundAmount(selectedItem.amount.toString());
@@ -5802,7 +5792,7 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.id} // Use item.id as the value
+                          value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
@@ -5925,7 +5915,7 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.id} // Use item.id as the value
+                          value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
@@ -6111,7 +6101,7 @@ export default function PatientDetail() {
                       </Select>
                       <FormMessage />
                     </FormItem>
-                                  )}
+                  )}
                 />
 
                 <FormField
