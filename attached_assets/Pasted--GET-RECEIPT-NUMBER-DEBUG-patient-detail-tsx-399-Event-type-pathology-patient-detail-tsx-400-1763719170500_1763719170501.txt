@@ -1,0 +1,74 @@
+=== GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+chunk-YPQ46UJP.js?v=4c2de569:335 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+(anonymous) @ chunk-YPQ46UJP.js?v=4c2de569:335
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=4c2de569:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=4c2de569:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=4c2de569:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=4c2de569:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=4c2de569:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=4c2de569:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=4c2de569:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=4c2de569:19416
+commitRoot @ chunk-RPCDYKBN.js?v=4c2de569:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=4c2de569:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=4c2de569:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=4c2de569:18627Understand this warning
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 Pathology receipt number found: 251121-PAT-0006
+patient-detail.tsx:398 === GET RECEIPT NUMBER DEBUG ===
+patient-detail.tsx:399 Event type: pathology
+patient-detail.tsx:400 Event object keys: (17) ['id', 'orderId', 'patientId', 'visitId', 'doctorId', 'status', 'orderedDate', 'collectedDate', 'reportDate', 'remarks', 'totalPrice', 'receiptNumber', 'createdAt', 'updatedAt', 'tests', 'testName', 'sortTimestamp']
+patient-detail.tsx:401 Event.receiptNumber: 251121-PAT-0006
+patient-detail.tsx:402 Event.receipt_number: undefined
+patient-detail.tsx:432 
