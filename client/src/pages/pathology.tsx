@@ -595,16 +595,11 @@ export default function Pathology() {
                     const order = orderData.order;
                     const patient = orderData.patient;
                     const doctor = orderData.doctor;
-                    const isPaid = order.status === 'paid';
-                    const isCompleted = order.status === 'completed';
-                    const isCancelled = order.status === 'cancelled';
-                    const isGreyedOut = isPaid || isCompleted || isCancelled;
                     
                     return (
                       <TableRow 
                         key={order.id} 
                         data-testid={`order-row-${order.id}`}
-                        className={isGreyedOut ? "bg-gray-100 opacity-60" : ""}
                       >
                         <TableCell className="font-medium">{order.orderId}</TableCell>
                         <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
