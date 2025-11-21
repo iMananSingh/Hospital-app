@@ -2126,24 +2126,19 @@ export default function PatientDetail() {
     const item = billableItems.find((i: any) => i.id === value); // Use item.id for lookup
 
     if (item) {
-      // Calculate pending amount
-      const pendingAmount = calculatePendingAmount(item);
+      // Use the pendingAmount from the backend if available, otherwise use the full amount
+      const pendingAmount = item.pendingAmount !== undefined && item.pendingAmount !== null 
+        ? item.pendingAmount 
+        : (item.amount || 0);
+      
+      console.log('Selected billable item:', item);
+      console.log('Pending amount:', pendingAmount);
+      
       setPaymentAmount(pendingAmount.toString());
     } else {
       // If no item is selected or found, reset amount
       setPaymentAmount("");
     }
-  };
-
-  // Helper function to calculate pending amount for a billable item
-  const calculatePendingAmount = (item: any): number => {
-    // If the billable item object itself has a pending amount, use it.
-    if (item.pendingAmount !== undefined) {
-      return item.pendingAmount;
-    }
-    // Fallback: If pendingAmount is not available, return the full amount.
-    // This ensures we always have a value, but might need backend adjustment for accurate pending amounts.
-    return item.amount || 0;
   };
 
   if (!patient) {

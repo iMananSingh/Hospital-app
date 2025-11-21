@@ -6822,7 +6822,7 @@ export class SqliteStorage implements IStorage {
 
       // 4. Admissions and associated events
       // Admissions themselves are not added as bill items, but their payments/discounts are.
-      // Thecharges for admission services are handled in `patientServices`.
+      // The charges for admission services are handled in `patientServices`.
 
       // 5. Patient Payments
       const payments = db
