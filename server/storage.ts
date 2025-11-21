@@ -4356,6 +4356,7 @@ export class SqliteStorage implements IStorage {
         label: `Admission - ${admission.admissionId}`,
         value: `Admission - ${admission.admissionId}`,
         date: admission.admissionDate,
+        amount: admission.dailyCost || 0,
       });
     });
 
@@ -4380,6 +4381,7 @@ export class SqliteStorage implements IStorage {
         label: `Pathology - ${order.orderId}`,
         value: order.orderId,
         date: order.orderedDate,
+        amount: order.totalPrice || 0,
       });
     });
 
@@ -4389,6 +4391,7 @@ export class SqliteStorage implements IStorage {
         orderId: schema.patientServices.orderId,
         receiptNumber: schema.patientServices.receiptNumber,
         scheduledDate: schema.patientServices.scheduledDate,
+        price: schema.patientServices.price,
       })
       .from(schema.patientServices)
       .where(
@@ -4397,21 +4400,30 @@ export class SqliteStorage implements IStorage {
           isNotNull(schema.patientServices.orderId),
         ),
       )
-      .groupBy(schema.patientServices.orderId)
       .orderBy(desc(schema.patientServices.scheduledDate))
       .all();
 
+    const serviceOrderMap = new Map<string, { total: number; receipt?: string; date?: string }>();
     serviceOrders.forEach((order) => {
       if (order.orderId) {
-        const identifier = order.receiptNumber || order.orderId;
-        billableItems.push({
-          type: "service",
-          id: order.orderId,
-          label: `Service Order - ${identifier}`,
-          value: `Service Order - ${identifier}`,
-          date: order.scheduledDate,
-        });
+        if (!serviceOrderMap.has(order.orderId)) {
+          serviceOrderMap.set(order.orderId, { total: 0, receipt: order.receiptNumber, date: order.scheduledDate });
+        }
+        const current = serviceOrderMap.get(order.orderId)!;
+        current.total += order.price || 0;
       }
+    });
+
+    serviceOrderMap.forEach((orderData, orderId) => {
+      const identifier = orderData.receipt || orderId;
+      billableItems.push({
+        type: "service",
+        id: orderId,
+        label: `Service Order - ${identifier}`,
+        value: `Service Order - ${identifier}`,
+        date: orderData.date,
+        amount: orderData.total,
+      });
     });
 
     // 4. Get all OPD visits
@@ -4439,6 +4451,7 @@ export class SqliteStorage implements IStorage {
         label: `OPD Visit - ${visit.visitId}`,
         value: `OPD Visit - ${visit.visitId}`,
         date: visit.scheduledDate,
+        amount: visit.consultationFee || 0,
       });
     });
 
