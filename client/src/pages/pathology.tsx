@@ -465,6 +465,10 @@ export default function Pathology() {
         return 'bg-yellow-100 text-yellow-800';
       case 'ordered':
         return 'bg-orange-100 text-orange-800';
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -534,6 +538,8 @@ export default function Pathology() {
                     <SelectItem value="collected">Collected</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -602,10 +608,12 @@ export default function Pathology() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ordered">Ordered</SelectItem>
+                                <SelectItem value="ordered" disabled={order.status === "paid"}>Ordered</SelectItem>
                                 <SelectItem value="collected">Collected</SelectItem>
                                 <SelectItem value="processing">Processing</SelectItem>
                                 <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="cancelled" disabled={order.status === "collected"}>Cancelled</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>

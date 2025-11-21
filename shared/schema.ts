@@ -185,7 +185,7 @@ export const pathologyOrders = sqliteTable("pathology_orders", {
     .references(() => patients.id),
   visitId: text("visit_id").references(() => patientVisits.id),
   doctorId: text("doctor_id").references(() => doctors.id), // Optional for external patients
-  status: text("status").notNull().default("ordered"), // ordered, collected, processing, completed
+  status: text("status").notNull().default("ordered"), // ordered, collected, processing, completed, paid, cancelled
   orderedDate: text("ordered_date").notNull(),
   collectedDate: text("collected_date"),
   reportDate: text("report_date"),

@@ -4381,6 +4381,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Calculate and create doctor earning for this pathology order
                 await storage.calculatePathologyOrderEarning(pathologyOrder.order.id);
                 console.log(`✓ Created doctor earning for pathology order ${orderId}`);
+                // Auto-update order status to "paid" when payment is created
+                await storage.updatePathologyOrderStatus(pathologyOrder.order.id, "paid");
+                console.log(`✓ Updated order status to "paid" for ${orderId}`);
               } else {
                 console.log(`✗ Pathology order ${orderId} not found in database`);
                 console.log(`Available orders: ${allOrders.map((o: any) => o.order?.orderId).join(", ")}`);
