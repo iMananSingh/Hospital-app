@@ -422,6 +422,8 @@ async function initializeDatabase() {
         fiscal_year_start_day INTEGER NOT NULL DEFAULT 1,
         audit_log_retention_years INTEGER NOT NULL DEFAULT 7,
         last_audit_archive_date TEXT,
+        timezone TEXT DEFAULT 'UTC',
+        timezone_offset TEXT DEFAULT '+00:00',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
@@ -907,13 +909,13 @@ async function initializeDatabase() {
       const tableInfo = db.$client.prepare(
         "PRAGMA table_info(doctor_service_rates);"
       ).all() as Array<{ name: string; notnull: number }>;
-      
+
       const serviceIdColumn = tableInfo.find(col => col.name === 'service_id');
-      
+
       // If service_id is NOT NULL (notnull === 1), we need to recreate the table
       if (serviceIdColumn && serviceIdColumn.notnull === 1) {
         console.log("Migrating doctor_service_rates table to make service_id nullable...");
-        
+
         db.$client.exec(`
           -- Create new table with nullable service_id
           CREATE TABLE doctor_service_rates_new (
@@ -930,18 +932,18 @@ async function initializeDatabase() {
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
           );
-          
+
           -- Copy existing data
           INSERT INTO doctor_service_rates_new 
           SELECT * FROM doctor_service_rates;
-          
+
           -- Drop old table
           DROP TABLE doctor_service_rates;
-          
+
           -- Rename new table
           ALTER TABLE doctor_service_rates_new RENAME TO doctor_service_rates;
         `);
-        
+
         console.log("Successfully migrated doctor_service_rates table - service_id is now nullable");
       }
     } catch (error) {
@@ -1542,11 +1544,6 @@ export interface IStorage {
   // Doctor Payment Management
   getAllDoctorPayments(): Promise<DoctorPayment[]>;
   getDoctorPayments(doctorId: string): Promise<DoctorPayment[]>;
-
-  // Room management
-  getRoomById(id: string): Promise<any | undefined>;
-  getRoomTypeById(id: string): Promise<any | undefined>;
-  deleteRoom(id: string): Promise<boolean>;
 }
 
 export class SqliteStorage implements IStorage {
@@ -4390,18 +4387,20 @@ export class SqliteStorage implements IStorage {
         receiptNumber: schema.pathologyOrders.receiptNumber,
         orderedDate: schema.pathologyOrders.orderedDate,
         totalPrice: schema.pathologyOrders.totalPrice,
+        status: schema.pathologyOrders.status, // Added status for isFullyPaid check
       })
       .from(schema.pathologyOrders)
       .where(eq(schema.pathologyOrders.patientId, patientId))
       .orderBy(desc(schema.pathologyOrders.orderedDate))
       .all();
 
-    pathologyOrders.forEach((order) => {
+    for (const order of pathologyOrders) {
       const itemValue = order.orderId;
       const amount = order.totalPrice || 0;
       const paidAmount = paidAmounts.get(itemValue) || 0;
-      // Check both payment amount and order status (status is the most reliable indicator)
-      const isFullyPaid = (order.status === 'paid') || (paidAmount >= amount && amount > 0);
+      // CRITICAL: Check order.status === 'paid' FIRST - this is the authoritative source
+      // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
+      const isFullyPaid = order.status === 'paid' || (paidAmount >= amount && amount > 0);
 
       billableItems.push({
         type: "pathology",
@@ -4412,7 +4411,7 @@ export class SqliteStorage implements IStorage {
         amount,
         isFullyPaid,
       });
-    });
+    }
 
     // 3. Get all service orders (grouped by orderId)
     const serviceOrders = db
@@ -6950,7 +6949,7 @@ export class SqliteStorage implements IStorage {
           .reduce((sum, item) => sum + item.amount, 0),
       );
 
-      const remainingBalance = totalCharges - totalPaid - totalDiscounts;
+      const remainingBalance = totalCharges - totalPayments - totalDiscounts;
 
       const lastPayment = billItems.find((item) => item.type === "payment");
       const lastDiscount = billItems.find((item) => item.type === "discount");
@@ -7326,7 +7325,7 @@ export class SqliteStorage implements IStorage {
               .from(schema.services)
               .where(eq(schema.services.id, serviceId))
               .get();
-            
+
             if (!serviceExists) {
               // Service doesn't exist in the table - it's a placeholder
               // For pathology, use pathology_test_placeholder; for OPD, use opd_consultation_placeholder
@@ -7550,12 +7549,6 @@ export class SqliteStorage implements IStorage {
           `Visit ${visitId} is not an OPD visit (type: ${visit.visitType})`,
         );
         return null;
-      }
-
-      // Update visit status to completed if not already
-      if (visit.status !== "completed") {
-        await this.updateOpdVisitStatus(visit.id, "completed");
-        console.log(`Updated visit ${visitId} status to completed`);
       }
 
       // Check if earning already exists for this visit
