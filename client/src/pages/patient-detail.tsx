@@ -2398,18 +2398,17 @@ export default function PatientDetail() {
                 })() && (
                   <>
                     <Button
+                      size="sm"
                       onClick={() => {
                         setRefundAmount("");
                         setRefundReason("");
                         setIsRefundDialogOpen(true);
                       }}
-                      className="relative w-14 h-14 bg-red-600 hover:bg-red-700 text-white p-0 rounded-lg"
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
                       data-testid="button-add-refund"
                     >
-                      <TicketX className="h-full w-full p-1" />
-                      <span className="absolute inset-0 flex items-center justify-center text-xs font-bold pointer-events-none">
-                        Refund
-                      </span>
+                      <TicketX className="h-4 w-4" />
+                      Refund
                     </Button>
                     <Button
                       size="sm"
