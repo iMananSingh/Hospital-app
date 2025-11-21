@@ -4372,18 +4372,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const allOrders = await storage.getPathologyOrders();
               console.log(`📋 Found ${allOrders.length} total pathology orders`);
               
-              const pathologyOrder = allOrders.find((order: any) => order.orderId === orderId);
+              const pathologyOrder = allOrders.find((order: any) => order.order?.orderId === orderId);
               console.log(`🔍 Searching for order with ID: ${orderId}`);
               console.log(`Order found: ${!!pathologyOrder}`);
 
               if (pathologyOrder) {
-                console.log(`✓ Order found! Database ID: ${pathologyOrder.id}, Total: ₹${pathologyOrder.totalPrice}`);
+                console.log(`✓ Order found! Database ID: ${pathologyOrder.order.id}, Total: ₹${pathologyOrder.order.totalPrice}`);
                 // Calculate and create doctor earning for this pathology order
-                await storage.calculatePathologyOrderEarning(pathologyOrder.id);
+                await storage.calculatePathologyOrderEarning(pathologyOrder.order.id);
                 console.log(`✓ Created doctor earning for pathology order ${orderId}`);
               } else {
                 console.log(`✗ Pathology order ${orderId} not found in database`);
-                console.log(`Available orders: ${allOrders.map((o: any) => o.orderId).join(", ")}`);
+                console.log(`Available orders: ${allOrders.map((o: any) => o.order?.orderId).join(", ")}`);
               }
             } else {
               console.log(`✗ Failed to extract order ID from reason: "${reason}"`);
