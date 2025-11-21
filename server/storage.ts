@@ -4398,9 +4398,10 @@ export class SqliteStorage implements IStorage {
       const itemValue = order.orderId;
       const amount = order.totalPrice || 0;
       const paidAmount = paidAmounts.get(itemValue) || 0;
+      const pendingAmount = Math.max(0, amount - paidAmount);
       // CRITICAL: Check order.status === 'paid' FIRST - this is the authoritative source
       // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
-      const isFullyPaid = order.status === 'paid' || (paidAmount >= amount && amount > 0);
+      const isFullyPaid = order.status === 'paid' || paidAmount >= amount;
 
       billableItems.push({
         type: "pathology",
@@ -4409,6 +4410,7 @@ export class SqliteStorage implements IStorage {
         value: itemValue,
         date: order.orderedDate,
         amount,
+        pendingAmount,
         isFullyPaid,
       });
     }
@@ -4482,15 +4484,17 @@ export class SqliteStorage implements IStorage {
       const itemValue = `OPD Visit - ${visit.visitId}`;
       const amount = visit.consultationFee || 0;
       const paidAmount = paidAmounts.get(itemValue) || 0;
+      const pendingAmount = Math.max(0, amount - paidAmount);
       const isFullyPaid = paidAmount >= amount;
 
       billableItems.push({
-        type: "opd",
+        type: "opd_visit",
         id: visit.id,
         label: `OPD Visit - ${visit.visitId}`,
         value: itemValue,
         date: visit.scheduledDate,
         amount,
+        pendingAmount,
         isFullyPaid,
       });
     });
@@ -6176,8 +6180,7 @@ export class SqliteStorage implements IStorage {
             .prepare(
               `
             SELECT COUNT(*) as count FROM admission_events
-            WHERE event_type = 'discharge' AND event_time LIKE ?
-          `,
+            WHERE event_type = 'discharge' AND event_time LIKE ?            `,
             )
             .get(`${dateStr}%`)?.count || 0;
       } else if (serviceType === "service") {
