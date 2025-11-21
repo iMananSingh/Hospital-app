@@ -4378,7 +4378,7 @@ export class SqliteStorage implements IStorage {
         type: "pathology",
         id: order.id,
         label: `Pathology - ${order.orderId}`,
-        value: `Pathology - ${order.orderId}`,
+        value: order.orderId,
         date: order.orderedDate,
       });
     });
