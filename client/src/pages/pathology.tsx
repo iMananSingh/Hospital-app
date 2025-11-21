@@ -494,6 +494,24 @@ export default function Pathology() {
     return doctor?.name || "Unknown Doctor";
   };
 
+  const getAvailableStatusOptions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'ordered':
+        return ['cancelled']; // paid only happens automatically on payment
+      case 'paid':
+        return ['cancelled', 'collected'];
+      case 'collected':
+        return ['processing'];
+      case 'processing':
+        return ['completed'];
+      case 'completed':
+      case 'cancelled':
+        return []; // locked, no transitions allowed
+      default:
+        return [];
+    }
+  };
+
   const toggleTestSelection = (test: any) => {
     const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
     if (isSelected) {
@@ -602,18 +620,18 @@ export default function Pathology() {
                             <Select
                               value={order.status}
                               onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
-                              disabled={updateOrderStatusMutation.isPending}
+                              disabled={updateOrderStatusMutation.isPending || getAvailableStatusOptions(order.status).length === 0}
                             >
                               <SelectTrigger className="w-32" data-testid={`status-select-${order.id}`}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ordered" disabled={order.status !== "ordered"}>Ordered</SelectItem>
-                                <SelectItem value="collected">Collected</SelectItem>
-                                <SelectItem value="processing">Processing</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="cancelled" disabled={order.status === "collected"}>Cancelled</SelectItem>
+                                <SelectItem value="ordered" disabled={!getAvailableStatusOptions(order.status).includes('ordered')}>Ordered</SelectItem>
+                                <SelectItem value="collected" disabled={!getAvailableStatusOptions(order.status).includes('collected')}>Collected</SelectItem>
+                                <SelectItem value="processing" disabled={!getAvailableStatusOptions(order.status).includes('processing')}>Processing</SelectItem>
+                                <SelectItem value="completed" disabled={!getAvailableStatusOptions(order.status).includes('completed')}>Completed</SelectItem>
+                                <SelectItem value="paid" disabled={true}>Paid</SelectItem>
+                                <SelectItem value="cancelled" disabled={!getAvailableStatusOptions(order.status).includes('cancelled')}>Cancelled</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
