@@ -4329,6 +4329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log activity for payment
         const patient = await storage.getPatientById(patientId);
 
+        console.log(`=== Payment created ===`);
+        console.log(`Reason: "${reason}"`);
+        console.log(`Patient ID: ${patientId}`);
+
         // Check if payment is for OPD visit and trigger commission calculation
         if (reason && reason.startsWith("OPD Visit - VIS-")) {
           try {
@@ -4352,30 +4356,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if payment is for pathology order and trigger earning calculation
+        console.log(`Checking if reason includes "Pathology": ${reason?.includes("Pathology")}`);
         if (reason && reason.includes("Pathology")) {
+          console.log(`✓ Pathology payment detected`);
           try {
             // Extract pathology order ID from reason (e.g., "Pathology - LAB-2025-000001")
             const orderIdMatch = reason.match(/LAB-[\d\-]+/);
+            console.log(`Order ID match result: ${JSON.stringify(orderIdMatch)}`);
+            
             if (orderIdMatch) {
               const orderId = orderIdMatch[0];
-              console.log(`Payment for pathology order ${orderId}, calculating doctor earning`);
+              console.log(`🔍 Extracted order ID: ${orderId}`);
 
               // Get all pathology orders and find by orderId
               const allOrders = await storage.getPathologyOrders();
+              console.log(`📋 Found ${allOrders.length} total pathology orders`);
+              
               const pathologyOrder = allOrders.find((order: any) => order.orderId === orderId);
+              console.log(`🔍 Searching for order with ID: ${orderId}`);
+              console.log(`Order found: ${!!pathologyOrder}`);
 
               if (pathologyOrder) {
+                console.log(`✓ Order found! Database ID: ${pathologyOrder.id}, Total: ₹${pathologyOrder.totalPrice}`);
                 // Calculate and create doctor earning for this pathology order
                 await storage.calculatePathologyOrderEarning(pathologyOrder.id);
-                console.log(`Created doctor earning for pathology order ${orderId}`);
+                console.log(`✓ Created doctor earning for pathology order ${orderId}`);
               } else {
-                console.log(`Pathology order ${orderId} not found`);
+                console.log(`✗ Pathology order ${orderId} not found in database`);
+                console.log(`Available orders: ${allOrders.map((o: any) => o.orderId).join(", ")}`);
               }
+            } else {
+              console.log(`✗ Failed to extract order ID from reason: "${reason}"`);
             }
           } catch (earningError) {
             // Log error but don't fail the payment creation
-            console.error("Error calculating pathology order earning:", earningError);
+            console.error("❌ Error calculating pathology order earning:", earningError);
           }
+        } else {
+          console.log(`✗ Not a pathology payment`);
         }
 
         res.json(payment);
