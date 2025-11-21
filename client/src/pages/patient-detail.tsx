@@ -2361,6 +2361,7 @@ export default function PatientDetail() {
                       Add Discount
                     </Button>
                     <Button
+                      size="sm"
                       onClick={handleOpenPaymentDialog}
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                       data-testid="button-add-payment"
