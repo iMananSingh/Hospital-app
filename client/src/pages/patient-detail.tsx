@@ -5649,8 +5649,8 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem 
-                          key={item.id} 
+                        <SelectItem
+                          key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
@@ -5790,8 +5790,8 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem 
-                          key={item.id} 
+                        <SelectItem
+                          key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
@@ -5913,8 +5913,8 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem 
-                          key={item.id} 
+                        <SelectItem
+                          key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
