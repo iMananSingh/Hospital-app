@@ -401,19 +401,21 @@ export default function PatientDetail() {
 
     // Helper function to get receipt number from different sources
     const getReceiptNumber = () => {
-      console.log('=== GET RECEIPT NUMBER DEBUG ===');
-      console.log('Event type:', eventType);
-      console.log('Event object keys:', Object.keys(event));
-      console.log('Event.receiptNumber:', event.receiptNumber);
-      console.log('Event.receipt_number:', event.receipt_number);
+      console.log("=== GET RECEIPT NUMBER DEBUG ===");
+      console.log("Event type:", eventType);
+      console.log("Event object keys:", Object.keys(event));
+      console.log("Event.receiptNumber:", event.receiptNumber);
+      console.log("Event.receipt_number:", event.receipt_number);
 
       // For OPD visits (which come as opd_visit type), try to get from visit data
       if (eventType === "opd_visit") {
         // Check all possible locations for the receipt number
-        const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.visit?.receiptNumber ||
-                          event.rawData?.visit?.receipt_number;
-        console.log('OPD visit receipt number found:', receiptNum);
+        const receiptNum =
+          event.receiptNumber ||
+          event.receipt_number ||
+          event.rawData?.visit?.receiptNumber ||
+          event.rawData?.visit?.receipt_number;
+        console.log("OPD visit receipt number found:", receiptNum);
         if (receiptNum) {
           return receiptNum;
         }
@@ -422,7 +424,7 @@ export default function PatientDetail() {
       // For services, always use the stored receiptNumber
       if (eventType === "service") {
         const receiptNum = event.receiptNumber || event.receipt_number;
-        console.log('Service receipt number found:', receiptNum);
+        console.log("Service receipt number found:", receiptNum);
         if (receiptNum) {
           return receiptNum;
         }
@@ -431,7 +433,7 @@ export default function PatientDetail() {
       // For pathology, return the orderId (not receiptNumber) so backend can match LAB-XXXX pattern
       if (eventType === "pathology") {
         const orderId = event.orderId || event.rawData?.order?.orderId;
-        console.log('Pathology orderId found:', orderId);
+        console.log("Pathology orderId found:", orderId);
         if (orderId) {
           return orderId;
         }
@@ -439,10 +441,12 @@ export default function PatientDetail() {
 
       // For admission events, try to get from admission event data
       if (eventType === "admission_event") {
-        const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.event?.receiptNumber ||
-                          event.rawData?.event?.receipt_number;
-        console.log('Admission event receipt number found:', receiptNum);
+        const receiptNum =
+          event.receiptNumber ||
+          event.receipt_number ||
+          event.rawData?.event?.receiptNumber ||
+          event.rawData?.event?.receipt_number;
+        console.log("Admission event receipt number found:", receiptNum);
         if (receiptNum) {
           return receiptNum;
         }
@@ -450,10 +454,12 @@ export default function PatientDetail() {
 
       // For admission fallback, try to get from admission data
       if (eventType === "admission") {
-        const receiptNum = event.receiptNumber || event.receipt_number ||
-                          event.rawData?.admission?.receiptNumber ||
-                          event.rawData?.admission?.receipt_number;
-        console.log('Admission receipt number found:', receiptNum);
+        const receiptNum =
+          event.receiptNumber ||
+          event.receipt_number ||
+          event.rawData?.admission?.receiptNumber ||
+          event.rawData?.admission?.receipt_number;
+        console.log("Admission receipt number found:", receiptNum);
         if (receiptNum) {
           return receiptNum;
         }
@@ -461,13 +467,13 @@ export default function PatientDetail() {
 
       // For other event types, try direct access
       const receiptNum = event.receiptNumber || event.receipt_number;
-      console.log('Generic receipt number found:', receiptNum);
+      console.log("Generic receipt number found:", receiptNum);
       if (receiptNum) {
         return receiptNum;
       }
 
-      console.log('No receipt number found - returning RECEIPT-NOT-FOUND');
-      console.log('=== END GET RECEIPT NUMBER DEBUG ===');
+      console.log("No receipt number found - returning RECEIPT-NOT-FOUND");
+      console.log("=== END GET RECEIPT NUMBER DEBUG ===");
       return "RECEIPT-NOT-FOUND";
     };
 
@@ -687,11 +693,14 @@ export default function PatientDetail() {
   const { data: billableItems = [] } = useQuery({
     queryKey: ["/api/patients", patientId, "billable-items"],
     queryFn: async () => {
-      const response = await fetch(`/api/patients/${patientId}/billable-items`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/patients/${patientId}/billable-items`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
       if (!response.ok) throw new Error("Failed to fetch billable items");
       return response.json();
     },
@@ -910,7 +919,7 @@ export default function PatientDetail() {
 
   // Auto-open service dialog if hash is present
   React.useEffect(() => {
-    if (window.location.hash === '#add-service') {
+    if (window.location.hash === "#add-service") {
       // Clear all service-related state first and close dialog to reset
       setIsServiceDialogOpen(false);
       setSelectedServices([]);
@@ -952,7 +961,7 @@ export default function PatientDetail() {
       setTimeout(() => {
         setIsServiceDialogOpen(true);
         // Clear the hash
-        window.history.replaceState(null, '', window.location.pathname);
+        window.history.replaceState(null, "", window.location.pathname);
       }, 10);
     }
   }, []);
@@ -1705,7 +1714,9 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/patient-payments"] });
       // Invalidate doctor earnings queries to update salary tab immediately
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/doctors/all-earnings"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       setIsPaymentDialogOpen(false);
       setPaymentAmount("");
@@ -1727,10 +1738,7 @@ export default function PatientDetail() {
   });
 
   const addRefundMutation = useMutation({
-    mutationFn: async (data: {
-      amount: number;
-      reason: string;
-    }) => {
+    mutationFn: async (data: { amount: number; reason: string }) => {
       const response = await fetch(`/api/patients/${patientId}/refunds`, {
         method: "POST",
         headers: {
@@ -1753,7 +1761,9 @@ export default function PatientDetail() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/doctors/all-earnings"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       setIsRefundDialogOpen(false);
       setRefundAmount("");
@@ -1805,7 +1815,9 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       // Invalidate doctor earnings queries to update salary tab immediately
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/doctors/all-earnings"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
@@ -2103,7 +2115,6 @@ export default function PatientDetail() {
     setIsPaymentDialogOpen(true);
   };
 
-
   if (!patient) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -2364,8 +2375,12 @@ export default function PatientDetail() {
                           );
 
                           // Refresh room availability and current admissions data
-                          queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-                          queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
+                          queryClient.invalidateQueries({
+                            queryKey: ["/api/rooms"],
+                          });
+                          queryClient.invalidateQueries({
+                            queryKey: ["/api/inpatients/currently-admitted"],
+                          });
 
                           setIsAdmissionDialogOpen(true);
                         }}
@@ -2914,8 +2929,14 @@ export default function PatientDetail() {
                               );
 
                               // Refresh room availability and current admissions data
-                              queryClient.invalidateQueries({ queryKey: ["/api/rooms"] });
-                              queryClient.invalidateQueries({ queryKey: ["/api/inpatients/currently-admitted"] });
+                              queryClient.invalidateQueries({
+                                queryKey: ["/api/rooms"],
+                              });
+                              queryClient.invalidateQueries({
+                                queryKey: [
+                                  "/api/inpatients/currently-admitted",
+                                ],
+                              });
 
                               setIsAdmissionDialogOpen(true);
                             }}
@@ -3614,8 +3635,10 @@ export default function PatientDetail() {
                                     return (
                                       <div className="space-y-1">
                                         <div className="font-medium">
-                                          Consultation Fee: <span className="text-red-600 font-semibold">₹
-                                          {event.data.consultationFee || 0}</span>
+                                          Consultation Fee:{" "}
+                                          <span className="text-red-600 font-semibold">
+                                            ₹{event.data.consultationFee || 0}
+                                          </span>
                                         </div>
                                         {event.data.symptoms && (
                                           <div>
@@ -3705,9 +3728,12 @@ export default function PatientDetail() {
                                     return (
                                       <div className="space-y-1">
                                         <div className="font-medium">
-                                          Cost: <span className="text-red-600 font-semibold">₹
-                                          {event.data.calculatedAmount ||
-                                            event.data.price}</span>
+                                          Cost:{" "}
+                                          <span className="text-red-600 font-semibold">
+                                            ₹
+                                            {event.data.calculatedAmount ||
+                                              event.data.price}
+                                          </span>
                                         </div>
                                         {event.data.notes && (
                                           <div>
@@ -3856,9 +3882,14 @@ export default function PatientDetail() {
                                           "room_change" && (
                                           <>
                                             {(() => {
-                                              const notesText = event.data.notes || "";
-                                              const fromMatch = notesText.match(/from\s+([^(]+)\s+\(([^)]+)\)/);
-                                              const toMatch = notesText.match(/to\s+([^(]+)\s+\(([^)]+)\)/);
+                                              const notesText =
+                                                event.data.notes || "";
+                                              const fromMatch = notesText.match(
+                                                /from\s+([^(]+)\s+\(([^)]+)\)/,
+                                              );
+                                              const toMatch = notesText.match(
+                                                /to\s+([^(]+)\s+\(([^)]+)\)/,
+                                              );
 
                                               return (
                                                 <>
@@ -3867,7 +3898,8 @@ export default function PatientDetail() {
                                                       <span className="font-medium">
                                                         Previous Room:
                                                       </span>{" "}
-                                                      {fromMatch[2]} ({fromMatch[1].trim()})
+                                                      {fromMatch[2]} (
+                                                      {fromMatch[1].trim()})
                                                     </div>
                                                   )}
                                                   {toMatch && (
@@ -3875,7 +3907,8 @@ export default function PatientDetail() {
                                                       <span className="font-medium">
                                                         New Room:
                                                       </span>{" "}
-                                                      {toMatch[2]} ({toMatch[1].trim()})
+                                                      {toMatch[2]} (
+                                                      {toMatch[1].trim()})
                                                     </div>
                                                   )}
                                                 </>
@@ -3883,14 +3916,16 @@ export default function PatientDetail() {
                                             })()}
                                           </>
                                         )}
-                                        {event.data.eventType !== "room_change" && event.data.notes && (
-                                          <div>
-                                            <span className="font-medium">
-                                              Notes:
-                                            </span>{" "}
-                                            {event.data.notes}
-                                          </div>
-                                        )}
+                                        {event.data.eventType !==
+                                          "room_change" &&
+                                          event.data.notes && (
+                                            <div>
+                                              <span className="font-medium">
+                                                Notes:
+                                              </span>{" "}
+                                              {event.data.notes}
+                                            </div>
+                                          )}
                                       </div>
                                     );
                                   case "discharge":
@@ -4154,13 +4189,14 @@ export default function PatientDetail() {
                 <input
                   type="datetime-local"
                   value={
-                    serviceForm.watch("scheduledDate") && serviceForm.watch("scheduledTime")
+                    serviceForm.watch("scheduledDate") &&
+                    serviceForm.watch("scheduledTime")
                       ? `${serviceForm.watch("scheduledDate")}T${serviceForm.watch("scheduledTime")}`
                       : ""
                   }
                   onChange={(e) => {
                     if (e.target.value) {
-                      const [date, time] = e.target.value.split('T');
+                      const [date, time] = e.target.value.split("T");
                       serviceForm.setValue("scheduledDate", date);
                       serviceForm.setValue("scheduledTime", time);
                     }
@@ -5554,111 +5590,115 @@ export default function PatientDetail() {
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent data-testid="dialog-add-payment">
           <DialogHeader>
-            <DialogTitle>Add Payment</DialogTitle>
+            <DialogTitle>Record Payment</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="paymentAmount">Payment Amount *</Label>
-                <Input
-                  id="paymentAmount"
-                  type="number"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="Enter amount"
-                />
+
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentAmount">Payment Amount *</Label>
+                  <Input
+                    id="paymentAmount"
+                    type="number"
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Enter amount"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="paymentMethod">Payment Method</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+
+              <div className="space-y-2">
+                <Label htmlFor="billableItem">Billable Item</Label>
+                <Select
+                  value={selectedBillableItem}
+                  onValueChange={setSelectedBillableItem}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select payment method" />
+                    <SelectValue placeholder="Select billable item (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="upi">UPI</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    {billableItems && billableItems.length > 0 ? (
+                      billableItems.map((item: any) => (
+                        <SelectItem key={item.id} value={item.value}>
+                          {formatBillableItemLabel(item)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No billable items available
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="billableItem">Billable Item</Label>
-              <Select
-                value={selectedBillableItem}
-                onValueChange={setSelectedBillableItem}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select billable item (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {billableItems && billableItems.length > 0 ? (
-                    billableItems.map((item: any) => (
-                      <SelectItem key={item.id} value={item.value}>
-                        {formatBillableItemLabel(item)}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      No billable items available
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-                    toast({
-                      title: "Invalid Amount",
-                      description: "Please enter a valid payment amount",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
+          </div>
 
-                  // Format reason based on selected billable item
-                  let reason = "Payment";
-                  
-                  if (selectedBillableItem && selectedBillableItem !== "none") {
-                    const selectedItem = billableItems?.find(
-                      (item: any) => item.value === selectedBillableItem
-                    );
-                    if (selectedItem) {
-                      reason = formatBillableItemLabel(selectedItem);
-                    }
-                  }
-
-                  addPaymentMutation.mutate({
-                    amount: parseFloat(paymentAmount),
-                    paymentMethod: paymentMethod,
-                    reason: reason,
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPaymentDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+                  toast({
+                    title: "Invalid Amount",
+                    description: "Please enter a valid payment amount",
+                    variant: "destructive",
                   });
-                }}
-                disabled={addPaymentMutation.isPending}
-                data-testid="button-confirm-payment"
-              >
-                {addPaymentMutation.isPending ? "Processing..." : "Add Payment"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsPaymentDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-            </div>
+                  return;
+                }
+
+                // Format reason based on selected billable item
+                let reason = "Payment";
+
+                if (selectedBillableItem && selectedBillableItem !== "none") {
+                  const selectedItem = billableItems?.find(
+                    (item: any) => item.value === selectedBillableItem,
+                  );
+                  if (selectedItem) {
+                    reason = formatBillableItemLabel(selectedItem);
+                  }
+                }
+
+                addPaymentMutation.mutate({
+                  amount: parseFloat(paymentAmount),
+                  paymentMethod: paymentMethod,
+                  reason: reason,
+                });
+              }}
+              disabled={addPaymentMutation.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white"
+              data-testid="button-confirm-payment"
+            >
+              {addPaymentMutation.isPending ? "Processing..." : "Record Payment"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Refund Dialog */}
-      <Dialog
-        open={isRefundDialogOpen}
-        onOpenChange={setIsRefundDialogOpen}
-      >
+      <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Process Refund</DialogTitle>
@@ -5739,7 +5779,7 @@ export default function PatientDetail() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Discount</DialogTitle>
+            <DialogTitle>Apply Discount</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
@@ -5836,7 +5876,8 @@ export default function PatientDetail() {
 
           <Form {...opdVisitForm}>
             <form
-              onSubmit={opdVisitForm.handleSubmit((data) => {                console.log("OPD form submitted with data:", data);
+              onSubmit={opdVisitForm.handleSubmit((data) => {
+                console.log("OPD form submitted with data:", data);
 
                 // Validate required fields
                 if (!data.doctorId) {
