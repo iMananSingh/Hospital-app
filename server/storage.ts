@@ -4400,8 +4400,8 @@ export class SqliteStorage implements IStorage {
       const itemValue = order.orderId;
       const amount = order.totalPrice || 0;
       const paidAmount = paidAmounts.get(itemValue) || 0;
-      // Check both payment amount and order status
-      const isFullyPaid = (paidAmount >= amount) || (order.status === 'paid');
+      // Check both payment amount and order status (status is the most reliable indicator)
+      const isFullyPaid = (order.status === 'paid') || (paidAmount >= amount && amount > 0);
 
       billableItems.push({
         type: "pathology",
