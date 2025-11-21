@@ -60,6 +60,8 @@ import {
   Percent, // Import Percent for discount button
   Zap, // Import Zap for smart billing button
   TicketX, // Import TicketX for refund button
+  TicketCheck, // Import TicketCheck for record payment button
+  TicketPercent, // Import TicketPercent for apply discount button
 } from "lucide-react";
 import {
   insertPatientServiceSchema,
@@ -2420,8 +2422,8 @@ export default function PatientDetail() {
                       className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
                       data-testid="button-add-discount"
                     >
-                      <Minus className="h-4 w-4" />
-                      Add Discount
+                      <TicketPercent className="h-4 w-4" />
+                      Apply Discount
                     </Button>
                     <Button
                       size="sm"
@@ -2429,8 +2431,8 @@ export default function PatientDetail() {
                       className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
                       data-testid="button-add-payment"
                     >
-                      <CreditCard className="h-4 w-4" />
-                      Add Payment
+                      <TicketCheck className="h-4 w-4" />
+                      Record Payment
                     </Button>
                   </>
                 )}
