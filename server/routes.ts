@@ -4353,6 +4353,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
+        // Check if payment is for pathology order and trigger earning calculation
+        if (billableType === "pathology_order" && billableId) {
+          try {
+            console.log(`Payment for pathology order ${billableId}, calculating doctor earning`);
+            
+            // Calculate and create doctor earning for this pathology order
+            await storage.calculatePathologyOrderEarning(billableId);
+            console.log(`Created doctor earning for pathology order ${billableId}`);
+          } catch (earningError) {
+            // Log error but don't fail the payment creation
+            console.error("Error calculating pathology order earning:", earningError);
+          }
+        }
+
         res.json(payment);
       } catch (error: any) {
         console.error("Error creating patient payment:", error);
