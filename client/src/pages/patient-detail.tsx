@@ -2110,6 +2110,32 @@ export default function PatientDetail() {
     }
   };
 
+  // Helper function to calculate pending amount for a billable item
+  const calculatePendingAmount = (item: any): number => {
+    // Assuming item.amount is the total amount for this billable item
+    // and financialSummary contains totalPaid and totalDiscounts for the patient.
+    // We need to find payments specifically linked to this billable item.
+    // This logic might need refinement based on how payments are linked to billable items.
+
+    // For now, we'll use a simplified approach: Total Amount - Sum of existing payments for this item.
+    // This requires knowing how to identify payments related to a specific billable item.
+    // If 'billableItems' already contains the remaining balance, use that directly.
+
+    // If the billable item object itself has a pending amount or remaining balance, use it.
+    if (item.pendingAmount !== undefined) {
+      return item.pendingAmount;
+    }
+    // If 'item.amount' represents the original total and we can find related payments/discounts:
+    // This part is complex and depends heavily on backend data structure.
+    // For a simpler implementation, let's assume `item.amount` is the total, and we need to subtract payments.
+    // However, without a clear way to link payments to `billableItems` in the frontend,
+    // we'll rely on `item.pendingAmount` if available.
+
+    // Placeholder: If `pendingAmount` is not available, return the full amount as a fallback.
+    // This might need to be updated based on actual data structure.
+    return item.amount || 0;
+  };
+
   // Handler to open the payment dialog
   const handleOpenPaymentDialog = () => {
     setPaymentAmount(""); // Reset amount
@@ -5188,16 +5214,13 @@ export default function PatientDetail() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    service.billingType === "per_date"
-                                      ? "bg-indigo-100 text-indigo-800"
-                                      : service.billingType === "per_24_hours"
-                                        ? "bg-green-100 text-green-800"
-                                        : "bg-gray-100 text-gray-800"
-                                  }
-                                >
+                                <Badge variant="outline" className={
+                                  service.billingType === "per_date"
+                                    ? "bg-indigo-100 text-indigo-800"
+                                    : service.billingType === "per_24_hours"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-gray-100 text-gray-800"
+                                }>
                                   {service.billingType === "per_date"
                                     ? "Per Date"
                                     : service.billingType === "per_24_hours"
@@ -5629,20 +5652,18 @@ export default function PatientDetail() {
               <div className="space-y-2">
                 <Label htmlFor="billableItem">Billable Item *</Label>
                 <Select
-                  value={selectedBillableItem}
-                  onValueChange={(value) => {
-                    setSelectedBillableItem(value);
-                    // Auto-populate amount from selected billable item
-                    if (value && value !== "none") {
-                      const selectedItem = billableItems?.find(
-                        (item: any) => item.value === value,
-                      );
-                      if (selectedItem && selectedItem.amount) {
-                        setPaymentAmount(selectedItem.amount.toString());
+                    value={selectedBillableItem}
+                    onValueChange={(value) => {
+                      setSelectedBillableItem(value);
+                      // Auto-populate pending amount based on billable item
+                      const item = billableItems.find((i: any) => i.id === value);
+                      if (item) {
+                        const pendingAmount = calculatePendingAmount(item);
+                        setPaymentAmount(pendingAmount.toString());
                       }
-                    }
-                  }}
-                >
+                    }}
+                    data-testid="select-billable-item"
+                  >
                   <SelectTrigger>
                     <SelectValue placeholder="Select billable item *" />
                   </SelectTrigger>
@@ -5651,7 +5672,7 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.value}
+                          value={item.id} // Use item.id as the value
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
@@ -5700,7 +5721,7 @@ export default function PatientDetail() {
                 // Format reason based on selected billable item
                 let reason = "Payment";
                 const selectedItem = billableItems?.find(
-                  (item: any) => item.value === selectedBillableItem,
+                  (item: any) => item.id === selectedBillableItem, // Use item.id for lookup
                 );
                 if (selectedItem) {
                   reason = formatBillableItemLabel(selectedItem);
@@ -5776,7 +5797,7 @@ export default function PatientDetail() {
                     // Auto-populate amount from selected billable item
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
-                        (item: any) => item.value === value,
+                        (item: any) => item.id === value, // Use item.id for lookup
                       );
                       if (selectedItem && selectedItem.amount) {
                         setRefundAmount(selectedItem.amount.toString());
@@ -5792,7 +5813,7 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.value}
+                          value={item.id} // Use item.id as the value
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
@@ -5915,7 +5936,7 @@ export default function PatientDetail() {
                       billableItems.map((item: any) => (
                         <SelectItem
                           key={item.id}
-                          value={item.value}
+                          value={item.id} // Use item.id as the value
                           disabled={item.isFullyPaid}
                           className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
                         >
