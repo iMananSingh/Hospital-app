@@ -553,8 +553,6 @@ export const patientPayments = sqliteTable("patient_payments", {
   paymentDate: text("payment_date").notNull(),
   reason: text("reason"), // Optional reason/notes for payment
   receiptNumber: text("receipt_number"),
-  billableType: text("billable_type"), // pathology_order, admission, service, opd_visit
-  billableId: text("billable_id"), // ID of the billable item
   processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
@@ -931,6 +929,8 @@ export const insertPatientPaymentSchema = createInsertSchema(patientPayments)
     }),
     paymentDate: z.string().min(1, "Payment date is required"),
     processedBy: z.string().min(1, "Processed by user ID is required"),
+    reason: z.string().optional(),
+    receiptNumber: z.string().optional(),
   });
 
 export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts)

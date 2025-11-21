@@ -4354,13 +4354,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if payment is for pathology order and trigger earning calculation
-        if (billableType === "pathology_order" && billableId) {
+        if (reason && reason.startsWith("Pathology - LAB-")) {
           try {
-            console.log(`Payment for pathology order ${billableId}, calculating doctor earning`);
-            
-            // Calculate and create doctor earning for this pathology order
-            await storage.calculatePathologyOrderEarning(billableId);
-            console.log(`Created doctor earning for pathology order ${billableId}`);
+            // Extract pathology order ID from reason (e.g., "Pathology - LAB-2025-000001")
+            const orderIdMatch = reason.match(/LAB-\d{4}-\d+/);
+            if (orderIdMatch) {
+              const orderId = orderIdMatch[0];
+              console.log(`Payment for pathology order ${orderId}, calculating doctor earning`);
+
+              // First, find the pathology order by its orderId to get the database ID
+              const pathologyOrder = db
+                .select()
+                .from(schema.pathologyOrders)
+                .where(eq(schema.pathologyOrders.orderId, orderId))
+                .get();
+
+              if (pathologyOrder) {
+                // Calculate and create doctor earning for this pathology order
+                await storage.calculatePathologyOrderEarning(pathologyOrder.id);
+                console.log(`Created doctor earning for pathology order ${orderId}`);
+              } else {
+                console.log(`Pathology order ${orderId} not found`);
+              }
+            }
           } catch (earningError) {
             // Log error but don't fail the payment creation
             console.error("Error calculating pathology order earning:", earningError);

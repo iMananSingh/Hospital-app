@@ -4250,10 +4250,6 @@ export class SqliteStorage implements IStorage {
       },
     );
 
-    // Calculate pathology order earning when payment is made for pathology orders
-    if (paymentData.billableType === "pathology_order" && paymentData.billableId) {
-      await this.calculatePathologyOrderEarning(paymentData.billableId);
-    }
 
     return created;
   }
