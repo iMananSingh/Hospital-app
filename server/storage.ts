@@ -4335,6 +4335,22 @@ export class SqliteStorage implements IStorage {
   async getPatientBillableItems(patientId: string): Promise<any[]> {
     const billableItems: any[] = [];
 
+    // Get all payments for this patient to calculate paid amounts
+    const payments = db
+      .select()
+      .from(schema.patientPayments)
+      .where(eq(schema.patientPayments.patientId, patientId))
+      .all();
+
+    // Calculate total paid per billable item (stored in reason field)
+    const paidAmounts = new Map<string, number>();
+    payments.forEach((payment) => {
+      if (payment.reason) {
+        const current = paidAmounts.get(payment.reason) || 0;
+        paidAmounts.set(payment.reason, current + (payment.amount || 0));
+      }
+    });
+
     // 1. Get all admissions
     const admissions = db
       .select({
@@ -4350,13 +4366,19 @@ export class SqliteStorage implements IStorage {
       .all();
 
     admissions.forEach((admission) => {
+      const itemValue = `Admission - ${admission.admissionId}`;
+      const amount = admission.dailyCost || 0;
+      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const isFullyPaid = paidAmount >= amount;
+
       billableItems.push({
         type: "admission",
         id: admission.id,
         label: `Admission - ${admission.admissionId}`,
-        value: `Admission - ${admission.admissionId}`,
+        value: itemValue,
         date: admission.admissionDate,
-        amount: admission.dailyCost || 0,
+        amount,
+        isFullyPaid,
       });
     });
 
@@ -4375,13 +4397,19 @@ export class SqliteStorage implements IStorage {
       .all();
 
     pathologyOrders.forEach((order) => {
+      const itemValue = order.orderId;
+      const amount = order.totalPrice || 0;
+      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const isFullyPaid = paidAmount >= amount;
+
       billableItems.push({
         type: "pathology",
         id: order.id,
         label: `Pathology - ${order.orderId}`,
-        value: order.orderId,
+        value: itemValue,
         date: order.orderedDate,
-        amount: order.totalPrice || 0,
+        amount,
+        isFullyPaid,
       });
     });
 
@@ -4416,13 +4444,19 @@ export class SqliteStorage implements IStorage {
 
     serviceOrderMap.forEach((orderData, orderId) => {
       const identifier = orderData.receipt || orderId;
+      const itemValue = `Service Order - ${identifier}`;
+      const amount = orderData.total;
+      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const isFullyPaid = paidAmount >= amount;
+
       billableItems.push({
         type: "service",
         id: orderId,
         label: `Service Order - ${identifier}`,
-        value: `Service Order - ${identifier}`,
+        value: itemValue,
         date: orderData.date,
-        amount: orderData.total,
+        amount,
+        isFullyPaid,
       });
     });
 
@@ -4445,13 +4479,19 @@ export class SqliteStorage implements IStorage {
       .all();
 
     opdVisits.forEach((visit) => {
+      const itemValue = `OPD Visit - ${visit.visitId}`;
+      const amount = visit.consultationFee || 0;
+      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const isFullyPaid = paidAmount >= amount;
+
       billableItems.push({
         type: "opd",
         id: visit.id,
         label: `OPD Visit - ${visit.visitId}`,
-        value: `OPD Visit - ${visit.visitId}`,
+        value: itemValue,
         date: visit.scheduledDate,
-        amount: visit.consultationFee || 0,
+        amount,
+        isFullyPaid,
       });
     });
 
