@@ -4292,7 +4292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
       try {
         const { patientId } = req.params;
-        const { amount, paymentMethod, reason, paymentDate, billableType, billableId } = req.body;
+        const { amount, paymentMethod, reason, paymentDate } = req.body;
 
         // Verify user ID exists
         if (!req.user?.id) {
@@ -4309,8 +4309,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             reason: reason || "Payment",
             paymentDate: paymentDate || new Date().toISOString(),
             processedBy: req.user.id,
-            billableType,
-            billableId,
           },
           req.user.id,
         );
@@ -4354,20 +4352,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if payment is for pathology order and trigger earning calculation
-        if (reason && reason.startsWith("Pathology - LAB-")) {
+        if (reason && reason.includes("Pathology")) {
           try {
             // Extract pathology order ID from reason (e.g., "Pathology - LAB-2025-000001")
-            const orderIdMatch = reason.match(/LAB-\d{4}-\d+/);
+            const orderIdMatch = reason.match(/LAB-[\d\-]+/);
             if (orderIdMatch) {
               const orderId = orderIdMatch[0];
               console.log(`Payment for pathology order ${orderId}, calculating doctor earning`);
 
-              // First, find the pathology order by its orderId to get the database ID
-              const pathologyOrder = db
-                .select()
-                .from(schema.pathologyOrders)
-                .where(eq(schema.pathologyOrders.orderId, orderId))
-                .get();
+              // Get all pathology orders and find by orderId
+              const allOrders = await storage.getPathologyOrders();
+              const pathologyOrder = allOrders.find((order: any) => order.orderId === orderId);
 
               if (pathologyOrder) {
                 // Calculate and create doctor earning for this pathology order
