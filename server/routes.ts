@@ -4332,20 +4332,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const patient = await storage.getPatientById(patientId);
 
         // Check if payment is for OPD visit and trigger commission calculation
-        if (reason && reason.startsWith("OPD Visit - VIS-")) {
+        if (billableType === "opd_visit" && billableId) {
           try {
-            // Extract visit ID from reason (e.g., "OPD Visit - VIS-2025-000001")
-            const visitIdMatch = reason.match(/VIS-\d{4}-\d+/);
-            if (visitIdMatch) {
-              const visitId = visitIdMatch[0];
-              console.log(`Payment for OPD visit ${visitId}, calculating commission`);
+            console.log(`Payment for OPD visit ${billableId}, calculating commission`);
 
-              // Calculate and create doctor earning for this visit
-              // This method also updates the visit status to completed
-              const earning = await storage.calculateDoctorEarningForVisit(visitId);
-              if (earning) {
-                console.log(`Created doctor earning: ${earning.earningId} for ₹${earning.earnedAmount}`);
-              }
+            // Calculate and create doctor earning for this visit
+            // This method also updates the visit status to completed
+            const earning = await storage.calculateDoctorEarningForVisit(billableId);
+            if (earning) {
+              console.log(`Created doctor earning: ${earning.earningId} for ₹${earning.earnedAmount}`);
             }
           } catch (earningError) {
             // Log error but don't fail the payment creation
