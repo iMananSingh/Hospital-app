@@ -5706,28 +5706,59 @@ export default function PatientDetail() {
 
           <div className="py-4">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Refund Amount *</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={refundAmount}
-                  onChange={(e) => setRefundAmount(e.target.value)}
-                  placeholder="Enter refund amount"
-                  data-testid="input-refund-amount"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="refundAmount">Refund Amount *</Label>
+                  <Input
+                    id="refundAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    data-testid="input-refund-amount"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="refundMethod">Refund Method</Label>
+                  <Select value={refundMethod} onValueChange={setRefundMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select refund method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Reason for Refund</Label>
-                <Input
-                  type="text"
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Enter reason for refund (optional)"
-                  data-testid="input-refund-reason"
-                />
+                <Label htmlFor="refundBillableItem">Billable Item</Label>
+                <Select
+                  value={selectedRefundBillableItem}
+                  onValueChange={setSelectedRefundBillableItem}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select billable item (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {billableItems && billableItems.length > 0 ? (
+                      billableItems.map((item: any) => (
+                        <SelectItem key={item.id} value={item.value}>
+                          {formatBillableItemLabel(item)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No billable items available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -5747,7 +5778,7 @@ export default function PatientDetail() {
                 if (amount > 0) {
                   addRefundMutation.mutate({
                     amount: amount,
-                    reason: refundReason.trim() || "Manual refund",
+                    reason: "Manual refund",
                   });
                 } else {
                   toast({
@@ -5784,28 +5815,57 @@ export default function PatientDetail() {
 
           <div className="py-4">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Discount Amount *</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={discountAmount}
-                  onChange={(e) => setDiscountAmount(e.target.value)}
-                  placeholder="Enter discount amount"
-                  data-testid="input-discount-amount"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="discountAmount">Discount Amount *</Label>
+                  <Input
+                    id="discountAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={discountAmount}
+                    onChange={(e) => setDiscountAmount(e.target.value)}
+                    placeholder="Enter discount amount"
+                    data-testid="input-discount-amount"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountReason">Reason for Discount</Label>
+                  <Input
+                    id="discountReason"
+                    type="text"
+                    value={discountReason}
+                    onChange={(e) => setDiscountReason(e.target.value)}
+                    placeholder="Enter reason (optional)"
+                    data-testid="input-discount-reason"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Reason for Discount</Label>
-                <Input
-                  type="text"
-                  value={discountReason}
-                  onChange={(e) => setDiscountReason(e.target.value)}
-                  placeholder="Enter reason for discount (optional)"
-                  data-testid="input-discount-reason"
-                />
+                <Label htmlFor="discountBillableItem">Billable Item</Label>
+                <Select
+                  value={selectedDiscountBillableItem}
+                  onValueChange={setSelectedDiscountBillableItem}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select billable item (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {billableItems && billableItems.length > 0 ? (
+                      billableItems.map((item: any) => (
+                        <SelectItem key={item.id} value={item.value}>
+                          {formatBillableItemLabel(item)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>
+                        No billable items available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
