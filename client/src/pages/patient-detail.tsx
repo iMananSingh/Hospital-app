@@ -5649,7 +5649,12 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem key={item.id} value={item.value}>
+                        <SelectItem 
+                          key={item.id} 
+                          value={item.value}
+                          disabled={item.isFullyPaid}
+                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                        >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
@@ -5785,7 +5790,12 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem key={item.id} value={item.value}>
+                        <SelectItem 
+                          key={item.id} 
+                          value={item.value}
+                          disabled={item.isFullyPaid}
+                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                        >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
@@ -5903,7 +5913,12 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => (
-                        <SelectItem key={item.id} value={item.value}>
+                        <SelectItem 
+                          key={item.id} 
+                          value={item.value}
+                          disabled={item.isFullyPaid}
+                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                        >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
