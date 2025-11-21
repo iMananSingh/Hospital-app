@@ -136,6 +136,9 @@ export default function PatientDetail() {
   const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountReason, setDiscountReason] = useState("");
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [refundReason, setRefundReason] = useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
@@ -1720,6 +1723,52 @@ export default function PatientDetail() {
     },
   });
 
+  const addRefundMutation = useMutation({
+    mutationFn: async (data: {
+      amount: number;
+      reason: string;
+    }) => {
+      const response = await fetch(`/api/patients/${patientId}/refunds`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({
+          amount: data.amount,
+          reason: data.reason,
+          refundDate: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to add refund");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "financial-summary"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/all-earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
+      setIsRefundDialogOpen(false);
+      setRefundAmount("");
+      setRefundReason("");
+      toast({
+        title: "Refund processed successfully",
+        description: "The refund has been applied.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error processing refund",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const addDiscountMutation = useMutation({
     mutationFn: async (data: {
       amount: number;
@@ -2347,6 +2396,19 @@ export default function PatientDetail() {
                   return !userRoles.includes("receptionist");
                 })() && (
                   <>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setRefundAmount("");
+                        setRefundReason("");
+                        setIsRefundDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      data-testid="button-add-refund"
+                    >
+                      <Minus className="h-4 w-4" />
+                      Refund
+                    </Button>
                     <Button
                       size="sm"
                       onClick={() => {
@@ -5585,6 +5647,84 @@ export default function PatientDetail() {
                 Cancel
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Dialog */}
+      <Dialog
+        open={isRefundDialogOpen}
+        onOpenChange={setIsRefundDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Refund</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Refund Amount *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                  placeholder="Enter refund amount"
+                  data-testid="input-refund-amount"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Reason for Refund</Label>
+                <Input
+                  type="text"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Enter reason for refund (optional)"
+                  data-testid="input-refund-reason"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsRefundDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const amount = parseFloat(refundAmount);
+
+                if (amount > 0) {
+                  addRefundMutation.mutate({
+                    amount: amount,
+                    reason: refundReason.trim() || "Manual refund",
+                  });
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Please enter a valid refund amount.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={
+                addRefundMutation.isPending ||
+                !refundAmount ||
+                parseFloat(refundAmount) <= 0
+              }
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {addRefundMutation.isPending
+                ? "Processing Refund..."
+                : "Process Refund"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
