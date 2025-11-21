@@ -4332,9 +4332,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log activity for payment
         const patient = await storage.getPatientById(patientId);
 
-        console.log(`=== Payment created ===`);
-        console.log(`Reason: "${reason}"`);
-        console.log(`Patient ID: ${patientId}`);
+        console.log("=== Payment created ===");
+        console.log('Reason:', reason);
+        console.log('Patient ID:', patientId);
 
         // Check if payment is for OPD visit and trigger commission calculation
         if (reason && reason.startsWith("OPD Visit - VIS-")) {
@@ -4379,33 +4379,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`🔍 Searching for order with ID: ${orderId}`);
               console.log(`Order found: ${!!pathologyOrder}`);
 
-              if (pathologyOrder) {
-                console.log(`✓ Order found! Database ID: ${pathologyOrder.order.id}, Total: ₹${pathologyOrder.order.totalPrice}`);
-                // Calculate and create doctor earning for this pathology order
-                await storage.calculatePathologyOrderEarning(pathologyOrder.order.id);
-                console.log(`✓ Created doctor earning for pathology order ${orderId}`);
+              if (pathologyOrder && pathologyOrder.order) {
+                const order = pathologyOrder.order;
+                console.log(`✓ Order found! Database ID: ${order.id}, Total: ₹${order.totalPrice}`);
 
-                // Only update order status to paid if payment amount matches order total
-                const paymentAmount = validatedData.amount;
-                const orderTotal = pathologyOrder.order.totalPrice;
+                // Calculate doctor earnings if order has a doctor
+                if (order.doctorId) {
+                  try {
+                    await storage.calculatePathologyOrderEarning(order.id);
+                    console.log(`✓ Created doctor earning for pathology order ${orderId}`);
+                  } catch (earningError) {
+                    console.error('Error creating doctor earning:', earningError);
+                  }
+                }
 
-                if (paymentAmount >= orderTotal) {
-                  console.log(`✓ Payment amount (₹${paymentAmount}) matches or exceeds order total (₹${orderTotal}), updating status to "paid"`);
+                // Calculate total payments made for this specific pathology order
+                const allPatientPayments = await storage.getPatientPayments(patientId);
+                const pathologyPaymentsForOrder = allPatientPayments.filter((p: any) =>
+                  p.reason && p.reason.includes(orderId)
+                );
+                const totalPaid = pathologyPaymentsForOrder.reduce((sum: number, p: any) => sum + p.amount, 0);
+
+                console.log(`💰 Total payments for order ${orderId}: ₹${totalPaid} (including current payment of ₹${amount})`);
+                console.log(`📊 Order total: ₹${order.totalPrice}`);
+
+                // Check if total payments match or exceed order total to mark as paid
+                if (totalPaid >= order.totalPrice) {
+                  console.log(`✓ Total payments (₹${totalPaid}) meet or exceed order total (₹${order.totalPrice}), updating status to "paid"`);
+                  try {
+                    await storage.updatePathologyOrderStatus(order.id, 'paid');
+                    console.log(`✓ Updated order status to "paid" for ${orderId}`);
+                  } catch (statusError) {
+                    console.error('Error updating order status:', statusError);
+                  }
                 } else {
-                  console.log(`⚠ Partial payment detected: ₹${paymentAmount} paid out of ₹${orderTotal} total, keeping status as "${pathologyOrder.order.status}"`);
+                  console.log(`ℹ️ Total payments (₹${totalPaid}) still less than order total (₹${order.totalPrice}), remaining: ₹${order.totalPrice - totalPaid}`);
                 }
-
-                console.log(`✓ Updated order status to "${paymentAmount >= orderTotal ? 'paid' : pathologyOrder.order.status}" for ${orderId}`);
-
-                // Update pathology order status to paid only if full amount is received
-                if (paymentAmount >= orderTotal) {
-                  await storage.updatePathologyOrderStatus(pathologyOrder.order.id, 'paid');
-                }
-                // If partial payment, keep current status (ordered, collected, processing, etc.)
-
               } else {
-                console.log(`✗ Pathology order ${orderId} not found in database`);
-                console.log(`Available orders: ${allOrders.map((o: any) => o.order?.orderId).join(", ")}`);
+                console.log(`⚠️  Could not find pathology order with ID: ${orderId}`);
               }
             } else {
               console.log(`✗ Failed to extract order ID from reason: "${reason}"`);
