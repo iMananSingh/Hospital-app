@@ -1991,7 +1991,7 @@ export class SqliteStorage implements IStorage {
       await this.createDoctorEarning({
         doctorId: pathologyOrder.doctorId,
         patientId: pathologyOrder.patientId,
-        serviceId: null,
+        serviceId: "pathology-lab",
         patientServiceId: null,
         serviceName: pathologyRate.serviceName || "Pathology Lab (All Tests)",
         serviceCategory: "pathology",
