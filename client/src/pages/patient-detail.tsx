@@ -5691,7 +5691,7 @@ export default function PatientDetail() {
               className="bg-green-600 hover:bg-green-700 text-white"
               data-testid="button-confirm-payment"
             >
-              {addPaymentMutation.isPending ? "Processing..." : "Record Payment"}
+              {addPaymentMutation.isPending ? "Processing..." : "Record"}
             </Button>
           </div>
         </DialogContent>
@@ -5765,8 +5765,8 @@ export default function PatientDetail() {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {addRefundMutation.isPending
-                ? "Processing Refund..."
-                : "Process Refund"}
+                ? "Processing..."
+                : "Refund"}
             </Button>
           </div>
         </DialogContent>
@@ -5841,11 +5841,11 @@ export default function PatientDetail() {
                 !discountAmount ||
                 parseFloat(discountAmount) <= 0
               }
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-amber-500 hover:bg-amber-600 text-white"
             >
               {addDiscountMutation.isPending
-                ? "Adding Discount..."
-                : "Add Discount"}
+                ? "Applying..."
+                : "Apply"}
             </Button>
           </div>
         </DialogContent>
