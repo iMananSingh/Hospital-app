@@ -5627,13 +5627,24 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="billableItem">Billable Item</Label>
+                <Label htmlFor="billableItem">Billable Item *</Label>
                 <Select
                   value={selectedBillableItem}
-                  onValueChange={setSelectedBillableItem}
+                  onValueChange={(value) => {
+                    setSelectedBillableItem(value);
+                    // Auto-populate amount from selected billable item
+                    if (value && value !== "none") {
+                      const selectedItem = billableItems?.find(
+                        (item: any) => item.value === value,
+                      );
+                      if (selectedItem && selectedItem.amount) {
+                        setPaymentAmount(selectedItem.amount.toString());
+                      }
+                    }
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select billable item (optional)" />
+                    <SelectValue placeholder="Select billable item *" />
                   </SelectTrigger>
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
@@ -5663,6 +5674,15 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
+                if (!selectedBillableItem || selectedBillableItem === "none") {
+                  toast({
+                    title: "Missing Selection",
+                    description: "Please select a billable item",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
                 if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
                   toast({
                     title: "Invalid Amount",
@@ -5674,14 +5694,11 @@ export default function PatientDetail() {
 
                 // Format reason based on selected billable item
                 let reason = "Payment";
-
-                if (selectedBillableItem && selectedBillableItem !== "none") {
-                  const selectedItem = billableItems?.find(
-                    (item: any) => item.value === selectedBillableItem,
-                  );
-                  if (selectedItem) {
-                    reason = formatBillableItemLabel(selectedItem);
-                  }
+                const selectedItem = billableItems?.find(
+                  (item: any) => item.value === selectedBillableItem,
+                );
+                if (selectedItem) {
+                  reason = formatBillableItemLabel(selectedItem);
                 }
 
                 addPaymentMutation.mutate({
@@ -5690,7 +5707,13 @@ export default function PatientDetail() {
                   reason: reason,
                 });
               }}
-              disabled={addPaymentMutation.isPending}
+              disabled={
+                addPaymentMutation.isPending ||
+                !selectedBillableItem ||
+                selectedBillableItem === "none" ||
+                !paymentAmount ||
+                parseFloat(paymentAmount) <= 0
+              }
               className="bg-green-600 hover:bg-green-700 text-white"
               data-testid="button-confirm-payment"
             >
@@ -5740,13 +5763,24 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="refundBillableItem">Billable Item</Label>
+                <Label htmlFor="refundBillableItem">Billable Item *</Label>
                 <Select
                   value={selectedRefundBillableItem}
-                  onValueChange={setSelectedRefundBillableItem}
+                  onValueChange={(value) => {
+                    setSelectedRefundBillableItem(value);
+                    // Auto-populate amount from selected billable item
+                    if (value && value !== "none") {
+                      const selectedItem = billableItems?.find(
+                        (item: any) => item.value === value,
+                      );
+                      if (selectedItem && selectedItem.amount) {
+                        setRefundAmount(selectedItem.amount.toString());
+                      }
+                    }
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select billable item (optional)" />
+                    <SelectValue placeholder="Select billable item *" />
                   </SelectTrigger>
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
@@ -5776,6 +5810,15 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
+                if (!selectedRefundBillableItem || selectedRefundBillableItem === "none") {
+                  toast({
+                    title: "Missing Selection",
+                    description: "Please select a billable item",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
                 const amount = parseFloat(refundAmount);
 
                 if (amount > 0) {
@@ -5793,6 +5836,8 @@ export default function PatientDetail() {
               }}
               disabled={
                 addRefundMutation.isPending ||
+                !selectedRefundBillableItem ||
+                selectedRefundBillableItem === "none" ||
                 !refundAmount ||
                 parseFloat(refundAmount) <= 0
               }
@@ -5847,13 +5892,13 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="discountBillableItem">Billable Item</Label>
+                <Label htmlFor="discountBillableItem">Billable Item *</Label>
                 <Select
                   value={selectedDiscountBillableItem}
                   onValueChange={setSelectedDiscountBillableItem}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select billable item (optional)" />
+                    <SelectValue placeholder="Select billable item *" />
                   </SelectTrigger>
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
@@ -5883,6 +5928,15 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
+                if (!selectedDiscountBillableItem || selectedDiscountBillableItem === "none") {
+                  toast({
+                    title: "Missing Selection",
+                    description: "Please select a billable item",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
                 const amount = parseFloat(discountAmount);
 
                 if (amount > 0) {
@@ -5901,6 +5955,8 @@ export default function PatientDetail() {
               }}
               disabled={
                 addDiscountMutation.isPending ||
+                !selectedDiscountBillableItem ||
+                selectedDiscountBillableItem === "none" ||
                 !discountAmount ||
                 parseFloat(discountAmount) <= 0
               }
