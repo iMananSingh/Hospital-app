@@ -4301,15 +4301,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ message: "User authentication required" });
         }
 
+        const validatedData = insertPatientPaymentSchema.parse({
+          patientId,
+          amount,
+          paymentMethod,
+          reason: reason || "Payment",
+          paymentDate: paymentDate || new Date().toISOString(),
+          processedBy: req.user.id,
+        });
+
+
         const payment = await storage.createPatientPayment(
-          {
-            patientId,
-            amount,
-            paymentMethod,
-            reason: reason || "Payment",
-            paymentDate: paymentDate || new Date().toISOString(),
-            processedBy: req.user.id,
-          },
+          validatedData,
           req.user.id,
         );
 
@@ -4363,7 +4366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Extract pathology order ID from reason (e.g., "Pathology - LAB-2025-000001")
             const orderIdMatch = reason.match(/LAB-[\d\-]+/);
             console.log(`Order ID match result: ${JSON.stringify(orderIdMatch)}`);
-            
+
             if (orderIdMatch) {
               const orderId = orderIdMatch[0];
               console.log(`🔍 Extracted order ID: ${orderId}`);
@@ -4371,7 +4374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get all pathology orders and find by orderId
               const allOrders = await storage.getPathologyOrders();
               console.log(`📋 Found ${allOrders.length} total pathology orders`);
-              
+
               const pathologyOrder = allOrders.find((order: any) => order.order?.orderId === orderId);
               console.log(`🔍 Searching for order with ID: ${orderId}`);
               console.log(`Order found: ${!!pathologyOrder}`);
@@ -4381,9 +4384,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 // Calculate and create doctor earning for this pathology order
                 await storage.calculatePathologyOrderEarning(pathologyOrder.order.id);
                 console.log(`✓ Created doctor earning for pathology order ${orderId}`);
-                // Auto-update order status to "paid" when payment is created
-                await storage.updatePathologyOrderStatus(pathologyOrder.order.id, "paid");
-                console.log(`✓ Updated order status to "paid" for ${orderId}`);
+
+                // Only update order status to paid if payment amount matches order total
+                const paymentAmount = validatedData.amount;
+                const orderTotal = pathologyOrder.order.totalPrice;
+
+                if (paymentAmount >= orderTotal) {
+                  console.log(`✓ Payment amount (₹${paymentAmount}) matches or exceeds order total (₹${orderTotal}), updating status to "paid"`);
+                } else {
+                  console.log(`⚠ Partial payment detected: ₹${paymentAmount} paid out of ₹${orderTotal} total, keeping status as "${pathologyOrder.order.status}"`);
+                }
+
+                console.log(`✓ Updated order status to "${paymentAmount >= orderTotal ? 'paid' : pathologyOrder.order.status}" for ${orderId}`);
+
+                // Update pathology order status to paid only if full amount is received
+                if (paymentAmount >= orderTotal) {
+                  await storage.updatePathologyOrderStatus(pathologyOrder.order.id, 'paid');
+                }
+                // If partial payment, keep current status (ordered, collected, processing, etc.)
+
               } else {
                 console.log(`✗ Pathology order ${orderId} not found in database`);
                 console.log(`Available orders: ${allOrders.map((o: any) => o.order?.orderId).join(", ")}`);
