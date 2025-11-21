@@ -5779,7 +5779,7 @@ export default function PatientDetail() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Apply Discount</DialogTitle>
+            <DialogTitle>Add Discount</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
