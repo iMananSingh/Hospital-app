@@ -2419,7 +2419,7 @@ export default function PatientDetail() {
                         setDiscountReason("");
                         setIsDiscountDialogOpen(true);
                       }}
-                      className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+                      className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white"
                       data-testid="button-add-discount"
                     >
                       <TicketPercent className="h-4 w-4" />
