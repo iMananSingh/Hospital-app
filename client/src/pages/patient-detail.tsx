@@ -5573,7 +5573,7 @@ export default function PatientDetail() {
                     );
                     if (selectedItem) {
                       reason = formatBillableItemLabel(selectedItem);
-                      billableId = selectedItem.value;
+                      billableId = selectedItem.id;
                       
                       // Map item type to billableType
                       if (selectedItem.type === "pathology") {
