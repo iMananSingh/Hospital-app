@@ -1,0 +1,102 @@
+PS F:\Projects\HMSync App\MediCareFlow-V84-Flyio> fly logs --app hmsync-newhch-mandla -n
+2025-11-22T21:18:15Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:16Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:16Z proxy[683d441b3d4e58] bom [error][PR03] could not find a good candidate within 1 attempts at load balancing. last error: [PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:17Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:17Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:19Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:19Z proxy[683d441b3d4e58] bom [error][PR03] could not find a good candidate within 1 attempts at load balancing. last error: [PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:20Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:20Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:22Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:22Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:23Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:23Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:25Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:25Z proxy[683d441b3d4e58] bom [error][PR03] could not find a good candidate within 1 attempts at load balancing. last error: [PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:26Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:26Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:27Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:27Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:28Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:28Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:30Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:30Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:32Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:32Z proxy[683d441b3d4e58] bom [error][PR03] could not find a good candidate within 1 attempts at load balancing. last error: [PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:33Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:33Z proxy[683d441b3d4e58] bom [error][PM07] failed to change machine state: machine still active, refusing to start
+2025-11-22T21:18:33Z app[683d441b3d4e58] bom [info]2025-11-22T21:18:33.649898847 [01KAPPSNHEGKKBHBQ1DX7RJKB7:main] Running Firecracker v1.12.1
+2025-11-22T21:18:33Z app[683d441b3d4e58] bom [info]2025-11-22T21:18:33.650047559 [01KAPPSNHEGKKBHBQ1DX7RJKB7:main] Listening on API socket ("/fc.sock").
+2025-11-22T21:18:34Z proxy fra [error][PR04] could not find a good candidate within 40 attempts at load balancing
+2025-11-22T21:18:34Z proxy[683d441b3d4e58] bom [info]Starting machine
+2025-11-22T21:18:34Z proxy[683d441b3d4e58] bom [error][PM01] machines API returned an error: "machine still attempting to start"
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO Starting init (commit: 6f59af0a)...
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO Checking filesystem on /data
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]/dev/vdc: clean, 11/64512 files, 8785/258048 blocks
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO Resized /data to 1056964608 bytes
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO Preparing to run: `docker-entrypoint.sh node ./dbsetup.js node dist/index.js` as root
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info] INFO [fly api proxy] listening at /.fly/api
+2025-11-22T21:18:34Z runner[683d441b3d4e58] bom [info]Machine started in 1.295s
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]2025/11/22 21:18:34 INFO SSH listening listen_address=[fdaa:35:e0cd:a7b:176:729e:7a95:2]:22
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]node:internal/modules/cjs/loader:1210
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]  throw err;
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]  ^
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]Error: Cannot find module '/app/dbsetup.js'
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]    at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]    at node:internal/main/run_main_module:28:49 {
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]  code: 'MODULE_NOT_FOUND',
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]  requireStack: []
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]}
+2025-11-22T21:18:34Z app[683d441b3d4e58] bom [info]Node.js v20.19.5
+2025-11-22T21:18:35Z app[683d441b3d4e58] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T21:18:35Z app[683d441b3d4e58] bom [info] INFO Starting clean up.
+2025-11-22T21:18:35Z app[683d441b3d4e58] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T21:18:35Z app[683d441b3d4e58] bom [info][    1.937803] reboot: Restarting system
+2025-11-22T21:18:43Z app[683d441b3d4e58] bom [info]2025-11-22T21:18:43.795884821 [01KAPPSNHEGKKBHBQ1DX7RJKB7:main] Running Firecracker v1.12.1
+2025-11-22T21:18:43Z app[683d441b3d4e58] bom [info]2025-11-22T21:18:43.796018575 [01KAPPSNHEGKKBHBQ1DX7RJKB7:main] Listening on API socket ("/fc.sock").
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO Starting init (commit: 6f59af0a)...
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO Checking filesystem on /data
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info]/dev/vdc: clean, 11/64512 files, 8785/258048 blocks
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO Resized /data to 1056964608 bytes
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO Preparing to run: `docker-entrypoint.sh node ./dbsetup.js node dist/index.js` as root
+2025-11-22T21:18:44Z app[683d441b3d4e58] bom [info] INFO [fly api proxy] listening at /.fly/api
+2025-11-22T21:18:44Z runner[683d441b3d4e58] bom [info]Machine started in 1.203s
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]2025/11/22 21:18:45 INFO SSH listening listen_address=[fdaa:35:e0cd:a7b:176:729e:7a95:2]:22
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]node:internal/modules/cjs/loader:1210
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]  throw err;
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]  ^
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]Error: Cannot find module '/app/dbsetup.js'
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]    at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]    at Module._load (node:internal/modules/cjs/loader:1038:27)
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:164:12)
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]    at node:internal/main/run_main_module:28:49 {
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]  code: 'MODULE_NOT_FOUND',
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]  requireStack: []
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]}
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info]Node.js v20.19.5
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info] INFO Starting clean up.
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T21:18:45Z app[683d441b3d4e58] bom [info][    1.936863] reboot: Restarting system
+2025-11-22T21:18:46Z runner[683d441b3d4e58] bom [info]machine has reached its max restart count of 10
+2025-11-22T21:34:20Z runner[683d441b3d4e58] bom [info]Pulling container image registry.fly.io/hmsync-newhch-mandla@sha256:ab5987a8062f16f0b1b48676ff874c696c27374bc285bdf1899dfd17c9497220
+2025-11-22T21:34:22Z runner[683d441b3d4e58] bom [info]Successfully prepared image registry.fly.io/hmsync-newhch-mandla@sha256:ab5987a8062f16f0b1b48676ff874c696c27374bc285bdf1899dfd17c9497220 (1.580550267s)
+2025-11-22T21:34:22Z runner[683d441b3d4e58] bom [info]Setting up volume 'data'
+2025-11-22T21:34:22Z runner[683d441b3d4e58] bom [info]Opening encrypted volume
+2025-11-22T21:34:23Z runner[683d441b3d4e58] bom [info]Configuring firecracker
+2025-11-22T21:44:51Z runner[683d441b3d4e58] bom [info]Pulling container image registry.fly.io/hmsync-newhch-mandla@sha256:a0f2b59100cbf19bc6251289dbda6e853deb02249797a51294cf67326ff0aa79
+2025-11-22T21:44:51Z runner[683d441b3d4e58] bom [info]Container image registry.fly.io/hmsync-newhch-mandla@sha256:a0f2b59100cbf19bc6251289dbda6e853deb02249797a51294cf67326ff0aa79 already prepared
+2025-11-22T21:44:51Z runner[683d441b3d4e58] bom [info]Setting up volume 'data'
+2025-11-22T21:44:51Z runner[683d441b3d4e58] bom [info]Opening encrypted volume
+2025-11-22T21:44:52Z runner[683d441b3d4e58] bom [info]Configuring firecracker
+2025-11-22T22:08:39Z runner[683d441b3d4e58] bom [info]Pulling container image registry.fly.io/hmsync-newhch-mandla@sha256:d6d8c0caf2abd8c73d67c035177de62390c8156cac90b8a72fba06ff0da9b198
+2025-11-22T22:08:41Z runner[683d441b3d4e58] bom [info]Successfully prepared image registry.fly.io/hmsync-newhch-mandla@sha256:d6d8c0caf2abd8c73d67c035177de62390c8156cac90b8a72fba06ff0da9b198 (2.213928718s)
+2025-11-22T22:08:41Z runner[683d441b3d4e58] bom [info]Setting up volume 'data'
+2025-11-22T22:08:41Z runner[683d441b3d4e58] bom [info]Opening encrypted volume
+2025-11-22T22:08:42Z runner[683d441b3d4e58] bom [info]Configuring firecracker
+PS F:\Projects\HMSync App\MediCareFlow-V84-Flyio>
