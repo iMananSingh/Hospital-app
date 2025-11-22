@@ -39,6 +39,7 @@ RUN mkdir -p /data
 
 # Set environment variables
 ENV NODE_ENV=production
+ENV PORT=8080
 ENV DATABASE_PATH=/data/hospital.db
 
 # Expose port
