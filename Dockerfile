@@ -33,7 +33,7 @@ RUN npm ci --only=production
 # Copy built application from build stage
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/client ./client
-COPY hospital.db /data/hospital.db
+COPY --from=base /app/hospital.db /data/hospital.db
 
 # Create data directory for volume mount
 RUN mkdir -p /data && chmod 777 /data
