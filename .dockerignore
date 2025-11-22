@@ -1,0 +1,53 @@
+# Node modules
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Git
+.git
+.gitignore
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Replit specific
+.replit
+replit.nix
+.config
+.local
+.cache
+.upm
+
+# Build artifacts (we'll rebuild in Docker)
+dist
+
+# Testing
+coverage
+.nyc_output
+
+# Logs
+*.log
+logs
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Database (will be created in mounted volume)
+*.db
+*.sqlite
+*.sqlite3
