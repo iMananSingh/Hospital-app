@@ -34,6 +34,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 22, 2025** - Fly.io Deployment Preparation
+- Prepared complete deployment configuration for Fly.io hosting platform
+- Created multi-stage Dockerfile with proper build and production stages
+- Configured fly.toml with always-on deployment (min 1 machine), health checks, and 3GB persistent volume for SQLite
+- Updated database path to use /app/data volume mount in production environment
+- Added /api/health endpoint for Fly.io health monitoring
+- Created comprehensive DEPLOYMENT.md guide with step-by-step instructions for:
+  - Fly.io deployment process
+  - Custom domain configuration with SSL
+  - Database backup strategies
+  - Cost monitoring (stays within $10/month free allowance)
+- Build verified successfully: frontend bundles to dist/public, backend to dist/index.js
+
 **November 20, 2025** - Doctor Payment History Tab
 - Added "Payments" tab to doctor detail page to display payment history
 - Implemented new backend storage method `getDoctorPayments(doctorId)` to filter payments by specific doctor
