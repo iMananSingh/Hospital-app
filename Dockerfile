@@ -1,5 +1,5 @@
 # Use Node.js 20 Alpine for smaller image size
-FROM node:20-alpine AS base
+FROM node:20-alpine AS builder
 
 # Install build dependencies needed for better-sqlite3
 RUN apk add --no-cache python3 make g++
@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci && npm cache clean --force
 
 # Copy application code
 COPY . .
@@ -26,10 +26,14 @@ RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
-# Copy built application and node_modules from base stage
-COPY --from=base /app/dist ./dist
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./package.json
+# Copy package files
+COPY package*.json ./
+
+# Install ONLY production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
 
 # Create directory for SQLite database with proper permissions
 RUN mkdir -p /app/data && chown -R node:node /app/data
@@ -37,7 +41,7 @@ RUN mkdir -p /app/data && chown -R node:node /app/data
 # Use non-root user for security
 USER node
 
-# Expose port (Fly.io typically uses 8080)
+# Expose port (Fly.io uses 8080)
 EXPOSE 8080
 
 # Use dumb-init to handle signals properly
