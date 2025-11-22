@@ -26,9 +26,10 @@ RUN apk add --no-cache sqlite
 
 WORKDIR /app
 
-# Copy package files and install production dependencies only
+# Copy package files and install all dependencies
+# (vite is needed by the server code even in production)
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # Copy built application from build stage
 COPY --from=base /app/dist ./dist

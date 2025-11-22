@@ -1,0 +1,101 @@
+PS F:\Projects\HMSync App\MediCareFlow-V84-Flyio> fly logs --app hmsync-newhch-mandla -n
+2025-11-22T22:28:53Z app[1857556f0159d8] bom [info]  code: 'ERR_MODULE_NOT_FOUND'
+2025-11-22T22:28:53Z app[1857556f0159d8] bom [info]}
+2025-11-22T22:28:53Z app[1857556f0159d8] bom [info]Node.js v20.19.5
+2025-11-22T22:28:53Z app[1857556f0159d8] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T22:28:53Z app[1857556f0159d8] bom [info] INFO Starting clean up.
+2025-11-22T22:28:54Z app[1857556f0159d8] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T22:28:54Z app[1857556f0159d8] bom [info][    1.912619] reboot: Restarting system
+2025-11-22T22:29:00Z app[1857556f0159d8] bom [info]2025-11-22T22:29:00.811911171 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Running Firecracker v1.12.1
+2025-11-22T22:29:00Z app[1857556f0159d8] bom [info]2025-11-22T22:29:00.812280463 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Listening on API socket ("/fc.sock").
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO Starting init (commit: 6f59af0a)...
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO Checking filesystem on /data
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info]/dev/vdc: clean, 11/64512 files, 8785/258048 blocks
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO Resized /data to 1056964608 bytes
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO Preparing to run: `docker-entrypoint.sh node dist/index.js` as root
+2025-11-22T22:29:01Z app[1857556f0159d8] bom [info] INFO [fly api proxy] listening at /.fly/api
+2025-11-22T22:29:02Z runner[1857556f0159d8] bom [info]Machine started in 1.409s
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]2025/11/22 22:29:02 INFO SSH listening listen_address=[fdaa:35:e0cd:a7b:176:10ba:13ae:2]:22
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]node:internal/modules/esm/resolve:873
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]        ^
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]    at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]  code: 'ERR_MODULE_NOT_FOUND'
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]}
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info]Node.js v20.19.5
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info] INFO Starting clean up.
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T22:29:02Z app[1857556f0159d8] bom [info][    1.980891] reboot: Restarting system
+2025-11-22T22:29:28Z app[1857556f0159d8] bom [info]2025-11-22T22:29:28.268686150 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Running Firecracker v1.12.1
+2025-11-22T22:29:28Z app[1857556f0159d8] bom [info]2025-11-22T22:29:28.268842447 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Listening on API socket ("/fc.sock").
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO Starting init (commit: 6f59af0a)...
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO Checking filesystem on /data
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]/dev/vdc: clean, 11/64512 files, 8785/258048 blocks
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO Resized /data to 1056964608 bytes
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO Preparing to run: `docker-entrypoint.sh node dist/index.js` as root
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info] INFO [fly api proxy] listening at /.fly/api
+2025-11-22T22:29:29Z runner[1857556f0159d8] bom [info]Machine started in 1.304s
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]2025/11/22 22:29:29 INFO SSH listening listen_address=[fdaa:35:e0cd:a7b:176:10ba:13ae:2]:22
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]node:internal/modules/esm/resolve:873
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]        ^
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]    at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]  code: 'ERR_MODULE_NOT_FOUND'
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]}
+2025-11-22T22:29:29Z app[1857556f0159d8] bom [info]Node.js v20.19.5
+2025-11-22T22:29:30Z app[1857556f0159d8] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T22:29:30Z app[1857556f0159d8] bom [info] INFO Starting clean up.
+2025-11-22T22:29:30Z app[1857556f0159d8] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T22:29:30Z app[1857556f0159d8] bom [info][    1.949012] reboot: Restarting system
+2025-11-22T22:29:57Z app[1857556f0159d8] bom [info]2025-11-22T22:29:57.424261826 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Running Firecracker v1.12.1
+2025-11-22T22:29:57Z app[1857556f0159d8] bom [info]2025-11-22T22:29:57.424418013 [01KAPTWTBYKM2ZHVVNME7G08FF:main] Listening on API socket ("/fc.sock").
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO Starting init (commit: 6f59af0a)...
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO Checking filesystem on /data
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info]/dev/vdc: clean, 11/64512 files, 8785/258048 blocks
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO Mounting /dev/vdc at /data w/ uid: 0, gid: 0 and chmod 0755
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO Resized /data to 1056964608 bytes
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO Preparing to run: `docker-entrypoint.sh node dist/index.js` as root
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info] INFO [fly api proxy] listening at /.fly/api
+2025-11-22T22:29:58Z runner[1857556f0159d8] bom [info]Machine started in 1.456s
+2025-11-22T22:29:58Z health[1857556f0159d8] bom [warn]Health check 'http' on port 8080 is in a 'warning' state. Your app may not be responding properly.
+2025-11-22T22:29:58Z app[1857556f0159d8] bom [info]2025/11/22 22:29:58 INFO SSH listening listen_address=[fdaa:35:e0cd:a7b:176:10ba:13ae:2]:22
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]node:internal/modules/esm/resolve:873
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]        ^
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /app/dist/index.js
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at packageResolve (node:internal/modules/esm/resolve:873:9)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:708:12)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at #cachedDefaultResolve (node:internal/modules/esm/loader:657:25)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at ModuleLoader.resolve (node:internal/modules/esm/loader:640:38)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:264:38)
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]    at ModuleJob._link (node:internal/modules/esm/module_job:168:49) {
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]  code: 'ERR_MODULE_NOT_FOUND'
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]}
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info]Node.js v20.19.5
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info] INFO Main child exited normally with code: 1
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info] INFO Starting clean up.
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info] INFO Umounting /dev/vdc from /data
+2025-11-22T22:29:59Z app[1857556f0159d8] bom [info][    2.070167] reboot: Restarting system
+2025-11-22T22:29:59Z health[1857556f0159d8] bom [error]Health check 'http' on port 8080 has failed. Your app is not responding properly.
+2025-11-22T22:30:03Z runner[1857556f0159d8] bom [info]machine has reached its max restart count of 10
