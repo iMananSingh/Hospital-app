@@ -69,6 +69,11 @@ const authenticateToken = (req: any, res: any, next: any) => {
 const requireAuth = authenticateToken;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Fly.io
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
