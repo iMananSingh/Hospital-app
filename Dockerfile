@@ -34,12 +34,8 @@ RUN npm ci --only=production
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/client ./client
 
-# Copy database with demo data from build stage
-COPY --from=base /app/hospital.db ./hospital.db
-
-# Create data directory and copy database to volume mount path
-RUN mkdir -p /data && chmod 777 /data && \
-    if [ -f ./hospital.db ]; then cp ./hospital.db /data/hospital.db && chmod 666 /data/hospital.db; fi
+# Create data directory for volume mount
+RUN mkdir -p /data && chmod 777 /data
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -50,4 +46,5 @@ ENV DATABASE_PATH=/data/hospital.db
 EXPOSE 8080
 
 # Start the application
-CMD ["node", "dist/index.js"]
+# Run with error output to help debug any startup issues
+CMD ["node", "--expose-gc", "dist/index.js"]
