@@ -1,0 +1,43 @@
+PS F:\Projects\HMSync App> fly certs add healthcare.mandla.hmsync.com -a hmsync-newhch-mandla
+
+You are creating a certificate for healthcare.mandla.hmsync.com
+We are using Let's Encrypt for this certificate.
+
+You can direct traffic to your Fly application by adding records to your DNS provider.
+
+Choose your DNS setup:
+
+1. A and AAAA records (recommended for direct connections)
+
+   A    healthcare.mandla → 66.241.125.221
+   AAAA healthcare.mandla → 2a09:8280:1::b3:1be3:0
+
+2. CNAME record
+
+   CNAME healthcare.mandla → knrwe3g.hmsync-newhch-mandla.fly.dev
+
+3. External proxy setup
+
+   AAAA healthcare.mandla → 2a09:8280:1::b3:1be3:0
+
+   Use this setup when configuring a proxy or CDN in front of your Fly application.
+   When proxying traffic, you should only use your application's IPv6 address.
+
+Optional: DNS Challenge
+
+   CNAME _acme-challenge.healthcare.mandla.hmsync.com → healthcare.mandla.hmsync.com.knrwe3g.flydns.net
+
+   Additional to one of the DNS setups.
+   Required for wildcard certificates, or to generate
+   a certificate before directing traffic to your application.
+
+
+Once your DNS is configured correctly, we will automatically provision your certificate.
+Run fly certs check healthcare.mandla.hmsync.com to check the progress.
+PS F:\Projects\HMSync App> ^C
+PS F:\Projects\HMSync App> ^C
+PS F:\Projects\HMSync App> ^C
+PS F:\Projects\HMSync App> ^C
+PS F:\Projects\HMSync App> fly certs add healthcare.mandla.hmsync.com -a hmsync-newhch-mandla
+Error: failed to run mutation($appId: ID!, $hostname: String!) { addCertificate(appId: $appId, hostname: $hostname) { certificate { acmeDnsConfigured acmeAlpnConfigured configured certificateAuthority createdAt dnsProvider dnsValidationInstructions dnsValidationHostname dnsValidationTarget hostname id source clientStatus isApex isWildcard issued { nodes { type expiresAt } } validationErrors { errorCode message remediation timestamp } } check { aRecords aaaaRecords cnameRecords soa dnsProvider dnsVerificationRecord resolvedAddresses } } }: Hostname already exists on app
+PS F:\Projects\HMSync App>
