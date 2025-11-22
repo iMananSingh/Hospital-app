@@ -15,7 +15,7 @@ build
 .vite
 .cache
 
-# Database backup/temp files (will keep hospital.db for demo data)
+# Database backup/temp files
 *.db-shm
 *.db-wal
 

@@ -33,10 +33,13 @@ RUN npm ci --only=production
 # Copy built application from build stage
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/client ./client
-COPY --from=base /app/hospital.db /data/hospital.db
 
-# Create data directory for volume mount
-RUN mkdir -p /data && chmod 777 /data
+# Copy database with demo data from build stage
+COPY --from=base /app/hospital.db ./hospital.db
+
+# Create data directory and copy database to volume mount path
+RUN mkdir -p /data && chmod 777 /data && \
+    if [ -f ./hospital.db ]; then cp ./hospital.db /data/hospital.db && chmod 666 /data/hospital.db; fi
 
 # Set environment variables
 ENV NODE_ENV=production
