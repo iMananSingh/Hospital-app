@@ -34,6 +34,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 22, 2025** - Production Deployment to Fly.io (LIVE)
+- Successfully deployed HMSync to Fly.io in the `bom` (Mumbai) region
+- App running 24/7 with `auto_stop_machines = false` and `min_machines_running = 1` configuration
+- Machine configured with shared-cpu-1x, 256MB RAM, and 1GB persistent volume for SQLite database
+- Fixed critical Docker build issue: Changed `npm ci --only=production` to `npm ci` to include dev dependencies (vite needed by server)
+- Database initializes automatically on startup with demo data pre-loaded
+- Health checks configured for automatic healing
+- Estimated monthly cost: ~$3.59 USD (shared CPU + volume storage)
+- App accessible at: https://hmsync-newhch-mandla.fly.dev
+- Demo credentials available and working
+
 **November 20, 2025** - Doctor Payment History Tab
 - Added "Payments" tab to doctor detail page to display payment history
 - Implemented new backend storage method `getDoctorPayments(doctorId)` to filter payments by specific doctor
