@@ -15,11 +15,9 @@ build
 .vite
 .cache
 
-# Database (will be on volume)
-*.db
+# Database backup/temp files (will keep hospital.db for demo data)
 *.db-shm
 *.db-wal
-hospital.db*
 
 # Git
 .git
