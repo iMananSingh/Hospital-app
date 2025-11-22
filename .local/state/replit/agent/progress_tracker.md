@@ -3,6 +3,26 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Fly.io Deployment Preparation - November 22, 2025 at 12:40 PM
+[x] Prepared HMSync for Fly.io deployment with persistent database storage
+- **Configuration Files Created**:
+  - `fly.toml` - Fly.io app configuration with volume mount for database
+  - `Dockerfile` - Multi-stage build optimized for Node.js + SQLite
+  - `.dockerignore` - Excludes dev files and local database from builds
+  - `DEPLOYMENT.md` - Complete step-by-step deployment guide
+- **Database Path Update**: Modified `server/storage.ts` to use DATABASE_PATH environment variable
+  - Development: Uses local `hospital.db` file
+  - Production (Fly.io): Uses `/data/hospital.db` on mounted volume
+- **Cost Estimate**: ~$0.15/month for 1GB volume storage (VM is free tier)
+- **Key Features**:
+  - Persistent database storage via Fly.io volumes
+  - Automatic database initialization on first run
+  - Daily backups at 3:41 PM (built into app)
+  - Health checks configured
+  - Auto-scaling disabled for always-on operation
+- **Next Steps**: Follow DEPLOYMENT.md instructions to deploy to Fly.io
+- **Status**: Ready for deployment ✓
+
 ### Environment Migration - November 22, 2025 at 12:34 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
