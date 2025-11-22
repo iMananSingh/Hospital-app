@@ -91,7 +91,16 @@ export interface BillFilters {
 }
 
 // Initialize SQLite database
-const dbPath = path.join(process.cwd(), "hospital.db");
+// In production (Fly.io), use /data volume mount. In development, use local file.
+const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), "hospital.db");
+console.log(`Using database at: ${dbPath}`);
+
+// Ensure directory exists for the database file
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 let sqlite = new Database(dbPath);
 let db = drizzle(sqlite, { schema });
 

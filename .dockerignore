@@ -1,0 +1,64 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+
+# Build artifacts
+dist
+build
+.vite
+.cache
+
+# Database (will be on volume)
+*.db
+*.db-shm
+*.db-wal
+hospital.db*
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+.nyc_output
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+
+# Replit specific
+.replit
+replit.nix
+.config
+.upm
+.cache
+
+# Local state
+.local
+
+# Backup files
+backups
+*.backup
