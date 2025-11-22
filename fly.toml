@@ -1,8 +1,8 @@
 # fly.toml app configuration file
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 
-app = 'hmsync' # You can change this to your preferred app name
-primary_region = 'sin' # Singapore - change to your preferred region
+app = 'hmsync-newhch-mandla'
+primary_region = 'bom'
 
 [build]
 
@@ -13,7 +13,7 @@ primary_region = 'sin' # Singapore - change to your preferred region
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = 'off'  # Keep machines running always
+  auto_stop_machines = false
   auto_start_machines = true
   min_machines_running = 1
   processes = ['app']
@@ -23,23 +23,28 @@ primary_region = 'sin' # Singapore - change to your preferred region
     hard_limit = 250
     soft_limit = 200
 
+[processes]
+  app = 'node dist/index.js'
+
 [[vm]]
-  size = 'shared-cpu-1x'  # 256MB RAM, 1 shared CPU - you can upgrade later
+  size = 'shared-cpu-1x'
   memory = '256mb'
   cpus = 1
 
 [[mounts]]
-  source = 'hmsync_data'
+  source = 'data'
   destination = '/data'
-  initial_size = '1gb'  # Start with 1GB, costs $0.15/month
+  auto_extend_size_threshold = 80
+  auto_extend_size_increment = '1GB'
+  auto_extend_size_limit = '10GB'
 
 # Health check to ensure app is running
 [[checks]]
-  name = "http"
-  grace_period = "30s"
-  interval = "30s"
-  method = "GET"
-  path = "/"
+  name = 'http'
+  grace_period = '30s'
+  interval = '30s'
+  method = 'GET'
+  path = '/'
   port = 8080
-  timeout = "10s"
-  type = "http"
+  timeout = '10s'
+  type = 'http'
