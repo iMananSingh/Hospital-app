@@ -1,0 +1,61 @@
+PS F:\Projects\HMSync App> fly ssh console -a hmsync-newhch-mandla
+Connecting to fdaa:35:e0cd:a7b:176:10ba:13ae:2... complete
+1857556f0159d8:/app# cp /data/hospital.db /tmp/hospital.db
+1857556f0159d8:/app# ls -lh /tmp/hospital.db
+-rw-r--r--    1 root     root      356.0K Nov 22 22:48 /tmp/hospital.db
+1857556f0159d8:/app# exit
+PS F:\Projects\HMSync App> fly ssh sftp get -a hmsync-newhch-mandla /tmp/hospital.db ./hospital.db
+364544 bytes written to ./hospital.db
+PS F:\Projects\HMSync App> fly certs add hmsync.healthcare.mandla.com -a hmsync-newhch-mandla
+
+You are creating a certificate for hmsync.healthcare.mandla.com
+We are using Let's Encrypt for this certificate.
+
+You can direct traffic to your Fly application by adding records to your DNS provider.
+
+Choose your DNS setup:
+
+1. A and AAAA records (recommended for direct connections)
+
+   A    hmsync.healthcare → 66.241.125.221
+   AAAA hmsync.healthcare → 2a09:8280:1::b3:1be3:0
+
+2. CNAME record
+
+   CNAME hmsync.healthcare → knrwe3g.hmsync-newhch-mandla.fly.dev
+
+3. External proxy setup
+
+   AAAA hmsync.healthcare → 2a09:8280:1::b3:1be3:0
+
+   Use this setup when configuring a proxy or CDN in front of your Fly application.
+   When proxying traffic, you should only use your application's IPv6 address.
+
+Optional: DNS Challenge
+
+   CNAME _acme-challenge.hmsync.healthcare.mandla.com → hmsync.healthcare.mandla.com.knrwe3g.flydns.net
+
+   Additional to one of the DNS setups.
+   Required for wildcard certificates, or to generate
+   a certificate before directing traffic to your application.
+
+
+Once your DNS is configured correctly, we will automatically provision your certificate.
+Run fly certs check hmsync.healthcare.mandla.com to check the progress.
+PS F:\Projects\HMSync App> fly certs check hmsync.healthcare.mandla.com -a hmsync-newhch-mandla
+Status                    = Awaiting configuration
+Hostname                  = hmsync.healthcare.mandla.com
+DNS Provider              = ui-dns
+Certificate Authority     = Let's Encrypt
+Issued                    =
+Added to App              = 15 minutes ago
+Source                    = fly
+
+Certificate validation issues:
+
+  No AAAA records were found for your domain
+  Fix: Add AAAA records pointing to your app's IPv6 addresses
+  Checked 0s
+
+Your DNS is not yet configured correctly.
+Run fly certs setup hmsync.healthcare.mandla.com to view DNS setup instructions.
