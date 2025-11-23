@@ -31,7 +31,7 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import type { RoomType, Room, Service, PathologyCategory, DynamicPathologyTest, ServiceCategory } from "@shared/schema";
+import type { RoomType, Room, Service, PathologyCategory, PathologyCategoryTest, ServiceCategory } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
 
 export default function ServiceManagement() {
@@ -74,7 +74,7 @@ export default function ServiceManagement() {
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<PathologyCategory | null>(null);
-  const [editingTest, setEditingTest] = useState<DynamicPathologyTest | null>(null);
+  const [editingTest, setEditingTest] = useState<PathologyCategoryTest | null>(null);
   const [uploadData, setUploadData] = useState<string>("");
 
   // Service Category states
@@ -114,7 +114,7 @@ export default function ServiceManagement() {
   });
 
   // Fetch dynamic pathology tests
-  const { data: dynamicPathologyTests = [], refetch: refetchTests } = useQuery<DynamicPathologyTest[]>({
+  const { data: pathologyCategoryTests = [], refetch: refetchTests } = useQuery<PathologyCategoryTest[]>({
     queryKey: ["/api/dynamic-pathology-tests"],
   });
 

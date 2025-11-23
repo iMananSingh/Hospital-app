@@ -22,7 +22,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import AccessRestricted from "@/components/access-restricted";
-import type { PathologyOrder, Patient, Doctor, Service, PathologyCategory, DynamicPathologyTest } from "@shared/schema";
+import type { PathologyOrder, Patient, Doctor, Service, PathologyCategory, PathologyCategoryTest } from "@shared/schema";
 
 // Patient Search Combobox Component
 function PatientSearchCombobox({ value, onValueChange, patients }: {

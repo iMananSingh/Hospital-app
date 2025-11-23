@@ -14,7 +14,7 @@ import {
   insertPathologyTestSchema,
   insertSystemSettingsSchema,
   insertPathologyCategorySchema,
-  insertDynamicPathologyTestSchema,
+  insertPathologyCategoryTestSchema,
   insertPatientPaymentSchema,
   insertPatientDiscountSchema,
   insertServiceCategorySchema,
@@ -1425,7 +1425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get custom categories and tests from database
       const customCategories = await storage.getPathologyCategories();
-      const customTests = await storage.getDynamicPathologyTests();
+      const customTests = await storage.getPathologyCategoryTests();
 
       // Organize custom tests by category
       const customTestsByCategory: { [key: string]: any[] } = {};
@@ -1631,9 +1631,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { categoryId } = req.query;
         let tests;
         if (categoryId && typeof categoryId === "string") {
-          tests = await storage.getDynamicPathologyTestsByCategory(categoryId);
+          tests = await storage.getPathologyCategoryTestsByCategory(categoryId);
         } else {
-          tests = await storage.getDynamicPathologyTests();
+          tests = await storage.getPathologyCategoryTests();
         }
         res.json(tests);
       } catch (error) {
@@ -1710,7 +1710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Add test to database for custom categories
-          const test = await storage.createDynamicPathologyTest({
+          const test = await storage.createPathologyCategoryTest({
             testName,
             price,
             categoryId,
@@ -1746,15 +1746,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateToken,
     async (req, res) => {
       try {
-        const testData = insertDynamicPathologyTestSchema
+        const testData = insertPathologyCategoryTestSchema
           .partial()
           .parse(req.body);
         const testId = req.params.id;
 
         // Get test data before update for audit log
-        const testToUpdate = await storage.getDynamicPathologyTestById(testId);
+        const testToUpdate = await storage.getPathologyCategoryTestById(testId);
 
-        const test = await storage.updateDynamicPathologyTest(testId, testData);
+        const test = await storage.updatePathologyCategoryTest(testId, testData);
         if (!test) {
           return res
             .status(404)
@@ -1794,9 +1794,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const testId = req.params.id;
 
         // Get test data before deletion for audit log
-        const testToDelete = await storage.getDynamicPathologyTestById(testId);
+        const testToDelete = await storage.getPathologyCategoryTestById(testId);
 
-        const deleted = await storage.deleteDynamicPathologyTest(testId);
+        const deleted = await storage.deletePathologyCategoryTest(testId);
         if (!deleted) {
           return res
             .status(404)
@@ -1933,7 +1933,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Create tests for this category
             const testsToCreate = categoryData.tests.map((test: any) =>
-              insertDynamicPathologyTestSchema.parse({
+              insertPathologyCategoryTestSchema.parse({
                 categoryId: category.id,
                 testName: test.test_name || test.name,
                 price: test.price || 0,
@@ -1943,7 +1943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             const createdTests =
-              await storage.bulkCreateDynamicPathologyTests(testsToCreate);
+              await storage.bulkCreatePathologyCategoryTests(testsToCreate);
             results.tests.push(...createdTests);
           } catch (error) {
             results.errors.push(
@@ -1988,7 +1988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const systemCategories = getCategories();
         const customCategories = await storage.getPathologyCategories();
-        const customTests = await storage.getDynamicPathologyTests();
+        const customTests = await storage.getPathologyCategoryTests();
 
         // Create combined categories structure
         const combinedCategories = [

@@ -32,8 +32,8 @@ import type {
   InsertAuditLog,
   PathologyCategory,
   InsertPathologyCategory,
-  DynamicPathologyTest,
-  InsertDynamicPathologyTest,
+  PathologyCategoryTest,
+  InsertPathologyCategoryTest,
   Activity,
   InsertActivity,
   PatientPayment,
@@ -373,7 +373,7 @@ async function initializeDatabase() {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
-      CREATE TABLE IF NOT EXISTS dynamic_pathology_tests (
+      CREATE TABLE IF NOT EXISTS pathology_category_tests (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         category_id TEXT NOT NULL REFERENCES pathology_categories(id),
         test_name TEXT NOT NULL,
@@ -1451,24 +1451,24 @@ export interface IStorage {
   deletePathologyCategory(id: string): Promise<boolean>;
 
   // Dynamic pathology test management
-  createDynamicPathologyTest(
-    test: InsertDynamicPathologyTest,
-  ): Promise<DynamicPathologyTest>;
-  getDynamicPathologyTests(): Promise<DynamicPathologyTest[]>;
-  getDynamicPathologyTestsByCategory(
+  createPathologyCategoryTest(
+    test: InsertPathologyCategoryTest,
+  ): Promise<PathologyCategoryTest>;
+  getPathologyCategoryTests(): Promise<PathologyCategoryTest[]>;
+  getPathologyCategoryTestsByCategory(
     categoryId: string,
-  ): Promise<DynamicPathologyTest[]>;
-  getDynamicPathologyTestById(
+  ): Promise<PathologyCategoryTest[]>;
+  getPathologyCategoryTestById(
     id: string,
-  ): Promise<DynamicPathologyTest | undefined>;
-  updateDynamicPathologyTest(
+  ): Promise<PathologyCategoryTest | undefined>;
+  updatePathologyCategoryTest(
     id: string,
-    test: Partial<InsertDynamicPathologyTest>,
-  ): Promise<DynamicPathologyTest | undefined>;
-  deleteDynamicPathologyTest(id: string): Promise<boolean>;
-  bulkCreateDynamicPathologyTests(
-    tests: InsertDynamicPathologyTest[],
-  ): Promise<DynamicPathologyTest[]>;
+    test: Partial<InsertPathologyCategoryTest>,
+  ): Promise<PathologyCategoryTest | undefined>;
+  deletePathologyCategoryTest(id: string): Promise<boolean>;
+  bulkCreatePathologyCategoryTests(
+    tests: InsertPathologyCategoryTest[],
+  ): Promise<PathologyCategoryTest[]>;
 
   // Schedule Event Management
   getAllScheduleEvents(): Promise<ScheduleEvent[]>;
@@ -5490,7 +5490,7 @@ export class SqliteStorage implements IStorage {
         "patient_payments",
         "patient_discounts",
         "pathology_categories",
-        "dynamic_pathology_tests",
+        "pathology_category_tests",
         "service_categories",
         "doctor_service_rates",
         "doctor_earnings",
@@ -5841,7 +5841,6 @@ export class SqliteStorage implements IStorage {
     return db
       .select()
       .from(schema.pathologyCategories)
-      .where(eq(schema.pathologyCategories.isActive, true))
       .orderBy(asc(schema.pathologyCategories.name))
       .all();
   }
@@ -5874,8 +5873,8 @@ export class SqliteStorage implements IStorage {
       // Check if category has any tests first
       const testsCount = db
         .select()
-        .from(schema.dynamicPathologyTests)
-        .where(eq(schema.dynamicPathologyTests.categoryId, id))
+        .from(schema.pathologyCategoryTests)
+        .where(eq(schema.pathologyCategoryTests.categoryId, id))
         .all().length;
 
       if (testsCount > 0) {
@@ -5894,87 +5893,83 @@ export class SqliteStorage implements IStorage {
   }
 
   // Dynamic pathology test management
-  async createDynamicPathologyTest(
-    test: InsertDynamicPathologyTest,
-  ): Promise<DynamicPathologyTest> {
+  async createPathologyCategoryTest(
+    test: InsertPathologyCategoryTest,
+  ): Promise<PathologyCategoryTest> {
     const created = db
-      .insert(schema.dynamicPathologyTests)
+      .insert(schema.pathologyCategoryTests)
       .values(test)
       .returning()
       .get();
     return created;
   }
 
-  async getDynamicPathologyTests(): Promise<DynamicPathologyTest[]> {
+  async getPathologyCategoryTests(): Promise<PathologyCategoryTest[]> {
     return db
       .select()
-      .from(schema.dynamicPathologyTests)
-      .where(eq(schema.dynamicPathologyTests.isActive, true))
-      .orderBy(asc(schema.dynamicPathologyTests.testName))
+      .from(schema.pathologyCategoryTests)
+      .orderBy(asc(schema.pathologyCategoryTests.testName))
       .all();
   }
 
-  async getDynamicPathologyTestsByCategory(
+  async getPathologyCategoryTestsByCategory(
     categoryId: string,
-  ): Promise<DynamicPathologyTest[]> {
+  ): Promise<PathologyCategoryTest[]> {
     return db
       .select()
-      .from(schema.dynamicPathologyTests)
+      .from(schema.pathologyCategoryTests)
       .where(
-        and(
-          eq(schema.dynamicPathologyTests.categoryId, categoryId),
-          eq(schema.dynamicPathologyTests.isActive, true),
-        ),
+        eq(schema.pathologyCategoryTests.categoryId, categoryId),
       )
-      .orderBy(asc(schema.dynamicPathologyTests.testName))
+      .orderBy(asc(schema.pathologyCategoryTests.testName))
       .all();
   }
 
-  async getDynamicPathologyTestById(
+  async getPathologyCategoryTestById(
     id: string,
-  ): Promise<DynamicPathologyTest | undefined> {
+  ): Promise<PathologyCategoryTest | undefined> {
     return db
       .select()
-      .from(schema.dynamicPathologyTests)
-      .where(eq(schema.dynamicPathologyTests.id, id))
+      .from(schema.pathologyCategoryTests)
+      .where(eq(schema.pathologyCategoryTests.id, id))
       .get();
   }
 
-  async updateDynamicPathologyTest(
+  async updatePathologyCategoryTest(
     id: string,
-    test: Partial<InsertDynamicPathologyTest>,
-  ): Promise<DynamicPathologyTest | undefined> {
+    test: Partial<InsertPathologyCategoryTest>,
+  ): Promise<PathologyCategoryTest | undefined> {
     const updated = db
-      .update(schema.dynamicPathologyTests)
+      .update(schema.pathologyCategoryTests)
       .set({ ...test, updatedAt: sql`datetime('now')` })
-      .where(eq(schema.dynamicPathologyTests.id, id))
+      .where(eq(schema.pathologyCategoryTests.id, id))
       .returning()
       .get();
     return updated;
   }
 
-  async deleteDynamicPathologyTest(id: string): Promise<boolean> {
+  async deletePathologyCategoryTest(id: string): Promise<boolean> {
     try {
       const result = db
-        .delete(schema.dynamicPathologyTests)
-        .where(eq(schema.dynamicPathologyTests.id, id))
+        .delete(schema.pathologyCategoryTests)
+        .where(eq(schema.pathologyCategoryTests.id, id))
         .run();
       return result.changes > 0;
     } catch (error) {
-      console.error("Error deleting dynamic pathology test:", error);
+      console.error("Error deleting pathology category test:", error);
       return false;
     }
   }
 
-  async bulkCreateDynamicPathologyTests(
-    tests: InsertDynamicPathologyTest[],
-  ): Promise<DynamicPathologyTest[]> {
-    const createdTests: DynamicPathologyTest[] = [];
+  async bulkCreatePathologyCategoryTests(
+    tests: InsertPathologyCategoryTest[],
+  ): Promise<PathologyCategoryTest[]> {
+    const createdTests: PathologyCategoryTest[] = [];
 
     const transaction = db.transaction(() => {
       for (const test of tests) {
         const created = db
-          .insert(schema.dynamicPathologyTests)
+          .insert(schema.pathologyCategoryTests)
           .values(test)
           .returning()
           .get();

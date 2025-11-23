@@ -490,7 +490,6 @@ export const pathologyCategories = sqliteTable("pathology_categories", {
     .default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull().unique(),
   description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -499,8 +498,8 @@ export const pathologyCategories = sqliteTable("pathology_categories", {
     .default(sql`(datetime('now'))`),
 });
 
-// Dynamic Pathology Tests
-export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
+// Pathology Category Tests
+export const pathologyCategoryTests = sqliteTable("pathology_category_tests", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
@@ -509,9 +508,7 @@ export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
     .references(() => pathologyCategories.id),
   testName: text("test_name").notNull(),
   price: real("price").notNull().default(0),
-  normalRange: text("normal_range"),
   description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -896,8 +893,8 @@ export const insertPathologyCategorySchema = createInsertSchema(
   updatedAt: true,
 });
 
-export const insertDynamicPathologyTestSchema = createInsertSchema(
-  dynamicPathologyTests,
+export const insertPathologyCategoryTestSchema = createInsertSchema(
+  pathologyCategoryTests,
 ).omit({
   id: true,
   createdAt: true,
@@ -1111,9 +1108,9 @@ export type PathologyCategory = typeof pathologyCategories.$inferSelect;
 export type InsertPathologyCategory = z.infer<
   typeof insertPathologyCategorySchema
 >;
-export type DynamicPathologyTest = typeof dynamicPathologyTests.$inferSelect;
-export type InsertDynamicPathologyTest = z.infer<
-  typeof insertDynamicPathologyTestSchema
+export type PathologyCategoryTest = typeof pathologyCategoryTests.$inferSelect;
+export type InsertPathologyCategoryTest = z.infer<
+  typeof insertPathologyCategoryTestSchema
 >;
 export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
