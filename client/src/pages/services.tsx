@@ -1610,7 +1610,7 @@ export default function ServiceManagement() {
 
                   {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
                     <div>
-                      {/* Category Filter */}
+                      {/* Category Filter - Deduplicate by name */}
                       <div className="flex gap-4 items-center">
                         <label className="text-sm font-medium">Filter by Category:</label>
                         <select
@@ -1619,7 +1619,11 @@ export default function ServiceManagement() {
                           className="px-3 py-2 border rounded-md"
                         >
                           <option value="">All Categories</option>
-                          {combinedPathologyData.categories.map(category => (
+                          {Array.from(
+                            new Map(
+                              combinedPathologyData.categories.map(cat => [cat.name, cat])
+                            ).values()
+                          ).map(category => (
                             <option key={category.id} value={category.id}>
                               {category.name} ({category.tests?.length || 0} tests)
                             </option>

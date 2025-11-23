@@ -8,6 +8,16 @@ HMSync is a comprehensive full-stack web application for efficient hospital mana
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**November 23, 2025** - Pathology Cleanup & Fixes
+- Deleted `dynamic_pathology_tests` table from database
+- Replaced all pathology data with simple demo: 2 categories
+  - "demo category 1": 2 tests (demo test 1: ₹100, demo test 2: ₹150)
+  - "demo category 2": empty (no tests)
+- Fixed category filter dropdown to deduplicate categories by name
+- Moved import/export UI from pathology orders page to Services Management → Pathology tab
+
 ## System Architecture
 
 ### Frontend Architecture
