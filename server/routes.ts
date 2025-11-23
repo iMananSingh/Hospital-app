@@ -1417,6 +1417,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Combined pathology tests (system catalog + custom database tests)
+  app.get("/api/pathology-tests/combined", authenticateToken, async (req, res) => {
+    try {
+      // Get system categories and tests from catalog
+      const systemCategories = pathologyCatalog.categories || [];
+      
+      // Get custom categories and tests from database
+      const customCategories = await storage.getPathologyCategories();
+      const customTests = await storage.getDynamicPathologyTests();
+
+      // Organize custom tests by category
+      const customTestsByCategory: { [key: string]: any[] } = {};
+      for (const category of customCategories) {
+        customTestsByCategory[category.id] = customTests.filter(t => t.categoryId === category.id);
+      }
+
+      // Build combined categories
+      const combinedCategories = [
+        ...systemCategories.map((cat: any) => ({
+          name: cat.name,
+          tests: cat.tests || []
+        })),
+        ...customCategories.map(cat => ({
+          name: cat.name,
+          tests: customTestsByCategory[cat.id]?.map(t => ({
+            test_name: t.testName,
+            price: t.price,
+            subtests: []
+          })) || []
+        }))
+      ];
+
+      res.json({ categories: combinedCategories });
+    } catch (error) {
+      console.error("Error fetching combined pathology tests:", error);
+      res.status(500).json({ message: "Failed to get combined pathology tests" });
+    }
+  });
+
   // Create pathology category (creates custom categories in database)
   app.post("/api/pathology-categories", authenticateToken, async (req, res) => {
     try {
