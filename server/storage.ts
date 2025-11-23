@@ -34,8 +34,6 @@ import type {
   InsertPathologyCategory,
   DynamicPathologyTest,
   InsertDynamicPathologyTest,
-  PathologyCategoryTest,
-  InsertPathologyCategoryTest,
   Activity,
   InsertActivity,
   PatientPayment,
@@ -1236,8 +1234,6 @@ async function createDemoData() {
   }
 }
 
-    // Bootstrap pathology demo data
-    // await bootstrapPathologyData();
 // IMPORTANT: All timestamps in the database are stored in UTC.
 // The server should NOT format timestamps for display - that's the frontend's job.
 // The frontend uses Intl.DateTimeFormat with the configured IANA timezone to
@@ -2521,6 +2517,47 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  async permanentlyDeleteDoctor(id: string): Promise<Doctor | undefined> {
+    try {
+      // First, get the doctor to be deleted for returning
+      const doctorToDelete = db
+        .select()
+        .from(schema.doctors)
+        .where(eq(schema.doctors.id, id))
+        .get();
+
+      if (!doctorToDelete) {
+        return undefined;
+      }
+
+      // Use transaction to handle foreign key constraints
+      return db.transaction((tx) => {
+        try {
+          // First, set all references to this doctor to null
+
+          // Update patient_visits to set doctorId to null
+          tx.update(schema.patientVisits)
+            .set({ doctorId: null })
+            .where(eq(schema.patientVisits.doctorId, id))
+            .run();
+
+          // Update pathology_orders to set doctorId to null
+          tx.update(schema.pathologyOrders)
+            .set({ doctorId: null })
+            .where(eq(schema.pathologyOrders.doctorId, id))
+            .run();
+
+          // Update patient_services to set doctorId to null
+          tx.update(schema.patientServices)
+            .set({ doctorId: null })
+            .where(eq(schema.patientServices.doctorId, id))
+            .run();
+
+          // Update admissions to set doctorId to null
+          tx.update(schema.admissions)
+            .set({ doctorId: null })
+            .where(eq(schema.admissions.doctorId, id))
+            .run();
 
           // Now delete the doctor record
           tx.delete(schema.doctors).where(eq(schema.doctors.id, id)).run();
@@ -5804,6 +5841,7 @@ export class SqliteStorage implements IStorage {
     return db
       .select()
       .from(schema.pathologyCategories)
+      .where(eq(schema.pathologyCategories.isActive, true))
       .orderBy(asc(schema.pathologyCategories.name))
       .all();
   }
@@ -5836,8 +5874,8 @@ export class SqliteStorage implements IStorage {
       // Check if category has any tests first
       const testsCount = db
         .select()
-        .from(schema.pathologyCategoryTests)
-        .where(eq(schema.pathologyCategoryTests.categoryId, id))
+        .from(schema.dynamicPathologyTests)
+        .where(eq(schema.dynamicPathologyTests.categoryId, id))
         .all().length;
 
       if (testsCount > 0) {
@@ -5860,7 +5898,7 @@ export class SqliteStorage implements IStorage {
     test: InsertDynamicPathologyTest,
   ): Promise<DynamicPathologyTest> {
     const created = db
-      .insert(schema.pathologyCategoryTests)
+      .insert(schema.dynamicPathologyTests)
       .values(test)
       .returning()
       .get();
@@ -5870,8 +5908,9 @@ export class SqliteStorage implements IStorage {
   async getDynamicPathologyTests(): Promise<DynamicPathologyTest[]> {
     return db
       .select()
-      .from(schema.pathologyCategoryTests)
-      .orderBy(asc(schema.pathologyCategoryTests.name))
+      .from(schema.dynamicPathologyTests)
+      .where(eq(schema.dynamicPathologyTests.isActive, true))
+      .orderBy(asc(schema.dynamicPathologyTests.testName))
       .all();
   }
 
@@ -5880,9 +5919,14 @@ export class SqliteStorage implements IStorage {
   ): Promise<DynamicPathologyTest[]> {
     return db
       .select()
-      .from(schema.pathologyCategoryTests)
-      .where(eq(schema.pathologyCategoryTests.categoryId, categoryId))
-      .orderBy(asc(schema.pathologyCategoryTests.name))
+      .from(schema.dynamicPathologyTests)
+      .where(
+        and(
+          eq(schema.dynamicPathologyTests.categoryId, categoryId),
+          eq(schema.dynamicPathologyTests.isActive, true),
+        ),
+      )
+      .orderBy(asc(schema.dynamicPathologyTests.testName))
       .all();
   }
 
@@ -5891,8 +5935,8 @@ export class SqliteStorage implements IStorage {
   ): Promise<DynamicPathologyTest | undefined> {
     return db
       .select()
-      .from(schema.pathologyCategoryTests)
-      .where(eq(schema.pathologyCategoryTests.id, id))
+      .from(schema.dynamicPathologyTests)
+      .where(eq(schema.dynamicPathologyTests.id, id))
       .get();
   }
 
@@ -5901,9 +5945,9 @@ export class SqliteStorage implements IStorage {
     test: Partial<InsertDynamicPathologyTest>,
   ): Promise<DynamicPathologyTest | undefined> {
     const updated = db
-      .update(schema.pathologyCategoryTests)
+      .update(schema.dynamicPathologyTests)
       .set({ ...test, updatedAt: sql`datetime('now')` })
-      .where(eq(schema.pathologyCategoryTests.id, id))
+      .where(eq(schema.dynamicPathologyTests.id, id))
       .returning()
       .get();
     return updated;
@@ -5912,8 +5956,8 @@ export class SqliteStorage implements IStorage {
   async deleteDynamicPathologyTest(id: string): Promise<boolean> {
     try {
       const result = db
-        .delete(schema.pathologyCategoryTests)
-        .where(eq(schema.pathologyCategoryTests.id, id))
+        .delete(schema.dynamicPathologyTests)
+        .where(eq(schema.dynamicPathologyTests.id, id))
         .run();
       return result.changes > 0;
     } catch (error) {
@@ -5930,7 +5974,7 @@ export class SqliteStorage implements IStorage {
     const transaction = db.transaction(() => {
       for (const test of tests) {
         const created = db
-          .insert(schema.pathologyCategoryTests)
+          .insert(schema.dynamicPathologyTests)
           .values(test)
           .returning()
           .get();
