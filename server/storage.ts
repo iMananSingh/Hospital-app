@@ -1228,6 +1228,91 @@ async function createDemoData() {
       console.log("Created pathology_test_placeholder service");
     }
 
+    // Add demo pathology categories and tests
+    const demoCategories = [
+      {
+        id: "biochem-cat",
+        name: "Biochemistry",
+        description: "Chemical analysis of body fluids and tissues",
+      },
+      {
+        id: "hematology-cat",
+        name: "Hematology",
+        description: "Blood cell and clotting analysis",
+      },
+      {
+        id: "microbiology-cat",
+        name: "Microbiology",
+        description: "Bacterial and viral culture analysis",
+      },
+    ];
+
+    for (const cat of demoCategories) {
+      const existing = db
+        .select()
+        .from(schema.pathologyCategories)
+        .where(eq(schema.pathologyCategories.id, cat.id))
+        .get();
+      if (!existing) {
+        db.insert(schema.pathologyCategories)
+          .values({
+            id: cat.id,
+            name: cat.name,
+            description: cat.description,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .run();
+        console.log(`Created pathology category: ${cat.name}`);
+      }
+    }
+
+    // Add demo tests for each category
+    const demoTests = [
+      // Biochemistry tests
+      { categoryId: "biochem-cat", testName: "Blood Glucose", price: 150 },
+      { categoryId: "biochem-cat", testName: "Hemoglobin A1C", price: 200 },
+      { categoryId: "biochem-cat", testName: "Lipid Profile", price: 250 },
+      { categoryId: "biochem-cat", testName: "Liver Function Tests", price: 300 },
+      { categoryId: "biochem-cat", testName: "Kidney Function Tests", price: 300 },
+      // Hematology tests
+      { categoryId: "hematology-cat", testName: "Complete Blood Count", price: 200 },
+      { categoryId: "hematology-cat", testName: "Blood Group", price: 100 },
+      { categoryId: "hematology-cat", testName: "Prothrombin Time", price: 150 },
+      { categoryId: "hematology-cat", testName: "Platelet Count", price: 100 },
+      // Microbiology tests
+      { categoryId: "microbiology-cat", testName: "Blood Culture", price: 400 },
+      { categoryId: "microbiology-cat", testName: "Urinalysis", price: 150 },
+      { categoryId: "microbiology-cat", testName: "Stool Culture", price: 300 },
+    ];
+
+    for (const test of demoTests) {
+      const existing = db
+        .select()
+        .from(schema.pathologyCategoryTests)
+        .where(
+          and(
+            eq(schema.pathologyCategoryTests.categoryId, test.categoryId),
+            eq(schema.pathologyCategoryTests.testName, test.testName),
+          ),
+        )
+        .get();
+      if (!existing) {
+        db.insert(schema.pathologyCategoryTests)
+          .values({
+            id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            categoryId: test.categoryId,
+            testName: test.testName,
+            price: test.price,
+            description: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .run();
+        console.log(`Created pathology test: ${test.testName}`);
+      }
+    }
+
     console.log("Demo data verification completed");
   } catch (error) {
     console.error("Error creating demo data:", error);
