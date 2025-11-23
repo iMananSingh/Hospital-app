@@ -34,6 +34,41 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 23, 2025** - Pathology Module Refactoring: Steps 1-6 Complete
+- **Step 1-4: Schema Migration Complete**
+  - Renamed `dynamic_pathology_tests` table to `pathology_category_tests` for consistency
+  - Removed `isActive` column from both `pathology_categories` and `pathology_category_tests` tables (all data is active by default)
+  - Removed `normalRange` column from `pathology_category_tests` (not used in hospital workflows)
+  - Updated all Drizzle ORM queries to match new schema
+  - Applied database migration successfully - all demo data preserved
+- **Step 5: Conversion Utilities Created**
+  - Created `server/utils/pathology-conversion.ts` with comprehensive conversion functions
+  - Implemented `pathologyToJSON()` and `pathologyToExcel()` for exporting data in multiple formats
+  - Implemented `parsePathologyJSON()` and `parsePathologyExcel()` for importing with strict validation
+  - Added `jsonToDatabase()` and `generatePathologyTemplate()` utilities
+  - Validation rejects entire upload on any data error (security-first approach)
+  - All exports include timestamps and version information for tracking
+- **Step 6: Import/Export API Endpoints Created**
+  - `POST /api/pathology-data/import/json` - Import pathology data from JSON
+  - `POST /api/pathology-data/import/excel` - Import from Excel workbook
+  - `GET /api/pathology-data/export/json` - Export all pathology data as JSON
+  - `GET /api/pathology-data/export/excel` - Export all pathology data as Excel
+  - `GET /api/pathology-data/template` - Download blank template for adding new data
+  - All endpoints require authentication and create audit logs for tracking
+  - Transaction-based creation ensures data consistency on import
+- **Technical Details:**
+  - Database-only approach: No file-based pathology catalog for new data (legacy system still supported temporarily)
+  - Excel support via `xlsx` library (already installed)
+  - Type-safe imports with Zod validation schemas
+  - Audit logging for all import/export operations
+  - Proper error handling with clear user messages
+  - All data organized by category with unlimited tests per category
+- **Testing Status:**
+  - Server running successfully with no runtime errors
+  - All endpoints registered and accessible
+  - Demo pathology data verified in database
+  - Conversion utilities tested with LSP diagnostics passing for new code
+
 **November 22, 2025** - Production Deployment to Fly.io (LIVE)
 - Successfully deployed HMSync to Fly.io in the `bom` (Mumbai) region
 - App running 24/7 with `auto_stop_machines = false` and `min_machines_running = 1` configuration

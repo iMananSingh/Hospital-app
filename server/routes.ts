@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { backupScheduler } from "./backup-scheduler";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
+import * as XLSX from "xlsx";
 import {
   insertUserSchema,
   insertPatientSchema,
@@ -1476,7 +1477,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.createPathologyCategory({
         name,
         description: description || "",
-        isActive: true,
       });
 
       // Create audit log
@@ -1714,7 +1714,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             testName,
             price,
             categoryId,
-            isActive: true,
           });
 
           // Create audit log for custom test creation
@@ -2027,9 +2026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               price: test.price,
               category: customCat.name,
               categoryId: test.categoryId,
-              normalRange: test.normalRange,
               description: test.description,
-              isActive: test.isActive,
               isHardcoded: false,
               subtests: [],
             })),
@@ -4965,6 +4962,296 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // ==================== PATHOLOGY IMPORT/EXPORT ENDPOINTS ====================
+
+  // Import pathology data from JSON
+  app.post("/api/pathology-data/import/json", authenticateToken, async (req, res) => {
+    try {
+      const { jsonData } = req.body;
+
+      if (!jsonData) {
+        return res.status(400).json({ message: "JSON data is required" });
+      }
+
+      // Parse and validate JSON
+      const { parsePathologyJSON, jsonToDatabase } = await import(
+        "./utils/pathology-conversion"
+      );
+      const parsedData = parsePathologyJSON(
+        typeof jsonData === "string" ? jsonData : JSON.stringify(jsonData),
+      );
+
+      // Convert to database format
+      const { categories, tests } = jsonToDatabase(parsedData);
+
+      // Create categories and tests in transaction
+      const createdCategories = [];
+      const createdTests = [];
+
+      const transaction = db.transaction(() => {
+        for (const category of categories) {
+          const created = db
+            .insert(schema.pathologyCategories)
+            .values(category)
+            .returning()
+            .get();
+          createdCategories.push(created);
+
+          // Create tests for this category
+          const categoryTests = tests.filter((t) => t.categoryName === category.name);
+          for (const test of categoryTests) {
+            const { categoryName, ...testData } = test;
+            const createdTest = db
+              .insert(schema.pathologyCategoryTests)
+              .values({
+                ...testData,
+                categoryId: created.id,
+              })
+              .returning()
+              .get();
+            createdTests.push(createdTest);
+          }
+        }
+      });
+
+      transaction();
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "import",
+        tableName: "pathology_categories",
+        recordId: "batch_import",
+        oldValues: null,
+        newValues: {
+          categoriesCount: createdCategories.length,
+          testsCount: createdTests.length,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({
+        message: "Pathology data imported successfully",
+        categoriesCount: createdCategories.length,
+        testsCount: createdTests.length,
+        categories: createdCategories,
+      });
+    } catch (error) {
+      console.error("Error importing pathology data:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to import pathology data";
+      res.status(400).json({ message });
+    }
+  });
+
+  // Import pathology data from Excel
+  app.post("/api/pathology-data/import/excel", authenticateToken, async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Excel file is required" });
+      }
+
+      // Parse and validate Excel
+      const { parsePathologyExcel, jsonToDatabase } = await import(
+        "./utils/pathology-conversion"
+      );
+      const parsedData = parsePathologyExcel(req.file.buffer);
+
+      // Convert to database format
+      const { categories, tests } = jsonToDatabase(parsedData);
+
+      // Create categories and tests in transaction
+      const createdCategories = [];
+      const createdTests = [];
+
+      const transaction = db.transaction(() => {
+        for (const category of categories) {
+          const created = db
+            .insert(schema.pathologyCategories)
+            .values(category)
+            .returning()
+            .get();
+          createdCategories.push(created);
+
+          // Create tests for this category
+          const categoryTests = tests.filter((t) => t.categoryName === category.name);
+          for (const test of categoryTests) {
+            const { categoryName, ...testData } = test;
+            const createdTest = db
+              .insert(schema.pathologyCategoryTests)
+              .values({
+                ...testData,
+                categoryId: created.id,
+              })
+              .returning()
+              .get();
+            createdTests.push(createdTest);
+          }
+        }
+      });
+
+      transaction();
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "import",
+        tableName: "pathology_categories",
+        recordId: "batch_import",
+        oldValues: null,
+        newValues: {
+          categoriesCount: createdCategories.length,
+          testsCount: createdTests.length,
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({
+        message: "Pathology data imported successfully",
+        categoriesCount: createdCategories.length,
+        testsCount: createdTests.length,
+        categories: createdCategories,
+      });
+    } catch (error) {
+      console.error("Error importing pathology data from Excel:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to import pathology data";
+      res.status(400).json({ message });
+    }
+  });
+
+  // Export pathology data as JSON
+  app.get("/api/pathology-data/export/json", authenticateToken, async (req, res) => {
+    try {
+      const { pathologyToJSON } = await import("./utils/pathology-conversion");
+
+      // Get all categories
+      const categories = await storage.getPathologyCategories();
+
+      // Get tests for each category
+      const categoriesWithTests = await Promise.all(
+        categories.map(async (category) => ({
+          ...category,
+          tests: await storage.getPathologyCategoryTestsByCategory(category.id),
+        })),
+      );
+
+      // Convert to JSON format
+      const jsonData = pathologyToJSON(categoriesWithTests);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "export",
+        tableName: "pathology_categories",
+        recordId: "batch_export",
+        oldValues: null,
+        newValues: {
+          categoriesCount: categories.length,
+          testsCount: categoriesWithTests.reduce((sum, c) => sum + c.tests.length, 0),
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json(jsonData);
+    } catch (error) {
+      console.error("Error exporting pathology data:", error);
+      res.status(500).json({ message: "Failed to export pathology data" });
+    }
+  });
+
+  // Export pathology data as Excel
+  app.get("/api/pathology-data/export/excel", authenticateToken, async (req, res) => {
+    try {
+      const { pathologyToExcel } = await import("./utils/pathology-conversion");
+
+      // Get all categories
+      const categories = await storage.getPathologyCategories();
+
+      // Get tests for each category
+      const categoriesWithTests = await Promise.all(
+        categories.map(async (category) => ({
+          ...category,
+          tests: await storage.getPathologyCategoryTestsByCategory(category.id),
+        })),
+      );
+
+      // Convert to Excel format
+      const workbook = pathologyToExcel(categoriesWithTests);
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "export",
+        tableName: "pathology_categories",
+        recordId: "batch_export",
+        oldValues: null,
+        newValues: {
+          categoriesCount: categories.length,
+          testsCount: categoriesWithTests.reduce((sum, c) => sum + c.tests.length, 0),
+        },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      // Generate Excel file
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="pathology-data-${new Date().toISOString().split("T")[0]}.xlsx"`,
+      );
+
+      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error exporting pathology data to Excel:", error);
+      res.status(500).json({ message: "Failed to export pathology data" });
+    }
+  });
+
+  // Get blank template for pathology data
+  app.get("/api/pathology-data/template", authenticateToken, async (req, res) => {
+    try {
+      const { generatePathologyTemplate } = await import("./utils/pathology-conversion");
+
+      // Generate template
+      const workbook = generatePathologyTemplate();
+
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "download_template",
+        tableName: "pathology_categories",
+        recordId: "template",
+        oldValues: null,
+        newValues: { templateType: "blank" },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      // Generate Excel file
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="pathology-template-${new Date().toISOString().split("T")[0]}.xlsx"`,
+      );
+
+      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generating template:", error);
+      res.status(500).json({ message: "Failed to generate template" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
