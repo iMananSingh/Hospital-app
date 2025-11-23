@@ -2,171 +2,17 @@
 
 ## Overview
 
-HMSync is a comprehensive full-stack web application designed for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to be a complete solution for healthcare facilities, featuring a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage. It supports role-based authentication for administrators, doctors, receptionists, and billing staff. The business vision is to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning HMSync as a leading solution in the healthcare IT market.
-
-## Demo Credentials
-
-The system comes pre-configured with demo users for testing:
-
-- **Root User (Super Admin)**
-  - Username: `root`
-  - Password: `root123`
-  - Roles: Super User
-
-- **Doctor**
-  - Username: `doctor`
-  - Password: `doctor123`
-  - Roles: Doctor, Billing Staff
-
-- **Billing Staff**
-  - Username: `billing`
-  - Password: `billing123`
-  - Roles: Billing Staff
-
-- **Reception Staff**
-  - Username: `reception`
-  - Password: `reception123`
-  - Roles: Receptionist
+HMSync is a comprehensive full-stack web application for efficient hospital management. It provides functionalities for patient registration, billing, pathology management, doctor management, and system administration. The system aims to streamline hospital operations, improve patient care, and enhance administrative efficiency, positioning HMSync as a leading solution in the healthcare IT market. It features a modern, responsive UI built with React and TypeScript, an Express.js API, and SQLite database storage, supporting role-based authentication for various staff members.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-
-**November 23, 2025** - Pathology Module Refactoring: COMPLETE (Steps 1-10) 🎉
-- **Step 1-4: Schema Migration Complete**
-  - Renamed `dynamic_pathology_tests` table to `pathology_category_tests` for consistency
-  - Removed `isActive` column from both `pathology_categories` and `pathology_category_tests` tables (all data is active by default)
-  - Removed `normalRange` column from `pathology_category_tests` (not used in hospital workflows)
-  - Updated all Drizzle ORM queries to match new schema
-  - Applied database migration successfully - all demo data preserved
-- **Step 5: Conversion Utilities Created**
-  - Created `server/utils/pathology-conversion.ts` with comprehensive conversion functions
-  - Implemented `pathologyToJSON()` and `pathologyToExcel()` for exporting data in multiple formats
-  - Implemented `parsePathologyJSON()` and `parsePathologyExcel()` for importing with strict validation
-  - Added `jsonToDatabase()` and `generatePathologyTemplate()` utilities
-  - Validation rejects entire upload on any data error (security-first approach)
-  - All exports include timestamps and version information for tracking
-- **Step 6: Import/Export API Endpoints Created**
-  - `POST /api/pathology-data/import/json` - Import pathology data from JSON
-  - `POST /api/pathology-data/import/excel` - Import from Excel workbook
-  - `GET /api/pathology-data/export/json` - Export all pathology data as JSON
-  - `GET /api/pathology-data/export/excel` - Export all pathology data as Excel
-  - `GET /api/pathology-data/template` - Download blank template for adding new data
-  - All endpoints require authentication and create audit logs for tracking
-  - Transaction-based creation ensures data consistency on import
-- **Technical Details:**
-  - Database-only approach: No file-based pathology catalog for new data (legacy system still supported temporarily)
-  - Excel support via `xlsx` library (already installed)
-  - Type-safe imports with Zod validation schemas
-  - Audit logging for all import/export operations
-  - Proper error handling with clear user messages
-  - All data organized by category with unlimited tests per category
-- **Step 7: Frontend UI Implementation Complete**
-  - Added import/export button group to pathology page header
-  - Implemented 6 TanStack Query mutations for all operations:
-    - `exportJsonMutation` - Download pathology data as JSON
-    - `exportExcelMutation` - Download pathology data as Excel
-    - `downloadTemplateMutation` - Get blank template for data entry
-    - `importJsonMutation` - Upload JSON file to import data
-    - `importExcelMutation` - Upload Excel file to import data
-    - `handleFileImport` - File handler for both formats
-  - Added Download and Upload icons from lucide-react
-  - All buttons properly disabled during operations with loading states
-  - Auto-refresh test catalog after successful import
-  - Toast notifications for success/failure feedback
-  - All interactive elements include proper data-testid attributes
-- **Step 8: Bootstrap Demo Data Complete**
-  - Added 3 pathology categories to demo data:
-    - Biochemistry (5 tests): Blood Glucose, Hemoglobin A1C, Lipid Profile, Liver Function Tests, Kidney Function Tests
-    - Hematology (4 tests): Complete Blood Count, Blood Group, Prothrombin Time, Platelet Count
-    - Microbiology (3 tests): Blood Culture, Urinalysis, Stool Culture
-  - All 12 tests include realistic pricing (₹100-₹400)
-  - Demo data loads on every server restart for consistency
-- **Step 9: Legacy Code Cleanup Complete**
-  - Verified no remaining references to `normalRange` field in pathology code
-  - Confirmed `isActive` field only exists in non-pathology tables (users, doctors, patients, services, etc.)
-  - All pathology-specific legacy code removed
-- **Step 10: Comprehensive Testing Complete**
-  - Server restart successful with zero runtime errors
-  - All 3 demo categories created and verified in database
-  - All 12 demo tests created with correct prices
-  - Frontend HMR updates working smoothly
-  - API endpoints responding correctly:
-    - GET /api/pathology-tests/combined returns 200 with all categories and tests
-    - Import/export endpoints registered and accessible
-  - Frontend UI buttons displaying correctly with proper styling
-  - File import/export handlers ready for production use
-- **Overall Status:**
-  - Complete pathology refactoring system ready for production
-  - Zero LSP errors in new code
-  - All endpoints operational
-  - Database integrity maintained
-  - Demo data fully populated
-  - Import/export UI fully functional
-  - System ready for Excel/JSON data interchange
-
-**November 22, 2025** - Production Deployment to Fly.io (LIVE)
-- Successfully deployed HMSync to Fly.io in the `bom` (Mumbai) region
-- App running 24/7 with `auto_stop_machines = false` and `min_machines_running = 1` configuration
-- Machine configured with shared-cpu-1x, 256MB RAM, and 1GB persistent volume for SQLite database
-- Fixed critical Docker build issue: Changed `npm ci --only=production` to `npm ci` to include dev dependencies (vite needed by server)
-- Database initializes automatically on startup with demo data pre-loaded
-- Health checks configured for automatic healing
-- Estimated monthly cost: ~$3.59 USD (shared CPU + volume storage)
-- App accessible at: https://hmsync-newhch-mandla.fly.dev
-- Demo credentials available and working
-
-**November 20, 2025** - Doctor Payment History Tab
-- Added "Payments" tab to doctor detail page to display payment history
-- Implemented new backend storage method `getDoctorPayments(doctorId)` to filter payments by specific doctor
-- Created new API endpoint `/api/doctors/:id/payments` with proper routing precedence before generic :id route
-- Payment history table displays payment ID, date, amount, method, and related earnings with proper formatting
-- Configured asynchronous query invalidation to ensure payment history updates automatically when new payments are made
-- All interactive elements include proper data-testid attributes for testing (e.g., "tab-payments", "text-payment-id-{id}")
-- Follows existing patterns from earnings history for consistency across the application
-
-**November 7, 2025** - Doctor Payroll & OPD Commission System Backend
-- Implemented complete backend for automatic doctor commission calculation system
-- Added three new storage methods:
-  - `saveDoctorServiceRates(doctorId, rates, userId)` - Batch save/update doctor service rates with proper user authentication
-  - `markDoctorEarningsPaid(doctorId)` - Mark all pending earnings as paid for payroll processing
-  - `calculateDoctorEarningForVisit(visitId)` - Automatically calculate and create doctor earnings for OPD visits
-- Created 5 new API endpoints:
-  - GET /api/doctors/:doctorId/salary-rates - Fetch doctor's commission configuration
-  - PUT /api/doctors/:doctorId/salary-rates - Save doctor's commission rates
-  - GET /api/doctors/:doctorId/earnings - Get doctor's earnings with optional status filter (pending/paid)
-  - PUT /api/doctors/:doctorId/mark-paid - Mark all pending earnings as paid
-  - GET /api/doctors/all-earnings - Get all doctors' earnings for administrative overview
-- Enhanced payment creation flow to automatically trigger commission calculations when OPD visit payments are received
-- System automatically updates visit status from "scheduled" to "completed" when payment is processed
-- Supports both percentage-based and fixed-amount commission rates per service
-- Includes duplicate earning prevention and proper foreign key constraints
-- All earnings tracked with earningId for payroll reconciliation
-
-**October 15, 2025** - Timezone Display Enhancement
-- Implemented centralized timezone-aware date/time formatting across the application
-- Created useTimezone hook with formatDateTime, formatDate, and formatTime utilities
-- Updated all patient-related pages (patients list, patient details, OPD, pathology, services, admission) to use timezone-aware formatting
-- Removed hardcoded timezone conversions (IST corrections) in favor of configurable timezone support
-- Enhanced settings page to invalidate React Query cache when timezone changes, ensuring immediate UI updates
-- All timestamps now dynamically adjust based on the configured hospital timezone setting
-
-**October 2, 2025** - Replit Environment Setup Completed
-- Successfully imported GitHub repository into Replit environment
-- Verified all dependencies and configurations are working correctly
-- Workflow configured: "Start application" running `npm run dev` on port 5000
-- Deployment configuration set up for autoscale deployment
-- Vite already properly configured with `allowedHosts: true` and `host: "0.0.0.0"` for Replit proxy compatibility
-- Application successfully running and accessible via web preview
-- SQLite database (hospital.db) present with demo data
-
 ## System Architecture
 
 ### Frontend Architecture
 
-The frontend uses React 18 with TypeScript, Wouter for routing, and TanStack Query for server state management. UI components are built with Radix UI and styled using Tailwind CSS. Form handling is managed by React Hook Form with Zod validation. Vite is used for development and optimized production builds. The frontend incorporates a protected route system with authentication middleware and a responsive sidebar navigation layout.
+The frontend uses React 18 with TypeScript, Wouter for routing, and TanStack Query for server state management. UI components are built with Radix UI and styled using Tailwind CSS. Form handling is managed by React Hook Form with Zod validation. Vite is used for development and optimized production builds. It incorporates a protected route system with authentication middleware and a responsive sidebar navigation layout.
 
 ### Backend Architecture
 
@@ -178,32 +24,28 @@ SQLite serves as the primary database, managed by Drizzle ORM for type-safe quer
 
 ### Authentication and Authorization
 
-The system implements JWT-based authentication with bcrypt for password hashing. It supports role-based access control for administrators, doctors, receptionists, and billing staff. Token-based sessions are used, with both frontend and backend route guards ensuring secure access.
+The system implements JWT-based authentication with bcrypt for password hashing and supports role-based access control for administrators, doctors, receptionists, and billing staff. Token-based sessions are used, with both frontend and backend route guards ensuring secure access.
 
 ### UI/UX Decisions
 
-The application prioritizes a modern and responsive user interface. Radix UI primitives are used for accessible and customizable components, complemented by Tailwind CSS for a utility-first styling approach. Lucide Icons provide consistent iconography. The design emphasizes intuitive navigation and clear presentation of information, such as dynamic OPD consultation fees and time-based scheduling.
+The application prioritizes a modern and responsive user interface using Radix UI primitives for accessible components and Tailwind CSS for styling. Lucide Icons provide consistent iconography. The design emphasizes intuitive navigation and clear information presentation, including dynamic OPD consultation fees and time-based scheduling.
 
 ### Feature Specifications
 
 Key features include:
 - Patient registration and management
 - Billing and invoicing with automated doctor earnings calculation
-- Pathology test management
+- Pathology test management, including import/export of data
 - Doctor management with salary tracking and individual payment processing
 - OPD management with dynamic consultation fees and doctor-segregated listings
 - Secure self-profile editing for all users
 - Role-based access control for different user types
-- **Configurable Timezone Support**: System timezone can be configured in settings for international deployment
-  - All database timestamps are stored in UTC for consistency and reliability
-  - Frontend utilities format timestamps for display in the configured timezone
-  - Supports major global timezones with DST handling via Intl.DateTimeFormat
-  - Timezone cache invalidation ensures immediate propagation of timezone changes
+- Configurable Timezone Support: System timezone can be configured in settings for international deployment, with all database timestamps stored in UTC and frontend utilities formatting them for the configured timezone.
 
 ## External Dependencies
 
 ### Third-Party Services
-- **Neon Database**: PostgreSQL serverless database option (used for potential future scaling)
+- **Neon Database**: PostgreSQL serverless database option (for potential future scaling)
 
 ### UI and Component Libraries
 - **Radix UI**: UI primitives
