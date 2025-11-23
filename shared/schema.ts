@@ -483,14 +483,13 @@ export const rooms = sqliteTable("rooms", {
     .default(sql`(datetime('now'))`),
 });
 
-// Pathology Categories for dynamic test management
+// Pathology Categories for test management (no isActive - all categories are active)
 export const pathologyCategories = sqliteTable("pathology_categories", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
   name: text("name").notNull().unique(),
   description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -499,19 +498,17 @@ export const pathologyCategories = sqliteTable("pathology_categories", {
     .default(sql`(datetime('now'))`),
 });
 
-// Dynamic Pathology Tests
-export const dynamicPathologyTests = sqliteTable("dynamic_pathology_tests", {
+// Pathology Category Tests (renamed from dynamicPathologyTests, no normalRange, no isActive)
+export const pathologyCategoryTests = sqliteTable("pathology_category_tests", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
   categoryId: text("category_id")
     .notNull()
     .references(() => pathologyCategories.id),
-  testName: text("test_name").notNull(),
+  name: text("name").notNull(),
   price: real("price").notNull().default(0),
-  normalRange: text("normal_range"),
   description: text("description"),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -588,24 +585,26 @@ export const patientDiscounts = sqliteTable("patient_discounts", {
     .default(sql`(datetime('now'))`),
 });
 
-// Activities table for tracking user actions
+// Activity Logs for user actions
 export const activities = sqliteTable("activities", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
-  userId: text("user_id").references(() => users.id),
-  activityType: text("activity_type").notNull(), // e.g., 'login', 'create_patient', 'update_bill'
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  activityType: text("activity_type").notNull(), // login, logout, create, update, delete, view
   title: text("title").notNull(),
-  description: text("description").notNull(),
+  description: text("description"),
+  entityType: text("entity_type"), // user, patient, doctor, bill, etc.
   entityId: text("entity_id"),
-  entityType: text("entity_type"),
-  metadata: text("metadata"),
+  metadata: text("metadata"), // JSON for additional data
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
 });
 
-// Doctor Service Rates - Maps doctors to services with commission/salary rates
+// Doctor Service Rates
 export const doctorServiceRates = sqliteTable("doctor_service_rates", {
   id: text("id")
     .primaryKey()
@@ -613,16 +612,11 @@ export const doctorServiceRates = sqliteTable("doctor_service_rates", {
   doctorId: text("doctor_id")
     .notNull()
     .references(() => doctors.id),
-  serviceId: text("service_id").references(() => services.id), // Nullable to support representative entries (e.g., pathology_lab_representative, opd_consultation_placeholder)
-  serviceName: text("service_name").notNull(), // Denormalized for easier querying
-  serviceCategory: text("service_category").notNull(), // opd, diagnostics, lab_tests, admission, pathology
-  rateType: text("rate_type").notNull().default("per_instance"), // per_instance, percentage, fixed_daily
-  rateAmount: real("rate_amount").notNull(), // Amount or percentage
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
-  notes: text("notes"),
-  createdBy: text("created_by")
+  serviceId: text("service_id")
     .notNull()
-    .references(() => users.id),
+    .references(() => services.id),
+  rateType: text("rate_type").notNull().default("percentage"), // percentage, fixed
+  rateValue: real("rate_value").notNull(),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -631,33 +625,21 @@ export const doctorServiceRates = sqliteTable("doctor_service_rates", {
     .default(sql`(datetime('now'))`),
 });
 
-// Doctor Earnings - Tracks what doctors have earned based on services performed
+// Doctor Earnings
 export const doctorEarnings = sqliteTable("doctor_earnings", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
-  earningId: text("earning_id").notNull().unique(), // EARN-2024-001 format
+  earningId: text("earning_id").notNull().unique(),
   doctorId: text("doctor_id")
     .notNull()
     .references(() => doctors.id),
-  patientId: text("patient_id")
-    .notNull()
-    .references(() => patients.id),
   serviceId: text("service_id")
     .notNull()
     .references(() => services.id),
-  patientServiceId: text("patient_service_id").references(
-    () => patientServices.id,
-  ), // Link to actual service performed
-  serviceName: text("service_name").notNull(),
-  serviceCategory: text("service_category").notNull(),
-  serviceDate: text("service_date").notNull(),
-  rateType: text("rate_type").notNull(), // per_instance, percentage, fixed_daily
-  rateAmount: real("rate_amount").notNull(), // The rate applied
-  servicePrice: real("service_price").notNull(), // Original service price
-  earnedAmount: real("earned_amount").notNull(), // Calculated earning amount
+  visitId: text("visit_id").references(() => patientVisits.id),
+  amount: real("amount").notNull(),
   status: text("status").notNull().default("pending"), // pending, paid
-  notes: text("notes"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -666,27 +648,22 @@ export const doctorEarnings = sqliteTable("doctor_earnings", {
     .default(sql`(datetime('now'))`),
 });
 
-// Doctor Payments - Tracks payments made to doctors
+// Doctor Payments
 export const doctorPayments = sqliteTable("doctor_payments", {
   id: text("id")
     .primaryKey()
     .default(sql`(lower(hex(randomblob(16))))`),
-  paymentId: text("payment_id").notNull().unique(), // DPAY-2024-001 format
+  paymentId: text("payment_id").notNull().unique(),
   doctorId: text("doctor_id")
     .notNull()
     .references(() => doctors.id),
+  amount: real("amount").notNull(),
   paymentDate: text("payment_date").notNull(),
-  totalAmount: real("total_amount").notNull(),
-  paymentMethod: text("payment_method").notNull(), // cash, bank_transfer, cheque
-  earningsIncluded: text("earnings_included").notNull(), // JSON array of earning IDs
-  startDate: text("start_date").notNull(), // Period start date
-  endDate: text("end_date").notNull(), // Period end date
-  description: text("description"),
+  paymentMethod: text("payment_method").notNull(),
+  status: text("status").notNull().default("pending"),
   processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
-  receiptNumber: text("receipt_number"),
-  notes: text("notes"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -695,379 +672,134 @@ export const doctorPayments = sqliteTable("doctor_payments", {
     .default(sql`(datetime('now'))`),
 });
 
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    primaryRole: true,
-  })
-  .extend({
-    roles: z
-      .array(
-        z.enum([
-          "super_user",
-          "admin",
-          "doctor",
-          "receptionist",
-          "billing_staff",
-        ]),
-      )
-      .min(1, "At least one role is required"),
-  });
+// Schedule Events
+export const scheduleEvents = sqliteTable("schedule_events", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`(lower(hex(randomblob(16))))`),
+  doctorId: text("doctor_id")
+    .notNull()
+    .references(() => doctors.id),
+  date: text("date").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  eventType: text("event_type").notNull(), // available, leave, blocked
+  reason: text("reason"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
 
-// Profile update schema - for users to edit their own profile
-export const updateProfileSchema = z
-  .object({
-    username: z.string().min(1, "Username is required").trim(),
-    fullName: z.string().min(1, "Full name is required").trim(),
-    profilePicture: z.string().optional(),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .optional(),
-  })
-  .partial()
-  .refine(
-    (data) => {
-      // At least one field must be provided
-      return Object.keys(data).length > 0;
-    },
-    { message: "At least one field must be provided" },
-  );
+// Type inference for forms
+export const insertPathologyCategorySchema = createInsertSchema(
+  pathologyCategories
+).omit({ id: true, createdAt: true, updatedAt: true });
 
+export const insertPathologyCategoryTestSchema = createInsertSchema(
+  pathologyCategoryTests
+).omit({ id: true, createdAt: true, updatedAt: true });
+
+export type PathologyCategory = typeof pathologyCategories.$inferSelect;
+export type InsertPathologyCategory = z.infer<
+  typeof insertPathologyCategorySchema
+>;
+
+export type PathologyCategoryTest = typeof pathologyCategoryTests.$inferSelect;
+export type InsertPathologyCategoryTest = z.infer<
+  typeof insertPathologyCategoryTestSchema
+>;
+
+// Legacy for compatibility (we keep this but point to new table)
+export type DynamicPathologyTest = PathologyCategoryTest;
+export type InsertDynamicPathologyTest = InsertPathologyCategoryTest;
+
+// Schema Zodsupport exports
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const insertDoctorSchema = createInsertSchema(doctors).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
-
-export const insertPatientSchema = createInsertSchema(patients)
-  .omit({
-    id: true,
-    patientId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    name: z.string().min(1, "Name is required"),
-    age: z
-      .number()
-      .min(1, "Age must be greater than 0")
-      .max(150, "Invalid age"),
-    gender: z.string().min(1, "Gender is required"),
-    phone: z.string().min(1, "Phone number is required"),
-  });
-
+export const insertPatientSchema = createInsertSchema(patients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const insertPatientVisitSchema = createInsertSchema(patientVisits).omit({
   id: true,
-  visitId: true,
   createdAt: true,
   updatedAt: true,
 });
-
-export const insertServiceSchema = createInsertSchema(services)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    billingType: z
-      .enum([
-        "per_instance",
-        "per_24_hours",
-        "per_hour",
-        "composite",
-        "variable",
-        "per_date",
-      ])
-      .default("per_instance"),
-    billingParameters: z.string().nullable().optional(),
-  });
-
+export const insertServiceSchema = createInsertSchema(services).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export const insertBillSchema = createInsertSchema(bills).omit({
   id: true,
-  billNumber: true,
   createdAt: true,
   updatedAt: true,
 });
-
 export const insertBillItemSchema = createInsertSchema(billItems).omit({
   id: true,
   createdAt: true,
 });
-
-export const insertPathologyOrderSchema = createInsertSchema(
-  pathologyOrders,
-).omit({
+export const insertPathologyOrderSchema = createInsertSchema(pathologyOrders).omit(
+  { id: true, createdAt: true, updatedAt: true }
+);
+export const insertPathologyTestSchema = createInsertSchema(pathologyTests).omit(
+  { id: true, createdAt: true, updatedAt: true }
+);
+export const insertPatientServiceSchema = createInsertSchema(
+  patientServices
+).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertAdmissionSchema = createInsertSchema(admissions).omit({
   id: true,
-  orderId: true,
   createdAt: true,
   updatedAt: true,
 });
-
-export const insertPatientServiceSchema = createInsertSchema(patientServices)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    patientId: z.string().min(1, "Patient ID is required"),
-    serviceType: z.string().min(1, "Service type is required"),
-    serviceName: z.string().min(1, "Service name is required"),
-    scheduledDate: z.string().min(1, "Scheduled date is required"),
-    scheduledTime: z.string().min(1, "Scheduled time is required"),
-    billingType: z
-      .enum([
-        "per_instance",
-        "per_24_hours",
-        "per_hour",
-        "composite",
-        "variable",
-        "per_date",
-      ])
-      .default("per_instance"),
-    billingQuantity: z.number().optional().default(1),
-    billingParameters: z.string().optional(),
-    calculatedAmount: z.number().default(0),
-    receiptNumber: z.string().optional(),
-  });
-
-export const insertAdmissionSchema = createInsertSchema(admissions)
-  .omit({
-    id: true,
-    admissionId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    patientId: z.string().min(1, "Patient is required"),
-    doctorId: z.string().min(1, "Doctor is required"),
-    currentWardType: z.string().min(1, "Ward type is required"),
-    admissionDate: z.string().min(1, "Admission date is required"),
-    reason: z.string().optional(),
-    dailyCost: z.number().min(0, "Daily cost must be non-negative"),
-    initialDeposit: z
-      .number()
-      .min(0, "Initial deposit must be non-negative")
-      .optional(),
-  });
-
 export const insertAdmissionEventSchema = createInsertSchema(
-  admissionEvents,
-).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertPathologyTestSchema = createInsertSchema(
-  pathologyTests,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
+  admissionEvents
+).omit({ id: true, createdAt: true });
 export const insertAuditLogSchema = createInsertSchema(auditLog).omit({
   id: true,
   createdAt: true,
 });
-
-export const insertAuditLogBackupSchema = createInsertSchema(
-  auditLogBackup,
-).omit({
-  id: true,
-  archivedAt: true,
-});
-
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
   createdAt: true,
 });
-
-export const insertPathologyCategorySchema = createInsertSchema(
-  pathologyCategories,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertDynamicPathologyTestSchema = createInsertSchema(
-  dynamicPathologyTests,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
+export const insertPatientPaymentSchema = createInsertSchema(
+  patientPayments
+).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPatientDiscountSchema = createInsertSchema(
+  patientDiscounts
+).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertServiceCategorySchema = createInsertSchema(
-  serviceCategories,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertPatientPaymentSchema = createInsertSchema(patientPayments)
-  .omit({
-    id: true,
-    paymentId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    patientId: z.string().min(1, "Patient ID is required"),
-    amount: z.number().min(0.01, "Payment amount must be greater than 0"),
-    paymentMethod: z.enum(["cash", "card", "upi", "bank_transfer"], {
-      errorMap: () => ({
-        message: "Payment method must be cash, card, upi, or bank_transfer",
-      }),
-    }),
-    paymentDate: z.string().min(1, "Payment date is required"),
-    processedBy: z.string().min(1, "Processed by user ID is required"),
-    reason: z.string().optional(),
-    receiptNumber: z.string().optional(),
-  });
-
-export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts)
-  .omit({
-    id: true,
-    discountId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    patientId: z.string().min(1, "Patient ID is required"),
-    amount: z.number().min(0.01, "Discount amount must be greater than 0"),
-    discountType: z.enum(
-      ["manual", "insurance", "senior_citizen", "employee"],
-      {
-        errorMap: () => ({
-          message:
-            "Discount type must be manual, insurance, senior_citizen, or employee",
-        }),
-      },
-    ),
-    reason: z.string().min(1, "Discount reason is required"),
-    discountDate: z.string().min(1, "Discount date is required"),
-    approvedBy: z.string().min(1, "Approved by user ID is required"),
-  });
-
-export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertRoomSchema = createInsertSchema(rooms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertHospitalSettingsSchema = createInsertSchema(
-  hospitalSettings,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertSystemSettingsSchema = createInsertSchema(
-  systemSettings,
-).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertBackupLogSchema = createInsertSchema(backupLogs).omit({
-  id: true,
-  createdAt: true,
-});
-
+  serviceCategories
+).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertDoctorServiceRateSchema = createInsertSchema(
-  doctorServiceRates,
-)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    doctorId: z.string().min(1, "Doctor ID is required"),
-    serviceId: z.string().min(1, "Service ID is required"),
-    serviceName: z.string().min(1, "Service name is required"),
-    serviceCategory: z.enum(
-      ["opd", "diagnostics", "lab_tests", "admission", "pathology"],
-      {
-        errorMap: () => ({
-          message:
-            "Service category must be opd, diagnostics, lab_tests, admission, or pathology",
-        }),
-      },
-    ),
-    rateType: z
-      .enum(["amount", "percentage", "fixed_daily"], {
-        errorMap: () => ({
-          message: "Rate type must be amount, percentage, or fixed_daily",
-        }),
-      })
-      .default("amount"),
-    rateAmount: z.number().min(0, "Rate amount must be non-negative"),
-    createdBy: z.string().min(1, "Created by user ID is required"),
-  });
+  doctorServiceRates
+).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDoctorEarningSchema = createInsertSchema(doctorEarnings).omit(
+  { id: true, createdAt: true, updatedAt: true }
+);
+export const insertDoctorPaymentSchema = createInsertSchema(doctorPayments).omit(
+  { id: true, createdAt: true, updatedAt: true }
+);
+export const insertScheduleEventSchema = createInsertSchema(scheduleEvents).omit(
+  { id: true, createdAt: true, updatedAt: true }
+);
 
-export const insertDoctorEarningSchema = createInsertSchema(doctorEarnings)
-  .omit({
-    id: true,
-    earningId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    doctorId: z.string().min(1, "Doctor ID is required"),
-    patientId: z.string().min(1, "Patient ID is required"),
-    serviceId: z.string().min(1, "Service ID is required"),
-    serviceName: z.string().min(1, "Service name is required"),
-    serviceCategory: z.string().min(1, "Service category is required"),
-    serviceDate: z.string().min(1, "Service date is required"),
-    rateType: z.enum(["amount", "percentage", "fixed_daily"]),
-    rateAmount: z.number().min(0, "Rate amount must be non-negative"),
-    servicePrice: z.number().min(0, "Service price must be non-negative"),
-    earnedAmount: z.number().min(0, "Earned amount must be non-negative"),
-  });
-
-export const insertDoctorPaymentSchema = createInsertSchema(doctorPayments)
-  .omit({
-    id: true,
-    paymentId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    doctorId: z.string().min(1, "Doctor ID is required"),
-    paymentDate: z.string().min(1, "Payment date is required"),
-    totalAmount: z.number().min(0.01, "Total amount must be greater than 0"),
-    paymentMethod: z.enum(["cash", "bank_transfer", "cheque"], {
-      errorMap: () => ({
-        message: "Payment method must be cash, bank_transfer, or cheque",
-      }),
-    }),
-    earningsIncluded: z.string().min(1, "Earnings included is required"),
-    startDate: z.string().min(1, "Start date is required"),
-    endDate: z.string().min(1, "End date is required"),
-    processedBy: z.string().min(1, "Processed by user ID is required"),
-  });
-
-// Types
-export type User = typeof users.$inferSelect & {
-  rolesArray?: string[]; // Helper property for parsed roles
-};
+// Type exports
+export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Doctor = typeof doctors.$inferSelect;
 export type InsertDoctor = z.infer<typeof insertDoctorSchema>;
@@ -1091,106 +823,34 @@ export type Admission = typeof admissions.$inferSelect;
 export type InsertAdmission = z.infer<typeof insertAdmissionSchema>;
 export type AdmissionEvent = typeof admissionEvents.$inferSelect;
 export type InsertAdmissionEvent = z.infer<typeof insertAdmissionEventSchema>;
-export type RoomType = typeof roomTypes.$inferSelect;
-export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
-export type Room = typeof rooms.$inferSelect;
-export type InsertRoom = z.infer<typeof insertRoomSchema>;
-export type HospitalSettings = typeof hospitalSettings.$inferSelect;
-export type InsertHospitalSettings = z.infer<
-  typeof insertHospitalSettingsSchema
->;
-export type SystemSettings = typeof systemSettings.$inferSelect;
-export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
-export type BackupLog = typeof backupLogs.$inferSelect;
+export type AuditLog = typeof auditLog.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type Activity = typeof activities.$inferSelect;
+export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type PatientPayment = typeof patientPayments.$inferSelect;
 export type InsertPatientPayment = z.infer<typeof insertPatientPaymentSchema>;
 export type PatientDiscount = typeof patientDiscounts.$inferSelect;
 export type InsertPatientDiscount = z.infer<typeof insertPatientDiscountSchema>;
-export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
-export type PathologyCategory = typeof pathologyCategories.$inferSelect;
-export type InsertPathologyCategory = z.infer<
-  typeof insertPathologyCategorySchema
->;
-export type DynamicPathologyTest = typeof dynamicPathologyTests.$inferSelect;
-export type InsertDynamicPathologyTest = z.infer<
-  typeof insertDynamicPathologyTestSchema
->;
 export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type InsertServiceCategory = z.infer<typeof insertServiceCategorySchema>;
-
-export type AuditLog = typeof auditLog.$inferSelect;
-export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
-
-export type AuditLogBackup = typeof auditLogBackup.$inferSelect;
-export type InsertAuditLogBackup = z.infer<typeof insertAuditLogBackupSchema>;
-
-export type Activity = typeof activities.$inferSelect;
-export type InsertActivity = z.infer<typeof insertActivitySchema>;
-
 export type DoctorServiceRate = typeof doctorServiceRates.$inferSelect;
 export type InsertDoctorServiceRate = z.infer<
   typeof insertDoctorServiceRateSchema
 >;
-
 export type DoctorEarning = typeof doctorEarnings.$inferSelect;
 export type InsertDoctorEarning = z.infer<typeof insertDoctorEarningSchema>;
-
 export type DoctorPayment = typeof doctorPayments.$inferSelect;
 export type InsertDoctorPayment = z.infer<typeof insertDoctorPaymentSchema>;
+export type ScheduleEvent = typeof scheduleEvents.$inferSelect;
+export type InsertScheduleEvent = z.infer<typeof insertScheduleEventSchema>;
 
-// Update schema for PATCH (partial updates allowed)
-export const updatePatientSchema = insertPatientSchema.partial();
-export type UpdatePatient = z.infer<typeof updatePatientSchema>;
-
-/**
- * Calculate admission stay duration in days using consistent logic
- * This ensures frontend and backend calculations always match
- */
+// Utility functions
 export function calculateStayDays(
-  admissionDate: string | Date,
-  endDate?: string | Date,
+  admissionDate: string,
+  dischargeDate?: string | null
 ): number {
-  let startDate: Date;
-
-  // Parse admission date using the same robust logic as frontend
-  if (typeof admissionDate === "string") {
-    const dateStr = admissionDate;
-
-    // Detect SQL datetime format "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(dateStr)) {
-      // Parse SQL format as local time to avoid timezone conversion
-      const match = dateStr.match(
-        /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/,
-      );
-      if (match) {
-        const [, year, month, day, hour, minute, second = "0"] = match;
-        startDate = new Date(
-          parseInt(year),
-          parseInt(month) - 1, // Month is 0-indexed
-          parseInt(day),
-          parseInt(hour),
-          parseInt(minute),
-          parseInt(second),
-        );
-      } else {
-        startDate = new Date(dateStr);
-      }
-    } else {
-      // Fallback to default Date parsing for other formats
-      startDate = new Date(dateStr);
-    }
-  } else {
-    startDate = admissionDate;
-  }
-
-  const end = endDate ? new Date(endDate) : new Date();
-
-  // Guard against invalid dates
-  if (isNaN(startDate.getTime()) || isNaN(end.getTime())) {
-    return 1; // Fallback to minimum 1 day for invalid dates
-  }
-
-  // Use direct millisecond calculation to avoid floating-point precision issues
-  const timeDiff = end.getTime() - startDate.getTime();
-  return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+  const admission = new Date(admissionDate);
+  const discharge = dischargeDate ? new Date(dischargeDate) : new Date();
+  const diffTime = Math.abs(discharge.getTime() - admission.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
 }
