@@ -1434,14 +1434,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         customTestsByCategory[category.id] = customTests.filter(t => t.categoryId === category.id);
       }
 
-      // Build combined categories
+      // Build combined categories with consistent IDs
       const combinedCategories = [
-        ...systemCategories.map((cat: any) => ({
+        ...systemCategories.map((cat: any, index: number) => ({
+          id: `system-${index}`,
           name: cat.name,
+          isHardcoded: true,
           tests: cat.tests || []
         })),
         ...customCategories.map(cat => ({
+          id: cat.id,
           name: cat.name,
+          isHardcoded: false,
           tests: customTestsByCategory[cat.id]?.map(t => ({
             test_name: t.testName,
             price: t.price,

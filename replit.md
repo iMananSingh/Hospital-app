@@ -10,13 +10,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**November 23, 2025** - Pathology Cleanup & Fixes
-- Deleted `dynamic_pathology_tests` table from database
-- Replaced all pathology data with simple demo: 2 categories
+**November 23, 2025** - Pathology Module Complete Cleanup & Filter Fix
+- **Database Cleanup**
+  - Deleted `dynamic_pathology_tests` table
+  - Cleared all pathology_categories and pathology_category_tests
+  - Removed hardcoded demo data creation from storage.ts (no more Biochemistry, Hematology, etc.)
+  
+- **Data Structure Fixed**
+  - All categories in combined endpoint now have consistent IDs (system-0, system-1 for hardcoded)
+  - Backend now returns `id` and `isHardcoded` flags for each category
+  - Filter now works by matching category IDs correctly
+  
+- **Demo Data** (from pathology-catalog.json only)
   - "demo category 1": 2 tests (demo test 1: ₹100, demo test 2: ₹150)
   - "demo category 2": empty (no tests)
-- Fixed category filter dropdown to deduplicate categories by name
-- Moved import/export UI from pathology orders page to Services Management → Pathology tab
+  
+- **Frontend Filter Fixed**
+  - Deduplicate categories by name in dropdown
+  - Filter by category ID now works properly
+  
+- **UI Placement**
+  - Moved import/export UI from pathology orders page to Services Management → Pathology tab
 
 ## System Architecture
 
