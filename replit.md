@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**November 23, 2025** - Pathology Module Complete Cleanup & Filter Fix
+**November 23, 2025** - Pathology Module Complete Cleanup & All Fixes Complete
 - **Database Cleanup**
   - Deleted `dynamic_pathology_tests` table
   - Cleared all pathology_categories and pathology_category_tests
@@ -28,6 +28,12 @@ Preferred communication style: Simple, everyday language.
 - **Frontend Filter Fixed**
   - Deduplicate categories by name in dropdown
   - Filter by category ID now works properly
+  
+- **Category Deletion Fixed** ✅
+  - Fixed issue where system categories couldn't be deleted
+  - Endpoint now correctly identifies system categories by "system-" ID prefix
+  - Extracts actual category name from catalog and passes to delete function
+  - Both system and custom categories can now be deleted when they have no associated tests
   
 - **UI Placement**
   - Moved import/export UI from pathology orders page to Services Management → Pathology tab

@@ -1562,30 +1562,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get category data before deletion for audit log
         const categoryToDelete = await storage.getPathologyCategoryById(id);
 
-        // Check if it's a system category (categoryId is a string that matches system category name)
-        const systemCategories = getCategories();
-        const isSystemCategory = systemCategories.includes(id);
+        // Check if it's a system category by ID pattern (system-0, system-1, etc.)
+        const isSystemCategory = id.startsWith("system-");
 
         if (isSystemCategory) {
           try {
-            deleteCategoryFromFile(id);
-            // Create audit log for system category deletion
-            if (categoryToDelete) {
-              await storage.createAuditLog({
-                userId: req.user.id,
-                username: req.user.username,
-                action: "delete",
-                tableName: "pathology_categories",
-                recordId: id,
-                oldValues: { ...categoryToDelete, isSystem: true }, // Mark as system category in old values
-                newValues: null,
-                ipAddress: req.ip,
-                userAgent: req.get("user-agent"),
+            // Extract the index from system-0, system-1, etc.
+            const systemCategoryIndex = parseInt(id.substring(7));
+            const systemCategories = pathologyCatalog.categories || [];
+            
+            if (systemCategoryIndex >= 0 && systemCategoryIndex < systemCategories.length) {
+              const categoryName = systemCategories[systemCategoryIndex].name;
+              deleteCategoryFromFile(categoryName);
+              
+              // Create audit log for system category deletion
+              if (categoryToDelete) {
+                await storage.createAuditLog({
+                  userId: req.user.id,
+                  username: req.user.username,
+                  action: "delete",
+                  tableName: "pathology_categories",
+                  recordId: id,
+                  oldValues: { ...categoryToDelete, isSystem: true },
+                  newValues: null,
+                  ipAddress: req.ip,
+                  userAgent: req.get("user-agent"),
+                });
+              }
+              res.json({
+                message: "System pathology category deleted successfully",
+              });
+            } else {
+              return res.status(404).json({
+                message: "System category not found",
               });
             }
-            res.json({
-              message: "System pathology category deleted successfully",
-            });
           } catch (error) {
             console.error("Error deleting system pathology category:", error);
             res
