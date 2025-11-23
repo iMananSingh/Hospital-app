@@ -287,11 +287,6 @@
           "test_name": "Urine Ketone",
           "price": 80,
           "subtests": []
-        },
-        {
-          "test_name": "Urine RM (Routine Microscopic)",
-          "price": 80,
-          "subtests": []
         }
       ]
     }
