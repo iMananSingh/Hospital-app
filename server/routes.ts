@@ -1569,7 +1569,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req, res) => {
       try {
-        const { testName, price, categoryId } = req.body;
+        const { testName, price, categoryId, description } = req.body;
 
         if (!testName || typeof price !== "number" || !categoryId) {
           return res.status(400).json({
@@ -1592,6 +1592,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           testName,
           price,
           categoryId,
+          description,
         });
 
         // Create audit log for test creation
