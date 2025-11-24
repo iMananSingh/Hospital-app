@@ -4772,37 +4772,43 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       // Convert to database format
       const { categories, tests } = jsonToDatabase(parsedData);
 
-      // Create categories and tests in transaction
+      // Create categories and tests
       const createdCategories = [];
       const createdTests = [];
 
-      const transaction = db.transaction(() => {
-        for (const category of categories) {
-          const created = db
-            .insert(schema.pathologyCategories)
-            .values(category)
-            .returning()
-            .get();
-          createdCategories.push(created);
+      // Get all existing categories
+      const existingCategories = await storage.getPathologyCategories();
+      const existingCategoryMap = new Map(existingCategories.map((c) => [c.name, c]));
 
-          // Create tests for this category
-          const categoryTests = tests.filter((t) => t.categoryName === category.name);
-          for (const test of categoryTests) {
-            const { categoryName, ...testData } = test;
-            const createdTest = db
-              .insert(schema.pathologyCategoryTests)
-              .values({
-                ...testData,
-                categoryId: created.id,
-              })
-              .returning()
-              .get();
-            createdTests.push(createdTest);
+      for (const category of categories) {
+        let categoryRecord = existingCategoryMap.get(category.name);
+
+        // If category doesn't exist, create it
+        if (!categoryRecord) {
+          categoryRecord = await storage.createPathologyCategory(category);
+        } else {
+          // If category exists, update its description
+          await storage.updatePathologyCategory(categoryRecord.id, category);
+          // Delete all existing tests in this category
+          const existingTests = await storage.getPathologyCategoryTestsByCategory(categoryRecord.id);
+          for (const existingTest of existingTests) {
+            await storage.deletePathologyCategoryTest(existingTest.id);
           }
         }
-      });
 
-      transaction();
+        createdCategories.push(categoryRecord);
+
+        // Create tests for this category
+        const categoryTests = tests.filter((t) => t.categoryName === category.name);
+        for (const test of categoryTests) {
+          const { categoryName, ...testData } = test;
+          const createdTest = await storage.createPathologyCategoryTest({
+            ...testData,
+            categoryId: categoryRecord.id,
+          });
+          createdTests.push(createdTest);
+        }
+      }
 
       // Create audit log
       await storage.createAuditLog({
@@ -4854,9 +4860,27 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       const createdCategories = [];
       const createdTests = [];
 
+      // Get all existing categories
+      const existingCategories = await storage.getPathologyCategories();
+      const existingCategoryMap = new Map(existingCategories.map((c) => [c.name, c]));
+
       for (const category of categories) {
-        const created = await storage.createPathologyCategory(category);
-        createdCategories.push(created);
+        let categoryRecord = existingCategoryMap.get(category.name);
+
+        // If category doesn't exist, create it
+        if (!categoryRecord) {
+          categoryRecord = await storage.createPathologyCategory(category);
+        } else {
+          // If category exists, update its description
+          await storage.updatePathologyCategory(categoryRecord.id, category);
+          // Delete all existing tests in this category
+          const existingTests = await storage.getPathologyCategoryTestsByCategory(categoryRecord.id);
+          for (const existingTest of existingTests) {
+            await storage.deletePathologyCategoryTest(existingTest.id);
+          }
+        }
+
+        createdCategories.push(categoryRecord);
 
         // Create tests for this category
         const categoryTests = tests.filter((t) => t.categoryName === category.name);
@@ -4864,7 +4888,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           const { categoryName, ...testData } = test;
           const createdTest = await storage.createPathologyCategoryTest({
             ...testData,
-            categoryId: created.id,
+            categoryId: categoryRecord.id,
           });
           createdTests.push(createdTest);
         }
