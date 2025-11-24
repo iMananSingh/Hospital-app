@@ -267,7 +267,7 @@ export function jsonToDatabase(
 
 /**
  * Generate Excel template for users to fill in
- * Creates a blank template with instructions
+ * Creates a blank template with instructions and visual styling
  */
 export function generatePathologyTemplate(): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
@@ -312,6 +312,67 @@ export function generatePathologyTemplate(): XLSX.WorkBook {
 
   const templateSheet = XLSX.utils.json_to_sheet(templateData);
   templateSheet["!cols"] = [{ wch: 20 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 30 }];
+
+  // Apply styling - category colors, green for Test Name, blue for Price
+  const categoryColors: { [key: string]: string } = {
+    Biochemistry: "C5D9F1", // Light blue
+    Hematology: "FFE8CC",   // Light orange
+  };
+
+  // Style header row (row 1: A1-E1)
+  const headerStyle = {
+    fill: { type: "solid" as const, fgColor: { rgb: "003366" } },
+    font: { color: { rgb: "FFFFFF" }, bold: true },
+  };
+
+  // Row 1 headers
+  templateSheet["A1"]!.fill = headerStyle.fill;
+  templateSheet["A1"]!.font = headerStyle.font;
+  templateSheet["B1"]!.fill = headerStyle.fill;
+  templateSheet["B1"]!.font = headerStyle.font;
+  templateSheet["C1"]!.fill = headerStyle.fill;
+  templateSheet["C1"]!.font = headerStyle.font;
+  templateSheet["D1"]!.fill = headerStyle.fill;
+  templateSheet["D1"]!.font = headerStyle.font;
+  templateSheet["E1"]!.fill = headerStyle.fill;
+  templateSheet["E1"]!.font = headerStyle.font;
+
+  // Track current category for coloring
+  let currentCategory = "";
+  let currentCategoryColor = "";
+
+  // Apply styling to data rows
+  for (let i = 0; i < templateData.length; i++) {
+    const rowIndex = i + 2; // Start from row 2 (A2, B2, etc)
+    const category = templateData[i].Category;
+
+    // Update category color if category changed
+    if (category !== currentCategory) {
+      currentCategory = category;
+      currentCategoryColor = categoryColors[category] || "E8F4F8";
+    }
+
+    // Category column (A)
+    const cellA = `A${rowIndex}`;
+    templateSheet[cellA]!.fill = { type: "solid" as const, fgColor: { rgb: currentCategoryColor } };
+
+    // Description column (B)
+    const cellB = `B${rowIndex}`;
+    templateSheet[cellB]!.fill = { type: "solid" as const, fgColor: { rgb: currentCategoryColor } };
+
+    // Test Name column (C) - GREEN
+    const cellC = `C${rowIndex}`;
+    templateSheet[cellC]!.fill = { type: "solid" as const, fgColor: { rgb: "90EE90" } };
+
+    // Price column (D) - BLUE
+    const cellD = `D${rowIndex}`;
+    templateSheet[cellD]!.fill = { type: "solid" as const, fgColor: { rgb: "87CEEB" } };
+
+    // Test Description column (E) - match category color
+    const cellE = `E${rowIndex}`;
+    templateSheet[cellE]!.fill = { type: "solid" as const, fgColor: { rgb: currentCategoryColor } };
+  }
+
   XLSX.utils.book_append_sheet(workbook, templateSheet, "Template");
 
   return workbook;
