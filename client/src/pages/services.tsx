@@ -1033,22 +1033,6 @@ export default function ServiceManagement() {
                     <Icon className="h-4 w-4 mr-1" />
                     {category.label.split(' ')[0]}
                   </button>
-                  <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Are you sure you want to delete "${category.label}"? This action cannot be undone.`)) {
-                          deleteServiceCategoryMutation.mutate(category.id);
-                        }
-                      }}
-                      size="sm"
-                      variant="destructive"
-                      className="h-6 w-6 p-0 rounded-full"
-                      disabled={deleteServiceCategoryMutation.isPending}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
                 </div>
               );
             })}
