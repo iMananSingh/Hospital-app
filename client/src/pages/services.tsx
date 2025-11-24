@@ -1501,7 +1501,6 @@ export default function ServiceManagement() {
                             <TableHead>Name</TableHead>
                             <TableHead>Description</TableHead>
                             <TableHead>Tests Count</TableHead>
-                            <TableHead>Type</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1623,7 +1622,6 @@ export default function ServiceManagement() {
                                   <TableHead>Test Name</TableHead>
                                   <TableHead>Price</TableHead>
                                   <TableHead>Normal Range</TableHead>
-                                  <TableHead>Type</TableHead>
                                   <TableHead>Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
