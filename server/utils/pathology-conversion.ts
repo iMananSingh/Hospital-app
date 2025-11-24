@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { z } from "zod";
 import {
   PathologyCategory,
@@ -320,28 +320,23 @@ export function generatePathologyTemplate(): XLSX.WorkBook {
   const cols = ["A", "B", "C", "D", "E"];
   const headers = ["Category", "Description", "Test Name", "Price", "Test Description"];
 
-  // Category colors
+  // Category colors (RGB format without FF prefix for xlsx-js-style)
   const categoryColors: { [key: string]: string } = {
     Biochemistry: "C5D9F1", // Light blue
     Hematology: "FFE8CC",   // Light orange
   };
 
   // Header styling
-  const headerFill = { patternType: "solid", fgColor: { rgb: "FF003366" } };
-  const headerFont = { bold: true, color: { rgb: "FFFFFFFF" } };
+  const headerStyle = {
+    fill: { fgColor: { rgb: "FF003366" }, patternType: "solid" },
+    font: { bold: true, color: { rgb: "FFFFFFFF" } },
+    alignment: { horizontal: "center", vertical: "center" },
+  };
 
   // Add headers (row 1)
   for (let colIdx = 0; colIdx < headers.length; colIdx++) {
     const cellRef = `${cols[colIdx]}1`;
-    ws[cellRef] = {
-      v: headers[colIdx],
-      t: "s",
-      s: {
-        fill: headerFill,
-        font: headerFont,
-        alignment: { horizontal: "center", vertical: "center" },
-      },
-    };
+    ws[cellRef] = { v: headers[colIdx], t: "s", s: headerStyle };
   }
 
   // Add data rows with styling
@@ -351,49 +346,35 @@ export function generatePathologyTemplate(): XLSX.WorkBook {
     const categoryName = row.Category;
     const categoryColor = categoryColors[categoryName] || "E8F4F8";
 
-    const categoryFill = { patternType: "solid", fgColor: { rgb: `FF${categoryColor}` } };
-    const greenFill = { patternType: "solid", fgColor: { rgb: "FF90EE90" } };
-    const blueFill = { patternType: "solid", fgColor: { rgb: "FF87CEEB" } };
+    // Define fills for this row
+    const categoryStyle = {
+      fill: { fgColor: { rgb: `FF${categoryColor}` }, patternType: "solid" },
+    };
+
+    const greenStyle = {
+      fill: { fgColor: { rgb: "FF90EE90" }, patternType: "solid" },
+      font: { bold: true, color: { rgb: "FF000000" } },
+    };
+
+    const blueStyle = {
+      fill: { fgColor: { rgb: "FF87CEEB" }, patternType: "solid" },
+      font: { bold: true, color: { rgb: "FF000000" } },
+    };
 
     // Category column (A)
-    const cellA = `A${excelRow}`;
-    ws[cellA] = {
-      v: row.Category,
-      t: "s",
-      s: { fill: categoryFill },
-    };
+    ws[`A${excelRow}`] = { v: row.Category, t: "s", s: categoryStyle };
 
     // Description column (B)
-    const cellB = `B${excelRow}`;
-    ws[cellB] = {
-      v: row.Description,
-      t: "s",
-      s: { fill: categoryFill },
-    };
+    ws[`B${excelRow}`] = { v: row.Description, t: "s", s: categoryStyle };
 
     // Test Name column (C) - GREEN
-    const cellC = `C${excelRow}`;
-    ws[cellC] = {
-      v: row["Test Name"],
-      t: "s",
-      s: { fill: greenFill, font: { bold: true, color: { rgb: "FF000000" } } },
-    };
+    ws[`C${excelRow}`] = { v: row["Test Name"], t: "s", s: greenStyle };
 
     // Price column (D) - BLUE
-    const cellD = `D${excelRow}`;
-    ws[cellD] = {
-      v: row.Price,
-      t: "n",
-      s: { fill: blueFill, font: { bold: true, color: { rgb: "FF000000" } } },
-    };
+    ws[`D${excelRow}`] = { v: row.Price, t: "n", s: blueStyle };
 
     // Test Description column (E)
-    const cellE = `E${excelRow}`;
-    ws[cellE] = {
-      v: row["Test Description"],
-      t: "s",
-      s: { fill: categoryFill },
-    };
+    ws[`E${excelRow}`] = { v: row["Test Description"], t: "s", s: categoryStyle };
   }
 
   // Set range for data
