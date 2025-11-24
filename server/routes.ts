@@ -1408,7 +1408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
-  // Create pathology category (creates custom categories in database)
+  // Create pathology category
   app.post("/api/pathology-categories", authenticateToken, async (req, res) => {
     try {
       const { name, description } = req.body;
@@ -1417,7 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Category name is required" });
       }
 
-      // Check if custom category with same name already exists
+      // Check if category with same name already exists
       const existingCategories = await storage.getPathologyCategories();
       if (existingCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
         return res
@@ -1541,7 +1541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Dynamic Pathology Tests routes
+  // Pathology Tests routes
   app.get(
     "/api/dynamic-pathology-tests",
     authenticateToken,
@@ -1558,12 +1558,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         res
           .status(500)
-          .json({ message: "Failed to get dynamic pathology tests" });
+          .json({ message: "Failed to get pathology tests" });
       }
     },
   );
 
-  // Create dynamic pathology test (works for both system and custom categories)
+  // Create pathology test
   app.post(
     "/api/dynamic-pathology-tests",
     authenticateToken,
@@ -1577,9 +1577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Check if category exists (all categories are now in the database)
-        const customCategories = await storage.getPathologyCategories();
-        const categoryExists = customCategories.some(
+        // Check if category exists in database
+        const categories = await storage.getPathologyCategories();
+        const categoryExists = categories.some(
           (cat) => cat.id === categoryId,
         );
 
@@ -1587,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Category not found" });
         }
 
-        // Add test to database for categories
+        // Add test to database
         const test = await storage.createPathologyCategoryTest({
           testName,
           price,
@@ -1700,39 +1700,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res
           .status(500)
           .json({ message: "Failed to delete dynamic pathology test" });
-      }
-    },
-  );
-
-  // Delete system pathology test
-  app.delete(
-    "/api/pathology-tests/system/:categoryName/:testName",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const { categoryName, testName } = req.params;
-
-        deleteTestFromFile(categoryName, testName);
-
-        // Create audit log for system test deletion
-        await storage.createAuditLog({
-          userId: req.user.id,
-          username: req.user.username,
-          action: "delete",
-          tableName: "pathology_tests", // Assuming system tests are logged under a generic table
-          recordId: `${categoryName}-${testName}`, // Combine category and test name for unique ID
-          oldValues: { categoryName, testName },
-          newValues: null,
-          ipAddress: req.ip,
-          userAgent: req.get("user-agent"),
-        });
-
-        res.json({ message: "System pathology test deleted successfully" });
-      } catch (error) {
-        console.error("Error deleting system pathology test:", error);
-        res
-          .status(500)
-          .json({ message: "Failed to delete system pathology test" });
       }
     },
   );
@@ -1874,8 +1841,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: cat.id,
             name: cat.name,
             description: cat.description || "",
-            isHardcoded: false,
-            isSystem: false,
             tests: testsInCategory.map((test) => ({
               id: test.id,
               test_name: test.testName,
@@ -1885,7 +1850,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               category: cat.name,
               categoryId: test.categoryId,
               description: test.description,
-              isHardcoded: false,
               subtests: [],
             })),
           };

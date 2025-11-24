@@ -696,30 +696,13 @@ export default function ServiceManagement() {
 
   const deleteTest = async (test: any, categoryName: string) => {
     try {
-      let response;
-
-      // Check if it's a system test (from JSON file) or custom test (from database)
-      // System tests don't have an id or have an id that starts with 'system-'
-      const isSystemTest = !test.id || test.id.toString().startsWith('system-') || typeof test.id === 'string' && test.id.includes('system');
-
-      if (isSystemTest) {
-        // Delete from system (JSON file)
-        const testName = test.test_name || test.testName || test.name;
-        response = await fetch(`/api/pathology-tests/system/${encodeURIComponent(categoryName)}/${encodeURIComponent(testName)}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      } else {
-        // Delete custom test from database
-        response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
+      // Delete test from database
+      const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -965,15 +948,15 @@ export default function ServiceManagement() {
     }
   };
 
-  // Combine predefined and custom service categories
+  // Predefined service categories
   const predefinedCategories = [
-    { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2, isSystem: true },
-    { key: 'admissions', label: 'Admission Services', icon: Bed, isSystem: true },
-    { key: 'pathology', label: 'Pathology Tests', icon: Activity, isSystem: true },
-    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart, isSystem: true },
-    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope, isSystem: true },
-    { key: 'operations', label: 'Surgical Operations', icon: Scissors, isSystem: true },
-    { key: 'misc', label: 'Miscellaneous Services', icon: Settings, isSystem: true }
+    { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2 },
+    { key: 'admissions', label: 'Admission Services', icon: Bed },
+    { key: 'pathology', label: 'Pathology Tests', icon: Activity },
+    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
+    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
+    { key: 'operations', label: 'Surgical Operations', icon: Scissors },
+    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
   ];
 
   const getIconComponent = (iconName: string) => {
@@ -995,7 +978,6 @@ export default function ServiceManagement() {
       key: cat.name,
       label: cat.label,
       icon: getIconComponent(cat.icon),
-      isSystem: false,
       id: cat.id
     }))
   ];
@@ -1054,24 +1036,22 @@ export default function ServiceManagement() {
                     <Icon className="h-4 w-4 mr-1" />
                     {category.label.split(' ')[0]}
                   </button>
-                  {!category.isSystem && (
-                    <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Are you sure you want to delete "${category.label}"? This action cannot be undone.`)) {
-                            deleteServiceCategoryMutation.mutate(category.id);
-                          }
-                        }}
-                        size="sm"
-                        variant="destructive"
-                        className="h-6 w-6 p-0 rounded-full"
-                        disabled={deleteServiceCategoryMutation.isPending}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Are you sure you want to delete "${category.label}"? This action cannot be undone.`)) {
+                          deleteServiceCategoryMutation.mutate(category.id);
+                        }
+                      }}
+                      size="sm"
+                      variant="destructive"
+                      className="h-6 w-6 p-0 rounded-full"
+                      disabled={deleteServiceCategoryMutation.isPending}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -1532,32 +1512,25 @@ export default function ServiceManagement() {
                               <TableCell>{category.description || '-'}</TableCell>
                               <TableCell>{category.tests?.length || 0}</TableCell>
                               <TableCell>
-                                <Badge variant={category.isHardcoded ? "secondary" : "default"}>
-                                  {category.isHardcoded ? "System" : "Custom"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
                                 <div className="flex gap-2">
-                                  {!category.isHardcoded && (
-                                    <Button
-                                      onClick={() => {
-                                        const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
-                                        if (dynamicCategory) {
-                                          setEditingCategory(dynamicCategory);
-                                          categoryForm.reset({
-                                            name: dynamicCategory.name,
-                                            description: dynamicCategory.description || "",
-                                            isActive: dynamicCategory.isActive,
-                                          });
-                                          setIsCategoryDialogOpen(true);
-                                        }
-                                      }}
-                                      size="sm"
-                                      variant="outline"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  )}
+                                  <Button
+                                    onClick={() => {
+                                      const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
+                                      if (dynamicCategory) {
+                                        setEditingCategory(dynamicCategory);
+                                        categoryForm.reset({
+                                          name: dynamicCategory.name,
+                                          description: dynamicCategory.description || "",
+                                          isActive: dynamicCategory.isActive,
+                                        });
+                                        setIsCategoryDialogOpen(true);
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     onClick={async () => {
                                       if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
@@ -1639,9 +1612,6 @@ export default function ServiceManagement() {
                           <div key={category.id} className="space-y-2">
                             <div className="flex items-center gap-2">
                               <h3 className="text-lg font-semibold">{category.name}</h3>
-                              <Badge variant={category.isHardcoded ? "secondary" : "default"}>
-                                {category.isHardcoded ? "System" : "Custom"}
-                              </Badge>
                               <span className="text-sm text-gray-500">
                                 ({category.tests.length} tests)
                               </span>
@@ -1666,14 +1636,8 @@ export default function ServiceManagement() {
                                     <TableCell>₹{test.price}</TableCell>
                                     <TableCell>{test.normalRange || '-'}</TableCell>
                                     <TableCell>
-                                      <Badge variant={test.isHardcoded ? "secondary" : "default"}>
-                                        {test.isHardcoded ? "System" : "Custom"}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell>
                                       <div className="flex gap-2">
-                                        {!test.isHardcoded && (
-                                          <Button
+                                        <Button
                                             onClick={() => {
                                               setEditingTest(test);
                                               testForm.reset({
@@ -1690,8 +1654,7 @@ export default function ServiceManagement() {
                                             variant="outline"
                                           >
                                             <Edit className="h-4 w-4" />
-                                          </Button>
-                                        )}
+                                        </Button>
                                         <Button
                                           onClick={() => {
                                             if (confirm(`Are you sure you want to delete "${test.name || test.test_name}"? This action cannot be undone.`)) {
@@ -2221,7 +2184,7 @@ export default function ServiceManagement() {
                   <SelectContent>
                     {combinedPathologyData?.categories.map(category => (
                       <SelectItem key={category.id} value={category.id}>
-                        {category.name} {category.isHardcoded ? '(System)' : '(Custom)'}
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

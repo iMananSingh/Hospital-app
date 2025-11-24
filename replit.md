@@ -10,34 +10,36 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**November 24, 2025** - Pathology Module Migrated to Database-Only Storage ✅
-- **Removed File-Based Storage**
-  - Deleted `pathology-catalog.json` file completely
-  - Eliminated `pathology-catalog.ts` module (no longer used)
-  - All pathology data now stored exclusively in database tables
+**November 24, 2025** - Complete System/Custom Labeling Removed - All Tests Treated Equally ✅
+- **Eliminated All Distinction Logic**
+  - Removed all `isHardcoded`, `isSystem`, `isCustom` flags from backend and frontend
+  - Removed all "System" vs "Custom" badges and labels from UI  
+  - Removed special edit/delete logic treating system tests differently
+  - Removed old system test deletion endpoint (`/api/pathology-tests/system/:categoryName/:testName`)
   
-- **Demo Data Initialization**
-  - Demo categories and tests now seeded in database on app startup
-  - Demo category 1: Contains 2 tests (demo test 1: ₹100, demo test 2: ₹150)
-  - Demo category 2: Empty category with no tests
-  - Seeding only occurs once (uses existence checks to prevent duplication)
+- **Unified Test Handling**
+  - All tests now deleted via same database endpoint: `/api/dynamic-pathology-tests/{id}`
+  - No distinction between demo, seeded, and user-created tests
+  - All tests function identically regardless of creation source (UI, bulk upload, or initialization)
+  - Removed all conditional rendering based on test origin
   
-- **Unified Storage System**
-  - All pathology categories and tests use single storage model (database)
-  - No more dual-storage (JSON catalog + database) complexity
-  - Combined endpoint simplified to return all data from database only
-  - System categories now stored alongside custom categories in same tables
+- **Backend Changes**
+  - Removed `isHardcoded`, `isSystem` from combined endpoint responses
+  - Simplified test creation to treat all categories uniformly
+  - Removed system-specific comments and special handling code
+  - All CRUD operations use unified database functions
   
-- **Code Cleanup**
-  - Removed all `getCategories()`, `getTestsByCategory()`, `getAllPathologyTests()` function calls
-  - Deleted three old catalog endpoints: `/api/pathology/catalog`, `/api/pathology/catalog/categories`, `/api/pathology/catalog/category/:categoryName`
-  - Simplified `/api/pathology-tests/combined` endpoint logic
-  - Removed file-based category/test deletion functions
+- **Frontend Changes (services.tsx)**
+  - Removed `isSystemTest` detection logic from delete function
+  - Removed `isSystem` flags from predefined service categories
+  - Removed conditional delete buttons hiding for "system" categories
+  - Removed "(System)/(Custom)" labels from category/test displays and dropdowns
+  - Simplified all category/test rendering without type badges
   
-- **Route Simplification**
-  - Category deletion now uses unified database deletion for all categories
-  - Test creation now handles both demo and custom categories uniformly
-  - Removed system category special handling logic
+- **Result: Complete Parity**
+  - Demo data (2 tests in category 1, empty category 2) seeded on startup
+  - All tests work identically - no internal system vs custom distinction
+  - No way to distinguish test origin - pure functional equality
 
 ## System Architecture
 
