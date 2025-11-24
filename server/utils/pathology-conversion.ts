@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx-js-style";
+const XLSX = require("xlsx-js-style");
 import { z } from "zod";
 import {
   PathologyCategory,
