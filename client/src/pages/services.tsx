@@ -1641,9 +1641,7 @@ export default function ServiceManagement() {
                                                 categoryId: test.categoryId,
                                                 testName: test.name,
                                                 price: test.price,
-                                                normalRange: test.normalRange || "",
                                                 description: test.description || "",
-                                                isActive: test.isActive,
                                               });
                                               setIsTestDialogOpen(true);
                                             }}
@@ -2204,15 +2202,6 @@ export default function ServiceManagement() {
                   {...testForm.register("price", { valueAsNumber: true })}
                   placeholder="Enter test price"
                   data-testid="input-test-price"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Normal Range</Label>
-                <Input
-                  {...testForm.register("normalRange")}
-                  placeholder="e.g., 70-100 mg/dL"
-                  data-testid="input-test-normal-range"
                 />
               </div>
 
