@@ -318,7 +318,7 @@ export default function ServiceManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
       toast({
         title: "Import successful",
-        description: `Imported ${result.importedCategories || 0} categories and ${result.importedTests || 0} tests`,
+        description: `Imported ${result.categoriesCount || 0} categories and ${result.testsCount || 0} tests`,
       });
     },
     onError: (error: any) => {
@@ -351,7 +351,7 @@ export default function ServiceManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
       toast({
         title: "Import successful",
-        description: `Imported ${result.importedCategories || 0} categories and ${result.importedTests || 0} tests`,
+        description: `Imported ${result.categoriesCount || 0} categories and ${result.testsCount || 0} tests`,
       });
     },
     onError: (error: any) => {
