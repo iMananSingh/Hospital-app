@@ -5,8 +5,15 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
+const TOAST_LIMIT = 4
 const TOAST_REMOVE_DELAY = 1000000
+
+// Auto-dismiss delays based on variant
+const TOAST_AUTO_DISMISS_DELAY = {
+  default: 2500, // Success: 2.5 seconds
+  destructive: 5000, // Error: 5 seconds
+}
+
 
 type ToasterToast = ToastProps & {
   id: string
@@ -160,6 +167,15 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  // Auto-dismiss based on variant
+  const autoDismissDelay = props.variant === "destructive" 
+    ? TOAST_AUTO_DISMISS_DELAY.destructive
+    : TOAST_AUTO_DISMISS_DELAY.default
+
+  setTimeout(() => {
+    dismiss()
+  }, autoDismissDelay)
 
   return {
     id: id,
