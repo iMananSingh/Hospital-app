@@ -213,8 +213,6 @@ export function parsePathologyExcel(fileBuffer: Buffer): PathologyDataJSON {
       .parse(categories);
 
     return {
-      version: "1.0",
-      timestamp: new Date().toISOString(),
       categories: validated,
     };
   } catch (error) {
