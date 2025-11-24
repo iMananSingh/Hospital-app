@@ -24,8 +24,6 @@ export interface PathologyCategoryJSON {
 }
 
 export interface PathologyDataJSON {
-  version: string;
-  timestamp: string;
   categories: PathologyCategoryJSON[];
 }
 
@@ -45,8 +43,6 @@ const PathologyCategoryJSONSchema = z.object({
 });
 
 const PathologyDataJSONSchema = z.object({
-  version: z.string(),
-  timestamp: z.string(),
   categories: z.array(PathologyCategoryJSONSchema),
 });
 
@@ -66,8 +62,6 @@ export function pathologyToJSON(
   })[],
 ): PathologyDataJSON {
   return {
-    version: "1.0",
-    timestamp: new Date().toISOString(),
     categories: categoriesWithTests.map((category) => ({
       name: category.name,
       description: category.description || undefined,
