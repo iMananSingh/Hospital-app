@@ -454,3 +454,127 @@ export async function generateStyledPathologyTemplate(): Promise<Buffer> {
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer as Buffer;
 }
+
+/**
+ * Generate styled Excel export of existing pathology data using ExcelJS
+ * Exports current data with same styling as template
+ */
+export async function generateStyledPathologyExport(
+  categoriesWithTests: (PathologyCategory & {
+    tests: PathologyCategoryTest[];
+  })[],
+): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+
+  // Sheet 1: Instructions
+  const instructionSheet = workbook.addWorksheet("Instructions");
+  instructionSheet.columns = [{ header: "NOTE:", key: "note", width: 80 }];
+  instructionSheet.addRows([
+    {
+      note: "This is your current pathology data. You can edit any values and re-upload.",
+    },
+    {
+      note: "Each row represents one test. Tests with the same Category name will be grouped together.",
+    },
+  ]);
+
+  // Sheet 2: Template with all current data
+  const templateSheet = workbook.addWorksheet("Template");
+  templateSheet.columns = [
+    { header: "Category", key: "Category", width: 20 },
+    { header: "Description", key: "Description", width: 30 },
+    { header: "Test Name", key: "Test Name", width: 25 },
+    { header: "Price", key: "Price", width: 12 },
+    { header: "Test Description", key: "Test Description", width: 30 },
+  ];
+
+  // Style the header row
+  const headerRow = templateSheet.getRow(1);
+  headerRow.height = 25;
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF003366" },
+    };
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+      size: 11,
+    };
+    cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+  });
+
+  // Category color map
+  const categoryColors: { [key: string]: string } = {};
+  const colorPalette = [
+    "FFC5D9F1", // Light blue
+    "FFFFE8CC", // Light orange
+    "FFC6EFCE", // Light green
+    "FFFFC7CE", // Light red
+    "FFE2EFDA", // Light teal
+    "FFFFF2CC", // Light yellow
+  ];
+
+  // Assign colors to categories dynamically
+  categoriesWithTests.forEach((category, index) => {
+    if (!categoryColors[category.name]) {
+      categoryColors[category.name] = colorPalette[index % colorPalette.length];
+    }
+  });
+
+  // Add data rows with styling
+  let currentRow = 2;
+  for (const category of categoriesWithTests) {
+    const categoryColor = categoryColors[category.name];
+
+    for (const test of category.tests) {
+      const newRow = templateSheet.insertRow(currentRow, {
+        Category: category.name,
+        Description: category.description || "",
+        "Test Name": test.testName,
+        Price: test.price,
+        "Test Description": test.description || "",
+      });
+
+      newRow.height = 20;
+
+      // Category column (A) - category color
+      newRow.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+      newRow.getCell(1).alignment = { horizontal: "left", vertical: "center" };
+
+      // Description column (B) - category color
+      newRow.getCell(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+      newRow.getCell(2).alignment = { horizontal: "left", vertical: "center" };
+
+      // Test Name column (C) - GREEN
+      newRow.getCell(3).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF90EE90" },
+      };
+      newRow.getCell(3).font = { bold: true, color: { argb: "FF000000" } };
+      newRow.getCell(3).alignment = { horizontal: "left", vertical: "center" };
+
+      // Price column (D) - BLUE
+      newRow.getCell(4).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF87CEEB" },
+      };
+      newRow.getCell(4).font = { bold: true, color: { argb: "FF000000" } };
+      newRow.getCell(4).alignment = { horizontal: "center", vertical: "center" };
+      newRow.getCell(4).numFmt = "0";
+
+      // Test Description column (E) - category color
+      newRow.getCell(5).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+      newRow.getCell(5).alignment = { horizontal: "left", vertical: "center", wrapText: true };
+
+      currentRow++;
+    }
+  }
+
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
+  return buffer as Buffer;
+}

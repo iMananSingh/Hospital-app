@@ -4957,7 +4957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export pathology data as Excel
   app.get("/api/pathology-data/export/excel", authenticateToken, async (req, res) => {
     try {
-      const { pathologyToExcel } = await import("./utils/pathology-conversion");
+      const { generateStyledPathologyExport } = await import("./utils/pathology-conversion");
 
       // Get all categories
       const categories = await storage.getPathologyCategories();
@@ -4970,8 +4970,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })),
       );
 
-      // Convert to Excel format
-      const workbook = pathologyToExcel(categoriesWithTests);
+      // Generate styled Excel export with ExcelJS
+      const buffer = await generateStyledPathologyExport(categoriesWithTests);
 
       // Create audit log
       await storage.createAuditLog({
@@ -4989,14 +4989,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get("user-agent"),
       });
 
-      // Generate Excel file
+      // Send Excel file
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="pathology-data-${new Date().toISOString().split("T")[0]}.xlsx"`,
       );
 
-      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
       res.send(buffer);
     } catch (error) {
       console.error("Error exporting pathology data to Excel:", error);
