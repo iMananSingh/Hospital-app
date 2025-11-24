@@ -4850,37 +4850,25 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       // Convert to database format
       const { categories, tests } = jsonToDatabase(parsedData);
 
-      // Create categories and tests in transaction
+      // Create categories and tests
       const createdCategories = [];
       const createdTests = [];
 
-      const transaction = db.transaction(() => {
-        for (const category of categories) {
-          const created = db
-            .insert(schema.pathologyCategories)
-            .values(category)
-            .returning()
-            .get();
-          createdCategories.push(created);
+      for (const category of categories) {
+        const created = await storage.createPathologyCategory(category);
+        createdCategories.push(created);
 
-          // Create tests for this category
-          const categoryTests = tests.filter((t) => t.categoryName === category.name);
-          for (const test of categoryTests) {
-            const { categoryName, ...testData } = test;
-            const createdTest = db
-              .insert(schema.pathologyCategoryTests)
-              .values({
-                ...testData,
-                categoryId: created.id,
-              })
-              .returning()
-              .get();
-            createdTests.push(createdTest);
-          }
+        // Create tests for this category
+        const categoryTests = tests.filter((t) => t.categoryName === category.name);
+        for (const test of categoryTests) {
+          const { categoryName, ...testData } = test;
+          const createdTest = await storage.createPathologyCategoryTest({
+            ...testData,
+            categoryId: created.id,
+          });
+          createdTests.push(createdTest);
         }
-      });
-
-      transaction();
+      }
 
       // Create audit log
       await storage.createAuditLog({
