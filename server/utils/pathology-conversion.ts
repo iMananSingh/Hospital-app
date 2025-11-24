@@ -152,10 +152,11 @@ export function parsePathologyJSON(jsonString: string): PathologyDataJSON {
 export function parsePathologyExcel(fileBuffer: Buffer): PathologyDataJSON {
   try {
     const workbook = XLSX.read(fileBuffer, { type: "buffer" });
-    const sheet = workbook.Sheets["Categories"];
+    // Check for either "Template" (from blank download) or "Categories" (from data export)
+    const sheet = workbook.Sheets["Template"] || workbook.Sheets["Categories"];
 
     if (!sheet) {
-      throw new Error('Excel file must contain a "Categories" sheet');
+      throw new Error('Excel file must contain either a "Template" or "Categories" sheet');
     }
 
     const data = XLSX.utils.sheet_to_json(sheet);
