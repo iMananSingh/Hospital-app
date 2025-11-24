@@ -1550,46 +1550,49 @@ export default function ServiceManagement() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Pathology Tests</h3>
-                    <Button
-                      onClick={() => {
-                        setEditingTest(null);
-                        testForm.reset({
-                          categoryId: "",
-                          testName: "",
-                          price: 0,
-                          description: "",
-                        });
-                        setIsTestDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2"
-                      data-testid="button-add-test"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Test
-                    </Button>
                   </div>
 
                   {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
-                    <div>
-                      {/* Category Filter - Deduplicate by name */}
-                      <div className="flex gap-4 items-center">
-                        <label className="text-sm font-medium">Filter by Category:</label>
-                        <select
-                          value={selectedCategoryId}
-                          onChange={(e) => setSelectedCategoryId(e.target.value)}
-                          className="px-3 py-2 border rounded-md"
+                    <div className="space-y-4">
+                      {/* Filter and Add Test Button Row */}
+                      <div className="flex justify-between items-center gap-4">
+                        {/* Category Filter - Deduplicate by name */}
+                        <div className="flex gap-4 items-center">
+                          <label className="text-sm font-medium">Filter by Category:</label>
+                          <select
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            className="px-3 py-2 border rounded-md"
+                          >
+                            <option value="">All Categories</option>
+                            {Array.from(
+                              new Map(
+                                combinedPathologyData.categories.map(cat => [cat.name, cat])
+                              ).values()
+                            ).map(category => (
+                              <option key={category.id} value={category.id}>
+                                {category.name} ({category.tests?.length || 0} tests)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setEditingTest(null);
+                            testForm.reset({
+                              categoryId: "",
+                              testName: "",
+                              price: 0,
+                              description: "",
+                            });
+                            setIsTestDialogOpen(true);
+                          }}
+                          className="flex items-center gap-2"
+                          data-testid="button-add-test"
                         >
-                          <option value="">All Categories</option>
-                          {Array.from(
-                            new Map(
-                              combinedPathologyData.categories.map(cat => [cat.name, cat])
-                            ).values()
-                          ).map(category => (
-                            <option key={category.id} value={category.id}>
-                              {category.name} ({category.tests?.length || 0} tests)
-                            </option>
-                          ))}
-                        </select>
+                          <Plus className="h-4 w-4" />
+                          Add Test
+                        </Button>
                       </div>
 
                       {/* Tests grouped by category */}
