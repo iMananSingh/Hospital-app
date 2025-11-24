@@ -1,4 +1,4 @@
-const XLSX = require("xlsx-js-style");
+import * as XLSX from "xlsx";
 import { z } from "zod";
 import {
   PathologyCategory,
@@ -267,7 +267,7 @@ export function jsonToDatabase(
 
 /**
  * Generate Excel template for users to fill in
- * Creates a blank template with instructions and visual styling
+ * Creates a blank template with instructions
  */
 export function generatePathologyTemplate(): XLSX.WorkBook {
   const workbook = XLSX.utils.book_new();
@@ -310,77 +310,9 @@ export function generatePathologyTemplate(): XLSX.WorkBook {
     },
   ];
 
-  // Build sheet manually to enable styling support
-  const ws: any = {};
-
-  // Add column widths
-  ws["!cols"] = [{ wch: 20 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 30 }];
-
-  // Column mapping
-  const cols = ["A", "B", "C", "D", "E"];
-  const headers = ["Category", "Description", "Test Name", "Price", "Test Description"];
-
-  // Category colors (RGB format without FF prefix for xlsx-js-style)
-  const categoryColors: { [key: string]: string } = {
-    Biochemistry: "C5D9F1", // Light blue
-    Hematology: "FFE8CC",   // Light orange
-  };
-
-  // Header styling
-  const headerStyle = {
-    fill: { fgColor: { rgb: "FF003366" }, patternType: "solid" },
-    font: { bold: true, color: { rgb: "FFFFFFFF" } },
-    alignment: { horizontal: "center", vertical: "center" },
-  };
-
-  // Add headers (row 1)
-  for (let colIdx = 0; colIdx < headers.length; colIdx++) {
-    const cellRef = `${cols[colIdx]}1`;
-    ws[cellRef] = { v: headers[colIdx], t: "s", s: headerStyle };
-  }
-
-  // Add data rows with styling
-  for (let rowIdx = 0; rowIdx < templateData.length; rowIdx++) {
-    const row = templateData[rowIdx];
-    const excelRow = rowIdx + 2;
-    const categoryName = row.Category;
-    const categoryColor = categoryColors[categoryName] || "E8F4F8";
-
-    // Define fills for this row
-    const categoryStyle = {
-      fill: { fgColor: { rgb: `FF${categoryColor}` }, patternType: "solid" },
-    };
-
-    const greenStyle = {
-      fill: { fgColor: { rgb: "FF90EE90" }, patternType: "solid" },
-      font: { bold: true, color: { rgb: "FF000000" } },
-    };
-
-    const blueStyle = {
-      fill: { fgColor: { rgb: "FF87CEEB" }, patternType: "solid" },
-      font: { bold: true, color: { rgb: "FF000000" } },
-    };
-
-    // Category column (A)
-    ws[`A${excelRow}`] = { v: row.Category, t: "s", s: categoryStyle };
-
-    // Description column (B)
-    ws[`B${excelRow}`] = { v: row.Description, t: "s", s: categoryStyle };
-
-    // Test Name column (C) - GREEN
-    ws[`C${excelRow}`] = { v: row["Test Name"], t: "s", s: greenStyle };
-
-    // Price column (D) - BLUE
-    ws[`D${excelRow}`] = { v: row.Price, t: "n", s: blueStyle };
-
-    // Test Description column (E)
-    ws[`E${excelRow}`] = { v: row["Test Description"], t: "s", s: categoryStyle };
-  }
-
-  // Set range for data
-  ws["!ref"] = `A1:E${templateData.length + 1}`;
-
-  XLSX.utils.book_append_sheet(workbook, ws, "Template");
+  const templateSheet = XLSX.utils.json_to_sheet(templateData);
+  templateSheet["!cols"] = [{ wch: 20 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(workbook, templateSheet, "Template");
 
   return workbook;
 }
