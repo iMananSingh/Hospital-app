@@ -5007,10 +5007,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get blank template for pathology data
   app.get("/api/pathology-data/template", authenticateToken, async (req, res) => {
     try {
-      const { generatePathologyTemplate } = await import("./utils/pathology-conversion");
+      const { generateStyledPathologyTemplate } = await import("./utils/pathology-conversion");
 
-      // Generate template
-      const workbook = generatePathologyTemplate();
+      // Generate styled template with ExcelJS
+      const buffer = await generateStyledPathologyTemplate();
 
       // Create audit log
       await storage.createAuditLog({
@@ -5025,14 +5025,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get("user-agent"),
       });
 
-      // Generate Excel file
+      // Send Excel file
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader(
         "Content-Disposition",
         `attachment; filename="pathology-template-${new Date().toISOString().split("T")[0]}.xlsx"`,
       );
 
-      const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
       res.send(buffer);
     } catch (error) {
       console.error("Error generating template:", error);

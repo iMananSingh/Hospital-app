@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { z } from "zod";
 import {
   PathologyCategory,
@@ -266,7 +267,7 @@ export function jsonToDatabase(
 }
 
 /**
- * Generate Excel template for users to fill in
+ * Generate Excel template for users to fill in (using plain XLSX - no styling)
  * Creates a blank template with instructions
  */
 export function generatePathologyTemplate(): XLSX.WorkBook {
@@ -315,4 +316,141 @@ export function generatePathologyTemplate(): XLSX.WorkBook {
   XLSX.utils.book_append_sheet(workbook, templateSheet, "Template");
 
   return workbook;
+}
+
+/**
+ * Generate styled Excel template using ExcelJS with full styling support
+ * Returns a Buffer directly ready to send as response
+ */
+export async function generateStyledPathologyTemplate(): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+
+  // Sheet 1: Instructions
+  const instructionSheet = workbook.addWorksheet("Instructions");
+  instructionSheet.columns = [{ header: "NOTE:", key: "note", width: 80 }];
+  instructionSheet.addRows([
+    {
+      note: "Use the Template sheet to add new pathology tests and categories",
+    },
+    {
+      note: "Each row represents one test. Tests with the same Category name will be grouped together",
+    },
+  ]);
+
+  // Sheet 2: Template with styling
+  const templateSheet = workbook.addWorksheet("Template");
+  templateSheet.columns = [
+    { header: "Category", key: "Category", width: 20 },
+    { header: "Description", key: "Description", width: 30 },
+    { header: "Test Name", key: "Test Name", width: 25 },
+    { header: "Price", key: "Price", width: 12 },
+    { header: "Test Description", key: "Test Description", width: 30 },
+  ];
+
+  // Style the header row
+  const headerRow = templateSheet.getRow(1);
+  headerRow.height = 25;
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF003366" },
+    };
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+      size: 11,
+    };
+    cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+  });
+
+  // Template data
+  const templateData = [
+    {
+      Category: "Biochemistry",
+      Description: "Blood chemistry tests",
+      "Test Name": "Blood Glucose",
+      Price: 150,
+      "Test Description": "Fasting blood glucose test",
+    },
+    {
+      Category: "Biochemistry",
+      Description: "Blood chemistry tests",
+      "Test Name": "Liver Function Test",
+      Price: 200,
+      "Test Description": "LFT panel",
+    },
+    {
+      Category: "Hematology",
+      Description: "Blood cell analysis",
+      "Test Name": "Complete Blood Count",
+      Price: 250,
+      "Test Description": "CBC with differential",
+    },
+  ];
+
+  // Category color map
+  const categoryColors: { [key: string]: string } = {
+    Biochemistry: "FFC5D9F1", // Light blue
+    Hematology: "FFFFE8CC",   // Light orange
+  };
+
+  // Add data rows with styling
+  let currentRow = 2;
+  for (const row of templateData) {
+    const categoryColor = categoryColors[row.Category] || "FFFFE8F8";
+
+    const newRow = templateSheet.insertRow(currentRow, row);
+    newRow.height = 20;
+
+    // Category column (A) - category color
+    newRow.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+    newRow.getCell(1).alignment = { horizontal: "left", vertical: "center" };
+
+    // Description column (B) - category color
+    newRow.getCell(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+    newRow.getCell(2).alignment = { horizontal: "left", vertical: "center" };
+
+    // Test Name column (C) - GREEN
+    newRow.getCell(3).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF90EE90" },
+    };
+    newRow.getCell(3).font = { bold: true, color: { argb: "FF000000" } };
+    newRow.getCell(3).alignment = { horizontal: "left", vertical: "center" };
+
+    // Price column (D) - BLUE
+    newRow.getCell(4).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF87CEEB" },
+    };
+    newRow.getCell(4).font = { bold: true, color: { argb: "FF000000" } };
+    newRow.getCell(4).alignment = { horizontal: "center", vertical: "center" };
+    newRow.getCell(4).numFmt = "0";
+
+    // Test Description column (E) - category color
+    newRow.getCell(5).fill = { type: "pattern", pattern: "solid", fgColor: { argb: categoryColor } };
+    newRow.getCell(5).alignment = { horizontal: "left", vertical: "center", wrapText: true };
+
+    currentRow++;
+  }
+
+  // Add some empty rows for user to fill
+  for (let i = 0; i < 10; i++) {
+    const emptyRow = templateSheet.insertRow(currentRow, {});
+    emptyRow.height = 20;
+
+    for (let col = 1; col <= 5; col++) {
+      const cell = emptyRow.getCell(col);
+      cell.alignment = { horizontal: "left", vertical: "center" };
+    }
+
+    currentRow++;
+  }
+
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
+  return buffer as Buffer;
 }
