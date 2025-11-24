@@ -1621,7 +1621,7 @@ export default function ServiceManagement() {
                                 <TableRow>
                                   <TableHead>Test Name</TableHead>
                                   <TableHead>Price</TableHead>
-                                  <TableHead>Normal Range</TableHead>
+                                  <TableHead>Description</TableHead>
                                   <TableHead>Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -1632,7 +1632,7 @@ export default function ServiceManagement() {
                                       {test.name || test.test_name}
                                     </TableCell>
                                     <TableCell>₹{test.price}</TableCell>
-                                    <TableCell>{test.normalRange || '-'}</TableCell>
+                                    <TableCell>{test.description || '-'}</TableCell>
                                     <TableCell>
                                       <div className="flex gap-2">
                                         <Button
