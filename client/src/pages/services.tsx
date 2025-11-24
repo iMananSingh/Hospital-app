@@ -170,7 +170,6 @@ export default function ServiceManagement() {
     defaultValues: {
       name: "",
       description: "",
-      isActive: true,
     },
   });
 
@@ -179,9 +178,7 @@ export default function ServiceManagement() {
       categoryId: "",
       testName: "",
       price: 0,
-      normalRange: "",
       description: "",
-      isActive: true,
     },
   });
 
