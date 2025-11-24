@@ -1567,7 +1567,16 @@ export default function ServiceManagement() {
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Pathology Tests</h3>
                     <Button
-                      onClick={() => setIsTestDialogOpen(true)}
+                      onClick={() => {
+                        setEditingTest(null);
+                        testForm.reset({
+                          categoryId: "",
+                          testName: "",
+                          price: 0,
+                          description: "",
+                        });
+                        setIsTestDialogOpen(true);
+                      }}
                       className="flex items-center gap-2"
                       data-testid="button-add-test"
                     >
@@ -1673,7 +1682,16 @@ export default function ServiceManagement() {
                       <Syringe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                       <p className="text-gray-500">No pathology tests defined yet</p>
                       <Button
-                        onClick={() => setIsTestDialogOpen(true)}
+                        onClick={() => {
+                          setEditingTest(null);
+                          testForm.reset({
+                            categoryId: "",
+                            testName: "",
+                            price: 0,
+                            description: "",
+                          });
+                          setIsTestDialogOpen(true);
+                        }}
                         className="mt-4"
                       >
                         <Plus className="h-4 w-4 mr-2" />
