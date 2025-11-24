@@ -1228,8 +1228,71 @@ async function createDemoData() {
       console.log("Created pathology_test_placeholder service");
     }
 
-    // Pathology data is loaded from pathology-catalog.json (hardcoded)
-    // No additional demo categories are created in the database
+    // Create demo pathology categories and tests
+    const existingDemoCat1 = db
+      .select()
+      .from(schema.pathologyCategories)
+      .where(eq(schema.pathologyCategories.name, "demo category 1"))
+      .get();
+    if (!existingDemoCat1) {
+      const cat1Id = db.insert(schema.pathologyCategories)
+        .values({
+          name: "demo category 1",
+          description: "Demo pathology category 1",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .returning({ id: schema.pathologyCategories.id })
+        .get();
+
+      if (cat1Id) {
+        // Add demo tests for category 1
+        db.insert(schema.pathologyCategoryTests)
+          .values([
+            {
+              categoryId: cat1Id.id,
+              testName: "demo test 1",
+              price: 100,
+              description: "First demo test",
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              categoryId: cat1Id.id,
+              testName: "demo test 2",
+              price: 150,
+              description: "Second demo test",
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ])
+          .run();
+        console.log("Created demo category 1 with 2 tests");
+      }
+    }
+
+    // Create demo category 2 (empty)
+    const existingDemoCat2 = db
+      .select()
+      .from(schema.pathologyCategories)
+      .where(eq(schema.pathologyCategories.name, "demo category 2"))
+      .get();
+    if (!existingDemoCat2) {
+      db.insert(schema.pathologyCategories)
+        .values({
+          name: "demo category 2",
+          description: "Demo pathology category 2",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+      console.log("Created demo category 2 (empty)");
+    }
+
     console.log("Demo data verification completed");
   } catch (error) {
     console.error("Error creating demo data:", error);

@@ -10,40 +10,34 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**November 23, 2025** - Pathology Module Complete Cleanup & All Fixes Complete
-- **Database Cleanup**
-  - Deleted `dynamic_pathology_tests` table
-  - Cleared all pathology_categories and pathology_category_tests
-  - Removed hardcoded demo data creation from storage.ts (no more Biochemistry, Hematology, etc.)
+**November 24, 2025** - Pathology Module Migrated to Database-Only Storage ✅
+- **Removed File-Based Storage**
+  - Deleted `pathology-catalog.json` file completely
+  - Eliminated `pathology-catalog.ts` module (no longer used)
+  - All pathology data now stored exclusively in database tables
   
-- **Data Structure Fixed**
-  - All categories in combined endpoint now have consistent IDs (system-0, system-1 for hardcoded)
-  - Backend now returns `id` and `isHardcoded` flags for each category
-  - Filter now works by matching category IDs correctly
+- **Demo Data Initialization**
+  - Demo categories and tests now seeded in database on app startup
+  - Demo category 1: Contains 2 tests (demo test 1: ₹100, demo test 2: ₹150)
+  - Demo category 2: Empty category with no tests
+  - Seeding only occurs once (uses existence checks to prevent duplication)
   
-- **Demo Data** (from pathology-catalog.json only)
-  - "demo category 1": 2 tests (demo test 1: ₹100, demo test 2: ₹150)
-  - "demo category 2": empty (no tests)
+- **Unified Storage System**
+  - All pathology categories and tests use single storage model (database)
+  - No more dual-storage (JSON catalog + database) complexity
+  - Combined endpoint simplified to return all data from database only
+  - System categories now stored alongside custom categories in same tables
   
-- **Frontend Filter Fixed**
-  - Deduplicate categories by name in dropdown
-  - Filter by category ID now works properly
+- **Code Cleanup**
+  - Removed all `getCategories()`, `getTestsByCategory()`, `getAllPathologyTests()` function calls
+  - Deleted three old catalog endpoints: `/api/pathology/catalog`, `/api/pathology/catalog/categories`, `/api/pathology/catalog/category/:categoryName`
+  - Simplified `/api/pathology-tests/combined` endpoint logic
+  - Removed file-based category/test deletion functions
   
-- **Category Deletion Fixed** ✅
-  - Fixed issue where system categories couldn't be deleted
-  - Endpoint now correctly identifies system categories by "system-" ID prefix
-  - Extracts actual category name from catalog and passes to delete function
-  - Both system and custom categories can now be deleted when they have no associated tests
-
-- **Test Creation Fixed** ✅
-  - Fixed "Category not found" error when creating tests
-  - Both delete and create endpoints now use consistent system category detection
-  - System categories identified by "system-" ID prefix, not by category name
-  - Extracts catalog index from ID to get correct category name
-  - Tests can now be successfully added to existing categories
-  
-- **UI Placement**
-  - Moved import/export UI from pathology orders page to Services Management → Pathology tab
+- **Route Simplification**
+  - Category deletion now uses unified database deletion for all categories
+  - Test creation now handles both demo and custom categories uniformly
+  - Removed system category special handling logic
 
 ## System Architecture
 

@@ -27,17 +27,6 @@ import {
   insertPatientServiceSchema,
   insertRoomSchema, // Import Room schema
 } from "@shared/schema";
-import {
-  pathologyCatalog,
-  getAllPathologyTests,
-  getTestsByCategory,
-  getTestByName,
-  getCategories,
-  addCategoryToFile,
-  addTestToFile,
-  deleteCategoryFromFile,
-  deleteTestFromFile,
-} from "./pathology-catalog";
 import { updatePatientSchema } from "../shared/schema";
 import * as db from "./storage"; // Alias storage as db for brevity as seen in changes
 import * as schema from "@shared/schema"; // Import schema for Drizzle ORM
@@ -1418,48 +1407,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Combined pathology tests (system catalog + custom database tests)
-  app.get("/api/pathology-tests/combined", authenticateToken, async (req, res) => {
-    try {
-      // Get system categories and tests from catalog
-      const systemCategories = pathologyCatalog.categories || [];
-      
-      // Get custom categories and tests from database
-      const customCategories = await storage.getPathologyCategories();
-      const customTests = await storage.getPathologyCategoryTests();
-
-      // Organize custom tests by category
-      const customTestsByCategory: { [key: string]: any[] } = {};
-      for (const category of customCategories) {
-        customTestsByCategory[category.id] = customTests.filter(t => t.categoryId === category.id);
-      }
-
-      // Build combined categories with consistent IDs
-      const combinedCategories = [
-        ...systemCategories.map((cat: any, index: number) => ({
-          id: `system-${index}`,
-          name: cat.name,
-          isHardcoded: true,
-          tests: cat.tests || []
-        })),
-        ...customCategories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          isHardcoded: false,
-          tests: customTestsByCategory[cat.id]?.map(t => ({
-            test_name: t.testName,
-            price: t.price,
-            subtests: []
-          })) || []
-        }))
-      ];
-
-      res.json({ categories: combinedCategories });
-    } catch (error) {
-      console.error("Error fetching combined pathology tests:", error);
-      res.status(500).json({ message: "Failed to get combined pathology tests" });
-    }
-  });
 
   // Create pathology category (creates custom categories in database)
   app.post("/api/pathology-categories", authenticateToken, async (req, res) => {
@@ -1470,12 +1417,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Category name is required" });
       }
 
-      // Check if system category with same name exists
-      const systemCategories = getCategories();
-      if (systemCategories.includes(name)) {
+      // Check if custom category with same name already exists
+      const existingCategories = await storage.getPathologyCategories();
+      if (existingCategories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
         return res
           .status(400)
-          .json({ message: "A system category with this name already exists" });
+          .json({ message: "A category with this name already exists" });
       }
 
       const category = await storage.createPathologyCategory({
@@ -1562,72 +1509,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get category data before deletion for audit log
         const categoryToDelete = await storage.getPathologyCategoryById(id);
 
-        // Check if it's a system category by ID pattern (system-0, system-1, etc.)
-        const isSystemCategory = id.startsWith("system-");
-
-        if (isSystemCategory) {
-          try {
-            // Extract the index from system-0, system-1, etc.
-            const systemCategoryIndex = parseInt(id.substring(7));
-            const systemCategories = pathologyCatalog.categories || [];
-            
-            if (systemCategoryIndex >= 0 && systemCategoryIndex < systemCategories.length) {
-              const categoryName = systemCategories[systemCategoryIndex].name;
-              deleteCategoryFromFile(categoryName);
-              
-              // Create audit log for system category deletion
-              if (categoryToDelete) {
-                await storage.createAuditLog({
-                  userId: req.user.id,
-                  username: req.user.username,
-                  action: "delete",
-                  tableName: "pathology_categories",
-                  recordId: id,
-                  oldValues: { ...categoryToDelete, isSystem: true },
-                  newValues: null,
-                  ipAddress: req.ip,
-                  userAgent: req.get("user-agent"),
-                });
-              }
-              res.json({
-                message: "System pathology category deleted successfully",
-              });
-            } else {
-              return res.status(404).json({
-                message: "System category not found",
-              });
-            }
-          } catch (error) {
-            console.error("Error deleting system pathology category:", error);
-            res
-              .status(500)
-              .json({ message: "Failed to delete system pathology category" });
-          }
-        } else {
-          // Handle custom category deletion
-          const deleted = await storage.deletePathologyCategory(id);
-          if (!deleted) {
-            return res.status(404).json({
-              message: "Pathology category not found or has associated tests",
-            });
-          }
-
-          // Create audit log for custom category deletion
-          if (categoryToDelete) {
-            await storage.createAuditLog({
-              userId: req.user.id,
-              username: req.user.username,
-              action: "delete",
-              tableName: "pathology_categories",
-              recordId: id,
-              oldValues: categoryToDelete,
-              newValues: null,
-              ipAddress: req.ip,
-              userAgent: req.get("user-agent"),
-            });
-          }
-          res.json({ message: "Pathology category deleted successfully" });
+        // All categories are now in the database - handle deletion
+        const deleted = await storage.deletePathologyCategory(id);
+        if (!deleted) {
+          return res.status(404).json({
+            message: "Pathology category not found or has associated tests",
+          });
         }
+
+        // Create audit log for category deletion
+        if (categoryToDelete) {
+          await storage.createAuditLog({
+            userId: req.user.id,
+            username: req.user.username,
+            action: "delete",
+            tableName: "pathology_categories",
+            recordId: id,
+            oldValues: categoryToDelete,
+            newValues: null,
+            ipAddress: req.ip,
+            userAgent: req.get("user-agent"),
+          });
+        }
+        res.json({ message: "Pathology category deleted successfully" });
       } catch (error) {
         console.error("Error deleting pathology category:", error);
         res
@@ -1673,87 +1577,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Check if it's a system category by ID pattern (system-0, system-1, etc.)
-        const isSystemCategory = categoryId.startsWith("system-");
+        // Check if category exists (all categories are now in the database)
+        const customCategories = await storage.getPathologyCategories();
+        const categoryExists = customCategories.some(
+          (cat) => cat.id === categoryId,
+        );
 
-        if (isSystemCategory) {
-          // Add test to the JSON file for system categories
-          try {
-            // Extract the index from system-0, system-1, etc.
-            const systemCategoryIndex = parseInt(categoryId.substring(7));
-            const systemCategories = pathologyCatalog.categories || [];
-            
-            if (systemCategoryIndex < 0 || systemCategoryIndex >= systemCategories.length) {
-              return res.status(400).json({ message: "Category not found" });
-            }
-            
-            const categoryName = systemCategories[systemCategoryIndex].name;
-            addTestToFile(categoryName, {
-              test_name: testName,
-              price: price,
-              subtests: [],
-            });
-
-            // Create audit log for system test creation
-            await storage.createAuditLog({
-              userId: req.user.id,
-              username: req.user.username,
-              action: "create",
-              tableName: "pathology_tests", // Assuming system tests are logged under a generic table
-              recordId: `${categoryId}-${testName}`, // Combine category and test name for unique ID
-              oldValues: null,
-              newValues: { categoryId, testName, price },
-              ipAddress: req.ip,
-              userAgent: req.get("user-agent"),
-            });
-
-            // Return a mock response that matches the expected format
-            res.json({
-              id: `system-${Date.now()}`,
-              testName,
-              price,
-              categoryId,
-              isActive: true,
-            });
-          } catch (fileError) {
-            console.error("Error adding test to system category:", fileError);
-            res
-              .status(500)
-              .json({ message: "Failed to add test to system category" });
-          }
-        } else {
-          // Check if custom category exists
-          const customCategories = await storage.getPathologyCategories();
-          const categoryExists = customCategories.some(
-            (cat) => cat.id === categoryId,
-          );
-
-          if (!categoryExists) {
-            return res.status(400).json({ message: "Category not found" });
-          }
-
-          // Add test to database for custom categories
-          const test = await storage.createPathologyCategoryTest({
-            testName,
-            price,
-            categoryId,
-          });
-
-          // Create audit log for custom test creation
-          await storage.createAuditLog({
-            userId: req.user.id,
-            username: req.user.username,
-            action: "create",
-            tableName: "dynamic_pathology_tests",
-            recordId: test.id,
-            oldValues: null,
-            newValues: test,
-            ipAddress: req.ip,
-            userAgent: req.get("user-agent"),
-          });
-
-          res.json(test);
+        if (!categoryExists) {
+          return res.status(400).json({ message: "Category not found" });
         }
+
+        // Add test to database for categories
+        const test = await storage.createPathologyCategoryTest({
+          testName,
+          price,
+          categoryId,
+        });
+
+        // Create audit log for test creation
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: "create",
+          tableName: "pathology_category_tests",
+          recordId: test.id,
+          oldValues: null,
+          newValues: test,
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+
+        res.json(test);
       } catch (error) {
         console.error("Error creating dynamic pathology test:", error);
         res
@@ -2002,43 +1856,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Get combined pathology tests (system + custom)
+  // Get combined pathology tests (all from database)
   app.get(
     "/api/pathology-tests/combined",
     authenticateToken,
     async (req, res) => {
       try {
-        const systemCategories = getCategories();
-        const customCategories = await storage.getPathologyCategories();
-        const customTests = await storage.getPathologyCategoryTests();
+        const categories = await storage.getPathologyCategories();
+        const tests = await storage.getPathologyCategoryTests();
 
         // Create combined categories structure
-        const combinedCategories = [
-          ...systemCategories.map((name) => ({
-            id: name,
-            name,
-            description: "",
-            isHardcoded: true,
-            isSystem: true,
-            tests: getTestsByCategory(name).map((test) => ({
-              ...test,
-              id: `system-${name}-${test.test_name}`,
-              isHardcoded: true,
-              name: test.test_name,
-              testName: test.test_name,
-            })),
-          })),
-        ];
-
-        // Add custom categories
-        for (const customCat of customCategories) {
-          const testsInCategory = customTests.filter(
-            (test) => test.categoryId === customCat.id,
+        const combinedCategories = categories.map((cat) => {
+          const testsInCategory = tests.filter(
+            (test) => test.categoryId === cat.id,
           );
-          combinedCategories.push({
-            id: customCat.id,
-            name: customCat.name,
-            description: customCat.description || "",
+          return {
+            id: cat.id,
+            name: cat.name,
+            description: cat.description || "",
             isHardcoded: false,
             isSystem: false,
             tests: testsInCategory.map((test) => ({
@@ -2047,14 +1882,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               testName: test.testName,
               name: test.testName,
               price: test.price,
-              category: customCat.name,
+              category: cat.name,
               categoryId: test.categoryId,
               description: test.description,
               isHardcoded: false,
               subtests: [],
             })),
-          });
-        }
+          };
+        });
 
         res.json({ categories: combinedCategories });
       } catch (error) {
@@ -2144,41 +1979,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Pathology Test Catalog routes
-  app.get("/api/pathology/catalog", authenticateToken, async (req, res) => {
-    try {
-      const tests = getAllPathologyTests();
-      res.json(tests);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get pathology catalog" });
-    }
-  });
-
-  app.get(
-    "/api/pathology/catalog/categories",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const categories = getCategories();
-        res.json(categories);
-      } catch (error) {
-        res.status(500).json({ message: "Failed to get pathology categories" });
-      }
-    },
-  );
-
-  app.get(
-    "/api/pathology/catalog/category/:categoryName",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const tests = getTestsByCategory(req.params.categoryName);
-        res.json(tests);
-      } catch (error) {
-        res.status(500).json({ message: "Failed to get tests for category" });
-      }
-    },
-  );
 
   // Pathology routes
   app.get("/api/pathology", authenticateToken, async (req, res) => {
