@@ -1520,7 +1520,6 @@ export default function ServiceManagement() {
                                         categoryForm.reset({
                                           name: dynamicCategory.name,
                                           description: dynamicCategory.description || "",
-                                          isActive: dynamicCategory.isActive,
                                         });
                                         setIsCategoryDialogOpen(true);
                                       }
