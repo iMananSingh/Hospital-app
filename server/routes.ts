@@ -76,6 +76,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           .json({ message: "Account has been deactivated" });
       }
 
+      // Verify password
+      const isPasswordValid = await storage.verifyPassword(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
       const rolesArray = JSON.parse(user.roles);
 
       const token = jwt.sign(
