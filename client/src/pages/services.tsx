@@ -1601,15 +1601,15 @@ export default function ServiceManagement() {
                         .filter(category => category.tests && category.tests.length > 0)
                         .map(category => (
                           <div key={category.id} className="space-y-2">
-                            <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-md">
-                              <h3 className="text-lg font-semibold">{category.name}</h3>
-                              <span className="text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 px-4 py-2 rounded-md">
+                              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">{category.name}</h3>
+                              <span className="text-sm text-blue-700 dark:text-blue-300">
                                 ({category.tests.length} tests)
                               </span>
                             </div>
 
                             <Table>
-                              <TableHeader>
+                              <TableHeader className="bg-muted">
                                 <TableRow>
                                   <TableHead>Test Name</TableHead>
                                   <TableHead>Price</TableHead>
