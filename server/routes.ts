@@ -58,7 +58,7 @@ const authenticateToken = (req: any, res: any, next: any) => {
 // Alias for authenticateToken to match the change snippet
 const requireAuth = authenticateToken;
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(app: Express, upload?: any): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -4755,10 +4755,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import pathology data from JSON
   app.post("/api/pathology-data/import/json", authenticateToken, async (req, res) => {
     try {
-      const { jsonData } = req.body;
+      const jsonData = req.body;
 
-      if (!jsonData) {
-        return res.status(400).json({ message: "JSON data is required" });
+      if (!jsonData || !jsonData.categories) {
+        return res.status(400).json({ message: "JSON data with categories is required" });
       }
 
       // Parse and validate JSON
@@ -4835,7 +4835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import pathology data from Excel
-  app.post("/api/pathology-data/import/excel", authenticateToken, async (req, res) => {
+  app.post("/api/pathology-data/import/excel", authenticateToken, upload?.single("file") || ((req: any, res: any, next: any) => next()), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Excel file is required" });

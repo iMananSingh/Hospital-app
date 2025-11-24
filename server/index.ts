@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import multer from "multer";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { backupScheduler } from "./backup-scheduler";
@@ -6,6 +7,9 @@ import { backupScheduler } from "./backup-scheduler";
 const app = express();
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '200kb' }));
+
+// Configure multer for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -39,7 +43,7 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    const server = await registerRoutes(app);
+    const server = await registerRoutes(app, upload);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
