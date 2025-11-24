@@ -4821,10 +4821,9 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       });
 
       res.json({
-        message: "Pathology data imported successfully",
-        categoriesCount: createdCategories.length,
-        testsCount: createdTests.length,
-        categories: createdCategories,
+        message: `Pathology data imported successfully`,
+        categoriesCount: categories.length,
+        testsCount: tests.length,
       });
     } catch (error) {
       console.error("Error importing pathology data:", error);
@@ -4899,10 +4898,9 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       });
 
       res.json({
-        message: "Pathology data imported successfully",
-        categoriesCount: createdCategories.length,
-        testsCount: createdTests.length,
-        categories: createdCategories,
+        message: `Pathology data imported successfully`,
+        categoriesCount: categories.length,
+        testsCount: tests.length,
       });
     } catch (error) {
       console.error("Error importing pathology data from Excel:", error);
