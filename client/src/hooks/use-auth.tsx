@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<{ error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -44,17 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token, user: userData } = await authApi.login(username, password);
       tokenStorage.set(token);
       setUser(userData);
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${userData.fullName}`,
-      });
+      return {};
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
-      throw error;
+      return { error: "Invalid username or password" };
     }
   };
 

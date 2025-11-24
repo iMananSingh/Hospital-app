@@ -10,13 +10,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { Hospital, Loader2 } from "lucide-react";
+import { Hospital, Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { login, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -30,12 +31,17 @@ export default function Login() {
     e.preventDefault();
     if (!username || !password) return;
 
+    setError(null);
     setIsLoading(true);
     try {
-      await login(username, password);
-      setLocation("/");
+      const result = await login(username, password);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setLocation("/");
+      }
     } catch (error) {
-      // Error handling is done in the login function
+      setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +65,12 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 text-destructive mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="username" data-testid="label-username">
                 Username
