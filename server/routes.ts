@@ -1673,14 +1673,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Check if it's a system category (categoryId is a string that matches system category name)
-        const systemCategories = getCategories();
-        const isSystemCategory = systemCategories.includes(categoryId);
+        // Check if it's a system category by ID pattern (system-0, system-1, etc.)
+        const isSystemCategory = categoryId.startsWith("system-");
 
         if (isSystemCategory) {
           // Add test to the JSON file for system categories
           try {
-            addTestToFile(categoryId, {
+            // Extract the index from system-0, system-1, etc.
+            const systemCategoryIndex = parseInt(categoryId.substring(7));
+            const systemCategories = pathologyCatalog.categories || [];
+            
+            if (systemCategoryIndex < 0 || systemCategoryIndex >= systemCategories.length) {
+              return res.status(400).json({ message: "Category not found" });
+            }
+            
+            const categoryName = systemCategories[systemCategoryIndex].name;
+            addTestToFile(categoryName, {
               test_name: testName,
               price: price,
               subtests: [],

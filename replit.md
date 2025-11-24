@@ -34,6 +34,13 @@ Preferred communication style: Simple, everyday language.
   - Endpoint now correctly identifies system categories by "system-" ID prefix
   - Extracts actual category name from catalog and passes to delete function
   - Both system and custom categories can now be deleted when they have no associated tests
+
+- **Test Creation Fixed** ✅
+  - Fixed "Category not found" error when creating tests
+  - Both delete and create endpoints now use consistent system category detection
+  - System categories identified by "system-" ID prefix, not by category name
+  - Extracts catalog index from ID to get correct category name
+  - Tests can now be successfully added to existing categories
   
 - **UI Placement**
   - Moved import/export UI from pathology orders page to Services Management → Pathology tab
