@@ -17,7 +17,13 @@
     },
     {
       "name": "demo category 2",
-      "tests": []
+      "tests": [
+        {
+          "test_name": "test 3",
+          "price": 150,
+          "subtests": []
+        }
+      ]
     }
   ]
 }
