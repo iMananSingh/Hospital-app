@@ -12,6 +12,7 @@ interface StatsCardsProps {
 }
 
 export default function StatsCards({ stats }: StatsCardsProps) {
+  console.log("[StatsCards] Received stats:", stats);
   const statsData = [
     {
       title: "OPD Patients",

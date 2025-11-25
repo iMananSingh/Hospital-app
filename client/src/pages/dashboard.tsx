@@ -141,10 +141,11 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
-    staleTime: 0, // Always refetch for real-time data
-    refetchOnMount: "stale",
+    staleTime: -1, // Always consider stale to force refetch
+    gcTime: 0, // Don't cache
+    refetchOnMount: true, // Always refetch on mount
     refetchOnWindowFocus: true,
     refetchInterval: 30000, // Refetch every 30 seconds for real-time dashboard
     queryFn: async () => {
@@ -1050,28 +1051,8 @@ export default function Dashboard() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div>
-        <TopBar
-          title="Dashboard & Reports"
-          showNotifications={true}
-          notificationCount={3}
-        />
-        <div className="px-6 pb-6 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Note: Removed top-level loading check - using statsLoading for individual stats cards instead
+  // This allows the rest of the dashboard to render while stats are loading
 
   // Get current greeting based on time
   const getGreeting = () => {
@@ -1131,16 +1112,33 @@ export default function Dashboard() {
 
         {/* Stats Cards - Fixed Height */}
         <div className="mb-4 flex-shrink-0">
-          <StatsCards
-            stats={
-              stats || {
-                opdPatients: 0,
-                inpatients: 0,
-                labTests: 0,
-                diagnostics: 0,
+          {statsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-slate-950 rounded-lg shadow-sm p-6"
+                >
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-8 w-12" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <StatsCards
+              stats={
+                stats || {
+                  opdPatients: 0,
+                  inpatients: 0,
+                  labTests: 0,
+                  diagnostics: 0,
+                }
               }
-            }
-          />
+            />
+          )}
         </div>
 
         {/* Recent Activity and Quick Actions - Flexible Height */}
