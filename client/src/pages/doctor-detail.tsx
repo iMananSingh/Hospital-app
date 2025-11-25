@@ -6,10 +6,29 @@ import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Download, Stethoscope, IndianRupee, Calculator, Wallet } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Download,
+  Stethoscope,
+  IndianRupee,
+  Calculator,
+  Wallet,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 
@@ -71,7 +90,7 @@ export default function DoctorDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,7 +102,11 @@ export default function DoctorDetail() {
   });
 
   // Fetch doctor earnings - fetch all statuses to see the complete picture
-  const { data: earnings = [], isLoading: isEarningsLoading, refetch: refetchEarnings } = useQuery({
+  const {
+    data: earnings = [],
+    isLoading: isEarningsLoading,
+    refetch: refetchEarnings,
+  } = useQuery({
     queryKey: ["/api/doctors", doctorId, "earnings"],
     enabled: !!doctorId,
   });
@@ -95,7 +118,9 @@ export default function DoctorDetail() {
   });
 
   // Fetch doctor payment history
-  const { data: payments = [], isLoading: isPaymentsLoading } = useQuery<DoctorPayment[]>({
+  const { data: payments = [], isLoading: isPaymentsLoading } = useQuery<
+    DoctorPayment[]
+  >({
     queryKey: ["/api/doctors", doctorId, "payments"],
     enabled: !!doctorId,
   });
@@ -114,7 +139,7 @@ export default function DoctorDetail() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify({ profilePicture }),
       });
@@ -133,7 +158,9 @@ export default function DoctorDetail() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
       setPreviewImage(updatedDoctor.profilePicture || null);
       setIsImageDialogOpen(false);
     },
@@ -149,13 +176,16 @@ export default function DoctorDetail() {
   // Mutation for marking individual earning as paid
   const markEarningAsPaidMutation = useMutation({
     mutationFn: async (earningId: string) => {
-      const response = await fetch(`/api/doctors/earnings/${earningId}/mark-paid`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+      const response = await fetch(
+        `/api/doctors/earnings/${earningId}/mark-paid`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -169,31 +199,45 @@ export default function DoctorDetail() {
         title: "Earning marked as paid",
         description: "The earning has been successfully marked as paid.",
       });
-      
+
       // Invalidate all related queries to update pending amounts everywhere
-      await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
-      await queryClient.invalidateQueries({ queryKey: ["/api/doctors", doctorId] });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/doctors", doctorId, "earnings"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/doctors", doctorId],
+      });
       await queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
-      
+
       // Invalidate all earnings queries (including those with payment dependencies)
-      await queryClient.invalidateQueries({ 
+      await queryClient.invalidateQueries({
         predicate: (query) => {
           const key = query.queryKey;
-          return Array.isArray(key) && 
-                 (key[0] === "/api/doctors/all-earnings" || key[1] === "earnings" || key[0] === "/api/doctors/payments");
-        }
+          return (
+            Array.isArray(key) &&
+            (key[0] === "/api/doctors/all-earnings" ||
+              key[1] === "earnings" ||
+              key[0] === "/api/doctors/payments")
+          );
+        },
       });
-      
-      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard/recent-activities"] });
-      
+
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/dashboard/recent-activities"],
+      });
+
       // Refetch to ensure immediate update
-      await queryClient.refetchQueries({ queryKey: ["/api/doctors", doctorId, "earnings"] });
+      await queryClient.refetchQueries({
+        queryKey: ["/api/doctors", doctorId, "earnings"],
+      });
       await refetchEarnings();
     },
     onError: (error: any) => {
       toast({
         title: "Failed to mark as paid",
-        description: error.message || "An error occurred while marking the earning as paid",
+        description:
+          error.message ||
+          "An error occurred while marking the earning as paid",
         variant: "destructive",
       });
     },
@@ -206,7 +250,7 @@ export default function DoctorDetail() {
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File too large",
-        description: "Please select an image smaller than 2MB",
+        description: "Image too large (2MB max).",
         variant: "destructive",
       });
       return;
@@ -229,15 +273,15 @@ export default function DoctorDetail() {
   const getInitials = (name: string) => {
     return name
       .split(" ")
-      .map(n => n[0])
+      .map((n) => n[0])
       .join("")
       .toUpperCase();
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -268,7 +312,12 @@ export default function DoctorDetail() {
         ["Joined Date", formatDate(doctor.createdAt)],
         [""],
         ["Earnings Summary", ""],
-        ["Total Pending Earnings", earnings.filter((e: DoctorEarning) => e.status === 'pending').reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0)],
+        [
+          "Total Pending Earnings",
+          earnings
+            .filter((e: DoctorEarning) => e.status === "pending")
+            .reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0),
+        ],
         ["Total Services", earnings.length],
         [""],
       ];
@@ -285,8 +334,8 @@ export default function DoctorDetail() {
             rate.serviceCategory,
             rate.rateType,
             rate.rateAmount,
-            rate.isActive ? "Active" : "Inactive"
-          ])
+            rate.isActive ? "Active" : "Inactive",
+          ]),
         ];
 
         const ratesSheet = XLSX.utils.aoa_to_sheet(ratesData);
@@ -296,7 +345,17 @@ export default function DoctorDetail() {
       // Earnings Sheet
       if (earnings.length > 0) {
         const earningsData = [
-          ["Earning ID", "Service Name", "Category", "Date", "Service Price", "Rate Type", "Rate Amount", "Earned Amount", "Status"],
+          [
+            "Earning ID",
+            "Service Name",
+            "Category",
+            "Date",
+            "Service Price",
+            "Rate Type",
+            "Rate Amount",
+            "Earned Amount",
+            "Status",
+          ],
           ...earnings.map((earning: DoctorEarning) => [
             earning.earningId,
             earning.serviceName,
@@ -306,8 +365,8 @@ export default function DoctorDetail() {
             earning.rateType,
             earning.rateAmount,
             earning.earnedAmount,
-            earning.status
-          ])
+            earning.status,
+          ]),
         ];
 
         const earningsSheet = XLSX.utils.aoa_to_sheet(earningsData);
@@ -315,7 +374,7 @@ export default function DoctorDetail() {
       }
 
       // Export the file
-      const fileName = `${doctor.name.replace(/[^a-zA-Z0-9]/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `${doctor.name.replace(/[^a-zA-Z0-9]/g, "_")}_Report_${new Date().toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast({
@@ -362,10 +421,15 @@ export default function DoctorDetail() {
   console.log("Doctor earnings data:", earnings);
   console.log("Number of earnings:", earnings.length);
 
-  const pendingEarnings = earnings.filter((e: DoctorEarning) => e.status === 'pending');
+  const pendingEarnings = earnings.filter(
+    (e: DoctorEarning) => e.status === "pending",
+  );
   console.log("Pending earnings:", pendingEarnings);
 
-  const totalPendingEarnings = pendingEarnings.reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0);
+  const totalPendingEarnings = pendingEarnings.reduce(
+    (sum: number, e: DoctorEarning) => sum + e.earnedAmount,
+    0,
+  );
   console.log("Total pending amount:", totalPendingEarnings);
 
   return (
@@ -379,7 +443,10 @@ export default function DoctorDetail() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Doctors
           </Button>
-          <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={exportToExcel}
+            className="bg-green-600 hover:bg-green-700"
+          >
             <Download className="w-4 h-4 mr-2" />
             Export to Excel
           </Button>
@@ -389,42 +456,60 @@ export default function DoctorDetail() {
         <Card>
           <CardHeader>
             <div className="flex items-center space-x-4">
-              <div 
-                className="relative group cursor-pointer" 
+              <div
+                className="relative group cursor-pointer"
                 onClick={() => setIsImageDialogOpen(true)}
                 data-testid="doctor-profile-picture-trigger"
               >
                 <div className="w-16 h-16 bg-healthcare-green rounded-full flex items-center justify-center overflow-hidden">
                   {previewImage || doctor.profilePicture ? (
-                    <img 
-                      src={previewImage || doctor.profilePicture} 
-                      alt={doctor.name} 
-                      className="w-full h-full object-cover" 
+                    <img
+                      src={previewImage || doctor.profilePicture}
+                      alt={doctor.name}
+                      className="w-full h-full object-cover"
                       data-testid="doctor-profile-image"
                     />
                   ) : (
-                    <span className="text-white font-medium text-lg" data-testid="doctor-initials">
+                    <span
+                      className="text-white font-medium text-lg"
+                      data-testid="doctor-initials"
+                    >
                       {getInitials(doctor.name)}
                     </span>
                   )}
                 </div>
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out"
+                    fill="none"
+                    viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                 </div>
               </div>
               <div>
                 <CardTitle className="text-2xl">{doctor.name}</CardTitle>
-                <p className="text-muted-foreground text-lg">{doctor.specialization}</p>
-                <Badge variant={doctor.isActive ? "default" : "secondary"} className="mt-2">
+                <p className="text-muted-foreground text-lg">
+                  {doctor.specialization}
+                </p>
+                <Badge
+                  variant={doctor.isActive ? "default" : "secondary"}
+                  className="mt-2"
+                >
                   {doctor.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
@@ -433,15 +518,23 @@ export default function DoctorDetail() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="text-sm text-muted-foreground">Qualification</label>
+                <label className="text-sm text-muted-foreground">
+                  Qualification
+                </label>
                 <p className="font-medium">{doctor.qualification}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Consultation Fee</label>
-                <p className="font-medium">{formatCurrency(doctor.consultationFee)}</p>
+                <label className="text-sm text-muted-foreground">
+                  Consultation Fee
+                </label>
+                <p className="font-medium">
+                  {formatCurrency(doctor.consultationFee)}
+                </p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Joined Date</label>
+                <label className="text-sm text-muted-foreground">
+                  Joined Date
+                </label>
                 <p className="font-medium">{formatDate(doctor.createdAt)}</p>
               </div>
             </div>
@@ -457,7 +550,9 @@ export default function DoctorDetail() {
                   <Wallet className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Earnings</p>
+                  <p className="text-sm text-muted-foreground">
+                    Pending Earnings
+                  </p>
                   <p className="text-xl font-semibold text-green-600">
                     {formatCurrency(totalPendingEarnings)}
                   </p>
@@ -473,8 +568,12 @@ export default function DoctorDetail() {
                   <Calculator className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Services</p>
-                  <p className="text-xl font-semibold text-blue-600">{earnings.length}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Services
+                  </p>
+                  <p className="text-xl font-semibold text-blue-600">
+                    {earnings.length}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -488,7 +587,9 @@ export default function DoctorDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Salary Rates</p>
-                  <p className="text-xl font-semibold text-purple-600">{salaryRates.length}</p>
+                  <p className="text-xl font-semibold text-purple-600">
+                    {salaryRates.length}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -498,9 +599,15 @@ export default function DoctorDetail() {
         {/* Detailed Information Tabs */}
         <Tabs defaultValue="salary-rates" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="salary-rates" data-testid="tab-salary-rates">Salary Rates</TabsTrigger>
-            <TabsTrigger value="earnings" data-testid="tab-earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="payments" data-testid="tab-payments">Payments</TabsTrigger>
+            <TabsTrigger value="salary-rates" data-testid="tab-salary-rates">
+              Salary Rates
+            </TabsTrigger>
+            <TabsTrigger value="earnings" data-testid="tab-earnings">
+              Earnings
+            </TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">
+              Payments
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="salary-rates">
@@ -512,7 +619,9 @@ export default function DoctorDetail() {
                 {salaryRates.length === 0 ? (
                   <div className="text-center py-8">
                     <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No salary rates configured</p>
+                    <p className="text-muted-foreground">
+                      No salary rates configured
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -530,26 +639,37 @@ export default function DoctorDetail() {
                         {salaryRates.map((rate: DoctorRate) => {
                           return (
                             <TableRow key={rate.id}>
-                              <TableCell className="font-medium">{rate.serviceName}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{rate.serviceCategory}</Badge>
+                              <TableCell className="font-medium">
+                                {rate.serviceName}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="secondary">
-                                  {rate.rateType === 'amount' ? 'Amount' : 
-                                   rate.rateType === 'percentage' ? 'Percentage' : 
-                                   rate.rateType === 'fixed_daily' ? 'Fixed Daily' : 
-                                   rate.rateType}
+                                <Badge variant="outline">
+                                  {rate.serviceCategory}
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {rate.rateType === 'percentage' 
-                                  ? `${rate.rateAmount}%` 
+                                <Badge variant="secondary">
+                                  {rate.rateType === "amount"
+                                    ? "Amount"
+                                    : rate.rateType === "percentage"
+                                      ? "Percentage"
+                                      : rate.rateType === "fixed_daily"
+                                        ? "Fixed Daily"
+                                        : rate.rateType}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {rate.rateType === "percentage"
+                                  ? `${rate.rateAmount}%`
                                   : `₹${rate.rateAmount.toFixed(2)}`}
                               </TableCell>
                               <TableCell>
-                                <Badge variant={rate.isActive ? 'default' : 'secondary'}>
-                                  {rate.isActive ? 'Active' : 'Inactive'}
+                                <Badge
+                                  variant={
+                                    rate.isActive ? "default" : "secondary"
+                                  }
+                                >
+                                  {rate.isActive ? "Active" : "Inactive"}
                                 </Badge>
                               </TableCell>
                             </TableRow>
@@ -572,7 +692,9 @@ export default function DoctorDetail() {
                 {earnings.length === 0 ? (
                   <div className="text-center py-8">
                     <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No earnings recorded</p>
+                    <p className="text-muted-foreground">
+                      No earnings recorded
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -592,45 +714,73 @@ export default function DoctorDetail() {
                       </TableHeader>
                       <TableBody>
                         {[...earnings]
-                          .sort((a: DoctorEarning, b: DoctorEarning) => 
-                            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                          .sort(
+                            (a: DoctorEarning, b: DoctorEarning) =>
+                              new Date(b.createdAt).getTime() -
+                              new Date(a.createdAt).getTime(),
                           )
                           .map((earning: DoctorEarning, index: number) => (
-                          <TableRow key={earning.earningId}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell className="font-medium">{earning.serviceName}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{earning.serviceCategory}</Badge>
-                            </TableCell>
-                            <TableCell>{formatDate(earning.serviceDate)}</TableCell>
-                            <TableCell>{formatCurrency(earning.servicePrice)}</TableCell>
-                            <TableCell>
-                              {earning.rateType === 'percentage' ? `${earning.rateAmount}%` : formatCurrency(earning.rateAmount)}
-                            </TableCell>
-                            <TableCell className="font-medium text-green-600">
-                              {formatCurrency(earning.earnedAmount)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={earning.status === 'pending' ? "default" : "secondary"}>
-                                {earning.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {earning.status === 'pending' ? (
-                                <Button
-                                  size="sm"
-                                  onClick={() => markEarningAsPaidMutation.mutate(earning.earningId)}
-                                  disabled={markEarningAsPaidMutation.isPending}
-                                  data-testid={`button-mark-paid-${earning.earningId}`}
+                            <TableRow key={earning.earningId}>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell className="font-medium">
+                                {earning.serviceName}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {earning.serviceCategory}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {formatDate(earning.serviceDate)}
+                              </TableCell>
+                              <TableCell>
+                                {formatCurrency(earning.servicePrice)}
+                              </TableCell>
+                              <TableCell>
+                                {earning.rateType === "percentage"
+                                  ? `${earning.rateAmount}%`
+                                  : formatCurrency(earning.rateAmount)}
+                              </TableCell>
+                              <TableCell className="font-medium text-green-600">
+                                {formatCurrency(earning.earnedAmount)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    earning.status === "pending"
+                                      ? "default"
+                                      : "secondary"
+                                  }
                                 >
-                                  {markEarningAsPaidMutation.isPending ? "Marking..." : "Mark as Paid"}
-                                </Button>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                                  {earning.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {earning.status === "pending" ? (
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      markEarningAsPaidMutation.mutate(
+                                        earning.earningId,
+                                      )
+                                    }
+                                    disabled={
+                                      markEarningAsPaidMutation.isPending
+                                    }
+                                    data-testid={`button-mark-paid-${earning.earningId}`}
+                                  >
+                                    {markEarningAsPaidMutation.isPending
+                                      ? "Marking..."
+                                      : "Mark as Paid"}
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">
+                                    -
+                                  </span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -647,12 +797,16 @@ export default function DoctorDetail() {
               <CardContent>
                 {isPaymentsLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Loading payment history...</p>
+                    <p className="text-muted-foreground">
+                      Loading payment history...
+                    </p>
                   </div>
                 ) : payments.length === 0 ? (
                   <div className="text-center py-8">
                     <IndianRupee className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No payments recorded</p>
+                    <p className="text-muted-foreground">
+                      No payments recorded
+                    </p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -670,37 +824,59 @@ export default function DoctorDetail() {
                       </TableHeader>
                       <TableBody>
                         {[...payments]
-                          .sort((a: DoctorPayment, b: DoctorPayment) => 
-                            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                          .sort(
+                            (a: DoctorPayment, b: DoctorPayment) =>
+                              new Date(b.createdAt).getTime() -
+                              new Date(a.createdAt).getTime(),
                           )
                           .map((payment: DoctorPayment, index: number) => (
-                          <TableRow key={payment.id} data-testid={`row-payment-${payment.paymentId}`}>
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell className="font-medium" data-testid={`text-payment-id-${payment.paymentId}`}>
-                              {payment.paymentId}
-                            </TableCell>
-                            <TableCell data-testid={`text-payment-date-${payment.paymentId}`}>
-                              {formatDate(payment.paymentDate)}
-                            </TableCell>
-                            <TableCell className="font-medium text-green-600" data-testid={`text-payment-amount-${payment.paymentId}`}>
-                              {formatCurrency(payment.totalAmount)}
-                            </TableCell>
-                            <TableCell data-testid={`text-payment-method-${payment.paymentId}`}>
-                              <Badge variant="outline">
-                                {payment.paymentMethod === 'cash' ? 'Cash' : 
-                                 payment.paymentMethod === 'bank_transfer' ? 'Bank Transfer' : 
-                                 payment.paymentMethod === 'cheque' ? 'Cheque' : 
-                                 payment.paymentMethod}
-                              </Badge>
-                            </TableCell>
-                            <TableCell data-testid={`text-receipt-number-${payment.paymentId}`}>
-                              {payment.receiptNumber || '-'}
-                            </TableCell>
-                            <TableCell data-testid={`text-description-${payment.paymentId}`}>
-                              {payment.description || '-'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                            <TableRow
+                              key={payment.id}
+                              data-testid={`row-payment-${payment.paymentId}`}
+                            >
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell
+                                className="font-medium"
+                                data-testid={`text-payment-id-${payment.paymentId}`}
+                              >
+                                {payment.paymentId}
+                              </TableCell>
+                              <TableCell
+                                data-testid={`text-payment-date-${payment.paymentId}`}
+                              >
+                                {formatDate(payment.paymentDate)}
+                              </TableCell>
+                              <TableCell
+                                className="font-medium text-green-600"
+                                data-testid={`text-payment-amount-${payment.paymentId}`}
+                              >
+                                {formatCurrency(payment.totalAmount)}
+                              </TableCell>
+                              <TableCell
+                                data-testid={`text-payment-method-${payment.paymentId}`}
+                              >
+                                <Badge variant="outline">
+                                  {payment.paymentMethod === "cash"
+                                    ? "Cash"
+                                    : payment.paymentMethod === "bank_transfer"
+                                      ? "Bank Transfer"
+                                      : payment.paymentMethod === "cheque"
+                                        ? "Cheque"
+                                        : payment.paymentMethod}
+                                </Badge>
+                              </TableCell>
+                              <TableCell
+                                data-testid={`text-receipt-number-${payment.paymentId}`}
+                              >
+                                {payment.receiptNumber || "-"}
+                              </TableCell>
+                              <TableCell
+                                data-testid={`text-description-${payment.paymentId}`}
+                              >
+                                {payment.description || "-"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -719,10 +895,10 @@ export default function DoctorDetail() {
             <div className="flex flex-col items-center space-y-4 py-4">
               <div className="w-32 h-32 rounded-full overflow-hidden bg-healthcare-green flex items-center justify-center">
                 {previewImage || doctor.profilePicture ? (
-                  <img 
-                    src={previewImage || doctor.profilePicture} 
-                    alt={doctor.name} 
-                    className="w-full h-full object-cover" 
+                  <img
+                    src={previewImage || doctor.profilePicture}
+                    alt={doctor.name}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <span className="text-white font-medium text-3xl">
@@ -740,7 +916,9 @@ export default function DoctorDetail() {
                       disabled={updateProfilePictureMutation.isPending}
                       data-testid="button-update-doctor-picture"
                     >
-                      {updateProfilePictureMutation.isPending ? "Updating..." : "Update"}
+                      {updateProfilePictureMutation.isPending
+                        ? "Updating..."
+                        : "Update"}
                     </Button>
                     <Button
                       type="button"
