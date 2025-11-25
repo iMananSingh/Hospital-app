@@ -57,7 +57,7 @@ export default function Login() {
               <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
             </div>
             <div className="text-center">
-              <CardTitle className="text-4xl font-bold text-text-dark">
+              <CardTitle className="text-4xl font-bold text-text-dark text-left">
                 HMSync
               </CardTitle>
               <CardDescription className="text-lg text-text-muted">
