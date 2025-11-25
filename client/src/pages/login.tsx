@@ -52,8 +52,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-healthcare-green/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 flex items-center justify-center">
-            <img src={hmSyncLogo} alt="HMSync Logo" className="w-14 h-14" />
+          <div className="mx-auto w-20 flex items-center justify-center">
+            <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-text-dark">

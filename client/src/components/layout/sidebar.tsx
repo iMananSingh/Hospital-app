@@ -524,8 +524,8 @@ export default function Sidebar() {
       {/* Logo and Hospital Name */}
       <div className="px-6 border-b border-border h-[84px] flex items-center">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img src={hmSyncLogo} alt="HMSync Logo" className="w-8 h-8" />
+          <div className="w-12 flex items-center justify-center">
+            <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-text-dark">HMSync</h1>
