@@ -1679,7 +1679,7 @@ export default function PatientDetail() {
       roomUpdateForm.reset();
       toast({
         title: "Room transfer completed",
-        description: "Patient transferred to the new room.",
+        description: "Patient transferred to a new room.",
       });
     },
   });
