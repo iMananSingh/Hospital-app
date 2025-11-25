@@ -144,8 +144,9 @@ export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     staleTime: 0, // Always refetch for real-time data
-    refetchOnMount: true,
+    refetchOnMount: "stale",
     refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time dashboard
     queryFn: async () => {
       const response = await fetch("/api/dashboard/stats", {
         headers: {
@@ -153,7 +154,9 @@ export default function Dashboard() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-      return response.json();
+      const data = await response.json();
+      console.log("[Dashboard] Stats fetched:", data);
+      return data;
     },
   });
 
