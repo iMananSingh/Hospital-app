@@ -51,17 +51,19 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-healthcare-green/5 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-20 flex items-center justify-center">
-            <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl font-bold text-text-dark">
-              HMSync
-            </CardTitle>
-            <CardDescription className="text-text-muted">
-              Hospital Management System
-            </CardDescription>
+        <CardHeader className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 flex-shrink-0">
+              <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-text-dark">
+                HMSync
+              </CardTitle>
+              <CardDescription className="text-text-muted">
+                Hospital Management System
+              </CardDescription>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
