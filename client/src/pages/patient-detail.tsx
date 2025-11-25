@@ -143,8 +143,10 @@ export default function PatientDetail() {
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundMethod, setRefundMethod] = useState("cash");
-  const [selectedRefundBillableItem, setSelectedRefundBillableItem] = useState("");
-  const [selectedDiscountBillableItem, setSelectedDiscountBillableItem] = useState("");
+  const [selectedRefundBillableItem, setSelectedRefundBillableItem] =
+    useState("");
+  const [selectedDiscountBillableItem, setSelectedDiscountBillableItem] =
+    useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
 
@@ -1189,7 +1191,7 @@ export default function PatientDetail() {
       });
       toast({
         title: "Service scheduled successfully",
-        description: "The service has been added to the patient's schedule.",
+        description: "Services added to patient's schedule.",
       });
     },
     onError: () => {
@@ -1214,7 +1216,7 @@ export default function PatientDetail() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "OPD appointment scheduled successfully!",
+        description: "OPD appointment scheduled!",
         className: "bg-green-50 border-green-200 text-green-800",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/opd-visits"] });
@@ -5612,7 +5614,10 @@ export default function PatientDetail() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select payment method" />
                     </SelectTrigger>
@@ -5620,7 +5625,9 @@ export default function PatientDetail() {
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        Bank Transfer
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -5653,7 +5660,9 @@ export default function PatientDetail() {
                           key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
-                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                          className={
+                            item.isFullyPaid ? "opacity-50 text-gray-400" : ""
+                          }
                         >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
@@ -5761,7 +5770,9 @@ export default function PatientDetail() {
                       <SelectItem value="cash">Cash</SelectItem>
                       <SelectItem value="card">Card</SelectItem>
                       <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        Bank Transfer
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -5794,7 +5805,9 @@ export default function PatientDetail() {
                           key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
-                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                          className={
+                            item.isFullyPaid ? "opacity-50 text-gray-400" : ""
+                          }
                         >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
@@ -5820,7 +5833,10 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
-                if (!selectedRefundBillableItem || selectedRefundBillableItem === "none") {
+                if (
+                  !selectedRefundBillableItem ||
+                  selectedRefundBillableItem === "none"
+                ) {
                   toast({
                     title: "Missing Selection",
                     description: "Please select a billable item",
@@ -5853,9 +5869,7 @@ export default function PatientDetail() {
               }
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              {addRefundMutation.isPending
-                ? "Processing..."
-                : "Refund"}
+              {addRefundMutation.isPending ? "Processing..." : "Refund"}
             </Button>
           </div>
         </DialogContent>
@@ -5917,7 +5931,9 @@ export default function PatientDetail() {
                           key={item.id}
                           value={item.value}
                           disabled={item.isFullyPaid}
-                          className={item.isFullyPaid ? "opacity-50 text-gray-400" : ""}
+                          className={
+                            item.isFullyPaid ? "opacity-50 text-gray-400" : ""
+                          }
                         >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
@@ -5943,7 +5959,10 @@ export default function PatientDetail() {
             </Button>
             <Button
               onClick={() => {
-                if (!selectedDiscountBillableItem || selectedDiscountBillableItem === "none") {
+                if (
+                  !selectedDiscountBillableItem ||
+                  selectedDiscountBillableItem === "none"
+                ) {
                   toast({
                     title: "Missing Selection",
                     description: "Please select a billable item",
@@ -5977,9 +5996,7 @@ export default function PatientDetail() {
               }
               className="bg-amber-500 hover:bg-amber-600 text-white"
             >
-              {addDiscountMutation.isPending
-                ? "Applying..."
-                : "Apply"}
+              {addDiscountMutation.isPending ? "Applying..." : "Apply"}
             </Button>
           </div>
         </DialogContent>

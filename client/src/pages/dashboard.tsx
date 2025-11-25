@@ -839,7 +839,7 @@ export default function Dashboard() {
       serviceForm.reset();
       toast({
         title: "Service scheduled successfully",
-        description: "The service has been added to the patient's schedule.",
+        description: "Services added to patient's schedule.",
       });
     },
     onError: () => {

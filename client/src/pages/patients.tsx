@@ -9,11 +9,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { UserPlus, Edit, Eye } from "lucide-react";
 import { insertPatientSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
@@ -37,7 +56,11 @@ export default function Patients() {
   const { formatDateTime } = useTimezone();
 
   // Fetch hospital settings for bills
-  const { data: hospitalSettings, isLoading: isHospitalSettingsLoading, error: hospitalSettingsError } = useQuery({
+  const {
+    data: hospitalSettings,
+    isLoading: isHospitalSettingsLoading,
+    error: hospitalSettingsError,
+  } = useQuery({
     queryKey: ["/api/settings/hospital"],
     queryFn: async () => {
       console.log("Fetching hospital settings for patients page...");
@@ -47,7 +70,11 @@ export default function Patients() {
         },
       });
       if (!response.ok) {
-        console.error("Failed to fetch hospital settings:", response.status, response.statusText);
+        console.error(
+          "Failed to fetch hospital settings:",
+          response.status,
+          response.statusText,
+        );
         throw new Error("Failed to fetch hospital settings");
       }
       const data = await response.json();
@@ -66,18 +93,25 @@ export default function Patients() {
     console.log("Hospital settings in patients page:", hospitalSettings);
     console.log("Hospital settings loading:", isHospitalSettingsLoading);
     console.log("Hospital settings error:", hospitalSettingsError);
-    
+
     // Always create hospital info object, preferring saved settings over defaults
     const info = {
-      name: hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
-      address: hospitalSettings?.address || "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
+      name:
+        hospitalSettings?.name || "Health Care Hospital and Diagnostic Center",
+      address:
+        hospitalSettings?.address ||
+        "In front of Maheshwari Garden, Binjhiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001",
       phone: hospitalSettings?.phone || "8889762101, 9826325958",
       email: hospitalSettings?.email || "hospital@healthcare.in",
-      registrationNumber: hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
+      registrationNumber:
+        hospitalSettings?.registrationNumber || "NH/3613/JUL-2021",
       logo: hospitalSettings?.logoPath || undefined,
     };
 
-    console.log("Final hospital info constructed for patients page comprehensive bill:", info);
+    console.log(
+      "Final hospital info constructed for patients page comprehensive bill:",
+      info,
+    );
     console.log("=== End Hospital Info Creation (Patients Page) ===");
     return info;
   }, [hospitalSettings, isHospitalSettingsLoading, hospitalSettingsError]);
@@ -92,15 +126,15 @@ export default function Patients() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(patientData),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to create patient");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -117,7 +151,7 @@ export default function Patients() {
       });
       toast({
         title: "Patient created successfully",
-        description: "The patient has been registered in the system.",
+        description: "New Patient registered successfully.",
       });
     },
     onError: () => {
@@ -134,15 +168,15 @@ export default function Patients() {
       // Remove empty string fields
       const filteredUpdates = Object.fromEntries(
         Object.entries(updates).filter(
-          ([_, value]) => value !== "" && value !== undefined && value !== null
-        )
+          ([_, value]) => value !== "" && value !== undefined && value !== null,
+        ),
       );
 
       const response = await fetch(`/api/patients/${id}`, {
         method: "PATCH", // PATCH for partial updates
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(filteredUpdates),
       });
@@ -178,26 +212,38 @@ export default function Patients() {
       }
 
       if (hospitalSettingsError) {
-        console.warn("Hospital settings error, proceeding with defaults:", hospitalSettingsError);
+        console.warn(
+          "Hospital settings error, proceeding with defaults:",
+          hospitalSettingsError,
+        );
       }
 
       console.log("=== Comprehensive Bill Generation (Patients Page) ===");
       console.log("Patient ID:", patientId);
       console.log("Hospital info being used:", hospitalInfo);
-      
-      const response = await fetch(`/api/patients/${patientId}/comprehensive-bill`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+
+      const response = await fetch(
+        `/api/patients/${patientId}/comprehensive-bill`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+          },
         },
-      });
-      
+      );
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Comprehensive bill API error:", response.status, errorText);
-        throw new Error(`Failed to generate comprehensive bill: ${response.status}`);
+        console.error(
+          "Comprehensive bill API error:",
+          response.status,
+          errorText,
+        );
+        throw new Error(
+          `Failed to generate comprehensive bill: ${response.status}`,
+        );
       }
-      
+
       const data = await response.json();
       console.log("Comprehensive bill data received:", data);
       console.log("=== End Comprehensive Bill Generation (Patients Page) ===");
@@ -262,11 +308,10 @@ export default function Patients() {
     mode: "onChange",
   });
 
-
   const onSubmit = (data: any) => {
     console.log("Form submitted with data:", data);
     console.log("Form errors:", form.formState.errors);
-    
+
     // Validate required fields explicitly
     if (!data.name?.trim()) {
       form.setError("name", { message: "Name is required" });
@@ -284,31 +329,36 @@ export default function Patients() {
       form.setError("phone", { message: "Phone number is required" });
       return;
     }
-    
+
     createPatientMutation.mutate(data);
   };
 
   // Check user roles for billing staff restrictions
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+  const isBillingStaff =
+    currentUserRoles.includes("billing_staff") &&
+    !currentUserRoles.includes("admin") &&
+    !currentUserRoles.includes("super_user");
 
-  const filteredPatients = patients.filter((patient: Patient) =>
-    patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    patient.phone.includes(searchQuery)
+  const filteredPatients = patients.filter(
+    (patient: Patient) =>
+      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.patientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.phone.includes(searchQuery),
   );
-
 
   return (
     <div>
-      <TopBar 
+      <TopBar
         title="Patient Registration"
         searchPlaceholder="Search patients by name, ID, or phone..."
         onSearch={setSearchQuery}
-        onNewAction={isBillingStaff ? undefined : () => setIsNewPatientOpen(true)}
+        onNewAction={
+          isBillingStaff ? undefined : () => setIsNewPatientOpen(true)
+        }
         newActionLabel={isBillingStaff ? undefined : "New Patient"}
       />
-      
+
       <div className="px-6 pb-6 pt-4">
         <Card>
           <CardHeader>
@@ -321,13 +371,15 @@ export default function Patients() {
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
-                <p className="text-sm text-muted-foreground mt-2">Loading patients...</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Loading patients...
+                </p>
               </div>
             ) : filteredPatients.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No patients found</p>
                 {!isBillingStaff && (
-                  <Button 
+                  <Button
                     onClick={() => setIsNewPatientOpen(true)}
                     className="mt-4"
                     data-testid="button-first-patient"
@@ -351,21 +403,33 @@ export default function Patients() {
                 </TableHeader>
                 <TableBody>
                   {filteredPatients.map((patient: Patient) => (
-                    <TableRow key={patient.id} data-testid={`patient-row-${patient.id}`}>
-                      <TableCell className="font-medium" data-testid={`patient-id-${patient.id}`}>
+                    <TableRow
+                      key={patient.id}
+                      data-testid={`patient-row-${patient.id}`}
+                    >
+                      <TableCell
+                        className="font-medium"
+                        data-testid={`patient-id-${patient.id}`}
+                      >
                         {patient.patientId}
                       </TableCell>
                       <TableCell data-testid={`patient-name-${patient.id}`}>
                         {patient.name}
                       </TableCell>
-                      <TableCell data-testid={`patient-age-gender-${patient.id}`}>
+                      <TableCell
+                        data-testid={`patient-age-gender-${patient.id}`}
+                      >
                         {patient.age}y, {patient.gender}
                       </TableCell>
                       <TableCell data-testid={`patient-phone-${patient.id}`}>
                         {patient.phone}
                       </TableCell>
-                      <TableCell data-testid={`patient-registered-${patient.id}`}>
-                        {patient.createdAt ? formatDateTime(patient.createdAt) : 'N/A'}
+                      <TableCell
+                        data-testid={`patient-registered-${patient.id}`}
+                      >
+                        {patient.createdAt
+                          ? formatDateTime(patient.createdAt)
+                          : "N/A"}
                       </TableCell>
                       {/* <TableCell>
                         <Badge 
@@ -377,8 +441,8 @@ export default function Patients() {
                       </TableCell> */}
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/patients/${patient.id}`)}
                             data-testid={`button-view-${patient.id}`}
@@ -386,31 +450,47 @@ export default function Patients() {
                             <Eye className="w-4 h-4" />
                           </Button>
                           {!isBillingStaff && (
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => {
                                 setSelectedPatient(patient);
-                                editForm.reset(patient);   // prefill fields
+                                editForm.reset(patient); // prefill fields
                                 setIsEditPatientOpen(true);
                               }}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
-                            onClick={() => handleGenerateComprehensiveBill(patient)}
-                            disabled={generateComprehensiveBillMutation.isPending || isHospitalSettingsLoading}
+                            onClick={() =>
+                              handleGenerateComprehensiveBill(patient)
+                            }
+                            disabled={
+                              generateComprehensiveBillMutation.isPending ||
+                              isHospitalSettingsLoading
+                            }
                             data-testid={`button-bill-${patient.id}`}
                             title="Generate Comprehensive Bill"
                           >
-                            {(generateComprehensiveBillMutation.isPending || isHospitalSettingsLoading) ? (
+                            {generateComprehensiveBillMutation.isPending ||
+                            isHospitalSettingsLoading ? (
                               <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
                             ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                />
                               </svg>
                             )}
                           </Button>
@@ -427,12 +507,11 @@ export default function Patients() {
 
       {/* New Patient Dialog */}
       <Dialog open={isNewPatientOpen} onOpenChange={setIsNewPatientOpen}>
-
         <DialogContent className="max-w-2xl" data-testid="new-patient-dialog">
           <DialogHeader>
             <DialogTitle>Register New Patient</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -444,10 +523,12 @@ export default function Patients() {
                   data-testid="input-patient-name"
                 />
                 {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.name.message}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="age">Age *</Label>
                 <Input
@@ -458,7 +539,9 @@ export default function Patients() {
                   data-testid="input-patient-age"
                 />
                 {form.formState.errors.age && (
-                  <p className="text-sm text-destructive">{form.formState.errors.age.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.age.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -466,9 +549,11 @@ export default function Patients() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="gender">Gender *</Label>
-                <Select 
+                <Select
                   value={form.watch("gender")}
-                  onValueChange={(value) => form.setValue("gender", value, { shouldValidate: true })}
+                  onValueChange={(value) =>
+                    form.setValue("gender", value, { shouldValidate: true })
+                  }
                 >
                   <SelectTrigger data-testid="select-patient-gender">
                     <SelectValue placeholder="Select gender" />
@@ -480,10 +565,12 @@ export default function Patients() {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.gender && (
-                  <p className="text-sm text-destructive">{form.formState.errors.gender.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.gender.message}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number *</Label>
                 <Input
@@ -493,7 +580,9 @@ export default function Patients() {
                   data-testid="input-patient-phone"
                 />
                 {form.formState.errors.phone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.phone.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -541,17 +630,20 @@ export default function Patients() {
               </Button>
               <Button
                 type="submit"
-                disabled={createPatientMutation.isPending || !form.formState.isValid}
+                disabled={
+                  createPatientMutation.isPending || !form.formState.isValid
+                }
                 className="bg-medical-blue hover:bg-medical-blue/90"
                 data-testid="button-save-patient"
               >
-                {createPatientMutation.isPending ? "Saving..." : "Register Patient"}
+                {createPatientMutation.isPending
+                  ? "Saving..."
+                  : "Register Patient"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
-
 
       {/* Edit Patient Dialog */}
       <Dialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen}>
@@ -559,7 +651,7 @@ export default function Patients() {
           <DialogHeader>
             <DialogTitle>Edit Patient: {selectedPatient?.name}</DialogTitle>
           </DialogHeader>
-          
+
           <form
             onSubmit={editForm.handleSubmit((data) => {
               if (!selectedPatient) return;
@@ -570,7 +662,7 @@ export default function Patients() {
                     setIsEditPatientOpen(false);
                     editForm.reset();
                   },
-                }
+                },
               );
             })}
             className="space-y-4"
@@ -589,7 +681,7 @@ export default function Patients() {
                   </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="age">Age *</Label>
                 <Input
@@ -630,7 +722,7 @@ export default function Patients() {
                   </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number *</Label>
                 <Input
@@ -686,12 +778,13 @@ export default function Patients() {
               <Button
                 type="submit"
                 disabled={
-                  updatePatientMutation.isPending ||
-                  !editForm.formState.isValid
+                  updatePatientMutation.isPending || !editForm.formState.isValid
                 }
                 className="bg-medical-blue hover:bg-medical-blue/90"
               >
-                {updatePatientMutation.isPending ? "Saving..." : "Update Patient"}
+                {updatePatientMutation.isPending
+                  ? "Saving..."
+                  : "Update Patient"}
               </Button>
             </div>
           </form>
