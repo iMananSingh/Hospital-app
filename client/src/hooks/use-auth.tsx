@@ -44,6 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token, user: userData } = await authApi.login(username, password);
       tokenStorage.set(token);
       setUser(userData);
+      toast({
+        description: "Logged in successfully",
+      });
       return {};
     } catch (error) {
       return { error: "Invalid username or password" };
