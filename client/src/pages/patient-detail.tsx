@@ -5799,21 +5799,19 @@ export default function PatientDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
-                      billableItems.map((item: any) => (
+                      billableItems
+                        .filter((item: any) => item.paymentStatus === "paid")
+                        .map((item: any) => (
                         <SelectItem
                           key={item.id}
                           value={item.value}
-                          disabled={item.isFullyPaid}
-                          className={
-                            item.isFullyPaid ? "opacity-50 text-gray-400" : ""
-                          }
                         >
                           {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
                     ) : (
                       <SelectItem value="none" disabled>
-                        No billable items available
+                        No paid billable items available
                       </SelectItem>
                     )}
                   </SelectContent>
