@@ -4905,7 +4905,7 @@ export class SqliteStorage implements IStorage {
       const labTests = db
         .select()
         .from(schema.pathologyOrders)
-        .where(eq(schema.pathologyOrders.orderedDate, today))
+        .where(sql`DATE(${schema.pathologyOrders.orderedDate}) = DATE(${today})`)
         .all().length;
 
       // Get diagnostics count (diagnostic services scheduled today)
