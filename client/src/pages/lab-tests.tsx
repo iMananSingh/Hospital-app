@@ -156,9 +156,13 @@ export default function LabTests() {
   const today = indianTime.getFullYear() + '-' + 
     String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
     String(indianTime.getDate()).padStart(2, '0');
-  const todayLabCount = pathologyOrders.filter((orderData: any) => 
-    orderData?.order?.orderedDate === today
-  ).length;
+  const todayLabCount = pathologyOrders.filter((orderData: any) => {
+    const orderDate = orderData?.order?.orderedDate;
+    if (!orderDate) return false;
+    // Extract date part (YYYY-MM-DD) from datetime string
+    const dateOnly = orderDate.split('T')[0];
+    return dateOnly === today;
+  }).length;
 
   if (isLoading) {
     return (
