@@ -5800,7 +5800,7 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
-                        .filter((item: any) => item.paymentStatus === "paid")
+                        .filter((item: any) => item.isFullyPaid)
                         .map((item: any) => (
                         <SelectItem
                           key={item.id}
