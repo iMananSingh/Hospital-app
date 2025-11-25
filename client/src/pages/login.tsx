@@ -10,8 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { Hospital, Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
+import hmSyncLogo from "@assets/hmsync-logo.svg";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -51,8 +52,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-healthcare-green/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-medical-blue rounded-2xl flex items-center justify-center">
-            <Hospital className="w-8 h-8 text-white" />
+          <div className="mx-auto w-16 h-16 flex items-center justify-center">
+            <img src={hmSyncLogo} alt="HMSync Logo" className="w-14 h-14" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-text-dark">

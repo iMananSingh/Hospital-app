@@ -10,6 +10,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**November 25, 2025** - Logo Replacement & Toast Notification System Redesign ✅
+- **New HMSync Logo Integration**
+  - Replaced Hospital icon with custom HMSync logo on login page (stored as `attached_assets/hmsync-logo.svg`)
+  - Replaced Hospital icon with custom logo in sidebar next to "HMSync Hospital Management"
+  - Logo sized appropriately: 56x56px (w-14 h-14) on login, 32x32px (w-8 h-8) on sidebar
+
+- **Toast Notification System Improvements**
+  - **Removed login error toast** - Replaced with inline validation (red alert box on form)
+  - **Icon-based toasts** - Success (green checkmark), Error (red alert), Warning (amber triangle), Info (blue icon)
+  - **Color-coded backgrounds** - Success: green bg with dark text, Error: red bg, Warning: amber bg, Info: blue bg
+  - **Compact positioning** - Fixed top-right (below navbar), 320px max-width
+  - **Auto-dismiss timing** - Success: 2.5s, Error/Warning: 5s
+
+- **Shortened Toast Messages** - Updated all long descriptions for 320px width constraints
+
 **November 24, 2025** - Complete System/Custom Labeling Removed - All Tests Treated Equally ✅
 - **Eliminated All Distinction Logic**
   - Removed all `isHardcoded`, `isSystem`, `isCustom` flags from backend and frontend

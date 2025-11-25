@@ -3,7 +3,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Hospital,
   FileText,
   Users,
   TestTube,
@@ -14,6 +13,7 @@ import {
   Building2,
   UserCog,
 } from "lucide-react";
+import hmSyncLogo from "@assets/hmsync-logo.svg";
 import { useState, useRef, useEffect } from "react";
 import {
   Dialog,
@@ -524,8 +524,8 @@ export default function Sidebar() {
       {/* Logo and Hospital Name */}
       <div className="px-6 border-b border-border h-[84px] flex items-center">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-medical-blue rounded-lg flex items-center justify-center">
-            <Hospital className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img src={hmSyncLogo} alt="HMSync Logo" className="w-8 h-8" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-text-dark">HMSync</h1>
