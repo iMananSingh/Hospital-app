@@ -26,6 +26,12 @@ export default function OpdList() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>("");
 
+  // Fetch server's today date for consistent timezone handling
+  const { data: todayData } = useQuery<{ today: string }>({
+    queryKey: ["/api/today"],
+  });
+  const today = todayData?.today || "";
+
   // Fetch all OPD visits
   const { data: opdServices = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/opd-visits"],
@@ -109,16 +115,9 @@ export default function OpdList() {
   };
 
   const totalOpdCount = opdServices.length;
-  // Use Indian timezone (UTC+5:30) for consistent date calculation
-  const now = new Date();
-  const indianTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-  const today = indianTime.getFullYear() + '-' + 
-    String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
-    String(indianTime.getDate()).padStart(2, '0');
-  
-  const todayOpdCount = opdServices.filter(visit => 
-    visit.scheduledDate === today
-  ).length;
+  const todayOpdCount = today 
+    ? opdServices.filter(visit => visit.scheduledDate === today).length 
+    : 0;
 
   if (isLoading) {
     return (

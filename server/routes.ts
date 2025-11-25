@@ -445,6 +445,25 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     }
   });
 
+  // Get server's today date for timezone-consistent filtering
+  app.get("/api/today", requireAuth, async (req, res) => {
+    try {
+      // Use Indian timezone (UTC+5:30) for consistent date calculation
+      const now = new Date();
+      const indianTime = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+      const today =
+        indianTime.getFullYear() +
+        "-" +
+        String(indianTime.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(indianTime.getDate()).padStart(2, "0");
+      res.json({ today });
+    } catch (error) {
+      console.error("Error getting today date:", error);
+      res.status(500).json({ error: "Failed to get today date" });
+    }
+  });
+
   app.get("/api/dashboard/recent-activities", requireAuth, async (req, res) => {
     try {
       res.set("Cache-Control", "no-cache, no-store, must-revalidate");
