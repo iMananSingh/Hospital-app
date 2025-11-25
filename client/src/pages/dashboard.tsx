@@ -1033,7 +1033,7 @@ export default function Dashboard() {
 
       toast({
         title: "Patient Admitted Successfully",
-        description: `Patient admitted${selectedAdmissionServices.length > 0 ? ` (${selectedAdmissionServices.length}service${selectedAdmissionServices.length !== 1 ? "s" : ""})` : ""}.`,
+        description: `Patient admitted${selectedAdmissionServices.length > 0 ? ` (${selectedAdmissionServices.length} service${selectedAdmissionServices.length !== 1 ? "s" : ""})` : ""}.`,
       });
     } catch (error) {
       console.error("Error admitting patient:", error);

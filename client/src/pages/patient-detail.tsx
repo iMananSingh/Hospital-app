@@ -1581,7 +1581,7 @@ export default function PatientDetail() {
 
       toast({
         title: "Admission created successfully",
-        description: `Patient admitted${selectedServices.length > 0 ? ` with ${selectedServices.length} admission service(s)` : ""}.`,
+        description: `Patient admitted${selectedServices.length > 0 ? ` (${selectedServices.length} service${selectedServices.length !== 1 ? "s" : ""})` : ""}`,
       });
 
       // Auto-refresh page after successful admission
