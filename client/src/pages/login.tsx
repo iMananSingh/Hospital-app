@@ -50,7 +50,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-medical-blue/5 to-healthcare-green/5 p-4">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center gap-6">
             <div className="w-24 flex-shrink-0">
