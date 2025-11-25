@@ -13,7 +13,7 @@ import {
   Building2,
   UserCog,
 } from "lucide-react";
-import hmSyncLogo from "@assets/hmsync-logo.svg";
+import hmSyncLogo from "@assets/upload_1764060155393.png";
 import { useState, useRef, useEffect } from "react";
 import {
   Dialog,

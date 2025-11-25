@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
-import hmSyncLogo from "@assets/hmsync-logo.svg";
+import hmSyncLogo from "@assets/upload_1764060155393.png";
 
 export default function Login() {
   const [username, setUsername] = useState("");
