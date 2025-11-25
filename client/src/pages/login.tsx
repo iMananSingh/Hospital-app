@@ -56,11 +56,11 @@ export default function Login() {
             <div className="w-24 flex-shrink-0">
               <img src={hmSyncLogo} alt="HMSync Logo" className="w-full h-auto" />
             </div>
-            <div className="text-center">
-              <CardTitle className="text-4xl font-bold text-text-dark text-left">
+            <div>
+              <CardTitle className="text-2xl font-bold text-text-dark text-left">
                 HMSync
               </CardTitle>
-              <CardDescription className="text-lg text-text-muted">
+              <CardDescription className="text-text-muted text-left">
                 Hospital Management System
               </CardDescription>
             </div>
