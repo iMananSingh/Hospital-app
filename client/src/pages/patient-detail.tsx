@@ -1635,8 +1635,7 @@ export default function PatientDetail() {
       setDischargeDateTime(""); // Reset the date/time state
       toast({
         title: "Patient discharged successfully",
-        description:
-          "The patient has been discharged and the event has been recorded.",
+        description: "Patient discharged successfully.",
       });
     },
     onError: () => {
@@ -1680,7 +1679,7 @@ export default function PatientDetail() {
       roomUpdateForm.reset();
       toast({
         title: "Room transfer completed",
-        description: "Patient has been transferred to the new room.",
+        description: "Patient transferred to the new room.",
       });
     },
   });

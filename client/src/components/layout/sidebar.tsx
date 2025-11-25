@@ -183,7 +183,7 @@ function ProfileEditForm({ user, onSuccess, isOpen }: ProfileEditFormProps) {
     onSuccess: (updatedUser) => {
       toast({
         title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        description: "Profile updated successfully.",
       });
       // Update the user data in cache and invalidate to trigger refetch
       queryClient.setQueryData(["/api/users/me"], updatedUser);
