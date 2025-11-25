@@ -56,7 +56,7 @@ export default function OpdList() {
 
       const matchesDoctor = selectedDoctor === "all" || visit.doctorId === selectedDoctor;
       const matchesStatus = selectedStatus === "all" || visit.status === selectedStatus;
-      const matchesDate = selectedDate === "" || visit.scheduledDate?.split('T')[0] === selectedDate;
+      const matchesDate = selectedDate === "" || visit.scheduledDate === selectedDate;
 
       return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
     });
@@ -115,8 +115,9 @@ export default function OpdList() {
   const today = indianTime.getFullYear() + '-' + 
     String(indianTime.getMonth() + 1).padStart(2, '0') + '-' + 
     String(indianTime.getDate()).padStart(2, '0');
+  
   const todayOpdCount = opdServices.filter(visit => 
-    visit.scheduledDate?.split('T')[0] === today
+    visit.scheduledDate === today
   ).length;
 
   if (isLoading) {
