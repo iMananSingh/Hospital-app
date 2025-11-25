@@ -6,11 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Building2,
@@ -28,12 +46,19 @@ import {
   Settings,
   Shield,
   Download,
-  Upload
+  Upload,
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import type { RoomType, Room, Service, PathologyCategory, PathologyCategoryTest, ServiceCategory } from "@shared/schema";
+import type {
+  RoomType,
+  Room,
+  Service,
+  PathologyCategory,
+  PathologyCategoryTest,
+  ServiceCategory,
+} from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
 
 export default function ServiceManagement() {
@@ -44,14 +69,15 @@ export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("rooms");
 
   const userRoles = user?.roles || [user?.role]; // Backward compatibility
-  const hasAccess = userRoles.includes('admin') || userRoles.includes('super_user');
+  const hasAccess =
+    userRoles.includes("admin") || userRoles.includes("super_user");
 
   if (!hasAccess) {
     return (
       <div>
         <TopBar title="Service Management" />
         <div className="px-6 pb-6 pt-4">
-          <AccessRestricted 
+          <AccessRestricted
             title="Access Restricted"
             description="Only administrators and super users can access service management."
           />
@@ -67,7 +93,9 @@ export default function ServiceManagement() {
   const [editingRoomType, setEditingRoomType] = useState<RoomType | null>(null);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [serviceDoctors, setServiceDoctors] = useState<{id: string, share: number}[]>([]);
+  const [serviceDoctors, setServiceDoctors] = useState<
+    { id: string; share: number }[]
+  >([]);
 
   // Pathology states
   const [pathologySubTab, setPathologySubTab] = useState("categories");
@@ -75,18 +103,25 @@ export default function ServiceManagement() {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<PathologyCategory | null>(null);
-  const [editingTest, setEditingTest] = useState<PathologyCategoryTest | null>(null);
+  const [editingCategory, setEditingCategory] =
+    useState<PathologyCategory | null>(null);
+  const [editingTest, setEditingTest] = useState<PathologyCategoryTest | null>(
+    null,
+  );
   const [uploadData, setUploadData] = useState<string>("");
 
   // Service Category states
-  const [isServiceCategoryDialogOpen, setIsServiceCategoryDialogOpen] = useState(false);
-  const [editingServiceCategory, setEditingServiceCategory] = useState<ServiceCategory | null>(null);
+  const [isServiceCategoryDialogOpen, setIsServiceCategoryDialogOpen] =
+    useState(false);
+  const [editingServiceCategory, setEditingServiceCategory] =
+    useState<ServiceCategory | null>(null);
 
   const token = localStorage.getItem("hospital_token");
 
   // Fetch room types
-  const { data: roomTypes = [], refetch: refetchRoomTypes } = useQuery<RoomType[]>({
+  const { data: roomTypes = [], refetch: refetchRoomTypes } = useQuery<
+    RoomType[]
+  >({
     queryKey: ["/api/room-types"],
   });
 
@@ -96,9 +131,11 @@ export default function ServiceManagement() {
   });
 
   // Fetch services
-  const { data: services = [], refetch: refetchServices } = useQuery<Service[]>({
-    queryKey: ["/api/services"],
-  });
+  const { data: services = [], refetch: refetchServices } = useQuery<Service[]>(
+    {
+      queryKey: ["/api/services"],
+    },
+  );
 
   // Fetch doctors for service assignment and display
   const { data: doctors = [] } = useQuery<any[]>({
@@ -111,23 +148,33 @@ export default function ServiceManagement() {
   });
 
   // Fetch pathology categories
-  const { data: pathologyCategories = [], refetch: refetchCategories } = useQuery<PathologyCategory[]>({
-    queryKey: ["/api/pathology-categories"],
-  });
+  const { data: pathologyCategories = [], refetch: refetchCategories } =
+    useQuery<PathologyCategory[]>({
+      queryKey: ["/api/pathology-categories"],
+    });
 
   // Fetch dynamic pathology tests
-  const { data: pathologyCategoryTests = [], refetch: refetchTests } = useQuery<PathologyCategoryTest[]>({
+  const { data: pathologyCategoryTests = [], refetch: refetchTests } = useQuery<
+    PathologyCategoryTest[]
+  >({
     queryKey: ["/api/dynamic-pathology-tests"],
   });
 
   // Fetch combined pathology data (hardcoded + dynamic)
-  const { data: combinedPathologyData, isLoading: combinedLoading, refetch: refetchCombined } = useQuery({
+  const {
+    data: combinedPathologyData,
+    isLoading: combinedLoading,
+    refetch: refetchCombined,
+  } = useQuery({
     queryKey: ["/api/pathology-tests/combined"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   // Fetch service categories
-  const { data: customServiceCategories = [], refetch: refetchServiceCategories } = useQuery<ServiceCategory[]>({
+  const {
+    data: customServiceCategories = [],
+    refetch: refetchServiceCategories,
+  } = useQuery<ServiceCategory[]>({
     queryKey: ["/api/service-categories"],
   });
 
@@ -197,7 +244,7 @@ export default function ServiceManagement() {
     mutationFn: async () => {
       const response = await fetch("/api/pathology-data/export/json", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to export JSON");
@@ -205,8 +252,14 @@ export default function ServiceManagement() {
     },
     onSuccess: (data) => {
       const element = document.createElement("a");
-      element.setAttribute("href", `data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`);
-      element.setAttribute("download", `pathology-data-${new Date().toISOString().split('T')[0]}.json`);
+      element.setAttribute(
+        "href",
+        `data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`,
+      );
+      element.setAttribute(
+        "download",
+        `pathology-data-${new Date().toISOString().split("T")[0]}.json`,
+      );
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -229,7 +282,7 @@ export default function ServiceManagement() {
     mutationFn: async () => {
       const response = await fetch("/api/pathology-data/export/excel", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to export Excel");
@@ -239,7 +292,10 @@ export default function ServiceManagement() {
       const url = window.URL.createObjectURL(blob);
       const element = document.createElement("a");
       element.setAttribute("href", url);
-      element.setAttribute("download", `pathology-data-${new Date().toISOString().split('T')[0]}.xlsx`);
+      element.setAttribute(
+        "download",
+        `pathology-data-${new Date().toISOString().split("T")[0]}.xlsx`,
+      );
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -263,7 +319,7 @@ export default function ServiceManagement() {
     mutationFn: async () => {
       const response = await fetch("/api/pathology-data/template", {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to download template");
@@ -273,7 +329,10 @@ export default function ServiceManagement() {
       const url = window.URL.createObjectURL(blob);
       const element = document.createElement("a");
       element.setAttribute("href", url);
-      element.setAttribute("download", `pathology-template-${new Date().toISOString().split('T')[0]}.xlsx`);
+      element.setAttribute(
+        "download",
+        `pathology-template-${new Date().toISOString().split("T")[0]}.xlsx`,
+      );
       element.style.display = "none";
       document.body.appendChild(element);
       element.click();
@@ -281,7 +340,7 @@ export default function ServiceManagement() {
       window.URL.revokeObjectURL(url);
       toast({
         title: "Template downloaded",
-        description: "Blank pathology template ready for data entry",
+        description: "Template downloaded for data entry",
       });
     },
     onError: () => {
@@ -301,7 +360,7 @@ export default function ServiceManagement() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(jsonData),
       });
@@ -312,7 +371,9 @@ export default function ServiceManagement() {
       return response.json();
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/pathology-tests/combined"],
+      });
       toast({
         title: "Import successful",
         description: `Imported ${result.categoriesCount || 0} categories and ${result.testsCount || 0} tests`,
@@ -334,7 +395,7 @@ export default function ServiceManagement() {
       const response = await fetch("/api/pathology-data/import/excel", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: formData,
       });
@@ -345,7 +406,9 @@ export default function ServiceManagement() {
       return response.json();
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pathology-tests/combined"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/pathology-tests/combined"],
+      });
       toast({
         title: "Import successful",
         description: `Imported ${result.categoriesCount || 0} categories and ${result.testsCount || 0} tests`,
@@ -360,10 +423,13 @@ export default function ServiceManagement() {
     },
   });
 
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>, isExcel: boolean) => {
+  const handleFileImport = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isExcel: boolean,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (isExcel) {
       importExcelMutation.mutate(file);
     } else {
@@ -375,20 +441,24 @@ export default function ServiceManagement() {
   const createRoomTypeMutation = useMutation({
     mutationFn: async (data: any) => {
       const isEditing = editingRoomType !== null;
-      const url = isEditing ? `/api/room-types/${editingRoomType.id}` : "/api/room-types";
+      const url = isEditing
+        ? `/api/room-types/${editingRoomType.id}`
+        : "/api/room-types";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} room type: ${errorText}`);
+        throw new Error(
+          `Failed to ${isEditing ? "update" : "create"} room type: ${errorText}`,
+        );
       }
       return response.json();
     },
@@ -400,7 +470,7 @@ export default function ServiceManagement() {
       setEditingRoomType(null);
       toast({
         title: "Success",
-        description: `Room type ${wasEditing ? 'updated' : 'created'} successfully`,
+        description: `Room type ${wasEditing ? "updated" : "created"} successfully`,
       });
     },
     onError: (error: any) => {
@@ -418,7 +488,7 @@ export default function ServiceManagement() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
@@ -447,20 +517,24 @@ export default function ServiceManagement() {
   const createServiceMutation = useMutation({
     mutationFn: async (data: any) => {
       const isEditing = editingService !== null;
-      const url = isEditing ? `/api/services/${editingService.id}` : "/api/services";
+      const url = isEditing
+        ? `/api/services/${editingService.id}`
+        : "/api/services";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} service: ${errorText}`);
+        throw new Error(
+          `Failed to ${isEditing ? "update" : "create"} service: ${errorText}`,
+        );
       }
       return response.json();
     },
@@ -473,7 +547,7 @@ export default function ServiceManagement() {
       setServiceDoctors([]);
       toast({
         title: "Success",
-        description: `Service ${wasEditing ? 'updated' : 'created'} successfully`,
+        description: `Service ${wasEditing ? "updated" : "created"} successfully`,
       });
     },
     onError: (error: any) => {
@@ -495,7 +569,7 @@ export default function ServiceManagement() {
       const response = await fetch(`/api/services/${serviceId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to delete service");
@@ -522,7 +596,7 @@ export default function ServiceManagement() {
       const response = await fetch(`/api/room-types/${roomTypeId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) {
@@ -557,7 +631,7 @@ export default function ServiceManagement() {
       const response = await fetch(`/api/rooms/${roomId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) {
@@ -590,20 +664,24 @@ export default function ServiceManagement() {
   const createServiceCategoryMutation = useMutation({
     mutationFn: async (data: any) => {
       const isEditing = editingServiceCategory !== null;
-      const url = isEditing ? `/api/service-categories/${editingServiceCategory.id}` : "/api/service-categories";
+      const url = isEditing
+        ? `/api/service-categories/${editingServiceCategory.id}`
+        : "/api/service-categories";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} service category: ${errorText}`);
+        throw new Error(
+          `Failed to ${isEditing ? "update" : "create"} service category: ${errorText}`,
+        );
       }
       return response.json();
     },
@@ -615,7 +693,7 @@ export default function ServiceManagement() {
       setEditingServiceCategory(null);
       toast({
         title: "Success",
-        description: `Service category ${wasEditing ? 'updated' : 'created'} successfully`,
+        description: `Service category ${wasEditing ? "updated" : "created"} successfully`,
       });
     },
     onError: (error: any) => {
@@ -632,12 +710,16 @@ export default function ServiceManagement() {
       const response = await fetch(`/api/service-categories/${categoryId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to delete service category" }));
-        throw new Error(errorData.message || "Failed to delete service category");
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Failed to delete service category" }));
+        throw new Error(
+          errorData.message || "Failed to delete service category",
+        );
       }
       return response.json();
     },
@@ -657,20 +739,18 @@ export default function ServiceManagement() {
     },
   });
 
-
-
   const deleteCategory = async (categoryId: string) => {
     try {
       const response = await fetch(`/api/pathology-categories/${categoryId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete category');
+        throw new Error(errorData.message || "Failed to delete category");
       }
 
       toast({
@@ -685,7 +765,8 @@ export default function ServiceManagement() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete category",
+        description:
+          error instanceof Error ? error.message : "Failed to delete category",
         variant: "destructive",
       });
     }
@@ -695,15 +776,15 @@ export default function ServiceManagement() {
     try {
       // Delete test from database
       const response = await fetch(`/api/dynamic-pathology-tests/${test.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete test');
+        throw new Error(errorData.message || "Failed to delete test");
       }
 
       toast({
@@ -717,7 +798,8 @@ export default function ServiceManagement() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete test",
+        description:
+          error instanceof Error ? error.message : "Failed to delete test",
         variant: "destructive",
       });
     }
@@ -736,13 +818,16 @@ export default function ServiceManagement() {
     const serviceData = {
       name: data.name,
       category: activeTab,
-      price: activeTab !== 'rooms' && (!data.price || data.price === '') ? 0 : Number(data.price) || 0,
-      description: data.description || '',
+      price:
+        activeTab !== "rooms" && (!data.price || data.price === "")
+          ? 0
+          : Number(data.price) || 0,
+      description: data.description || "",
       isActive: data.isActive !== undefined ? data.isActive : true,
-      billingType: data.billingType || 'per_instance',
-      billingParameters: data.billingParameters || null
+      billingType: data.billingType || "per_instance",
+      billingParameters: data.billingParameters || null,
     };
-    console.log('Submitting service data:', serviceData);
+    console.log("Submitting service data:", serviceData);
     createServiceMutation.mutate(serviceData);
   };
 
@@ -824,17 +909,23 @@ export default function ServiceManagement() {
   };
 
   const addDoctorToService = () => {
-    setServiceDoctors(prev => [...prev, { id: "", share: 0 }]);
+    setServiceDoctors((prev) => [...prev, { id: "", share: 0 }]);
   };
 
   const removeDoctorFromService = (index: number) => {
-    setServiceDoctors(prev => prev.filter((_, i) => i !== index));
+    setServiceDoctors((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateDoctorShare = (index: number, field: "id" | "share", value: string | number) => {
-    setServiceDoctors(prev => prev.map((doctor, i) =>
-      i === index ? { ...doctor, [field]: value } : doctor
-    ));
+  const updateDoctorShare = (
+    index: number,
+    field: "id" | "share",
+    value: string | number,
+  ) => {
+    setServiceDoctors((prev) =>
+      prev.map((doctor, i) =>
+        i === index ? { ...doctor, [field]: value } : doctor,
+      ),
+    );
   };
 
   const openServiceCategoryDialog = (category?: ServiceCategory) => {
@@ -860,15 +951,15 @@ export default function ServiceManagement() {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'ward':
+      case "ward":
         return <Home className="h-4 w-4" />;
-      case 'icu':
+      case "icu":
         return <Activity className="h-4 w-4" />;
-      case 'emergency':
+      case "emergency":
         return <AlertTriangle className="h-4 w-4" />;
-      case 'ot':
+      case "ot":
         return <Building2 className="h-4 w-4" />;
-      case 'room':
+      case "room":
         return <Bed className="h-4 w-4" />;
       default:
         return <Bed className="h-4 w-4" />;
@@ -877,32 +968,32 @@ export default function ServiceManagement() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'ward':
-        return 'bg-blue-100 text-blue-800';
-      case 'icu':
-        return 'bg-red-100 text-red-800';
-      case 'emergency':
-        return 'bg-orange-100 text-orange-800';
-      case 'ot':
-        return 'bg-purple-100 text-purple-800';
-      case 'room':
-        return 'bg-green-100 text-green-800';
+      case "ward":
+        return "bg-blue-100 text-blue-800";
+      case "icu":
+        return "bg-red-100 text-red-800";
+      case "emergency":
+        return "bg-orange-100 text-orange-800";
+      case "ot":
+        return "bg-purple-100 text-purple-800";
+      case "room":
+        return "bg-green-100 text-green-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getServiceCategoryIcon = (category: string) => {
     switch (category) {
-      case 'admissions':
+      case "admissions":
         return <Bed className="h-4 w-4" />;
-      case 'diagnostics':
+      case "diagnostics":
         return <Heart className="h-4 w-4" />;
-      case 'procedures':
+      case "procedures":
         return <Stethoscope className="h-4 w-4" />;
-      case 'operations':
+      case "operations":
         return <Scissors className="h-4 w-4" />;
-      case 'misc':
+      case "misc":
         return <Settings className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
@@ -911,34 +1002,34 @@ export default function ServiceManagement() {
 
   const getServiceCategoryColor = (category: string) => {
     switch (category) {
-      case 'admissions':
-        return 'bg-orange-100 text-orange-800';
-      case 'diagnostics':
-        return 'bg-pink-100 text-pink-800';
-      case 'procedures':
-        return 'bg-green-100 text-green-800';
-      case 'operations':
-        return 'bg-indigo-100 text-indigo-800';
-      case 'misc':
-        return 'bg-purple-100 text-purple-800';
+      case "admissions":
+        return "bg-orange-100 text-orange-800";
+      case "diagnostics":
+        return "bg-pink-100 text-pink-800";
+      case "procedures":
+        return "bg-green-100 text-green-800";
+      case "operations":
+        return "bg-indigo-100 text-indigo-800";
+      case "misc":
+        return "bg-purple-100 text-purple-800";
       default:
-        return 'bg-blue-100 text-blue-800';
+        return "bg-blue-100 text-blue-800";
     }
   };
 
   const getTabIcon = (tab: string) => {
     switch (tab) {
-      case 'rooms':
+      case "rooms":
         return <Building2 className="h-4 w-4" />;
-      case 'admissions':
+      case "admissions":
         return <Bed className="h-4 w-4" />;
-      case 'diagnostics':
+      case "diagnostics":
         return <Heart className="h-4 w-4" />;
-      case 'procedures':
+      case "procedures":
         return <Stethoscope className="h-4 w-4" />;
-      case 'operations':
+      case "operations":
         return <Scissors className="h-4 w-4" />;
-      case 'misc':
+      case "misc":
         return <Settings className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
@@ -947,36 +1038,44 @@ export default function ServiceManagement() {
 
   // Predefined service categories
   const predefinedCategories = [
-    { key: 'rooms', label: 'Rooms & Accommodation', icon: Building2 },
-    { key: 'admissions', label: 'Admission Services', icon: Bed },
-    { key: 'pathology', label: 'Pathology Tests', icon: Activity },
-    { key: 'diagnostics', label: 'Diagnostic Services', icon: Heart },
-    { key: 'procedures', label: 'Medical Procedures', icon: Stethoscope },
-    { key: 'operations', label: 'Surgical Operations', icon: Scissors },
-    { key: 'misc', label: 'Miscellaneous Services', icon: Settings }
+    { key: "rooms", label: "Rooms & Accommodation", icon: Building2 },
+    { key: "admissions", label: "Admission Services", icon: Bed },
+    { key: "pathology", label: "Pathology Tests", icon: Activity },
+    { key: "diagnostics", label: "Diagnostic Services", icon: Heart },
+    { key: "procedures", label: "Medical Procedures", icon: Stethoscope },
+    { key: "operations", label: "Surgical Operations", icon: Scissors },
+    { key: "misc", label: "Miscellaneous Services", icon: Settings },
   ];
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
-      case 'Building2': return Building2;
-      case 'Activity': return Activity;
-      case 'Heart': return Heart;
-      case 'Stethoscope': return Stethoscope;
-      case 'Scissors': return Scissors;
-      case 'Settings': return Settings;
-      case 'Syringe': return Syringe;
-      default: return Settings;
+      case "Building2":
+        return Building2;
+      case "Activity":
+        return Activity;
+      case "Heart":
+        return Heart;
+      case "Stethoscope":
+        return Stethoscope;
+      case "Scissors":
+        return Scissors;
+      case "Settings":
+        return Settings;
+      case "Syringe":
+        return Syringe;
+      default:
+        return Settings;
     }
   };
 
   const serviceCategories = [
     ...predefinedCategories,
-    ...customServiceCategories.map(cat => ({
+    ...customServiceCategories.map((cat) => ({
       key: cat.name,
       label: cat.label,
       icon: getIconComponent(cat.icon),
-      id: cat.id
-    }))
+      id: cat.id,
+    })),
   ];
 
   // Helper function to get doctor name
@@ -987,18 +1086,24 @@ export default function ServiceManagement() {
     }
     // If there's a doctorId, try to find the doctor in the doctors list
     if (service.doctorId) {
-      const doctor = doctors.find(d => d.id === service.doctorId);
+      const doctor = doctors.find((d) => d.id === service.doctorId);
       return doctor ? doctor.name : "Unknown Doctor";
     }
     // If no doctorId at all, it's an external patient
     return "External";
   };
 
-  const filteredServices = services.filter(service => service.category === activeTab);
-  const filteredPatientServices = patientServices.filter(service => service.serviceType === activeTab);
+  const filteredServices = services.filter(
+    (service) => service.category === activeTab,
+  );
+  const filteredPatientServices = patientServices.filter(
+    (service) => service.serviceType === activeTab,
+  );
 
-  const occupiedRooms = rooms.filter(room => room.isOccupied).length;
-  const availableRooms = rooms.filter(room => !room.isOccupied && room.isActive).length;
+  const occupiedRooms = rooms.filter((room) => room.isOccupied).length;
+  const availableRooms = rooms.filter(
+    (room) => !room.isOccupied && room.isActive,
+  ).length;
 
   return (
     <div>
@@ -1031,7 +1136,7 @@ export default function ServiceManagement() {
                     data-testid={`tab-${category.key}`}
                   >
                     <Icon className="h-4 w-4 mr-1" />
-                    {category.label.split(' ')[0]}
+                    {category.label.split(" ")[0]}
                   </button>
                 </div>
               );
@@ -1039,14 +1144,16 @@ export default function ServiceManagement() {
           </div>
         </div>
 
-
         {/* Content based on active tab */}
-        {activeTab === 'rooms' ? (
+        {activeTab === "rooms" ? (
           <div className="space-y-4">
             {/* Main Rooms Navigation */}
             <div className="flex flex-wrap gap-2 mb-6">
               <Button
-                onClick={() => {setRoomsSubTab("room-types"); setSelectedRoomTypeId("");}}
+                onClick={() => {
+                  setRoomsSubTab("room-types");
+                  setSelectedRoomTypeId("");
+                }}
                 variant={roomsSubTab === "room-types" ? "default" : "outline"}
                 className="flex items-center gap-2"
               >
@@ -1054,7 +1161,10 @@ export default function ServiceManagement() {
                 Room Types
               </Button>
               <Button
-                onClick={() => {setRoomsSubTab("rooms"); setSelectedRoomTypeId("");}}
+                onClick={() => {
+                  setRoomsSubTab("rooms");
+                  setSelectedRoomTypeId("");
+                }}
                 variant={roomsSubTab === "rooms" ? "default" : "outline"}
                 className="flex items-center gap-2"
               >
@@ -1092,47 +1202,67 @@ export default function ServiceManagement() {
                       <TableBody>
                         {roomTypes.map((roomType) => {
                           // Calculate dynamic total beds based on actual rooms for this room type
-                          const roomsForThisType = rooms.filter(room => room.roomTypeId === roomType.id);
-                          const dynamicTotalBeds = roomsForThisType.reduce((sum, room) => sum + (room.capacity || 1), 0);
+                          const roomsForThisType = rooms.filter(
+                            (room) => room.roomTypeId === roomType.id,
+                          );
+                          const dynamicTotalBeds = roomsForThisType.reduce(
+                            (sum, room) => sum + (room.capacity || 1),
+                            0,
+                          );
 
                           return (
                             <TableRow key={roomType.id}>
-                              <TableCell className="font-medium">{roomType.name}</TableCell>
+                              <TableCell className="font-medium">
+                                {roomType.name}
+                              </TableCell>
                               <TableCell>
-                                <Badge className={getCategoryColor(roomType.category)} variant="secondary">
+                                <Badge
+                                  className={getCategoryColor(
+                                    roomType.category,
+                                  )}
+                                  variant="secondary"
+                                >
                                   <div className="flex items-center gap-1">
                                     {getCategoryIcon(roomType.category)}
                                     {roomType.category}
                                   </div>
                                 </Badge>
                               </TableCell>
-                              <TableCell>₹{roomType.dailyCost.toLocaleString()}</TableCell>
+                              <TableCell>
+                                ₹{roomType.dailyCost.toLocaleString()}
+                              </TableCell>
                               <TableCell>{dynamicTotalBeds}</TableCell>
                               <TableCell>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={() => openRoomTypeDialog(roomType)}
-                                  size="sm"
-                                  variant="outline"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  onClick={() => {
-                                    if (confirm(`Are you sure you want to delete "${roomType.name}"? This action cannot be undone.`)) {
-                                      deleteRoomTypeMutation.mutate(roomType.id);
-                                    }
-                                  }}
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  disabled={deleteRoomTypeMutation.isPending}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => openRoomTypeDialog(roomType)}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      if (
+                                        confirm(
+                                          `Are you sure you want to delete "${roomType.name}"? This action cannot be undone.`,
+                                        )
+                                      ) {
+                                        deleteRoomTypeMutation.mutate(
+                                          roomType.id,
+                                        );
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    disabled={deleteRoomTypeMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
                           );
                         })}
                       </TableBody>
@@ -1158,7 +1288,11 @@ export default function ServiceManagement() {
             {roomsSubTab === "rooms" && (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Individual Rooms {selectedRoomTypeId && `- ${roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name}`}</CardTitle>
+                  <CardTitle>
+                    Individual Rooms{" "}
+                    {selectedRoomTypeId &&
+                      `- ${roomTypes.find((rt) => rt.id === selectedRoomTypeId)?.name}`}
+                  </CardTitle>
                   <Button
                     onClick={() => openRoomDialog()}
                     className="flex items-center gap-2"
@@ -1174,7 +1308,9 @@ export default function ServiceManagement() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       onClick={() => setSelectedRoomTypeId("")}
-                      variant={selectedRoomTypeId === "" ? "default" : "outline"}
+                      variant={
+                        selectedRoomTypeId === "" ? "default" : "outline"
+                      }
                       size="sm"
                       className="flex items-center gap-2"
                     >
@@ -1185,7 +1321,11 @@ export default function ServiceManagement() {
                       <Button
                         key={roomType.id}
                         onClick={() => setSelectedRoomTypeId(roomType.id)}
-                        variant={selectedRoomTypeId === roomType.id ? "default" : "outline"}
+                        variant={
+                          selectedRoomTypeId === roomType.id
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
                         className="flex items-center gap-2"
                       >
@@ -1198,7 +1338,9 @@ export default function ServiceManagement() {
                 <CardContent>
                   {(() => {
                     const filteredRooms = selectedRoomTypeId
-                      ? rooms.filter(room => room.roomTypeId === selectedRoomTypeId)
+                      ? rooms.filter(
+                          (room) => room.roomTypeId === selectedRoomTypeId,
+                        )
                       : rooms;
 
                     return filteredRooms.length > 0 ? (
@@ -1207,7 +1349,7 @@ export default function ServiceManagement() {
                           <div
                             key={room.id}
                             className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
-                            style={{ aspectRatio: '3/1' }}
+                            style={{ aspectRatio: "3/1" }}
                           >
                             <div className="flex flex-col justify-center">
                               <span className="font-medium text-sm text-gray-900">
@@ -1216,7 +1358,11 @@ export default function ServiceManagement() {
                             </div>
                             <Button
                               onClick={() => {
-                                if (confirm(`Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`)) {
+                                if (
+                                  confirm(
+                                    `Are you sure you want to delete room "${room.roomNumber}"? This action cannot be undone.`,
+                                  )
+                                ) {
                                   deleteRoomMutation.mutate(room.id);
                                 }
                               }}
@@ -1234,7 +1380,9 @@ export default function ServiceManagement() {
                       <div className="text-center py-8">
                         <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">
-                          {selectedRoomTypeId ? `No ${roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name} rooms defined yet` : `No individual rooms defined yet`}
+                          {selectedRoomTypeId
+                            ? `No ${roomTypes.find((rt) => rt.id === selectedRoomTypeId)?.name} rooms defined yet`
+                            : `No individual rooms defined yet`}
                         </p>
                         <Button
                           onClick={() => openRoomDialog()}
@@ -1250,12 +1398,12 @@ export default function ServiceManagement() {
               </Card>
             )}
           </div>
-        ) : activeTab !== 'pathology' ? (
+        ) : activeTab !== "pathology" ? (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {getServiceCategoryIcon(activeTab)}
-                {serviceCategories.find(cat => cat.key === activeTab)?.label}
+                {serviceCategories.find((cat) => cat.key === activeTab)?.label}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1273,20 +1421,33 @@ export default function ServiceManagement() {
                   <TableBody>
                     {filteredServices.map((service) => (
                       <TableRow key={service.id}>
-                        <TableCell className="font-medium">{service.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {service.name}
+                        </TableCell>
                         <TableCell>
-                          {(service.category !== 'rooms' && service.price === 0)
-                            ? <Badge variant="outline" className="text-purple-700 border-purple-300">Variable</Badge>
-                            : `₹${service.price.toLocaleString()}`
-                          }
+                          {service.category !== "rooms" &&
+                          service.price === 0 ? (
+                            <Badge
+                              variant="outline"
+                              className="text-purple-700 border-purple-300"
+                            >
+                              Variable
+                            </Badge>
+                          ) : (
+                            `₹${service.price.toLocaleString()}`
+                          )}
                         </TableCell>
                         <TableCell>{service.description || "N/A"}</TableCell>
                         <TableCell>
                           <Badge
-                            className={service.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
+                            className={
+                              service.isActive
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }
                             variant="secondary"
                           >
-                            {service.isActive ? 'Active' : 'Inactive'}
+                            {service.isActive ? "Active" : "Inactive"}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -1300,7 +1461,11 @@ export default function ServiceManagement() {
                             </Button>
                             <Button
                               onClick={() => {
-                                if (confirm(`Are you sure you want to delete "${service.name}"? This action cannot be undone.`)) {
+                                if (
+                                  confirm(
+                                    `Are you sure you want to delete "${service.name}"? This action cannot be undone.`,
+                                  )
+                                ) {
                                   deleteServiceMutation.mutate(service.id);
                                 }
                               }}
@@ -1320,11 +1485,10 @@ export default function ServiceManagement() {
               ) : (
                 <div className="text-center py-8">
                   {getServiceCategoryIcon(activeTab)}
-                  <p className="text-gray-500 mt-4">No {activeTab} services defined yet</p>
-                  <Button
-                    onClick={() => openServiceDialog()}
-                    className="mt-4"
-                  >
+                  <p className="text-gray-500 mt-4">
+                    No {activeTab} services defined yet
+                  </p>
+                  <Button onClick={() => openServiceDialog()} className="mt-4">
                     <Plus className="h-4 w-4 mr-2" />
                     Add First Service
                   </Button>
@@ -1335,7 +1499,7 @@ export default function ServiceManagement() {
         ) : null}
 
         {/* Pathology Section */}
-        {activeTab === 'pathology' && (
+        {activeTab === "pathology" && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
@@ -1423,7 +1587,9 @@ export default function ServiceManagement() {
               <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => setPathologySubTab("categories")}
-                  variant={pathologySubTab === "categories" ? "default" : "outline"}
+                  variant={
+                    pathologySubTab === "categories" ? "default" : "outline"
+                  }
                   className="flex items-center gap-2"
                 >
                   <Activity className="h-4 w-4" />
@@ -1445,7 +1611,9 @@ export default function ServiceManagement() {
               {pathologySubTab === "categories" && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Pathology Categories</h3>
+                    <h3 className="text-lg font-semibold">
+                      Pathology Categories
+                    </h3>
                     <Button
                       onClick={() => setIsCategoryDialogOpen(true)}
                       className="flex items-center gap-2"
@@ -1456,22 +1624,30 @@ export default function ServiceManagement() {
                     </Button>
                   </div>
 
-                  {combinedPathologyData && combinedPathologyData.categories && combinedPathologyData.categories.length > 0 ? (
+                  {combinedPathologyData &&
+                  combinedPathologyData.categories &&
+                  combinedPathologyData.categories.length > 0 ? (
                     <div className="space-y-4">
                       {/* Summary Stats */}
                       {combinedPathologyData.summary && (
                         <div className="flex gap-4 p-4 bg-gray-50 rounded-lg">
                           <div className="text-sm">
-                            <span className="font-medium">Total Categories:</span> {combinedPathologyData.summary.totalCategories}
+                            <span className="font-medium">
+                              Total Categories:
+                            </span>{" "}
+                            {combinedPathologyData.summary.totalCategories}
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium">Total Tests:</span> {combinedPathologyData.summary.totalTests}
+                            <span className="font-medium">Total Tests:</span>{" "}
+                            {combinedPathologyData.summary.totalTests}
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium">Dynamic:</span> {combinedPathologyData.summary.dynamicCategories}
+                            <span className="font-medium">Dynamic:</span>{" "}
+                            {combinedPathologyData.summary.dynamicCategories}
                           </div>
                           <div className="text-sm">
-                            <span className="font-medium">System:</span> {combinedPathologyData.summary.hardcodedCategories}
+                            <span className="font-medium">System:</span>{" "}
+                            {combinedPathologyData.summary.hardcodedCategories}
                           </div>
                         </div>
                       )}
@@ -1488,19 +1664,29 @@ export default function ServiceManagement() {
                         <TableBody>
                           {combinedPathologyData.categories.map((category) => (
                             <TableRow key={category.id}>
-                              <TableCell className="font-medium">{category.name}</TableCell>
-                              <TableCell>{category.description || '-'}</TableCell>
-                              <TableCell>{category.tests?.length || 0}</TableCell>
+                              <TableCell className="font-medium">
+                                {category.name}
+                              </TableCell>
+                              <TableCell>
+                                {category.description || "-"}
+                              </TableCell>
+                              <TableCell>
+                                {category.tests?.length || 0}
+                              </TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
                                   <Button
                                     onClick={() => {
-                                      const dynamicCategory = pathologyCategories.find(c => c.id === category.id);
+                                      const dynamicCategory =
+                                        pathologyCategories.find(
+                                          (c) => c.id === category.id,
+                                        );
                                       if (dynamicCategory) {
                                         setEditingCategory(dynamicCategory);
                                         categoryForm.reset({
                                           name: dynamicCategory.name,
-                                          description: dynamicCategory.description || "",
+                                          description:
+                                            dynamicCategory.description || "",
                                         });
                                         setIsCategoryDialogOpen(true);
                                       }
@@ -1512,7 +1698,11 @@ export default function ServiceManagement() {
                                   </Button>
                                   <Button
                                     onClick={async () => {
-                                      if (confirm(`Are you sure you want to delete "${category.name}"? This action cannot be undone.`)) {
+                                      if (
+                                        confirm(
+                                          `Are you sure you want to delete "${category.name}"? This action cannot be undone.`,
+                                        )
+                                      ) {
                                         deleteCategory(category.id);
                                       }
                                     }}
@@ -1532,7 +1722,9 @@ export default function ServiceManagement() {
                   ) : (
                     <div className="text-center py-8">
                       <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No pathology categories defined yet</p>
+                      <p className="text-gray-500">
+                        No pathology categories defined yet
+                      </p>
                       <Button
                         onClick={() => setIsCategoryDialogOpen(true)}
                         className="mt-4"
@@ -1552,26 +1744,37 @@ export default function ServiceManagement() {
                     <h3 className="text-lg font-semibold">Pathology Tests</h3>
                   </div>
 
-                  {combinedPathologyData && combinedPathologyData.categories.some(cat => cat.tests && cat.tests.length > 0) ? (
+                  {combinedPathologyData &&
+                  combinedPathologyData.categories.some(
+                    (cat) => cat.tests && cat.tests.length > 0,
+                  ) ? (
                     <div className="space-y-4">
                       {/* Filter and Add Test Button Row */}
                       <div className="flex justify-between items-center gap-4">
                         {/* Category Filter - Deduplicate by name */}
                         <div className="flex gap-4 items-center">
-                          <label className="text-sm font-medium">Filter by Category:</label>
+                          <label className="text-sm font-medium">
+                            Filter by Category:
+                          </label>
                           <select
                             value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            onChange={(e) =>
+                              setSelectedCategoryId(e.target.value)
+                            }
                             className="px-3 py-2 border rounded-md"
                           >
                             <option value="">All Categories</option>
                             {Array.from(
                               new Map(
-                                combinedPathologyData.categories.map(cat => [cat.name, cat])
-                              ).values()
-                            ).map(category => (
+                                combinedPathologyData.categories.map((cat) => [
+                                  cat.name,
+                                  cat,
+                                ]),
+                              ).values(),
+                            ).map((category) => (
                               <option key={category.id} value={category.id}>
-                                {category.name} ({category.tests?.length || 0} tests)
+                                {category.name} ({category.tests?.length || 0}{" "}
+                                tests)
                               </option>
                             ))}
                           </select>
@@ -1597,12 +1800,21 @@ export default function ServiceManagement() {
 
                       {/* Tests grouped by category */}
                       {combinedPathologyData.categories
-                        .filter(category => !selectedCategoryId || category.id === selectedCategoryId)
-                        .filter(category => category.tests && category.tests.length > 0)
-                        .map(category => (
+                        .filter(
+                          (category) =>
+                            !selectedCategoryId ||
+                            category.id === selectedCategoryId,
+                        )
+                        .filter(
+                          (category) =>
+                            category.tests && category.tests.length > 0,
+                        )
+                        .map((category) => (
                           <div key={category.id} className="space-y-2">
                             <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 px-4 py-2 rounded-md">
-                              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">{category.name}</h3>
+                              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                                {category.name}
+                              </h3>
                               <span className="text-sm text-blue-700 dark:text-blue-300">
                                 ({category.tests.length} tests)
                               </span>
@@ -1624,28 +1836,35 @@ export default function ServiceManagement() {
                                       {test.name || test.test_name}
                                     </TableCell>
                                     <TableCell>₹{test.price}</TableCell>
-                                    <TableCell>{test.description || '-'}</TableCell>
+                                    <TableCell>
+                                      {test.description || "-"}
+                                    </TableCell>
                                     <TableCell>
                                       <div className="flex gap-2">
                                         <Button
-                                            onClick={() => {
-                                              setEditingTest(test);
-                                              testForm.reset({
-                                                categoryId: test.categoryId,
-                                                testName: test.name,
-                                                price: test.price,
-                                                description: test.description || "",
-                                              });
-                                              setIsTestDialogOpen(true);
-                                            }}
-                                            size="sm"
-                                            variant="outline"
-                                          >
-                                            <Edit className="h-4 w-4" />
+                                          onClick={() => {
+                                            setEditingTest(test);
+                                            testForm.reset({
+                                              categoryId: test.categoryId,
+                                              testName: test.name,
+                                              price: test.price,
+                                              description:
+                                                test.description || "",
+                                            });
+                                            setIsTestDialogOpen(true);
+                                          }}
+                                          size="sm"
+                                          variant="outline"
+                                        >
+                                          <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button
                                           onClick={() => {
-                                            if (confirm(`Are you sure you want to delete "${test.name || test.test_name}"? This action cannot be undone.`)) {
+                                            if (
+                                              confirm(
+                                                `Are you sure you want to delete "${test.name || test.test_name}"? This action cannot be undone.`,
+                                              )
+                                            ) {
                                               deleteTest(test, category.name);
                                             }
                                           }}
@@ -1667,7 +1886,9 @@ export default function ServiceManagement() {
                   ) : (
                     <div className="text-center py-8">
                       <Syringe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No pathology tests defined yet</p>
+                      <p className="text-gray-500">
+                        No pathology tests defined yet
+                      </p>
                       <Button
                         onClick={() => {
                           setEditingTest(null);
@@ -1693,15 +1914,21 @@ export default function ServiceManagement() {
         )}
 
         {/* Room Type Dialog */}
-        <Dialog open={isRoomTypeDialogOpen} onOpenChange={setIsRoomTypeDialogOpen}>
+        <Dialog
+          open={isRoomTypeDialogOpen}
+          onOpenChange={setIsRoomTypeDialogOpen}
+        >
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingRoomType ? 'Edit Room Type' : 'Add Room Type'}
+                {editingRoomType ? "Edit Room Type" : "Add Room Type"}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={roomTypeForm.handleSubmit(onRoomTypeSubmit)} className="space-y-4">
+            <form
+              onSubmit={roomTypeForm.handleSubmit(onRoomTypeSubmit)}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Room Type Name *</Label>
@@ -1716,7 +1943,9 @@ export default function ServiceManagement() {
                   <Label>Category *</Label>
                   <Select
                     value={roomTypeForm.watch("category")}
-                    onValueChange={(value) => roomTypeForm.setValue("category", value)}
+                    onValueChange={(value) =>
+                      roomTypeForm.setValue("category", value)
+                    }
                     data-testid="select-room-category"
                   >
                     <SelectTrigger>
@@ -1737,7 +1966,9 @@ export default function ServiceManagement() {
                 <Label>Daily Cost (₹) *</Label>
                 <Input
                   type="number"
-                  {...roomTypeForm.register("dailyCost", { valueAsNumber: true })}
+                  {...roomTypeForm.register("dailyCost", {
+                    valueAsNumber: true,
+                  })}
                   placeholder="Enter daily cost"
                   data-testid="input-daily-cost"
                 />
@@ -1759,8 +1990,7 @@ export default function ServiceManagement() {
                     ? "Saving..."
                     : editingRoomType
                       ? "Update Room Type"
-                      : "Add Room Type"
-                  }
+                      : "Add Room Type"}
                 </Button>
               </div>
             </form>
@@ -1772,11 +2002,14 @@ export default function ServiceManagement() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingRoom ? 'Edit Room' : 'Add Room'}
+                {editingRoom ? "Edit Room" : "Add Room"}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={roomForm.handleSubmit(onRoomSubmit)} className="space-y-4">
+            <form
+              onSubmit={roomForm.handleSubmit(onRoomSubmit)}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label>Room Number *</Label>
                 <Input
@@ -1790,7 +2023,9 @@ export default function ServiceManagement() {
                 <Label>Room Type *</Label>
                 <Select
                   value={roomForm.watch("roomTypeId")}
-                  onValueChange={(value) => roomForm.setValue("roomTypeId", value)}
+                  onValueChange={(value) =>
+                    roomForm.setValue("roomTypeId", value)
+                  }
                   disabled={!!selectedRoomTypeId && !editingRoom}
                   data-testid="select-room-type"
                 >
@@ -1807,7 +2042,8 @@ export default function ServiceManagement() {
                 </Select>
                 {selectedRoomTypeId && !editingRoom && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Auto-selected: {roomTypes.find(rt => rt.id === selectedRoomTypeId)?.name}
+                    Auto-selected:{" "}
+                    {roomTypes.find((rt) => rt.id === selectedRoomTypeId)?.name}
                   </p>
                 )}
               </div>
@@ -1820,16 +2056,12 @@ export default function ServiceManagement() {
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={createRoomMutation.isPending}
-                >
+                <Button type="submit" disabled={createRoomMutation.isPending}>
                   {createRoomMutation.isPending
                     ? "Saving..."
                     : editingRoom
                       ? "Update Room"
-                      : "Add Room"
-                  }
+                      : "Add Room"}
                 </Button>
               </div>
             </form>
@@ -1837,43 +2069,65 @@ export default function ServiceManagement() {
         </Dialog>
 
         {/* Service Dialog */}
-        <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
+        <Dialog
+          open={isServiceDialogOpen}
+          onOpenChange={setIsServiceDialogOpen}
+        >
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingService ? 'Edit Service' : `Add ${serviceCategories.find(cat => cat.key === activeTab)?.label} Service`}
+                {editingService
+                  ? "Edit Service"
+                  : `Add ${serviceCategories.find((cat) => cat.key === activeTab)?.label} Service`}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={serviceForm.handleSubmit(onServiceSubmit)} className="space-y-4">
+            <form
+              onSubmit={serviceForm.handleSubmit(onServiceSubmit)}
+              className="space-y-4"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Service Name *</Label>
                   <Input
                     {...serviceForm.register("name")}
-                    placeholder={`e.g., ${activeTab === 'diagnostics' ? 'ECG' : activeTab === 'procedures' ? 'Dressing' : activeTab === 'operations' ? 'Appendectomy' : activeTab === 'misc' ? 'Ambulance Service' : 'Service Name'}`}
+                    placeholder={`e.g., ${activeTab === "diagnostics" ? "ECG" : activeTab === "procedures" ? "Dressing" : activeTab === "operations" ? "Appendectomy" : activeTab === "misc" ? "Ambulance Service" : "Service Name"}`}
                     data-testid="input-service-name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Price (₹) {activeTab !== 'rooms' ? '(Optional - Variable Pricing)' : '*'}</Label>
+                  <Label>
+                    Price (₹){" "}
+                    {activeTab !== "rooms"
+                      ? "(Optional - Variable Pricing)"
+                      : "*"}
+                  </Label>
                   <Input
                     type="number"
                     {...serviceForm.register("price", {
                       setValueAs: (value: string) => {
                         // For variable pricing services, allow null when blank
-                        if (value === "" && serviceForm.watch("billingType") === "variable") {
+                        if (
+                          value === "" &&
+                          serviceForm.watch("billingType") === "variable"
+                        ) {
                           return null;
                         }
                         return value === "" ? 0 : parseFloat(value) || 0;
-                      }
+                      },
                     })}
-                    placeholder={activeTab !== 'rooms' ? 'Leave blank for variable pricing' : 'Enter price'}
+                    placeholder={
+                      activeTab !== "rooms"
+                        ? "Leave blank for variable pricing"
+                        : "Enter price"
+                    }
                     data-testid="input-service-price"
                   />
-                  {activeTab !== 'rooms' && (
-                    <p className="text-sm text-gray-500">Price can be entered when adding to patient if left blank</p>
+                  {activeTab !== "rooms" && (
+                    <p className="text-sm text-gray-500">
+                      Price can be entered when adding to patient if left blank
+                    </p>
                   )}
                 </div>
               </div>
@@ -1892,28 +2146,48 @@ export default function ServiceManagement() {
                 <Label>Billing Type</Label>
                 <Select
                   value={serviceForm.watch("billingType") || "per_instance"}
-                  onValueChange={(value) => serviceForm.setValue("billingType", value)}
+                  onValueChange={(value) =>
+                    serviceForm.setValue("billingType", value)
+                  }
                   data-testid="select-billing-type"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select billing type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="per_instance">Per Instance (Default)</SelectItem>
-                    <SelectItem value="per_24_hours">Per 24 Hours (Room Charges)</SelectItem>
-                    <SelectItem value="per_hour">Per Hour (Oxygen, etc.)</SelectItem>
-                    <SelectItem value="composite">Composite (Fixed + Variable)</SelectItem>
-                    <SelectItem value="variable">Variable (Input-based pricing)</SelectItem>
-                    <SelectItem value="per_date">Per Date (Calendar dates during admission)</SelectItem>
+                    <SelectItem value="per_instance">
+                      Per Instance (Default)
+                    </SelectItem>
+                    <SelectItem value="per_24_hours">
+                      Per 24 Hours (Room Charges)
+                    </SelectItem>
+                    <SelectItem value="per_hour">
+                      Per Hour (Oxygen, etc.)
+                    </SelectItem>
+                    <SelectItem value="composite">
+                      Composite (Fixed + Variable)
+                    </SelectItem>
+                    <SelectItem value="variable">
+                      Variable (Input-based pricing)
+                    </SelectItem>
+                    <SelectItem value="per_date">
+                      Per Date (Calendar dates during admission)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-gray-500">
-                  {serviceForm.watch("billingType") === "per_instance" && "Charged once per service instance"}
-                  {serviceForm.watch("billingType") === "per_24_hours" && "Charged per day (room stays)"}
-                  {serviceForm.watch("billingType") === "per_hour" && "Charged per hour of usage"}
-                  {serviceForm.watch("billingType") === "composite" && "Fixed charge + variable component"}
-                  {serviceForm.watch("billingType") === "variable" && "Price determined at time of service (quantity always 1)"}
-                  {serviceForm.watch("billingType") === "per_date" && "Charged per calendar date during admission period"}
+                  {serviceForm.watch("billingType") === "per_instance" &&
+                    "Charged once per service instance"}
+                  {serviceForm.watch("billingType") === "per_24_hours" &&
+                    "Charged per day (room stays)"}
+                  {serviceForm.watch("billingType") === "per_hour" &&
+                    "Charged per hour of usage"}
+                  {serviceForm.watch("billingType") === "composite" &&
+                    "Fixed charge + variable component"}
+                  {serviceForm.watch("billingType") === "variable" &&
+                    "Price determined at time of service (quantity always 1)"}
+                  {serviceForm.watch("billingType") === "per_date" &&
+                    "Charged per calendar date during admission period"}
                 </p>
               </div>
 
@@ -1927,7 +2201,8 @@ export default function ServiceManagement() {
                     data-testid="textarea-billing-parameters"
                   />
                   <p className="text-sm text-gray-500">
-                    For ambulance: fixedCharge (base fee) + perKmRate (per km charge)
+                    For ambulance: fixedCharge (base fee) + perKmRate (per km
+                    charge)
                   </p>
                 </div>
               )}
@@ -1935,7 +2210,9 @@ export default function ServiceManagement() {
               {/* Doctor Assignment Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Doctor Assignment (Optional)</Label>
+                  <Label className="text-base font-semibold">
+                    Doctor Assignment (Optional)
+                  </Label>
                   {serviceDoctors.length === 0 && (
                     <Button
                       type="button"
@@ -1958,7 +2235,9 @@ export default function ServiceManagement() {
                           <Label>Doctor {index + 1}</Label>
                           <Select
                             value={doctor.id}
-                            onValueChange={(value) => updateDoctorShare(index, "id", value)}
+                            onValueChange={(value) =>
+                              updateDoctorShare(index, "id", value)
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select doctor" />
@@ -1979,7 +2258,13 @@ export default function ServiceManagement() {
                             <Input
                               type="number"
                               value={doctor.share || ""}
-                              onChange={(e) => updateDoctorShare(index, "share", parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                updateDoctorShare(
+                                  index,
+                                  "share",
+                                  parseFloat(e.target.value) || 0,
+                                )
+                              }
                               placeholder="Doctor's share amount"
                             />
                           </div>
@@ -2014,15 +2299,29 @@ export default function ServiceManagement() {
 
                 {serviceDoctors.length > 1 && (
                   <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium">Cost Distribution</p>
+                    <p className="text-sm text-blue-800 font-medium">
+                      Cost Distribution
+                    </p>
                     <p className="text-sm text-blue-600">
                       Total service price: ₹{serviceForm.watch("price") || 0}
                     </p>
                     <p className="text-sm text-blue-600">
-                      Total doctor shares: ₹{serviceDoctors.reduce((sum, doc) => sum + (doc.share || 0), 0)}
+                      Total doctor shares: ₹
+                      {serviceDoctors.reduce(
+                        (sum, doc) => sum + (doc.share || 0),
+                        0,
+                      )}
                     </p>
                     <p className="text-sm text-blue-600">
-                      Hospital share: ₹{Math.max(0, (serviceForm.watch("price") || 0) - serviceDoctors.reduce((sum, doc) => sum + (doc.share || 0), 0))}
+                      Hospital share: ₹
+                      {Math.max(
+                        0,
+                        (serviceForm.watch("price") || 0) -
+                          serviceDoctors.reduce(
+                            (sum, doc) => sum + (doc.share || 0),
+                            0,
+                          ),
+                      )}
                     </p>
                   </div>
                 )}
@@ -2044,8 +2343,7 @@ export default function ServiceManagement() {
                     ? "Saving..."
                     : editingService
                       ? "Update Service"
-                      : "Add Service"
-                  }
+                      : "Add Service"}
                 </Button>
               </div>
             </form>
@@ -2053,44 +2351,65 @@ export default function ServiceManagement() {
         </Dialog>
 
         {/* Pathology Category Dialog */}
-        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <Dialog
+          open={isCategoryDialogOpen}
+          onOpenChange={setIsCategoryDialogOpen}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? 'Edit Category' : 'Add Pathology Category'}
+                {editingCategory ? "Edit Category" : "Add Pathology Category"}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={categoryForm.handleSubmit(async (data) => {
-              try {
-                const url = editingCategory
-                  ? `/api/pathology-categories/${editingCategory.id}`
-                  : '/api/pathology-categories';
-                const method = editingCategory ? 'PUT' : 'POST';
+            <form
+              onSubmit={categoryForm.handleSubmit(async (data) => {
+                try {
+                  const url = editingCategory
+                    ? `/api/pathology-categories/${editingCategory.id}`
+                    : "/api/pathology-categories";
+                  const method = editingCategory ? "PUT" : "POST";
 
-                const response = await fetch(url, {
-                  method,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
-                  },
-                  body: JSON.stringify(data)
-                });
+                  const response = await fetch(url, {
+                    method,
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+                    },
+                    body: JSON.stringify(data),
+                  });
 
-                if (response.ok) {
-                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
-                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
-                  toast({ title: 'Success', description: `Category ${editingCategory ? 'updated' : 'created'} successfully` });
-                  setIsCategoryDialogOpen(false);
-                  setEditingCategory(null);
-                  categoryForm.reset();
-                } else {
-                  toast({ title: 'Error', description: 'Failed to save category', variant: 'destructive' });
+                  if (response.ok) {
+                    queryClient.invalidateQueries({
+                      queryKey: ["/api/pathology-categories"],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["/api/pathology-tests/combined"],
+                    });
+                    toast({
+                      title: "Success",
+                      description: `Category ${editingCategory ? "updated" : "created"} successfully`,
+                    });
+                    setIsCategoryDialogOpen(false);
+                    setEditingCategory(null);
+                    categoryForm.reset();
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "Failed to save category",
+                      variant: "destructive",
+                    });
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to save category",
+                    variant: "destructive",
+                  });
                 }
-              } catch (error) {
-                toast({ title: 'Error', description: 'Failed to save category', variant: 'destructive' });
-              }
-            })} className="space-y-4">
+              })}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label>Category Name *</Label>
                 <Input
@@ -2122,7 +2441,7 @@ export default function ServiceManagement() {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {editingCategory ? 'Update Category' : 'Add Category'}
+                  {editingCategory ? "Update Category" : "Add Category"}
                 </Button>
               </div>
             </form>
@@ -2134,52 +2453,72 @@ export default function ServiceManagement() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingTest ? 'Edit Test' : 'Add Pathology Test'}
+                {editingTest ? "Edit Test" : "Add Pathology Test"}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={testForm.handleSubmit(async (data) => {
-              try {
-                const url = editingTest
-                  ? `/api/dynamic-pathology-tests/${editingTest.id}`
-                  : '/api/dynamic-pathology-tests';
-                const method = editingTest ? 'PUT' : 'POST';
+            <form
+              onSubmit={testForm.handleSubmit(async (data) => {
+                try {
+                  const url = editingTest
+                    ? `/api/dynamic-pathology-tests/${editingTest.id}`
+                    : "/api/dynamic-pathology-tests";
+                  const method = editingTest ? "PUT" : "POST";
 
-                const response = await fetch(url, {
-                  method,
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
-                  },
-                  body: JSON.stringify(data)
-                });
+                  const response = await fetch(url, {
+                    method,
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+                    },
+                    body: JSON.stringify(data),
+                  });
 
-                if (response.ok) {
-                  queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
-                  queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
-                  toast({ title: 'Success', description: `Test ${editingTest ? 'updated' : 'created'} successfully` });
-                  setIsTestDialogOpen(false);
-                  setEditingTest(null);
-                  testForm.reset();
-                } else {
-                  toast({ title: 'Error', description: 'Failed to save test', variant: 'destructive' });
+                  if (response.ok) {
+                    queryClient.invalidateQueries({
+                      queryKey: ["/api/dynamic-pathology-tests"],
+                    });
+                    queryClient.invalidateQueries({
+                      queryKey: ["/api/pathology-tests/combined"],
+                    });
+                    toast({
+                      title: "Success",
+                      description: `Test ${editingTest ? "updated" : "created"} successfully`,
+                    });
+                    setIsTestDialogOpen(false);
+                    setEditingTest(null);
+                    testForm.reset();
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "Failed to save test",
+                      variant: "destructive",
+                    });
+                  }
+                } catch (error) {
+                  toast({
+                    title: "Error",
+                    description: "Failed to save test",
+                    variant: "destructive",
+                  });
                 }
-              } catch (error) {
-                toast({ title: 'Error', description: 'Failed to save test', variant: 'destructive' });
-              }
-            })} className="space-y-4">
+              })}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label>Category *</Label>
                 <Select
                   value={testForm.watch("categoryId")}
-                  onValueChange={(value) => testForm.setValue("categoryId", value)}
+                  onValueChange={(value) =>
+                    testForm.setValue("categoryId", value)
+                  }
                   data-testid="select-test-category"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {combinedPathologyData?.categories.map(category => (
+                    {combinedPathologyData?.categories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>
@@ -2229,7 +2568,7 @@ export default function ServiceManagement() {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {editingTest ? 'Update Test' : 'Add Test'}
+                  {editingTest ? "Update Test" : "Add Test"}
                 </Button>
               </div>
             </form>
@@ -2242,7 +2581,8 @@ export default function ServiceManagement() {
             <DialogHeader>
               <DialogTitle>Bulk Upload Pathology Tests</DialogTitle>
               <p className="text-sm text-gray-600">
-                Upload tests in JSON format. The system will create categories and tests as needed.
+                Upload tests in JSON format. The system will create categories
+                and tests as needed.
               </p>
             </DialogHeader>
 
@@ -2289,31 +2629,48 @@ export default function ServiceManagement() {
                   onClick={async () => {
                     try {
                       const data = JSON.parse(uploadData);
-                      const response = await fetch('/api/pathology-tests/bulk-upload', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${localStorage.getItem('hospital_token')}`
+                      const response = await fetch(
+                        "/api/pathology-tests/bulk-upload",
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+                          },
+                          body: JSON.stringify(data),
                         },
-                        body: JSON.stringify(data)
-                      });
+                      );
 
                       if (response.ok) {
                         const result = await response.json();
-                        queryClient.invalidateQueries({ queryKey: ['/api/pathology-categories'] });
-                        queryClient.invalidateQueries({ queryKey: ['/api/dynamic-pathology-tests'] });
-                        queryClient.invalidateQueries({ queryKey: ['/api/pathology-tests/combined'] });
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/pathology-categories"],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/dynamic-pathology-tests"],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/pathology-tests/combined"],
+                        });
                         toast({
-                          title: 'Success',
-                          description: `Uploaded ${result.categories?.length || 0} categories and ${result.tests?.length || 0} tests`
+                          title: "Success",
+                          description: `Uploaded ${result.categories?.length || 0} categories and ${result.tests?.length || 0} tests`,
                         });
                         setIsUploadDialogOpen(false);
                         setUploadData("");
                       } else {
-                        toast({ title: 'Error', description: 'Failed to upload data', variant: 'destructive' });
+                        toast({
+                          title: "Error",
+                          description: "Failed to upload data",
+                          variant: "destructive",
+                        });
                       }
                     } catch (error) {
-                      toast({ title: 'Error', description: 'Invalid JSON format', variant: 'destructive' });
+                      toast({
+                        title: "Error",
+                        description: "Invalid JSON format",
+                        variant: "destructive",
+                      });
                     }
                   }}
                 >
@@ -2325,15 +2682,25 @@ export default function ServiceManagement() {
         </Dialog>
 
         {/* Service Category Dialog */}
-        <Dialog open={isServiceCategoryDialogOpen} onOpenChange={setIsServiceCategoryDialogOpen}>
+        <Dialog
+          open={isServiceCategoryDialogOpen}
+          onOpenChange={setIsServiceCategoryDialogOpen}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingServiceCategory ? 'Edit Service Category' : 'Add Service Category'}
+                {editingServiceCategory
+                  ? "Edit Service Category"
+                  : "Add Service Category"}
               </DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={serviceCategoryForm.handleSubmit(onServiceCategorySubmit)} className="space-y-4">
+            <form
+              onSubmit={serviceCategoryForm.handleSubmit(
+                onServiceCategorySubmit,
+              )}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label>Category Name *</Label>
                 <Input
@@ -2356,7 +2723,9 @@ export default function ServiceManagement() {
                 <Label>Icon</Label>
                 <Select
                   value={serviceCategoryForm.watch("icon")}
-                  onValueChange={(value) => serviceCategoryForm.setValue("icon", value)}
+                  onValueChange={(value) =>
+                    serviceCategoryForm.setValue("icon", value)
+                  }
                   data-testid="select-category-icon"
                 >
                   <SelectTrigger>
@@ -2403,8 +2772,7 @@ export default function ServiceManagement() {
                     ? "Saving..."
                     : editingServiceCategory
                       ? "Update Category"
-                      : "Add Category"
-                  }
+                      : "Add Category"}
                 </Button>
               </div>
             </form>
