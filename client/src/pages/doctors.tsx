@@ -262,7 +262,7 @@ export default function Doctors() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Doctor salary rates saved successfully",
+        description: "Salary rates saved successfully",
       });
       refetchDoctorRates();
     },
@@ -298,7 +298,7 @@ export default function Doctors() {
         queryKey: ["/api/doctors/payments"],
       });
       await queryClient.refetchQueries({ queryKey: ["/api/doctors/payments"] });
-      
+
       // Invalidate specific doctor's payment history
       queryClient.invalidateQueries({
         queryKey: ["/api/doctors", doctorId, "payments"],
@@ -319,7 +319,7 @@ export default function Doctors() {
 
       toast({
         title: "Payment Confirmed",
-        description: `Successfully marked ${data.count} earnings as paid`,
+        description: `${data.count} earnings marked paid`,
       });
     },
     onError: (error: Error) => {
@@ -454,7 +454,7 @@ export default function Doctors() {
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/deleted"] });
       toast({
         title: "Doctor restored successfully",
-        description: "The doctor profile has been restored to active status.",
+        description: "Doctor profile restored",
       });
     },
     onError: () => {
@@ -785,7 +785,7 @@ export default function Doctors() {
       doctorRates.forEach((rate: any) => {
         // Handle null serviceId - map back to representative IDs
         let serviceId = rate.serviceId;
-        
+
         // If serviceId is null, determine the representative ID based on category
         if (!serviceId) {
           if (rate.serviceCategory === "pathology") {
@@ -794,12 +794,13 @@ export default function Doctors() {
             serviceId = "opd_consultation_placeholder";
           }
         }
-        
+
         // Only add to selections if we have a valid serviceId
         if (serviceId) {
           newSelections[serviceId] = {
             isSelected: true,
-            salaryBasis: rate.rateType === "percentage" ? "percentage" : "amount",
+            salaryBasis:
+              rate.rateType === "percentage" ? "percentage" : "amount",
             amount: rate.rateType === "amount" ? rate.rateAmount : 0,
             percentage: rate.rateType === "percentage" ? rate.rateAmount : 0,
           };

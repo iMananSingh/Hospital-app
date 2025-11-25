@@ -8,24 +8,72 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-import { TestTube, Eye, Search, Plus, ShoppingCart, Check, ChevronsUpDown } from "lucide-react";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  TestTube,
+  Eye,
+  Search,
+  Plus,
+  ShoppingCart,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { insertPathologyOrderSchema } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import AccessRestricted from "@/components/access-restricted";
-import type { PathologyOrder, Patient, Doctor, Service, PathologyCategory, PathologyCategoryTest } from "@shared/schema";
+import type {
+  PathologyOrder,
+  Patient,
+  Doctor,
+  Service,
+  PathologyCategory,
+  PathologyCategoryTest,
+} from "@shared/schema";
 
 // Patient Search Combobox Component
-function PatientSearchCombobox({ value, onValueChange, patients }: {
+function PatientSearchCombobox({
+  value,
+  onValueChange,
+  patients,
+}: {
   value: string;
   onValueChange: (value: string) => void;
   patients: any[];
@@ -44,7 +92,9 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
     );
   });
 
-  const selectedPatient = patients?.find((patient: any) => patient.id === value);
+  const selectedPatient = patients?.find(
+    (patient: any) => patient.id === value,
+  );
 
   const formatPatientDisplay = (patient: any) => {
     return `${patient.name}, ${patient.age} ${patient.gender} (${patient.patientId})`;
@@ -60,11 +110,16 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
           className="w-full justify-between text-left font-normal"
           data-testid="button-select-patient"
         >
-          {selectedPatient ? formatPatientDisplay(selectedPatient) : "Search and select patient..."}
+          {selectedPatient
+            ? formatPatientDisplay(selectedPatient)
+            : "Search and select patient..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+      <PopoverContent
+        className="w-full p-0"
+        style={{ width: "var(--radix-popover-trigger-width)" }}
+      >
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Type to search patients..."
@@ -95,7 +150,8 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
                   <div className="flex flex-col">
                     <span className="font-medium">{patient.name}</span>
                     <span className="text-sm text-muted-foreground">
-                      {patient.age} years, {patient.gender} • {patient.patientId}
+                      {patient.age} years, {patient.gender} •{" "}
+                      {patient.patientId}
                     </span>
                   </div>
                 </CommandItem>
@@ -109,13 +165,19 @@ function PatientSearchCombobox({ value, onValueChange, patients }: {
 }
 
 // Order Details Dialog Component
-function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => void }) {
+function OrderDetailsDialog({
+  order,
+  onClose,
+}: {
+  order: any;
+  onClose: () => void;
+}) {
   const { data: orderDetails } = useQuery({
     queryKey: ["/api/pathology", order.id],
     queryFn: async () => {
       const response = await fetch(`/api/pathology/${order.id}`, {
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch order details");
@@ -134,16 +196,16 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'collected':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'ordered':
-        return 'bg-orange-100 text-orange-800';
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "processing":
+        return "bg-blue-100 text-blue-800";
+      case "collected":
+        return "bg-yellow-100 text-yellow-800";
+      case "ordered":
+        return "bg-orange-100 text-orange-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -168,25 +230,36 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">Patient</Label>
-                <p className="text-sm text-muted-foreground">{getPatientName(order.patientId)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {getPatientName(order.patientId)}
+                </p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Doctor</Label>
-                <p className="text-sm text-muted-foreground">{getDoctorName(order.doctorId)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {getDoctorName(order.doctorId)}
+                </p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Status</Label>
-                <Badge className={getStatusColor(order.status)} variant="secondary">
+                <Badge
+                  className={getStatusColor(order.status)}
+                  variant="secondary"
+                >
                   {order.status}
                 </Badge>
               </div>
               <div>
                 <Label className="text-sm font-medium">Date Ordered</Label>
-                <p className="text-sm text-muted-foreground">{formatDate(order.orderedDate)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(order.orderedDate)}
+                </p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Total Price</Label>
-                <p className="text-sm text-muted-foreground">₹{order.totalPrice}</p>
+                <p className="text-sm text-muted-foreground">
+                  ₹{order.totalPrice}
+                </p>
               </div>
             </div>
             {order.remarks && (
@@ -197,7 +270,9 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
             )}
 
             <div className="mt-6">
-              <Label className="text-sm font-medium">Tests in this Order ({orderDetails?.tests?.length || 0} tests)</Label>
+              <Label className="text-sm font-medium">
+                Tests in this Order ({orderDetails?.tests?.length || 0} tests)
+              </Label>
               <div className="mt-2 border rounded-lg max-h-[300px] overflow-y-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
@@ -211,11 +286,19 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
                   <TableBody>
                     {orderDetails?.tests ? (
                       orderDetails.tests.map((test: any, index: number) => (
-                        <TableRow key={test.id} className={index % 2 === 0 ? "bg-gray-50/50" : ""}>
-                          <TableCell className="font-medium">{test.testName}</TableCell>
+                        <TableRow
+                          key={test.id}
+                          className={index % 2 === 0 ? "bg-gray-50/50" : ""}
+                        >
+                          <TableCell className="font-medium">
+                            {test.testName}
+                          </TableCell>
                           <TableCell>{test.testCategory}</TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(test.status)} variant="secondary">
+                            <Badge
+                              className={getStatusColor(test.status)}
+                              variant="secondary"
+                            >
                               {test.status}
                             </Badge>
                           </TableCell>
@@ -224,7 +307,10 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        <TableCell
+                          colSpan={4}
+                          className="text-center text-muted-foreground py-8"
+                        >
                           Loading test details...
                         </TableCell>
                       </TableRow>
@@ -243,8 +329,8 @@ function OrderDetailsDialog({ order, onClose }: { order: any, onClose: () => voi
 export default function Pathology() {
   // Get URL parameters for pre-selected patient
   const urlParams = new URLSearchParams(window.location.search);
-  const preSelectedPatientId = urlParams.get('patientId');
-  const preSelectedPatientName = urlParams.get('patientName');
+  const preSelectedPatientId = urlParams.get("patientId");
+  const preSelectedPatientName = urlParams.get("patientName");
 
   const [isNewTestOpen, setIsNewTestOpen] = useState(!!preSelectedPatientId);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -258,7 +344,10 @@ export default function Pathology() {
 
   // Check if user has appropriate role for pathology creation
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
+  const isBillingStaff =
+    currentUserRoles.includes("billing_staff") &&
+    !currentUserRoles.includes("admin") &&
+    !currentUserRoles.includes("super_user");
 
   const { data: pathologyOrders = [], isLoading } = useQuery({
     queryKey: ["/api/pathology"],
@@ -269,14 +358,16 @@ export default function Pathology() {
   });
 
   // Extract tests and categories from combined data
-  const testCatalog = combinedTestData?.categories?.flatMap(cat =>
-    cat.tests?.map(test => ({
-      ...test,
-      category: cat.name
-    })) || []
-  ) || [];
+  const testCatalog =
+    combinedTestData?.categories?.flatMap(
+      (cat) =>
+        cat.tests?.map((test) => ({
+          ...test,
+          category: cat.name,
+        })) || [],
+    ) || [];
 
-  const categories = combinedTestData?.categories?.map(cat => cat.name) || [];
+  const categories = combinedTestData?.categories?.map((cat) => cat.name) || [];
 
   const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients"],
@@ -287,12 +378,18 @@ export default function Pathology() {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string, status: string }) => {
+    mutationFn: async ({
+      orderId,
+      status,
+    }: {
+      orderId: string;
+      status: string;
+    }) => {
       const response = await fetch(`/api/pathology/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify({ status }),
       });
@@ -307,7 +404,7 @@ export default function Pathology() {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
       toast({
         title: "Status updated",
-        description: "The order status has been updated successfully.",
+        description: "Order status updated.",
       });
     },
     onError: (error) => {
@@ -326,7 +423,7 @@ export default function Pathology() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
         },
         body: JSON.stringify(data),
       });
@@ -341,7 +438,9 @@ export default function Pathology() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pathology"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/pathology/patient", preSelectedPatientId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/pathology/patient", preSelectedPatientId],
+      });
       setIsNewTestOpen(false);
       setSelectedCatalogTests([]);
       form.reset();
@@ -387,27 +486,27 @@ export default function Pathology() {
     if (systemSettings?.timezone && isNewTestOpen) {
       const timezone = systemSettings.timezone;
       const now = new Date();
-      
-      const formatter = new Intl.DateTimeFormat('en-US', {
+
+      const formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
-      
+
       const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value;
-      const month = parts.find(p => p.type === 'month')?.value;
-      const day = parts.find(p => p.type === 'day')?.value;
-      const hour = parts.find(p => p.type === 'hour')?.value;
-      const minute = parts.find(p => p.type === 'minute')?.value;
-      
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
+
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-      
-      form.setValue('orderedDate', currentDateTime);
+
+      form.setValue("orderedDate", currentDateTime);
     }
   }, [systemSettings?.timezone, isNewTestOpen]);
 
@@ -415,7 +514,7 @@ export default function Pathology() {
     if (selectedCatalogTests.length === 0) {
       toast({
         title: "No tests selected",
-        description: "Please select at least one test from the catalog.",
+        description: "No tests selected.",
         variant: "destructive",
       });
       return;
@@ -424,12 +523,15 @@ export default function Pathology() {
     // Create single order with multiple tests
     const orderData = {
       patientId: data.patientId,
-      doctorId: data.doctorId === "external" || data.doctorId === "" ? null : data.doctorId, // Make doctor optional
+      doctorId:
+        data.doctorId === "external" || data.doctorId === ""
+          ? null
+          : data.doctorId, // Make doctor optional
       orderedDate: data.orderedDate,
       remarks: data.remarks,
     };
 
-    const tests = selectedCatalogTests.map(test => ({
+    const tests = selectedCatalogTests.map((test) => ({
       testName: test.test_name,
       testCategory: test.category,
       price: test.price,
@@ -442,35 +544,40 @@ export default function Pathology() {
     if (!orderData?.order) return false;
     const order = orderData.order;
     const patient = orderData.patient;
-    const matchesSearch = order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    const matchesSearch =
+      order.orderId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient?.patientId?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const filteredCatalog = (testCatalog || []).filter((test: any) => {
-    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory;
-    const matchesSearch = test.test_name?.toLowerCase().includes(catalogSearchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || test.category === selectedCategory;
+    const matchesSearch = test.test_name
+      ?.toLowerCase()
+      .includes(catalogSearchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'collected':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'ordered':
-        return 'bg-orange-100 text-orange-800';
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "processing":
+        return "bg-blue-100 text-blue-800";
+      case "collected":
+        return "bg-yellow-100 text-yellow-800";
+      case "ordered":
+        return "bg-orange-100 text-orange-800";
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -496,16 +603,16 @@ export default function Pathology() {
 
   const getAvailableStatusOptions = (currentStatus: string) => {
     switch (currentStatus) {
-      case 'ordered':
-        return ['cancelled']; // paid only happens automatically on payment
-      case 'paid':
-        return ['cancelled', 'collected'];
-      case 'collected':
-        return ['processing'];
-      case 'processing':
-        return ['completed'];
-      case 'completed':
-      case 'cancelled':
+      case "ordered":
+        return ["cancelled"]; // paid only happens automatically on payment
+      case "paid":
+        return ["cancelled", "collected"];
+      case "collected":
+        return ["processing"];
+      case "processing":
+        return ["completed"];
+      case "completed":
+      case "cancelled":
         return []; // locked, no transitions allowed
       default:
         return [];
@@ -513,18 +620,21 @@ export default function Pathology() {
   };
 
   const toggleTestSelection = (test: any) => {
-    const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+    const isSelected = selectedCatalogTests.some(
+      (t) => t.test_name === test.test_name,
+    );
     if (isSelected) {
-      setSelectedCatalogTests(prev => prev.filter(t => t.test_name !== test.test_name));
+      setSelectedCatalogTests((prev) =>
+        prev.filter((t) => t.test_name !== test.test_name),
+      );
     } else {
-      setSelectedCatalogTests(prev => [...prev, test]);
+      setSelectedCatalogTests((prev) => [...prev, test]);
     }
   };
 
   const getTotalPrice = () => {
     return selectedCatalogTests.reduce((total, test) => total + test.price, 0);
   };
-
 
   return (
     <div>
@@ -568,12 +678,16 @@ export default function Pathology() {
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue mx-auto"></div>
-                <p className="text-sm text-muted-foreground mt-2">Loading tests...</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Loading tests...
+                </p>
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="text-center py-8">
                 <TestTube className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  No orders found
+                </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   No pathology orders match your current search criteria.
                 </p>
@@ -596,19 +710,28 @@ export default function Pathology() {
                     const order = orderData.order;
                     const patient = orderData.patient;
                     const doctor = orderData.doctor;
-                    
+
                     return (
-                      <TableRow 
-                        key={order.id} 
+                      <TableRow
+                        key={order.id}
                         data-testid={`order-row-${order.id}`}
                       >
-                        <TableCell className="font-medium">{order.orderId}</TableCell>
-                        <TableCell>{patient?.name || "Unknown Patient"}</TableCell>
-                        <TableCell>{doctor?.name || "External Patient"}</TableCell>
+                        <TableCell className="font-medium">
+                          {order.orderId}
+                        </TableCell>
+                        <TableCell>
+                          {patient?.name || "Unknown Patient"}
+                        </TableCell>
+                        <TableCell>
+                          {doctor?.name || "External Patient"}
+                        </TableCell>
                         <TableCell>{formatDate(order.orderedDate)}</TableCell>
                         <TableCell>₹{order.totalPrice}</TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(order.status)} variant="secondary">
+                          <Badge
+                            className={getStatusColor(order.status)}
+                            variant="secondary"
+                          >
                             {order.status}
                           </Badge>
                         </TableCell>
@@ -624,19 +747,78 @@ export default function Pathology() {
                             </Button>
                             <Select
                               value={order.status}
-                              onValueChange={(newStatus) => updateOrderStatusMutation.mutate({ orderId: order.id, status: newStatus })}
-                              disabled={updateOrderStatusMutation.isPending || getAvailableStatusOptions(order.status).length === 0}
+                              onValueChange={(newStatus) =>
+                                updateOrderStatusMutation.mutate({
+                                  orderId: order.id,
+                                  status: newStatus,
+                                })
+                              }
+                              disabled={
+                                updateOrderStatusMutation.isPending ||
+                                getAvailableStatusOptions(order.status)
+                                  .length === 0
+                              }
                             >
-                              <SelectTrigger className="w-32" data-testid={`status-select-${order.id}`}>
+                              <SelectTrigger
+                                className="w-32"
+                                data-testid={`status-select-${order.id}`}
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="ordered" disabled={!getAvailableStatusOptions(order.status).includes('ordered')}>Ordered</SelectItem>
-                                <SelectItem value="collected" disabled={!getAvailableStatusOptions(order.status).includes('collected')}>Collected</SelectItem>
-                                <SelectItem value="processing" disabled={!getAvailableStatusOptions(order.status).includes('processing')}>Processing</SelectItem>
-                                <SelectItem value="completed" disabled={!getAvailableStatusOptions(order.status).includes('completed')}>Completed</SelectItem>
-                                <SelectItem value="paid" disabled={true}>Paid</SelectItem>
-                                <SelectItem value="cancelled" disabled={!getAvailableStatusOptions(order.status).includes('cancelled')}>Cancelled</SelectItem>
+                                <SelectItem
+                                  value="ordered"
+                                  disabled={
+                                    !getAvailableStatusOptions(
+                                      order.status,
+                                    ).includes("ordered")
+                                  }
+                                >
+                                  Ordered
+                                </SelectItem>
+                                <SelectItem
+                                  value="collected"
+                                  disabled={
+                                    !getAvailableStatusOptions(
+                                      order.status,
+                                    ).includes("collected")
+                                  }
+                                >
+                                  Collected
+                                </SelectItem>
+                                <SelectItem
+                                  value="processing"
+                                  disabled={
+                                    !getAvailableStatusOptions(
+                                      order.status,
+                                    ).includes("processing")
+                                  }
+                                >
+                                  Processing
+                                </SelectItem>
+                                <SelectItem
+                                  value="completed"
+                                  disabled={
+                                    !getAvailableStatusOptions(
+                                      order.status,
+                                    ).includes("completed")
+                                  }
+                                >
+                                  Completed
+                                </SelectItem>
+                                <SelectItem value="paid" disabled={true}>
+                                  Paid
+                                </SelectItem>
+                                <SelectItem
+                                  value="cancelled"
+                                  disabled={
+                                    !getAvailableStatusOptions(
+                                      order.status,
+                                    ).includes("cancelled")
+                                  }
+                                >
+                                  Cancelled
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -668,12 +850,16 @@ export default function Pathology() {
                   patients={patients || []}
                 />
                 {form.formState.errors.patientId && (
-                  <p className="text-sm text-red-500">{form.formState.errors.patientId.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.patientId.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="doctorId">Doctor (Optional for External Patients)</Label>
+                <Label htmlFor="doctorId">
+                  Doctor (Optional for External Patients)
+                </Label>
                 <Select
                   onValueChange={(value) => form.setValue("doctorId", value)}
                   data-testid="select-doctor"
@@ -682,7 +868,9 @@ export default function Pathology() {
                     <SelectValue placeholder="Select doctor (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="external">External Patient (No Doctor)</SelectItem>
+                    <SelectItem value="external">
+                      External Patient (No Doctor)
+                    </SelectItem>
                     {(doctors || []).map((doctor: Doctor) => (
                       <SelectItem key={doctor.id} value={doctor.id}>
                         {doctor.name} - {doctor.specialization}
@@ -706,14 +894,19 @@ export default function Pathology() {
               <div className="flex items-center justify-between">
                 <Label>Select Tests from Catalog</Label>
                 <div className="flex items-center space-x-2">
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                  >
                     <SelectTrigger className="w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {(categories || []).map((category: string) => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -747,7 +940,9 @@ export default function Pathology() {
                   </TableHeader>
                   <TableBody>
                     {filteredCatalog.map((test: any, index: number) => {
-                      const isSelected = selectedCatalogTests.some(t => t.test_name === test.test_name);
+                      const isSelected = selectedCatalogTests.some(
+                        (t) => t.test_name === test.test_name,
+                      );
                       return (
                         <TableRow
                           key={`${test.category}-${test.test_name}-${index}`}
@@ -761,7 +956,9 @@ export default function Pathology() {
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{test.test_name}</TableCell>
+                          <TableCell className="font-medium">
+                            {test.test_name}
+                          </TableCell>
                           <TableCell>{test.category}</TableCell>
                           <TableCell>₹{test.price}</TableCell>
                         </TableRow>
@@ -773,7 +970,9 @@ export default function Pathology() {
 
               {selectedCatalogTests.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Selected Tests ({selectedCatalogTests.length})</h4>
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Selected Tests ({selectedCatalogTests.length})
+                  </h4>
                   <div className="space-y-1">
                     {selectedCatalogTests.map((test, index) => (
                       <div key={index} className="flex justify-between text-sm">
@@ -809,10 +1008,15 @@ export default function Pathology() {
               </Button>
               <Button
                 type="submit"
-                disabled={createOrderMutation.isPending || selectedCatalogTests.length === 0}
+                disabled={
+                  createOrderMutation.isPending ||
+                  selectedCatalogTests.length === 0
+                }
                 data-testid="button-order-tests"
               >
-                {createOrderMutation.isPending ? "Ordering..." : `Order ${selectedCatalogTests.length} Test(s)`}
+                {createOrderMutation.isPending
+                  ? "Ordering..."
+                  : `Order ${selectedCatalogTests.length} Test(s)`}
               </Button>
             </div>
           </form>
@@ -820,7 +1024,12 @@ export default function Pathology() {
       </Dialog>
 
       {/* View Order Details Dialog */}
-      {selectedOrder && <OrderDetailsDialog order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
+      {selectedOrder && (
+        <OrderDetailsDialog
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
     </div>
   );
 }

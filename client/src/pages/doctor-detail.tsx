@@ -197,7 +197,7 @@ export default function DoctorDetail() {
     onSuccess: async () => {
       toast({
         title: "Earning marked as paid",
-        description: "The earning has been successfully marked as paid.",
+        description: "Earning successfully marked as paid.",
       });
 
       // Invalidate all related queries to update pending amounts everywhere

@@ -449,7 +449,7 @@ export default function Dashboard() {
     if (selectedCatalogTests.length === 0) {
       toast({
         title: "No tests selected",
-        description: "Please select at least one test from the catalog.",
+        description: "No tests selected.",
         variant: "destructive",
       });
       return;
