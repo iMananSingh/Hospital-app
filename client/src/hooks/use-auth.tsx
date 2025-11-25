@@ -1,5 +1,10 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { authApi, tokenStorage, type User } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  
+
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
   };
@@ -58,19 +63,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     toast({
       title: "Logged out",
-      description: "You have been logged out successfully",
+      description: "Logged out successfully",
     });
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      login,
-      logout,
-      updateUser,
-      isAuthenticated: !!user,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

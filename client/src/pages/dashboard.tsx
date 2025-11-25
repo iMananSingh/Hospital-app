@@ -248,7 +248,7 @@ export default function Dashboard() {
       });
       toast({
         title: "Patient created successfully",
-        description: "The patient has been registered in the system.",
+        description: "New Patient registered successfully.",
       });
       // Navigate to the patient's detail page
       navigate(`/patients/${data.id}`);
