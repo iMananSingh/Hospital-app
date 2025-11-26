@@ -93,7 +93,7 @@ export default function DateRangePickerWithPresets({
             onChange={handleFromDateChange}
             onClick={(e) => e.stopPropagation()}
             placeholder="Start date"
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground"
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground date-input-hidden"
             data-testid="input-from-date"
           />
           <span className="text-sm text-muted-foreground font-medium">To</span>
@@ -103,7 +103,7 @@ export default function DateRangePickerWithPresets({
             onChange={handleToDateChange}
             onClick={(e) => e.stopPropagation()}
             placeholder="End date"
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground"
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground date-input-hidden"
             data-testid="input-to-date"
           />
           {(fromDate || toDate) && (
@@ -135,6 +135,17 @@ export default function DateRangePickerWithPresets({
             left: 8px;
             z-index: 10;
             width: auto;
+          }
+          .date-input-hidden::-webkit-calendar-picker-indicator {
+            display: none;
+          }
+          .date-input-hidden::-webkit-datetime-edit {
+            opacity: 0;
+            width: 0;
+            padding: 0;
+          }
+          .date-input-hidden::placeholder {
+            opacity: 1;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
