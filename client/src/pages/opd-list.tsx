@@ -242,7 +242,7 @@ export default function OpdList() {
               </Link>
             </div>
           ) : (
-            <Card className="rounded-none">
+            <Card className="rounded-none ml-[24px] mr-[24px] mt-[0px] mb-[0px]">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <tbody>
