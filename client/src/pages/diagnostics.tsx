@@ -26,7 +26,8 @@ export default function Diagnostics() {
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedService, setSelectedService] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedFromDate, setSelectedFromDate] = useState<string>("");
+  const [selectedToDate, setSelectedToDate] = useState<string>("");
 
   // Fetch all patient services
   const { data: patientServices = [], isLoading } = useQuery({
@@ -97,9 +98,22 @@ export default function Diagnostics() {
       const matchesService = selectedService === "all" || 
         service.serviceName.toLowerCase() === selectedService.toLowerCase();
 
-      const matchesDate = selectedDate === "" || service.scheduledDate === selectedDate;
+      const matchesDateRange = (() => {
+        if (!selectedFromDate && !selectedToDate) return true;
+        const serviceDate = service.scheduledDate;
+        if (!serviceDate) return false;
+        
+        if (selectedFromDate && selectedToDate) {
+          return serviceDate >= selectedFromDate && serviceDate <= selectedToDate;
+        } else if (selectedFromDate) {
+          return serviceDate >= selectedFromDate;
+        } else if (selectedToDate) {
+          return serviceDate <= selectedToDate;
+        }
+        return true;
+      })();
 
-      return matchesSearch && matchesDoctor && matchesStatus && matchesService && matchesDate;
+      return matchesSearch && matchesDoctor && matchesStatus && matchesService && matchesDateRange;
     });
 
     const grouped = filtered.reduce((groups: Record<string, PatientService[]>, service: PatientService) => {
@@ -121,7 +135,7 @@ export default function Diagnostics() {
     });
 
     return grouped;
-  }, [diagnosticPatientServices, patients, searchQuery, selectedDoctor, selectedStatus, selectedService, selectedDate]);
+  }, [diagnosticPatientServices, patients, searchQuery, selectedDoctor, selectedStatus, selectedService, selectedFromDate, selectedToDate]);
 
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
@@ -203,26 +217,27 @@ export default function Diagnostics() {
 
   return (
     <>
-      <TopBar />
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Diagnostics</h1>
-            <p className="text-muted-foreground">
-              Manage and view all diagnostic services by type
-            </p>
-          </div>
-          <div className="flex gap-2">
+      <TopBar 
+        title="Diagnostics"
+        showDateFilter={true}
+        fromDate={selectedFromDate}
+        toDate={selectedToDate}
+        onFromDateChange={setSelectedFromDate}
+        onToDateChange={setSelectedToDate}
+        actions={
+          <>
             <Badge variant="outline" className="px-3 py-1">
               <Calendar className="w-4 h-4 mr-1" />
               Today: {todayDiagnosticsCount}
             </Badge>
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge variant="outline" className="px-3 py-1 ml-2">
               <Heart className="w-4 h-4 mr-1" />
               Total: {totalDiagnosticsCount}
             </Badge>
-          </div>
-        </div>
+          </>
+        }
+      />
+      <div className="container mx-auto p-6">
 
         {/* Filters */}
         <Card className="mb-6">
@@ -280,13 +295,6 @@ export default function Diagnostics() {
                 </SelectContent>
               </Select>
 
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                data-testid="filter-date"
-              />
-
               <Button 
                 variant="outline" 
                 onClick={() => {
@@ -294,7 +302,8 @@ export default function Diagnostics() {
                   setSelectedDoctor("all");
                   setSelectedStatus("all");
                   setSelectedService("all");
-                  setSelectedDate("");
+                  setSelectedFromDate("");
+                  setSelectedToDate("");
                 }}
                 data-testid="clear-filters"
               >
