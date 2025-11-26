@@ -1,8 +1,8 @@
-import { Search, Bell, Plus, CalendarDays } from "lucide-react";
+import { Search, Bell, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+import DateRangePickerWithPresets from "@/components/date-range-picker-with-presets";
 
 interface TopBarProps {
   title: string;
@@ -52,39 +52,13 @@ export default function TopBar({
           
           {/* Date Range Filter */}
           {showDateFilter && (
-            <div className="flex items-center gap-4 px-4 py-2 bg-muted/50 rounded-lg border">
-              <CalendarDays className="w-4 h-4 text-text-muted" />
-              <div className="flex items-center gap-2">
-                <Label htmlFor="navbar-from-date" className="text-sm font-medium">From:</Label>
-                <Input
-                  id="navbar-from-date"
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => onFromDateChange?.(e.target.value)}
-                  className="w-36 text-sm"
-                  data-testid="input-navbar-from-date"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="navbar-to-date" className="text-sm font-medium">To:</Label>
-                <Input
-                  id="navbar-to-date"
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => onToDateChange?.(e.target.value)}
-                  className="w-36 text-sm"
-                  data-testid="input-navbar-to-date"
-                />
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={onTodayClick}
-                data-testid="button-navbar-today"
-              >
-                Today
-              </Button>
-            </div>
+            <DateRangePickerWithPresets
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromDateChange={onFromDateChange}
+              onToDateChange={onToDateChange}
+              onTodayClick={onTodayClick}
+            />
           )}
           
           {/* Search Bar */}
