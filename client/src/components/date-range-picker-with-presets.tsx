@@ -11,7 +11,6 @@ interface DateRangePickerWithPresetsProps {
   toDate?: string;
   onFromDateChange?: (date: string) => void;
   onToDateChange?: (date: string) => void;
-  onTodayClick?: () => void;
 }
 
 export default function DateRangePickerWithPresets({
@@ -43,6 +42,34 @@ export default function DateRangePickerWithPresets({
     }
   };
 
+  const handleFromDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onFromDateChange?.(value);
+    if (value) {
+      const date = new Date(value);
+      setState([
+        {
+          ...state[0],
+          startDate: date,
+        },
+      ]);
+    }
+  };
+
+  const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onToDateChange?.(value);
+    if (value) {
+      const date = new Date(value);
+      setState([
+        {
+          ...state[0],
+          endDate: date,
+        },
+      ]);
+    }
+  };
+
   const handleClear = () => {
     onFromDateChange?.("");
     onToDateChange?.("");
@@ -58,16 +85,38 @@ export default function DateRangePickerWithPresets({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 px-4 py-2 h-auto"
-          data-testid="button-date-range-picker"
-        >
-          <CalendarDays className="w-4 h-4" />
-          <span className="text-sm">
-            {fromDate && toDate ? `${fromDate} to ${toDate}` : "Select dates"}
-          </span>
-        </Button>
+        <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors" data-testid="button-date-range-picker">
+          <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <input
+            type="date"
+            value={fromDate || ""}
+            onChange={handleFromDateChange}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+            data-testid="input-from-date"
+          />
+          <span className="text-sm text-muted-foreground font-medium">To</span>
+          <input
+            type="date"
+            value={toDate || ""}
+            onChange={handleToDateChange}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+            data-testid="input-to-date"
+          />
+          {(fromDate || toDate) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClear();
+              }}
+              className="ml-auto text-destructive hover:text-destructive/80 transition-colors flex-shrink-0"
+              data-testid="button-clear-dates"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
         <style>{`
@@ -99,7 +148,7 @@ export default function DateRangePickerWithPresets({
               size="sm"
               className="text-destructive hover:text-destructive date-range-clear-button"
               onClick={handleClear}
-              data-testid="button-clear-dates"
+              data-testid="button-clear-dates-calendar"
             >
               <X className="w-4 h-4 mr-2" />
               Clear
