@@ -88,29 +88,33 @@ export default function DateRangePickerWithPresets({
         <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors" data-testid="button-date-range-picker">
           <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           {fromDate ? (
-            <input
-              type="date"
-              value={fromDate}
-              onChange={handleFromDateChange}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32 p-0"
-              style={{ textAlign: 'center', paddingRight: '0 !important' }}
-              data-testid="input-from-date"
-            />
+            <div className="w-32 overflow-hidden">
+              <input
+                type="date"
+                value={fromDate}
+                onChange={handleFromDateChange}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-transparent text-sm outline-none cursor-text date-input-no-picker p-0 w-40"
+                style={{ textAlign: 'center' }}
+                data-testid="input-from-date"
+              />
+            </div>
           ) : (
             <span className="text-sm text-muted-foreground w-32 text-center">Start date</span>
           )}
           <span className="text-sm text-muted-foreground font-medium">To</span>
           {toDate ? (
-            <input
-              type="date"
-              value={toDate}
-              onChange={handleToDateChange}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32 p-0"
-              style={{ textAlign: 'center', paddingRight: '0 !important' }}
-              data-testid="input-to-date"
-            />
+            <div className="w-32 overflow-hidden">
+              <input
+                type="date"
+                value={toDate}
+                onChange={handleToDateChange}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-transparent text-sm outline-none cursor-text date-input-no-picker p-0 w-40"
+                style={{ textAlign: 'center' }}
+                data-testid="input-to-date"
+              />
+            </div>
           ) : (
             <span className="text-sm text-muted-foreground w-32 text-center">End date</span>
           )}
