@@ -92,7 +92,8 @@ export default function DateRangePickerWithPresets({
             value={fromDate || ""}
             onChange={handleFromDateChange}
             onClick={(e) => e.stopPropagation()}
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+            placeholder="Start date"
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground"
             data-testid="input-from-date"
           />
           <span className="text-sm text-muted-foreground font-medium">To</span>
@@ -101,7 +102,8 @@ export default function DateRangePickerWithPresets({
             value={toDate || ""}
             onChange={handleToDateChange}
             onClick={(e) => e.stopPropagation()}
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+            placeholder="End date"
+            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground"
             data-testid="input-to-date"
           />
           {(fromDate || toDate) && (
