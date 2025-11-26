@@ -94,6 +94,7 @@ export default function DateRangePickerWithPresets({
               onChange={handleFromDateChange}
               onClick={(e) => e.stopPropagation()}
               className="bg-transparent text-sm outline-none w-32 cursor-text date-input-no-picker"
+              style={{ backgroundImage: 'none' }}
               data-testid="input-from-date"
             />
           ) : (
@@ -107,6 +108,7 @@ export default function DateRangePickerWithPresets({
               onChange={handleToDateChange}
               onClick={(e) => e.stopPropagation()}
               className="bg-transparent text-sm outline-none w-32 cursor-text date-input-no-picker"
+              style={{ backgroundImage: 'none' }}
               data-testid="input-to-date"
             />
           ) : (
@@ -160,13 +162,17 @@ export default function DateRangePickerWithPresets({
           .date-input-hidden:disabled {
             color: transparent;
           }
-          .date-input-no-picker::-webkit-calendar-picker-indicator {
+          input[type="date"].date-input-no-picker::-webkit-calendar-picker-indicator {
             display: none !important;
-            pointer-events: none;
+            opacity: 0 !important;
+            width: 0 !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
-          .date-input-no-picker::-webkit-inner-spin-button,
-          .date-input-no-picker::-webkit-outer-spin-button {
-            display: none;
+          input[type="date"].date-input-no-picker {
+            appearance: textfield;
+            background: transparent;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
