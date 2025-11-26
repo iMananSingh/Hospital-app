@@ -148,179 +148,188 @@ export default function OpdList() {
         onFromDateChange={setSelectedFromDate}
         onToDateChange={setSelectedToDate}
       />
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
-          <div>
-            <p className="text-muted-foreground">
-              Manage and view all OPD consultations by doctor
-            </p>
+      <div className="flex flex-col h-[calc(100vh-70px)]">
+        {/* Fixed Header Section */}
+        <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
+          <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
+            <div>
+              <p className="text-muted-foreground">
+                Manage and view all OPD consultations by doctor
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
+                <Calendar className="w-4 h-4 mr-1" />
+                Today: {todayOpdCount}
+              </Badge>
+              <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
+                <User className="w-4 h-4 mr-1" />
+                Total: {totalOpdCount}
+              </Badge>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
-              <Calendar className="w-4 h-4 mr-1" />
-              Today: {todayOpdCount}
-            </Badge>
-            <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
-              <User className="w-4 h-4 mr-1" />
-              Total: {totalOpdCount}
-            </Badge>
-          </div>
+
+          {/* Filter Card - Fixed */}
+          <Card className="rounded-b-none">
+            <CardContent className="p-4 border-b bg-[#f6760a]/20 rounded-t-lg">
+              <div className="flex gap-4 items-center flex-wrap">
+                <div className="relative flex-grow min-w-[200px]">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, ID, or phone..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                    data-testid="search-opd-patients"
+                  />
+                </div>
+
+                <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                  <SelectTrigger data-testid="filter-doctor" className="w-64">
+                    <SelectValue placeholder="Doctor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Doctors</SelectItem>
+                    {doctors.map(doctor => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger data-testid="filter-status" className="w-36">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedDoctor("all");
+                    setSelectedStatus("all");
+                    setSelectedFromDate("");
+                    setSelectedToDate("");
+                  }}
+                  data-testid="clear-filters"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-      {/* OPD Services by Doctor - Combined with Filters */}
-      <Card>
-        <CardContent className="p-4 border-b bg-[#f6760a]/20 rounded-t-lg">
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="relative flex-grow min-w-[200px]">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, ID, or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="search-opd-patients"
-              />
+        {/* Scrollable Table Content */}
+        <div className="flex-1 overflow-y-auto">
+          {Object.keys(opdServicesByDoctor).length === 0 ? (
+            <div className="container mx-auto px-6 py-8 text-center">
+              <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">No OPD appointments found matching your criteria.</p>
+              <Link href="/patients">
+                <Button className="mt-4">Schedule New OPD</Button>
+              </Link>
             </div>
-
-            <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-              <SelectTrigger data-testid="filter-doctor" className="w-64">
-                <SelectValue placeholder="Doctor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Doctors</SelectItem>
-                {doctors.map(doctor => (
-                  <SelectItem key={doctor.id} value={doctor.id}>
-                    {doctor.name}
-                  </SelectItem>
-                ))}
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger data-testid="filter-status" className="w-36">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button 
-              variant="outline"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedDoctor("all");
-                setSelectedStatus("all");
-                setSelectedFromDate("");
-                setSelectedToDate("");
-              }}
-              data-testid="clear-filters"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-        {Object.keys(opdServicesByDoctor).length === 0 ? (
-          <CardContent className="p-8 text-center">
-            <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No OPD appointments found matching your criteria.</p>
-            <Link href="/patients">
-              <Button className="mt-4">Schedule New OPD</Button>
-            </Link>
-          </CardContent>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <tbody>
-                {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
-                  let rowNumber = 1;
-                  return (
-                    <Fragment key={doctorId}>
-                      {/* Doctor Section Header */}
-                      <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
-                        <td colSpan={9} className="px-4 py-3 bg-blue-100">
-                          <div className="flex items-center gap-2 justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-lg text-blue-900">
-                                {getDoctorName(doctorId)}
-                              </span>
-                              <span className="text-sm text-blue-600">
-                                • {getDoctorSpecialization(doctorId)}
-                              </span>
-                            </div>
-                            <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
-                              {(services as any[]).length} patients
-                            </Badge>
-                          </div>
-                        </td>
-                      </tr>
-                      {/* Table Header for this Doctor Section */}
-                      <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
-                      </tr>
-                      {/* Patient Rows */}
-                      {(services as any[]).map((visit: any) => (
-                        <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">
-                            {visit.scheduledDate ? (() => {
-                              const d = new Date(visit.scheduledDate);
-                              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                              return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-                            })() : 'N/A'}
-                          </td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="font-medium">{visit.patientName || 'Unknown'}</div>
-                            <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
-                          </td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">
-                            {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm whitespace-nowrap">
-                            <Badge 
-                              className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                              variant={getStatusBadgeVariant(visit.status)}
-                              data-testid={`status-${visit.id}`}
-                            >
-                              {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                            ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
-                          </td>
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <Link href={`/patients/${visit.patientId}`}>
-                              <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-      )}
-      </Card>
+          ) : (
+            <Card className="rounded-none">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <tbody>
+                    {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
+                      let rowNumber = 1;
+                      return (
+                        <Fragment key={doctorId}>
+                          {/* Doctor Section Header */}
+                          <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
+                            <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                              <div className="flex items-center gap-2 justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-lg text-blue-900">
+                                    {getDoctorName(doctorId)}
+                                  </span>
+                                  <span className="text-sm text-blue-600">
+                                    • {getDoctorSpecialization(doctorId)}
+                                  </span>
+                                </div>
+                                <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
+                                  {(services as any[]).length} patients
+                                </Badge>
+                              </div>
+                            </td>
+                          </tr>
+                          {/* Table Header for this Doctor Section */}
+                          <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                          </tr>
+                          {/* Patient Rows */}
+                          {(services as any[]).map((visit: any) => (
+                            <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                {visit.scheduledDate ? (() => {
+                                  const d = new Date(visit.scheduledDate);
+                                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                                })() : 'N/A'}
+                              </td>
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm">
+                                <div className="font-medium">{visit.patientName || 'Unknown'}</div>
+                                <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
+                              </td>
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
+                              </td>
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
+                              <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                <Badge 
+                                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
+                                  variant={getStatusBadgeVariant(visit.status)}
+                                  data-testid={`status-${visit.id}`}
+                                >
+                                  {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
+                              </td>
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <Link href={`/patients/${visit.patientId}`}>
+                                  <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                </Link>
+                              </td>
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     </>
   );
