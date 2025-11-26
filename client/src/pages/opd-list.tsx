@@ -243,7 +243,7 @@ export default function OpdList() {
             </div>
           ) : (
             <Card className="border bg-card text-card-foreground shadow-sm rounded-none ml-[24px] mr-[24px] mt-[0px] mb-[0px]">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto w-full">
                 <table className="w-full">
                   <tbody>
                     {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
