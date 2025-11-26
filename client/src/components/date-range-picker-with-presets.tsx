@@ -13,6 +13,14 @@ interface DateRangePickerWithPresetsProps {
   onToDateChange?: (date: string) => void;
 }
 
+// Helper function to format date as YYYY-MM-DD using local date components (not UTC)
+const formatDateLocal = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function DateRangePickerWithPresets({
   fromDate,
   toDate,
@@ -33,11 +41,11 @@ export default function DateRangePickerWithPresets({
     setState([selection]);
 
     if (selection.startDate) {
-      const fromStr = selection.startDate.toISOString().split("T")[0];
+      const fromStr = formatDateLocal(selection.startDate);
       onFromDateChange?.(fromStr);
     }
     if (selection.endDate) {
-      const toStr = selection.endDate.toISOString().split("T")[0];
+      const toStr = formatDateLocal(selection.endDate);
       onToDateChange?.(toStr);
     }
   };
