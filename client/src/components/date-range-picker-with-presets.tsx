@@ -82,8 +82,8 @@ export default function DateRangePickerWithPresets({
             position: absolute;
             bottom: 8px;
             left: 8px;
-            right: 8px;
             z-index: 10;
+            width: auto;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
@@ -97,7 +97,7 @@ export default function DateRangePickerWithPresets({
             <Button
               variant="ghost"
               size="sm"
-              className="text-destructive hover:text-destructive justify-start date-range-clear-button"
+              className="text-destructive hover:text-destructive date-range-clear-button"
               onClick={handleClear}
               data-testid="button-clear-dates"
             >
