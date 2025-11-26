@@ -243,8 +243,8 @@ export default function OpdList() {
             </div>
           ) : (
             <Card className="border bg-card text-card-foreground shadow-sm rounded-none ml-[24px] mr-[24px] mt-[0px] mb-[0px] p-0">
-              <div className="overflow-x-auto w-full">
-                <table className="w-full">
+              <div className="overflow-x-auto w-full h-full">
+                <table className="w-full table-fixed">
                   <tbody>
                     {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
                       let rowNumber = 1;
