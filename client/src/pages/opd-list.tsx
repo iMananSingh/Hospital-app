@@ -169,8 +169,8 @@ export default function OpdList() {
       {/* Filters */}
       <Card className="mb-6">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative">
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="relative flex-grow min-w-[200px]">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, ID, or phone..."
@@ -182,8 +182,8 @@ export default function OpdList() {
             </div>
 
             <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-              <SelectTrigger data-testid="filter-doctor">
-                <SelectValue placeholder="Filter by doctor" />
+              <SelectTrigger data-testid="filter-doctor" className="w-32">
+                <SelectValue placeholder="Doctor" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Doctors</SelectItem>
@@ -197,8 +197,8 @@ export default function OpdList() {
             </Select>
 
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger data-testid="filter-status">
-                <SelectValue placeholder="Filter by status" />
+              <SelectTrigger data-testid="filter-status" className="w-28">
+                <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
@@ -210,7 +210,8 @@ export default function OpdList() {
             </Select>
 
             <Button 
-              variant="outline" 
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setSearchQuery("");
                 setSelectedDoctor("all");
@@ -220,8 +221,7 @@ export default function OpdList() {
               }}
               data-testid="clear-filters"
             >
-              <Filter className="w-4 h-4 mr-2" />
-              Clear
+              <Filter className="w-4 h-4" />
             </Button>
           </div>
         </CardContent>

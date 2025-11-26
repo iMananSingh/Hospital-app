@@ -198,8 +198,8 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="relative lg:col-span-2">
+            <div className="flex gap-4 items-center flex-wrap">
+              <div className="relative flex-grow min-w-[200px]">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by order ID, name, patient ID, or phone..."
@@ -211,8 +211,8 @@ export default function LabTests() {
               </div>
 
               <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                <SelectTrigger data-testid="filter-doctor">
-                  <SelectValue placeholder="Filter by doctor" />
+                <SelectTrigger data-testid="filter-doctor" className="w-32">
+                  <SelectValue placeholder="Doctor" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Doctors</SelectItem>
@@ -226,8 +226,8 @@ export default function LabTests() {
               </Select>
 
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger data-testid="filter-status">
-                  <SelectValue placeholder="Filter by status" />
+                <SelectTrigger data-testid="filter-status" className="w-28">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
@@ -240,7 +240,7 @@ export default function LabTests() {
 
               <Button 
                 variant="outline"
-                className="h-10 px-4 w-fit justify-self-end"
+                size="sm"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedDoctor("all");
@@ -250,7 +250,7 @@ export default function LabTests() {
                 }}
                 data-testid="clear-filters"
               >
-                Clear
+                <Filter className="w-4 h-4" />
               </Button>
             </div>
           </CardContent>
