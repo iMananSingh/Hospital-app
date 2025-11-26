@@ -262,15 +262,15 @@ export default function OpdList() {
                       </tr>
                       {/* Table Header for this Doctor Section */}
                       <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-12">S.No</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-32">Date</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-24">Time</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-20">Sex/Age</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-32">Contact</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold w-24">Status</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold w-20">Fees</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold w-12">View</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                       </tr>
                       {/* Patient Rows */}
                       {(services as any[]).map((visit: any) => (
