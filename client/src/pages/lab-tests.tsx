@@ -5,31 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { 
-  Calendar, 
-  Clock, 
   Search, 
   User, 
   TestTube,
   Phone,
-  MapPin,
-  Filter,
+  Calendar,
   Eye,
-  Notebook
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
-import type { DateRange } from "react-day-picker";
 import TopBar from "@/components/layout/topbar";
 
 export default function LabTests() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedFromDate, setSelectedFromDate] = useState<string>("");
+  const [selectedToDate, setSelectedToDate] = useState<string>("");
 
   // Fetch all pathology orders
   const { data: pathologyOrders = [], isLoading } = useQuery({
@@ -65,17 +59,16 @@ export default function LabTests() {
       const matchesStatus = selectedStatus === "all" || order.status === selectedStatus;
       
       const matchesDateRange = (() => {
-        if (!dateRange?.from && !dateRange?.to) return true;
-        const orderDate = order.orderedDate;
+        if (!selectedFromDate && !selectedToDate) return true;
+        const orderDate = order.orderedDate?.split('T')[0];
         if (!orderDate) return false;
         
-        if (dateRange.from && dateRange.to) {
-          return orderDate >= format(dateRange.from, 'yyyy-MM-dd') && 
-                 orderDate <= format(dateRange.to, 'yyyy-MM-dd');
-        } else if (dateRange.from) {
-          return orderDate >= format(dateRange.from, 'yyyy-MM-dd');
-        } else if (dateRange.to) {
-          return orderDate <= format(dateRange.to, 'yyyy-MM-dd');
+        if (selectedFromDate && selectedToDate) {
+          return orderDate >= selectedFromDate && orderDate <= selectedToDate;
+        } else if (selectedFromDate) {
+          return orderDate >= selectedFromDate;
+        } else if (selectedToDate) {
+          return orderDate <= selectedToDate;
         }
         return true;
       })();
@@ -103,7 +96,7 @@ export default function LabTests() {
     });
 
     return grouped;
-  }, [pathologyOrders, searchQuery, selectedDoctor, selectedStatus, dateRange]);
+  }, [pathologyOrders, searchQuery, selectedDoctor, selectedStatus, selectedFromDate, selectedToDate]);
 
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
@@ -179,6 +172,11 @@ export default function LabTests() {
     <>
       <TopBar 
         title="Lab Tests"
+        showDateFilter={true}
+        fromDate={selectedFromDate}
+        toDate={selectedToDate}
+        onFromDateChange={setSelectedFromDate}
+        onToDateChange={setSelectedToDate}
         actions={
           <>
             <Badge variant="outline" className="px-3 py-1">
@@ -210,42 +208,6 @@ export default function LabTests() {
                   className="pl-10"
                   data-testid="search-lab-tests"
                 />
-              </div>
-
-              <div className="lg:col-span-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal h-10"
-                      data-testid="filter-date-range"
-                    >
-                      <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
-                            </>
-                          ) : (
-                            format(dateRange.from, "MMM dd, yyyy")
-                          )
-                        ) : (
-                          "Select date range"
-                        )}
-                      </span>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent
-                      mode="range"
-                      selected={dateRange}
-                      onSelect={setDateRange}
-                      numberOfMonths={1}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
               </div>
 
               <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
@@ -283,7 +245,8 @@ export default function LabTests() {
                   setSearchQuery("");
                   setSelectedDoctor("all");
                   setSelectedStatus("all");
-                  setDateRange(undefined);
+                  setSelectedFromDate("");
+                  setSelectedToDate("");
                 }}
                 data-testid="clear-filters"
               >
