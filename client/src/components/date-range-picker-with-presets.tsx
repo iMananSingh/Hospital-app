@@ -161,6 +161,11 @@ export default function DateRangePickerWithPresets({
             color: transparent;
           }
           .date-input-no-picker::-webkit-calendar-picker-indicator {
+            display: none !important;
+            pointer-events: none;
+          }
+          .date-input-no-picker::-webkit-inner-spin-button,
+          .date-input-no-picker::-webkit-outer-spin-button {
             display: none;
           }
         `}</style>
