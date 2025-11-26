@@ -148,7 +148,7 @@ export default function OpdList() {
         onFromDateChange={setSelectedFromDate}
         onToDateChange={setSelectedToDate}
       />
-      <div className="flex flex-col h-[calc(100vh-70px)] pb-[24px]">
+      <div className="flex flex-col h-[calc(100vh-94px)] pb-[24px]">
         {/* Fixed Header Section */}
         <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
