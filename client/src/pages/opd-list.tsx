@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -254,7 +254,7 @@ export default function OpdList() {
                 {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
                   let rowNumber = 1;
                   return (
-                    <tbody key={doctorId}>
+                    <Fragment key={doctorId}>
                       {/* Doctor Section Header */}
                       <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
                         <td colSpan={9} className="px-4 py-3 bg-muted/30">
@@ -275,24 +275,23 @@ export default function OpdList() {
                       {/* Patient Rows */}
                       {(services as any[]).map((visit: any) => (
                         <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                          <td className="px-4 py-3 text-sm">{rowNumber++}</td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">
                             {visit.scheduledDate ? new Date(visit.scheduledDate).toLocaleDateString('en-US', {
                               month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
+                              day: 'numeric'
                             }) : 'N/A'}
                           </td>
-                          <td className="px-4 py-3 text-sm">{visit.scheduledTime || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
                           <td className="px-4 py-3 text-sm">
                             <div className="font-medium">{visit.patientName || 'Unknown'}</div>
                             <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">
                             {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm">{visit.patientPhone || 'N/A'}</td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm whitespace-nowrap">
                             <Badge 
                               variant={getStatusBadgeVariant(visit.status)}
                               data-testid={`status-${visit.id}`}
@@ -300,10 +299,10 @@ export default function OpdList() {
                               {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                             </Badge>
                           </td>
-                          <td className="px-4 py-3 text-sm text-right">
+                          <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                             ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
                             <Link href={`/patients/${visit.patientId}`}>
                               <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
                                 <Eye className="w-4 h-4" />
@@ -312,7 +311,7 @@ export default function OpdList() {
                           </td>
                         </tr>
                       ))}
-                    </tbody>
+                    </Fragment>
                   );
                 })}
               </tbody>
