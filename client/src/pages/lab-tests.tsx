@@ -198,7 +198,7 @@ export default function LabTests() {
             <p className="text-sm text-muted-foreground mb-4">
               Manage and view all pathology orders by status
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
