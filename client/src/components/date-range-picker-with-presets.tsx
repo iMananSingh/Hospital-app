@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DateRangePicker } from "react-date-range";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, X } from "lucide-react";
+import { X } from "lucide-react";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -86,7 +86,6 @@ export default function DateRangePickerWithPresets({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors" data-testid="button-date-range-picker">
-          <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           {fromDate ? (
             <input
               type="date"
