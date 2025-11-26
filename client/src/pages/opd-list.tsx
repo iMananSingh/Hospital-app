@@ -254,7 +254,7 @@ export default function OpdList() {
                                 • {getDoctorSpecialization(doctorId)}
                               </span>
                             </div>
-                            <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff]">
+                            <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
                               {(services as any[]).length} patients
                             </Badge>
                           </div>
