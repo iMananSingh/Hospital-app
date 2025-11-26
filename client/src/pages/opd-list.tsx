@@ -18,13 +18,15 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
+import DateRangePickerWithPresets from "@/components/date-range-picker-with-presets";
 import type { PatientService, Patient, Doctor } from "@shared/schema";
 
 export default function OpdList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedFromDate, setSelectedFromDate] = useState<string>("");
+  const [selectedToDate, setSelectedToDate] = useState<string>("");
 
   // Fetch server's today date for consistent timezone handling
   const { data: todayData } = useQuery<{ today: string }>({
@@ -62,7 +64,14 @@ export default function OpdList() {
 
       const matchesDoctor = selectedDoctor === "all" || visit.doctorId === selectedDoctor;
       const matchesStatus = selectedStatus === "all" || visit.status === selectedStatus;
-      const matchesDate = selectedDate === "" || visit.scheduledDate === selectedDate;
+      
+      // Check if date is within the selected range
+      let matchesDate = true;
+      if (selectedFromDate || selectedToDate) {
+        const visitDate = visit.scheduledDate;
+        if (selectedFromDate && visitDate < selectedFromDate) matchesDate = false;
+        if (selectedToDate && visitDate > selectedToDate) matchesDate = false;
+      }
 
       return matchesSearch && matchesDoctor && matchesStatus && matchesDate;
     });
@@ -86,7 +95,7 @@ export default function OpdList() {
     });
 
     return grouped;
-  }, [opdServices, searchQuery, selectedDoctor, selectedStatus, selectedDate]);
+  }, [opdServices, searchQuery, selectedDoctor, selectedStatus, selectedFromDate, selectedToDate]);
 
   const getDoctorName = (doctorId: string, visit?: any) => {
     if (doctorId === "unassigned") return "Unassigned";
@@ -194,11 +203,11 @@ export default function OpdList() {
               </SelectContent>
             </Select>
 
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              data-testid="filter-date"
+            <DateRangePickerWithPresets
+              fromDate={selectedFromDate}
+              toDate={selectedToDate}
+              onFromDateChange={setSelectedFromDate}
+              onToDateChange={setSelectedToDate}
             />
 
             <Button 
@@ -207,7 +216,8 @@ export default function OpdList() {
                 setSearchQuery("");
                 setSelectedDoctor("all");
                 setSelectedStatus("all");
-                setSelectedDate("");
+                setSelectedFromDate("");
+                setSelectedToDate("");
               }}
               data-testid="clear-filters"
             >
