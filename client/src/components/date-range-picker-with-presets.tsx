@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DateRangePicker } from "react-date-range";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, X } from "lucide-react";
+import { CalendarDays, CircleX } from "lucide-react";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -122,7 +122,7 @@ export default function DateRangePickerWithPresets({
             className={`ml-auto text-destructive hover:text-destructive/80 transition-colors flex-shrink-0 ${(fromDate || toDate) ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
             data-testid="button-clear-dates"
           >
-            <X className="w-4 h-4" />
+            <CircleX className="w-4 h-4" />
           </button>
         </div>
       </PopoverTrigger>
@@ -189,7 +189,7 @@ export default function DateRangePickerWithPresets({
               onClick={handleClear}
               data-testid="button-clear-dates-calendar"
             >
-              <X className="w-4 h-4 mr-2" />
+              <CircleX className="w-4 h-4 mr-2" />
               Clear
             </Button>
           )}
