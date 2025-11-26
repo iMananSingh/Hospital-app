@@ -149,7 +149,7 @@ export default function OpdList() {
         onToDateChange={setSelectedToDate}
       />
       <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
           <div>
             <p className="text-muted-foreground">
               Manage and view all OPD consultations by doctor
