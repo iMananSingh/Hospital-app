@@ -182,7 +182,7 @@ export default function OpdList() {
             </div>
 
             <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-              <SelectTrigger data-testid="filter-doctor" className="w-32">
+              <SelectTrigger data-testid="filter-doctor" className="w-64">
                 <SelectValue placeholder="Doctor" />
               </SelectTrigger>
               <SelectContent>
