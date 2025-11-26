@@ -93,8 +93,8 @@ export default function DateRangePickerWithPresets({
               value={fromDate}
               onChange={handleFromDateChange}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32"
-              style={{ textAlign: 'center' }}
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32 p-0"
+              style={{ textAlign: 'center', paddingRight: '0 !important' }}
               data-testid="input-from-date"
             />
           ) : (
@@ -107,8 +107,8 @@ export default function DateRangePickerWithPresets({
               value={toDate}
               onChange={handleToDateChange}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32"
-              style={{ textAlign: 'center' }}
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker w-32 p-0"
+              style={{ textAlign: 'center', paddingRight: '0 !important' }}
               data-testid="input-to-date"
             />
           ) : (
@@ -163,18 +163,17 @@ export default function DateRangePickerWithPresets({
             color: transparent;
           }
           input[type="date"].date-input-no-picker {
-            appearance: textfield;
-            -webkit-appearance: textfield;
             background: transparent !important;
+            padding: 0 !important;
           }
           input[type="date"].date-input-no-picker::-webkit-calendar-picker-indicator {
             display: none !important;
-          }
-          input[type="date"].date-input-no-picker::-webkit-outer-spin-button,
-          input[type="date"].date-input-no-picker::-webkit-inner-spin-button {
-            display: none !important;
-            -webkit-appearance: none;
-            margin: 0;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
