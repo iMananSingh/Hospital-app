@@ -57,7 +57,6 @@ export default function TopBar({
               toDate={toDate}
               onFromDateChange={onFromDateChange}
               onToDateChange={onToDateChange}
-              onTodayClick={onTodayClick}
             />
           )}
           

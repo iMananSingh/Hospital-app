@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
-import DateRangePickerWithPresets from "@/components/date-range-picker-with-presets";
 import type { PatientService, Patient, Doctor } from "@shared/schema";
 
 export default function OpdList() {
@@ -140,7 +139,14 @@ export default function OpdList() {
 
   return (
     <>
-      <TopBar title="OPD Appointments" />
+      <TopBar 
+        title="OPD Appointments" 
+        showDateFilter={true}
+        fromDate={selectedFromDate}
+        toDate={selectedToDate}
+        onFromDateChange={setSelectedFromDate}
+        onToDateChange={setSelectedToDate}
+      />
       <div className="container mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -202,13 +208,6 @@ export default function OpdList() {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-
-            <DateRangePickerWithPresets
-              fromDate={selectedFromDate}
-              toDate={selectedToDate}
-              onFromDateChange={setSelectedFromDate}
-              onToDateChange={setSelectedToDate}
-            />
 
             <Button 
               variant="outline" 
