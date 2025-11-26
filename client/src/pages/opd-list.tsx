@@ -242,7 +242,7 @@ export default function OpdList() {
               </Link>
             </div>
           ) : (
-            <Card className="border bg-card text-card-foreground shadow-sm rounded-none mt-[0px] mb-[24px] p-0 ml-[0px] mr-[0px]">
+            <Card className="border bg-card text-card-foreground shadow-sm rounded-none mt-[0px] mb-[0px] p-0 ml-[0px] mr-[0px]">
               <div className="overflow-x-auto w-full h-full">
                 <table className="w-full table-fixed">
                   <tbody>
