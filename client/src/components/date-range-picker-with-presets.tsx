@@ -93,7 +93,7 @@ export default function DateRangePickerWithPresets({
               value={fromDate}
               onChange={handleFromDateChange}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker text-center"
               style={{ clipPath: 'inset(0 25px 0 0)', width: '160px', marginRight: '-25px' }}
               data-testid="input-from-date"
             />
@@ -107,7 +107,7 @@ export default function DateRangePickerWithPresets({
               value={toDate}
               onChange={handleToDateChange}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker text-center"
               style={{ clipPath: 'inset(0 25px 0 0)', width: '160px', marginRight: '-25px' }}
               data-testid="input-to-date"
             />
