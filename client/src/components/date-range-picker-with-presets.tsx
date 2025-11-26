@@ -69,27 +69,38 @@ export default function DateRangePickerWithPresets({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 flex flex-col" align="end">
-        <DateRangePicker
-          ranges={state}
-          onChange={handleSelect}
-          months={2}
-          direction="horizontal"
-        />
-        {(fromDate || toDate) && (
-          <div className="border-t p-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-destructive hover:text-destructive"
-              onClick={handleClear}
-              data-testid="button-clear-dates"
+      <PopoverContent className="w-auto p-0" align="end">
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <DateRangePicker
+            ranges={state}
+            onChange={handleSelect}
+            months={2}
+            direction="horizontal"
+          />
+          {(fromDate || toDate) && (
+            <div
+              style={{
+                minWidth: "180px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "flex-end",
+                padding: "8px",
+                borderLeft: "1px solid #e5e7eb",
+              }}
             >
-              <X className="w-4 h-4 mr-2" />
-              Clear
-            </Button>
-          </div>
-        )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive justify-start"
+                onClick={handleClear}
+                data-testid="button-clear-dates"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear
+              </Button>
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
