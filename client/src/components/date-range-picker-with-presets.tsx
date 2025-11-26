@@ -88,33 +88,29 @@ export default function DateRangePickerWithPresets({
         <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors" data-testid="button-date-range-picker">
           <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           {fromDate ? (
-            <div className="overflow-hidden">
-              <input
-                type="date"
-                value={fromDate}
-                onChange={handleFromDateChange}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
-                style={{ width: '140px', paddingRight: '20px' }}
-                data-testid="input-from-date"
-              />
-            </div>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={handleFromDateChange}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
+              style={{ clipPath: 'inset(0 25px 0 0)', width: '160px', marginRight: '-25px' }}
+              data-testid="input-from-date"
+            />
           ) : (
             <span className="text-sm text-muted-foreground w-32 text-center">Start date</span>
           )}
           <span className="text-sm text-muted-foreground font-medium">To</span>
           {toDate ? (
-            <div className="overflow-hidden">
-              <input
-                type="date"
-                value={toDate}
-                onChange={handleToDateChange}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
-                style={{ width: '140px', paddingRight: '20px' }}
-                data-testid="input-to-date"
-              />
-            </div>
+            <input
+              type="date"
+              value={toDate}
+              onChange={handleToDateChange}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-transparent text-sm outline-none cursor-text date-input-no-picker"
+              style={{ clipPath: 'inset(0 25px 0 0)', width: '160px', marginRight: '-25px' }}
+              data-testid="input-to-date"
+            />
           ) : (
             <span className="text-sm text-muted-foreground w-32 text-center">End date</span>
           )}
