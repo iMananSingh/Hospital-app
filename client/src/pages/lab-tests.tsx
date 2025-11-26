@@ -240,7 +240,6 @@ export default function LabTests() {
 
               <Button 
                 variant="outline"
-                size="sm"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedDoctor("all");
@@ -250,7 +249,8 @@ export default function LabTests() {
                 }}
                 data-testid="clear-filters"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-4 h-4 mr-2" />
+                Clear
               </Button>
             </div>
           </CardContent>
