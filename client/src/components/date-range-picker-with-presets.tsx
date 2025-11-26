@@ -87,25 +87,31 @@ export default function DateRangePickerWithPresets({
       <PopoverTrigger asChild>
         <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-md bg-background hover:bg-accent/50 cursor-pointer transition-colors" data-testid="button-date-range-picker">
           <CalendarDays className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          <input
-            type="date"
-            value={fromDate || ""}
-            onChange={handleFromDateChange}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Start date"
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground date-input-hidden"
-            data-testid="input-from-date"
-          />
+          {fromDate ? (
+            <input
+              type="date"
+              value={fromDate}
+              onChange={handleFromDateChange}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+              data-testid="input-from-date"
+            />
+          ) : (
+            <span className="text-sm text-muted-foreground">Start date</span>
+          )}
           <span className="text-sm text-muted-foreground font-medium">To</span>
-          <input
-            type="date"
-            value={toDate || ""}
-            onChange={handleToDateChange}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="End date"
-            className="bg-transparent text-sm outline-none w-[120px] cursor-text placeholder:text-muted-foreground date-input-hidden"
-            data-testid="input-to-date"
-          />
+          {toDate ? (
+            <input
+              type="date"
+              value={toDate}
+              onChange={handleToDateChange}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-transparent text-sm outline-none w-[120px] cursor-text"
+              data-testid="input-to-date"
+            />
+          ) : (
+            <span className="text-sm text-muted-foreground">End date</span>
+          )}
           {(fromDate || toDate) && (
             <button
               onClick={(e) => {
@@ -136,16 +142,23 @@ export default function DateRangePickerWithPresets({
             z-index: 10;
             width: auto;
           }
+          .date-input-hidden {
+            color: transparent;
+          }
           .date-input-hidden::-webkit-calendar-picker-indicator {
             display: none;
           }
           .date-input-hidden::-webkit-datetime-edit {
-            opacity: 0;
-            width: 0;
-            padding: 0;
+            display: none;
           }
           .date-input-hidden::placeholder {
-            opacity: 1;
+            color: rgb(107, 114, 128);
+          }
+          .date-input-hidden:disabled::placeholder {
+            color: rgb(107, 114, 128);
+          }
+          .date-input-hidden:disabled {
+            color: transparent;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
