@@ -114,18 +114,16 @@ export default function DateRangePickerWithPresets({
           ) : (
             <span className="text-sm text-muted-foreground w-32 text-center">End date</span>
           )}
-          {(fromDate || toDate) && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
-              className="ml-auto text-destructive hover:text-destructive/80 transition-colors flex-shrink-0"
-              data-testid="button-clear-dates"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClear();
+            }}
+            className={`ml-auto text-destructive hover:text-destructive/80 transition-colors flex-shrink-0 ${(fromDate || toDate) ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+            data-testid="button-clear-dates"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
