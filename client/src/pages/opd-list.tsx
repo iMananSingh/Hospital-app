@@ -166,9 +166,9 @@ export default function OpdList() {
           </div>
         </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
+      {/* OPD Services by Doctor - Combined with Filters */}
+      <Card>
+        <CardContent className="p-4 border-b">
           <div className="flex gap-4 items-center flex-wrap">
             <div className="relative flex-grow min-w-[200px]">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -225,11 +225,7 @@ export default function OpdList() {
             </Button>
           </div>
         </CardContent>
-      </Card>
-
-      {/* OPD Services by Doctor */}
-      {Object.keys(opdServicesByDoctor).length === 0 ? (
-        <Card>
+        {Object.keys(opdServicesByDoctor).length === 0 ? (
           <CardContent className="p-8 text-center">
             <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">No OPD appointments found matching your criteria.</p>
@@ -237,22 +233,21 @@ export default function OpdList() {
               <Button className="mt-4">Schedule New OPD</Button>
             </Link>
           </CardContent>
-        </Card>
-      ) : (
-        <div>
-          {Object.entries(opdServicesByDoctor).map(([doctorId, services]) => (
-            <Card key={doctorId}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+        ) : (
+          <div>
+            {Object.entries(opdServicesByDoctor).map(([doctorId, services], index) => (
+              <div key={doctorId} className={index > 0 ? "border-t pt-4" : ""}>
+              <div className="px-4 py-3">
+                <h3 className="flex items-center gap-2 font-semibold text-lg">
                   <Stethoscope className="w-5 h-5" />
                   {getDoctorName(doctorId)}
                   <Badge variant="outline">{(services as any[]).length} patients</Badge>
-                </CardTitle>
-                <CardDescription>
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
                   {getDoctorSpecialization(doctorId)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </p>
+              </div>
+              <div className="px-4 pb-4">
                 <div className="space-y-3">
                   {(services as any[]).map((visit: any) => {
                     return (
@@ -322,12 +317,12 @@ export default function OpdList() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
-      </div>
+      </Card>
     </>
   );
 }
