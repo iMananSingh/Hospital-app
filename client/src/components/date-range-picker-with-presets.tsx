@@ -110,7 +110,7 @@ export default function DateRangePickerWithPresets({
               data-testid="input-to-date"
             />
           ) : (
-            <span className="text-sm text-muted-foreground w-32">End date</span>
+            <span className="text-sm text-muted-foreground w-32 text-center">End date</span>
           )}
           {(fromDate || toDate) && (
             <button
