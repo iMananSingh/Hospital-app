@@ -70,7 +70,23 @@ export default function DateRangePickerWithPresets({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="end">
-        <div style={{ display: "flex", flexDirection: "row" }}>
+        <style>{`
+          .rdrDateRangePickerWrapper.with-clear-button {
+            position: relative;
+          }
+          .rdrDateRangePickerWrapper.with-clear-button .rdrSidebar {
+            position: relative;
+            padding-bottom: 50px;
+          }
+          .date-range-clear-button {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            z-index: 10;
+          }
+        `}</style>
+        <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
           <DateRangePicker
             ranges={state}
             onChange={handleSelect}
@@ -78,27 +94,16 @@ export default function DateRangePickerWithPresets({
             direction="horizontal"
           />
           {(fromDate || toDate) && (
-            <div
-              style={{
-                minWidth: "180px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                padding: "8px",
-                borderLeft: "1px solid #e5e7eb",
-              }}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive justify-start date-range-clear-button"
+              onClick={handleClear}
+              data-testid="button-clear-dates"
             >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive justify-start"
-                onClick={handleClear}
-                data-testid="button-clear-dates"
-              >
-                <X className="w-4 h-4 mr-2" />
-                Clear
-              </Button>
-            </div>
+              <X className="w-4 h-4 mr-2" />
+              Clear
+            </Button>
           )}
         </div>
       </PopoverContent>
