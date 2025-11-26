@@ -156,11 +156,11 @@ export default function OpdList() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
               <Calendar className="w-4 h-4 mr-1" />
               Today: {todayOpdCount}
             </Badge>
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
               <User className="w-4 h-4 mr-1" />
               Total: {totalOpdCount}
             </Badge>
