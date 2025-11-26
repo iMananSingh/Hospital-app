@@ -276,10 +276,11 @@ export default function OpdList() {
                         <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
                           <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
                           <td className="px-4 py-3 text-sm whitespace-nowrap">
-                            {visit.scheduledDate ? new Date(visit.scheduledDate).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric'
-                            }) : 'N/A'}
+                            {visit.scheduledDate ? (() => {
+                              const d = new Date(visit.scheduledDate);
+                              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                              return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                            })() : 'N/A'}
                           </td>
                           <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
                           <td className="px-4 py-3 text-sm">
