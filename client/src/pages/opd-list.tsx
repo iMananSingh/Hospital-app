@@ -237,19 +237,6 @@ export default function OpdList() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-12">S.No</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-32">Date</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-24">Time</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48">Name</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-20">Sex/Age</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-32">Contact</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold w-24">Status</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold w-20">Fees</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold w-12">View</th>
-                </tr>
-              </thead>
               <tbody>
                 {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
                   let rowNumber = 1;
@@ -271,6 +258,18 @@ export default function OpdList() {
                             </span>
                           </div>
                         </td>
+                      </tr>
+                      {/* Table Header for this Doctor Section */}
+                      <tr className="border-b bg-muted/50">
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-12">S.No</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-32">Date</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-24">Time</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-20">Sex/Age</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-32">Contact</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold w-24">Status</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold w-20">Fees</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold w-12">View</th>
                       </tr>
                       {/* Patient Rows */}
                       {(services as any[]).map((visit: any) => (
