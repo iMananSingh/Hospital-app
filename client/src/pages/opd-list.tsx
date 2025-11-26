@@ -244,13 +244,13 @@ export default function OpdList() {
                     <Fragment key={doctorId}>
                       {/* Doctor Section Header */}
                       <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
-                        <td colSpan={9} className="px-4 py-3 bg-muted/30">
+                        <td colSpan={9} className="px-4 py-3 bg-blue-100">
                           <div className="flex items-center gap-2 justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-lg">
+                              <span className="font-semibold text-lg text-blue-900">
                                 {getDoctorName(doctorId)}
                               </span>
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-sm text-blue-600">
                                 • {getDoctorSpecialization(doctorId)}
                               </span>
                             </div>
