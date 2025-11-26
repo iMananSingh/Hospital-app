@@ -14,7 +14,8 @@ import {
   Stethoscope,
   Phone,
   MapPin,
-  Filter
+  Filter,
+  Eye
 } from "lucide-react";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
@@ -234,93 +235,89 @@ export default function OpdList() {
             </Link>
           </CardContent>
         ) : (
-          <div>
-            {Object.entries(opdServicesByDoctor).map(([doctorId, services], index) => (
-              <div key={doctorId} className={index > 0 ? "border-t pt-4" : ""}>
-              <div className="px-4 py-3">
-                <h3 className="flex items-center gap-2 font-semibold text-lg">
-                  <Stethoscope className="w-5 h-5" />
-                  {getDoctorName(doctorId)}
-                  <Badge variant="outline">{(services as any[]).length} patients</Badge>
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {getDoctorSpecialization(doctorId)}
-                </p>
-              </div>
-              <div className="px-4 pb-4">
-                <div className="space-y-3">
-                  {(services as any[]).map((visit: any) => {
-                    return (
-                      <div
-                        key={visit.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <User className="w-4 h-4 text-muted-foreground" />
-                              <span className="font-medium">
-                                {visit.patientName || "Unknown Patient"}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {visit.patientPatientId || "N/A"}
-                              </Badge>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {visit.scheduledDate ? new Date(visit.scheduledDate).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                }) : 'N/A'}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {visit.scheduledTime || 'N/A'}
-                              </div>
-                              {visit.patientPhone && (
-                                <div className="flex items-center gap-1">
-                                  <Phone className="w-3 h-3" />
-                                  {visit.patientPhone}
-                                </div>
-                              )}
-                            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-12">S.No</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-32">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-24">Time</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-20">Sex/Age</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-32">Contact</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold w-24">Status</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold w-20">Fees</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold w-12">View</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
+                  let rowNumber = 1;
+                  return (
+                    <tbody key={doctorId}>
+                      {/* Doctor Section Header */}
+                      <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
+                        <td colSpan={9} className="px-4 py-3 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <Stethoscope className="w-5 h-5" />
+                            <span className="font-semibold text-base">
+                              {getDoctorName(doctorId)}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              {(services as any[]).length} patients
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              • {getDoctorSpecialization(doctorId)}
+                            </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant={getStatusBadgeVariant(visit.status)}
-                            data-testid={`status-${visit.id}`}
-                          >
-                            {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-                          </Badge>
-
-                          <div className="text-right">
-                            <div className="font-medium">
-                              ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Consultation Fee
-                            </div>
-                          </div>
-
-                          <Link href={`/patients/${visit.patientId}`}>
-                            <Button variant="outline" size="sm" data-testid={`view-patient-${visit.id}`}>
-                              View
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+                        </td>
+                      </tr>
+                      {/* Patient Rows */}
+                      {(services as any[]).map((visit: any) => (
+                        <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
+                          <td className="px-4 py-3 text-sm">{rowNumber++}</td>
+                          <td className="px-4 py-3 text-sm">
+                            {visit.scheduledDate ? new Date(visit.scheduledDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">{visit.scheduledTime || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="font-medium">{visit.patientName || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">{visit.patientPhone || 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <Badge 
+                              variant={getStatusBadgeVariant(visit.status)}
+                              data-testid={`status-${visit.id}`}
+                            >
+                              {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right">
+                            ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Link href={`/patients/${visit.patientId}`}>
+                              <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
       )}
       </Card>
       </div>
