@@ -162,6 +162,14 @@ export default function DateRangePickerWithPresets({
           .date-input-hidden:disabled {
             color: transparent;
           }
+          input[type="date"].date-input-no-picker {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: transparent !important;
+            padding-right: 0 !important;
+            cursor: text !important;
+          }
           input[type="date"].date-input-no-picker::-webkit-calendar-picker-indicator {
             display: none !important;
             opacity: 0 !important;
@@ -169,10 +177,11 @@ export default function DateRangePickerWithPresets({
             height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
+            position: absolute !important;
+            pointer-events: none !important;
           }
-          input[type="date"].date-input-no-picker {
-            appearance: textfield;
-            background: transparent;
+          input[type="date"].date-input-no-picker::-webkit-datetime-edit {
+            padding-right: 0 !important;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
