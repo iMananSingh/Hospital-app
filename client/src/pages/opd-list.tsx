@@ -294,6 +294,7 @@ export default function OpdList() {
                           <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
                           <td className="px-4 py-3 text-sm whitespace-nowrap">
                             <Badge 
+                              className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
                               variant={getStatusBadgeVariant(visit.status)}
                               data-testid={`status-${visit.id}`}
                             >
