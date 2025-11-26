@@ -167,18 +167,15 @@ export default function DateRangePickerWithPresets({
           input[type="date"].date-input-no-picker {
             background: transparent !important;
             padding: 0 !important;
-            clip-path: inset(0 20px 0 0) !important;
+            -webkit-appearance: none !important;
+            appearance: none !important;
           }
           input[type="date"].date-input-no-picker::-webkit-calendar-picker-indicator {
             display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            position: absolute !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
+          }
+          input[type="date"].date-input-no-picker::-webkit-outer-spin-button,
+          input[type="date"].date-input-no-picker::-webkit-inner-spin-button {
+            display: none !important;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
