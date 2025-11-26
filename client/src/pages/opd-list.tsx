@@ -323,6 +323,7 @@ export default function OpdList() {
         </div>
       )}
       </Card>
+      </div>
     </>
   );
 }
