@@ -270,7 +270,7 @@ export default function Diagnostics() {
               </Select>
 
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger data-testid="filter-status" className="w-28">
+                <SelectTrigger data-testid="filter-status" className="w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
