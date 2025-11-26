@@ -169,7 +169,7 @@ export default function OpdList() {
 
       {/* OPD Services by Doctor - Combined with Filters */}
       <Card>
-        <CardContent className="p-4 border-b bg-[#f6a42882] rounded-t-lg">
+        <CardContent className="p-4 border-b bg-[#f6760a]/10 rounded-t-lg">
           <div className="flex gap-4 items-center flex-wrap">
             <div className="relative flex-grow min-w-[200px]">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
