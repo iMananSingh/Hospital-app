@@ -163,6 +163,7 @@ export default function DateRangePickerWithPresets({
           input[type="date"].date-input-no-picker {
             background: transparent !important;
             padding: 0 !important;
+            clip-path: inset(0 20px 0 0) !important;
           }
           input[type="date"].date-input-no-picker::-webkit-calendar-picker-indicator {
             display: none !important;
@@ -172,6 +173,8 @@ export default function DateRangePickerWithPresets({
             margin: 0 !important;
             padding: 0 !important;
             position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
           }
         `}</style>
         <div className={`rdrDateRangePickerWrapper ${(fromDate || toDate) ? 'with-clear-button' : ''}`}>
