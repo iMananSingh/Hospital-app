@@ -261,7 +261,7 @@ export default function OpdList() {
                         </td>
                       </tr>
                       {/* Table Header for this Doctor Section */}
-                      <tr className="border-b bg-muted/50">
+                      <tr className="border-b bg-gray-200">
                         <th className="px-4 py-3 text-left text-sm font-semibold w-12">S.No</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold w-32">Date</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold w-24">Time</th>
