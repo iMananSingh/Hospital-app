@@ -232,7 +232,7 @@ export default function OpdList() {
         </div>
 
         {/* Scrollable Table Content */}
-        <div className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           {Object.keys(opdServicesByDoctor).length === 0 ? (
             <div className="container mx-auto px-6 py-8 text-center">
               <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -242,9 +242,8 @@ export default function OpdList() {
               </Link>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto">
-              <Card className="rounded-none ml-[24px] mr-[24px] mt-[0px] mb-[0px] h-full">
-                <div className="overflow-x-auto h-full">
+            <Card className="rounded-none ml-[24px] mr-[24px] mt-[0px] mb-[0px]">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <tbody>
                     {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
@@ -329,7 +328,6 @@ export default function OpdList() {
                 </table>
               </div>
             </Card>
-            </div>
           )}
         </div>
       </div>
