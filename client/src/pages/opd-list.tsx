@@ -245,17 +245,19 @@ export default function OpdList() {
                       {/* Doctor Section Header */}
                       <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
                         <td colSpan={9} className="px-4 py-3 bg-muted/30">
-                          <div className="flex items-center gap-2">
-                            <Stethoscope className="w-5 h-5" />
-                            <span className="font-semibold text-base">
-                              {getDoctorName(doctorId)}
-                            </span>
+                          <div className="flex items-center gap-2 justify-between">
+                            <div className="flex items-center gap-2">
+                              <Stethoscope className="w-5 h-5" />
+                              <span className="font-semibold text-base">
+                                {getDoctorName(doctorId)}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                • {getDoctorSpecialization(doctorId)}
+                              </span>
+                            </div>
                             <Badge variant="outline" className="text-xs">
                               {(services as any[]).length} patients
                             </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              • {getDoctorSpecialization(doctorId)}
-                            </span>
                           </div>
                         </td>
                       </tr>
