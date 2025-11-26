@@ -148,7 +148,7 @@ export default function OpdList() {
         onFromDateChange={setSelectedFromDate}
         onToDateChange={setSelectedToDate}
       />
-      <div className="flex flex-col h-[calc(100vh-94px)] pb-[24px]">
+      <div className="flex flex-col h-[calc(100vh-94px)]">
         {/* Fixed Header Section */}
         <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
           <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
@@ -232,7 +232,7 @@ export default function OpdList() {
         </div>
 
         {/* Scrollable Table Content */}
-        <div className="flex-1 overflow-y-auto ml-[24px] mr-[24px]">
+        <div className="flex-1 overflow-y-auto ml-[24px] mr-[24px] pt-[0px] pb-[0px]">
           {Object.keys(opdServicesByDoctor).length === 0 ? (
             <div className="container mx-auto px-6 py-8 text-center">
               <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
