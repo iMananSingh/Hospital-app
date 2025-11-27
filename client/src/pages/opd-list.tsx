@@ -150,7 +150,7 @@ export default function OpdList() {
           onToDateChange={setSelectedToDate}
         />
         <div className="flex flex-col h-[calc(100%-84px)] pb-[24px] pt-[16px] pl-[24px] pr-[24px]">
-          <Card className="flex flex-col h-full overflow-hidden rounded-b-md">
+          <Card className="flex flex-col h-full overflow-hidden rounded-b-md pl-[24px] pr-[24px]">
             {/* Fixed Header Section */}
             <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0 pl-[0px] pr-[0px]">
             <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
