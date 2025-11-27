@@ -1,13 +1,12 @@
 import { useState, useMemo, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
   Search, 
-  User, 
   TestTube,
   Phone,
   Calendar,
@@ -34,7 +33,7 @@ export default function LabTests() {
   // Fetch all pathology orders
   const { data: pathologyOrders = [], isLoading } = useQuery({
     queryKey: ["/api/pathology"],
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Fetch patients for order details
@@ -97,7 +96,7 @@ export default function LabTests() {
       orders.sort((a, b) => {
         const dateA = new Date(a.order.orderedDate).getTime();
         const dateB = new Date(b.order.orderedDate).getTime();
-        return dateB - dateA; // Most recent first
+        return dateB - dateA;
       });
     });
 
@@ -108,21 +107,6 @@ export default function LabTests() {
     if (!doctorId) return "External Patient";
     const doctor = doctors.find(d => d.id === doctorId);
     return doctor ? `Dr. ${doctor.name}` : "Unknown Doctor";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'collected':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'ordered':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -203,7 +187,7 @@ export default function LabTests() {
                         <SelectItem value="all">All Doctors</SelectItem>
                         {doctors.map((doctor: Doctor) => (
                           <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.name} - {doctor.specialization}
+                            {doctor.name}
                           </SelectItem>
                         ))}
                         <SelectItem value="external">External Patients</SelectItem>
@@ -253,84 +237,88 @@ export default function LabTests() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {Object.entries(labTestsByStatus).map(([status, orders]) => (
-                    <div key={status} className="px-6">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                          <TestTube className="w-5 h-5" />
-                          {status.charAt(0).toUpperCase() + status.slice(1)} Tests
-                          <Badge variant="outline">{orders.length} orders</Badge>
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        {orders.map((orderData: any) => {
-                          const order = orderData.order;
-                          const patient = orderData.patient;
+                <Card className="border bg-card text-card-foreground shadow-sm rounded-none rounded-b-md mt-[0px] mb-[0px] p-0 ml-[0px] mr-[0px] overflow-hidden">
+                  <div className="overflow-x-auto w-full h-full">
+                    <table className="w-full table-fixed">
+                      <tbody>
+                        {Object.entries(labTestsByStatus).map(([status, orders]) => {
+                          let rowNumber = 1;
                           return (
-                            <div
-                              key={order.id}
-                              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-4 flex-1">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium">
-                                      {patient?.name || "Unknown Patient"}
-                                    </span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {order.orderId}
+                            <Fragment key={status}>
+                              {/* Status Section Header */}
+                              <tr>
+                                <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                                  <div className="flex items-center gap-2 justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-lg text-blue-900">
+                                        {status.charAt(0).toUpperCase() + status.slice(1)} Tests
+                                      </span>
+                                    </div>
+                                    <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
+                                      {(orders as any[]).length} orders
                                     </Badge>
                                   </div>
-
-                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="w-3 h-3" />
-                                      {formatDate(order.orderedDate)}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <TestTube className="w-3 h-3" />
-                                      {getDoctorName(order.doctorId)}
-                                    </div>
-                                    {patient?.phone && (
-                                      <div className="flex items-center gap-1">
-                                        <Phone className="w-3 h-3" />
-                                        {patient.phone}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-3">
-                                <Badge 
-                                  className={getStatusColor(order.status)}
-                                  variant="secondary"
-                                  data-testid={`status-${order.id}`}
-                                >
-                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                </Badge>
-
-                                <div className="text-right min-w-[80px]">
-                                  <div className="font-medium">₹{order.totalPrice}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Total Amount
-                                  </div>
-                                </div>
-
-                                <Link href={`/pathology`}>
-                                  <Button variant="outline" size="sm" data-testid={`view-order-${order.id}`}>
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                </Link>
-                              </div>
-                            </div>
+                                </td>
+                              </tr>
+                              {/* Table Header for this Status Section */}
+                              <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                                <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                              </tr>
+                              {/* Order Rows */}
+                              {(orders as any[]).map((orderData: any) => (
+                                <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    {formatDate(orderData.order.orderedDate)}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <div className="font-medium">{orderData.order.orderId}</div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
+                                    <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    {orderData.patient?.phone || 'N/A'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    {getDoctorName(orderData.order.doctorId)}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    <Badge 
+                                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
+                                      data-testid={`status-${orderData.order.id}`}
+                                    >
+                                      {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                    ₹{orderData.order.totalPrice}
+                                  </td>
+                                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                                    <Link href={`/pathology`}>
+                                      <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
+                                        <Eye className="w-4 h-4" />
+                                      </Button>
+                                    </Link>
+                                  </td>
+                                </tr>
+                              ))}
+                            </Fragment>
                           );
                         })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
               )}
             </div>
           </Card>
