@@ -14,7 +14,9 @@ import {
   Phone,
   Filter,
   Eye,
-  Heart
+  Heart,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PatientService, Patient, Doctor, Service } from "@shared/schema";
@@ -26,6 +28,17 @@ export default function Diagnostics() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedFromDate, setSelectedFromDate] = useState<string>("");
   const [selectedToDate, setSelectedToDate] = useState<string>("");
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
+
+  const toggleServiceSection = (serviceName: string) => {
+    const newExpanded = new Set(expandedServices);
+    if (newExpanded.has(serviceName)) {
+      newExpanded.delete(serviceName);
+    } else {
+      newExpanded.add(serviceName);
+    }
+    setExpandedServices(newExpanded);
+  };
 
   // Fetch server's today date for consistent timezone handling
   const { data: todayData } = useQuery<{ today: string }>({
@@ -315,11 +328,16 @@ export default function Diagnostics() {
                           let rowNumber = 1;
                           return (
                             <Fragment key={serviceName}>
-                              {/* Service Section Header */}
+                              {/* Service Section Header - Collapsible */}
                               <tr>
-                                <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                                <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleServiceSection(serviceName)}>
                                   <div className="flex items-center gap-2 justify-between">
                                     <div className="flex items-center gap-2">
+                                      {expandedServices.has(serviceName) ? (
+                                        <ChevronDown className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                      )}
                                       <span className="font-semibold text-lg text-blue-900">
                                         {serviceName}
                                       </span>
@@ -330,50 +348,55 @@ export default function Diagnostics() {
                                   </div>
                                 </td>
                               </tr>
-                              {/* Table Header for this Service Section */}
-                              <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
-                                <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Fee</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
-                              </tr>
-                              {/* Service Rows */}
-                              {(services as any[]).map((service: PatientService) => {
-                                const patient = patients.find(p => p.id === service.patientId);
-                                return (
-                                  <tr key={service.id} className="border-b hover:bg-muted/50 transition-colors">
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {formatDate(service.scheduledDate)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
-                                    <td className="px-4 py-3 text-sm">
-                                      <div className="font-medium">{patient?.name || 'Unknown'}</div>
-                                      <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {patient?.phone || 'N/A'}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {getDoctorName(service.doctorId)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                                      ₹{service.price}
-                                    </td>
-                                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                                      <Link href={`/patients/${service.patientId}`}>
-                                        <Button variant="ghost" size="icon" data-testid={`view-patient-${service.id}`}>
-                                          <Eye className="w-4 h-4" />
-                                        </Button>
-                                      </Link>
-                                    </td>
+                              {/* Table Header and Rows - Show only when expanded */}
+                              {expandedServices.has(serviceName) && (
+                                <>
+                                  {/* Table Header for this Service Section */}
+                                  <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                    <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Fee</th>
+                                    <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                                   </tr>
-                                );
-                              })}
+                                  {/* Service Rows */}
+                                  {(services as any[]).map((service: PatientService) => {
+                                    const patient = patients.find(p => p.id === service.patientId);
+                                    return (
+                                      <tr key={service.id} className="border-b hover:bg-muted/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {formatDate(service.scheduledDate)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
+                                        <td className="px-4 py-3 text-sm">
+                                          <div className="font-medium">{patient?.name || 'Unknown'}</div>
+                                          <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {patient?.phone || 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {getDoctorName(service.doctorId)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                          ₹{service.price}
+                                        </td>
+                                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                                          <Link href={`/patients/${service.patientId}`}>
+                                            <Button variant="ghost" size="icon" data-testid={`view-patient-${service.id}`}>
+                                              <Eye className="w-4 h-4" />
+                                            </Button>
+                                          </Link>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </>
+                              )}
                             </Fragment>
                           );
                         })}
