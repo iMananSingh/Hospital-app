@@ -342,7 +342,7 @@ export default function LabTests() {
                                           {formatDate(orderData.order.orderedDate)}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                          {orderData.order.orderedTime || 'N/A'}
+                                          {orderData.order.collectedDate ? '—' : 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 text-sm">
                                           <div className="font-medium">{orderData.order.orderId}</div>
