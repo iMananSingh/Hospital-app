@@ -296,6 +296,7 @@ export default function OpdList() {
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
@@ -319,6 +320,9 @@ export default function OpdList() {
                                     })() : 'N/A'}
                                   </td>
                                   <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    <div className="font-medium">{visit.visitId || 'N/A'}</div>
+                                  </td>
                                   <td className="px-4 py-3 text-sm">
                                     <div className="font-medium">{visit.patientName || 'Unknown'}</div>
                                     <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
