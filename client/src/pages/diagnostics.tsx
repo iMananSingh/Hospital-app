@@ -24,7 +24,6 @@ export default function Diagnostics() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedService, setSelectedService] = useState<string>("all");
   const [selectedFromDate, setSelectedFromDate] = useState<string>("");
   const [selectedToDate, setSelectedToDate] = useState<string>("");
 
@@ -99,9 +98,6 @@ export default function Diagnostics() {
 
       const matchesStatus = selectedStatus === "all" || service.status === selectedStatus;
 
-      const matchesService = selectedService === "all" || 
-        service.serviceName.toLowerCase() === selectedService.toLowerCase();
-
       const matchesDateRange = (() => {
         if (!selectedFromDate && !selectedToDate) return true;
         const serviceDate = service.scheduledDate;
@@ -117,7 +113,7 @@ export default function Diagnostics() {
         return true;
       })();
 
-      return matchesSearch && matchesDoctor && matchesStatus && matchesService && matchesDateRange;
+      return matchesSearch && matchesDoctor && matchesStatus && matchesDateRange;
     });
 
     const grouped = filtered.reduce((groups: Record<string, PatientService[]>, service: PatientService) => {
@@ -139,7 +135,7 @@ export default function Diagnostics() {
     });
 
     return grouped;
-  }, [diagnosticPatientServices, patients, searchQuery, selectedDoctor, selectedStatus, selectedService, selectedFromDate, selectedToDate]);
+  }, [diagnosticPatientServices, patients, searchQuery, selectedDoctor, selectedStatus, selectedFromDate, selectedToDate]);
 
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
@@ -281,27 +277,12 @@ export default function Diagnostics() {
                       </SelectContent>
                     </Select>
 
-                    <Select value={selectedService} onValueChange={setSelectedService}>
-                      <SelectTrigger data-testid="filter-service" className="w-28">
-                        <SelectValue placeholder="Service" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Services</SelectItem>
-                        {uniqueServiceNames.map((serviceName) => (
-                          <SelectItem key={serviceName} value={serviceName}>
-                            {serviceName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
                     <Button 
                       variant="outline"
                       onClick={() => {
                         setSearchQuery("");
                         setSelectedDoctor("all");
                         setSelectedStatus("all");
-                        setSelectedService("all");
                         setSelectedFromDate("");
                         setSelectedToDate("");
                       }}
