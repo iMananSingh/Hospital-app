@@ -354,7 +354,6 @@ export default function Diagnostics() {
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Service ID</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
@@ -371,9 +370,6 @@ export default function Diagnostics() {
                                       {formatDate(service.scheduledDate)}
                                     </td>
                                     <td className="px-4 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
-                                    <td className="px-4 py-3 text-sm">
-                                      <div className="font-medium">{service.serviceId}</div>
-                                    </td>
                                     <td className="px-4 py-3 text-sm">
                                       <div className="font-medium">{patient?.name || 'Unknown'}</div>
                                       <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
