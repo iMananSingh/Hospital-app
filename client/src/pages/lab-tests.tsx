@@ -121,6 +121,17 @@ export default function LabTests() {
     ? pathologyOrders.filter((orderData: any) => orderData?.order?.orderedDate?.split('T')[0] === today).length 
     : 0;
 
+  // Get unique statuses from pathology orders
+  const availableStatuses = useMemo(() => {
+    const statuses = new Set<string>();
+    pathologyOrders.forEach((orderData: any) => {
+      if (orderData?.order?.status) {
+        statuses.add(orderData.order.status);
+      }
+    });
+    return Array.from(statuses).sort();
+  }, [pathologyOrders]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -200,10 +211,11 @@ export default function LabTests() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="ordered">Ordered</SelectItem>
-                        <SelectItem value="collected">Collected</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
+                        {availableStatuses.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
