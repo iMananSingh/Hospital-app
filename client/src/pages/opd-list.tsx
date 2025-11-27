@@ -148,91 +148,92 @@ export default function OpdList() {
         onFromDateChange={setSelectedFromDate}
         onToDateChange={setSelectedToDate}
       />
-      <div className="flex flex-col h-[calc(100vh-70px)] pb-[24px]">
-        {/* Fixed Header Section */}
-        <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
-          <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
-            <div>
-              <p className="text-muted-foreground">
-                Manage and view all OPD consultations by doctor
-              </p>
+      <div>
+        <div className="flex flex-col h-[calc(100vh-70px)] pb-[24px]">
+          {/* Fixed Header Section */}
+          <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
+            <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
+              <div>
+                <p className="text-muted-foreground">
+                  Manage and view all OPD consultations by doctor
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Today: {todayOpdCount}
+                </Badge>
+                <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
+                  <User className="w-4 h-4 mr-1" />
+                  Total: {totalOpdCount}
+                </Badge>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
-                <Calendar className="w-4 h-4 mr-1" />
-                Today: {todayOpdCount}
-              </Badge>
-              <Badge className="inline-flex items-center rounded-full border text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 px-3 py-1 bg-[#f6760a] text-[#ffffff]">
-                <User className="w-4 h-4 mr-1" />
-                Total: {totalOpdCount}
-              </Badge>
-            </div>
+
+            {/* Filter Card - Fixed */}
+            <Card className="rounded-b-none">
+              <CardContent className="p-4 border-b bg-[#f6760a]/20 rounded-t-lg">
+                <div className="flex gap-4 items-center flex-wrap">
+                  <div className="relative flex-grow min-w-[200px]">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name, ID, or phone..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="search-opd-patients"
+                    />
+                  </div>
+
+                  <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                    <SelectTrigger data-testid="filter-doctor" className="w-64">
+                      <SelectValue placeholder="Doctor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Doctors</SelectItem>
+                      {doctors.map(doctor => (
+                        <SelectItem key={doctor.id} value={doctor.id}>
+                          {doctor.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger data-testid="filter-status" className="w-36">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="in-progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedDoctor("all");
+                      setSelectedStatus("all");
+                      setSelectedFromDate("");
+                      setSelectedToDate("");
+                    }}
+                    data-testid="clear-filters"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Clear
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Filter Card - Fixed */}
-          <Card className="rounded-b-none">
-            <CardContent className="p-4 border-b bg-[#f6760a]/20 rounded-t-lg">
-              <div className="flex gap-4 items-center flex-wrap">
-                <div className="relative flex-grow min-w-[200px]">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, ID, or phone..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                    data-testid="search-opd-patients"
-                  />
-                </div>
-
-                <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                  <SelectTrigger data-testid="filter-doctor" className="w-64">
-                    <SelectValue placeholder="Doctor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Doctors</SelectItem>
-                    {doctors.map(doctor => (
-                      <SelectItem key={doctor.id} value={doctor.id}>
-                        {doctor.name}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger data-testid="filter-status" className="w-36">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedDoctor("all");
-                    setSelectedStatus("all");
-                    setSelectedFromDate("");
-                    setSelectedToDate("");
-                  }}
-                  data-testid="clear-filters"
-                >
-                  <Filter className="w-4 h-4 mr-2" />
-                  Clear
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Scrollable Table Content */}
-        <div className="flex-1 overflow-y-auto ml-[24px] mr-[24px]">
+          {/* Scrollable Table Content */}
+          <div className="flex-1 overflow-y-auto ml-[24px] mr-[24px]">
           {Object.keys(opdServicesByDoctor).length === 0 ? (
             <div className="container mx-auto px-6 py-8 text-center">
               <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -331,6 +332,7 @@ export default function OpdList() {
           )}
         </div>
       </div>
+    </div>
     </>
   );
 }
