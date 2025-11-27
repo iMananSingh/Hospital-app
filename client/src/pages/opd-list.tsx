@@ -15,7 +15,9 @@ import {
   Phone,
   MapPin,
   Filter,
-  Eye
+  Eye,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
@@ -27,6 +29,17 @@ export default function OpdList() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedFromDate, setSelectedFromDate] = useState<string>("");
   const [selectedToDate, setSelectedToDate] = useState<string>("");
+  const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
+
+  const toggleDoctorSection = (doctorId: string) => {
+    const newExpanded = new Set(expandedDoctors);
+    if (newExpanded.has(doctorId)) {
+      newExpanded.delete(doctorId);
+    } else {
+      newExpanded.add(doctorId);
+    }
+    setExpandedDoctors(newExpanded);
+  };
 
   // Fetch server's today date for consistent timezone handling
   const { data: todayData } = useQuery<{ today: string }>({
