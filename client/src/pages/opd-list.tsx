@@ -259,7 +259,7 @@ export default function OpdList() {
           ) : (
             <Card className="border bg-card text-card-foreground shadow-sm rounded-none rounded-b-md mt-[0px] mb-[0px] p-0 ml-[0px] mr-[0px] overflow-hidden">
               <div className="overflow-x-auto w-full h-full">
-                <table className="w-full table-fixed">
+                <table className="w-full">
                   <tbody>
                     {Object.entries(opdServicesByDoctor).map(([doctorId, services], doctorIndex) => {
                       let rowNumber = 1;
@@ -293,7 +293,7 @@ export default function OpdList() {
                             <>
                               {/* Table Header for this Doctor Section */}
                               <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-max" style={{ color: '#6C757F' }}>S.No</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
                                 <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
