@@ -140,15 +140,15 @@ export default function OpdList() {
 
   return (
     <>
-      <TopBar 
-        title="OPD Appointments" 
-        showDateFilter={true}
-        fromDate={selectedFromDate}
-        toDate={selectedToDate}
-        onFromDateChange={setSelectedFromDate}
-        onToDateChange={setSelectedToDate}
-      />
       <div>
+        <TopBar 
+          title="OPD Appointments" 
+          showDateFilter={true}
+          fromDate={selectedFromDate}
+          toDate={selectedToDate}
+          onFromDateChange={setSelectedFromDate}
+          onToDateChange={setSelectedToDate}
+        />
         <div className="flex flex-col h-[calc(100vh-70px)] pb-[24px]">
           {/* Fixed Header Section */}
           <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0">
@@ -331,8 +331,8 @@ export default function OpdList() {
             </Card>
           )}
         </div>
+        </div>
       </div>
-    </div>
     </>
   );
 }
