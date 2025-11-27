@@ -143,8 +143,9 @@
     color: var(--alert-orange);
   }
 
-  /* Custom Scrollbar Styling */
+  /* Custom Scrollbar Styling - Overlay */
   .scrollbar-custom {
+    overflow-y: overlay;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
   }
