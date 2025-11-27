@@ -275,7 +275,7 @@
   .scrollbar-blue {
     overflow-y: overlay;
     scrollbar-width: thin;
-    scrollbar-color: #0D71C9 transparent;
+    scrollbar-color: #DBEAFE transparent;
   }
 
   .scrollbar-blue::-webkit-scrollbar {
@@ -287,16 +287,16 @@
   }
 
   .scrollbar-blue::-webkit-scrollbar-thumb {
-    background: #0D71C9;
+    background: #DBEAFE;
     border-radius: 4px;
     transition: background 0.3s ease;
   }
 
   .scrollbar-blue::-webkit-scrollbar-thumb:hover {
-    background: #0a5fa8;
+    background: #0D71C9;
   }
 
   .dark .scrollbar-blue {
-    scrollbar-color: #0D71C9 transparent;
+    scrollbar-color: #DBEAFE transparent;
   }
 }
