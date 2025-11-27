@@ -12,6 +12,8 @@ import {
   Calendar,
   Eye,
   Filter,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Link } from "wouter";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
@@ -23,6 +25,17 @@ export default function LabTests() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedFromDate, setSelectedFromDate] = useState<string>("");
   const [selectedToDate, setSelectedToDate] = useState<string>("");
+  const [expandedStatuses, setExpandedStatuses] = useState<Set<string>>(new Set());
+
+  const toggleStatusSection = (status: string) => {
+    const newExpanded = new Set(expandedStatuses);
+    if (newExpanded.has(status)) {
+      newExpanded.delete(status);
+    } else {
+      newExpanded.add(status);
+    }
+    setExpandedStatuses(newExpanded);
+  };
 
   // Fetch server's today date for consistent timezone handling
   const { data: todayData } = useQuery<{ today: string }>({
@@ -282,13 +295,19 @@ export default function LabTests() {
                           
                           return orderedEntries.map(([status, orders]) => {
                             let rowNumber = 1;
+                            const isExpanded = expandedStatuses.has(status);
                             return (
                               <Fragment key={status}>
-                                {/* Status Section Header */}
+                                {/* Status Section Header - Collapsible */}
                                 <tr>
-                                  <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                                  <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleStatusSection(status)}>
                                     <div className="flex items-center gap-2 justify-between">
                                       <div className="flex items-center gap-2">
+                                        {isExpanded ? (
+                                          <ChevronDown className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                        ) : (
+                                          <ChevronRight className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                        )}
                                         <span className="font-semibold text-lg text-blue-900">
                                           {status.charAt(0).toUpperCase() + status.slice(1)} Tests
                                         </span>
@@ -299,58 +318,63 @@ export default function LabTests() {
                                     </div>
                                   </td>
                                 </tr>
-                                {/* Table Header for this Status Section */}
-                                <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
-                                  <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
-                                  <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
-                                  <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
-                                </tr>
-                                {/* Order Rows */}
-                                {(orders as any[]).map((orderData: any) => (
-                                  <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {formatDate(orderData.order.orderedDate)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                      <div className="font-medium">{orderData.order.orderId}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm">
-                                      <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
-                                      <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {orderData.patient?.phone || 'N/A'}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      {getDoctorName(orderData.order.doctorId)}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                      <Badge 
-                                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                                        data-testid={`status-${orderData.order.id}`}
-                                      >
-                                        {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
-                                      </Badge>
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                                      ₹{orderData.order.totalPrice}
-                                    </td>
-                                    <td className="px-4 py-3 text-center whitespace-nowrap">
-                                      <Link href={`/pathology`}>
-                                        <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
-                                          <Eye className="w-4 h-4" />
-                                        </Button>
-                                      </Link>
-                                    </td>
-                                  </tr>
-                                ))}
+                                {/* Table Header and Rows - Show only when expanded */}
+                                {isExpanded && (
+                                  <>
+                                    {/* Table Header for this Status Section */}
+                                    <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                      <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                                      <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
+                                      <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                                    </tr>
+                                    {/* Order Rows */}
+                                    {(orders as any[]).map((orderData: any) => (
+                                      <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {formatDate(orderData.order.orderedDate)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                          <div className="font-medium">{orderData.order.orderId}</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm">
+                                          <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
+                                          <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {orderData.patient?.phone || 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {getDoctorName(orderData.order.doctorId)}
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          <Badge 
+                                            className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
+                                            data-testid={`status-${orderData.order.id}`}
+                                          >
+                                            {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
+                                          </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                          ₹{orderData.order.totalPrice}
+                                        </td>
+                                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                                          <Link href={`/pathology`}>
+                                            <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
+                                              <Eye className="w-4 h-4" />
+                                            </Button>
+                                          </Link>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </>
+                                )}
                               </Fragment>
                             );
                           });
