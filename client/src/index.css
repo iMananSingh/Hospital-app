@@ -143,40 +143,160 @@
     color: var(--alert-orange);
   }
 
-  /* Custom Scrollbar Styling - Overlay */
-  .scrollbar-custom {
+  /* Option 1: Brand Orange Scrollbar */
+  .scrollbar-orange {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: #f6760a transparent;
+  }
+
+  .scrollbar-orange::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-orange::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-orange::-webkit-scrollbar-thumb {
+    background: #f6760a;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+  }
+
+  .scrollbar-orange::-webkit-scrollbar-thumb:hover {
+    background: #e55c00;
+  }
+
+  .dark .scrollbar-orange {
+    scrollbar-color: #f6760a transparent;
+  }
+
+  /* Option 2: Minimalist Scrollbar */
+  .scrollbar-minimal {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(203, 213, 225, 0.3) transparent;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background: rgba(203, 213, 225, 0.3);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+  }
+
+  .dark .scrollbar-minimal {
+    scrollbar-color: rgba(71, 85, 105, 0.3) transparent;
+  }
+
+  .dark .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.3);
+  }
+
+  .dark .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+
+  /* Option 3: Modern Gradient Scrollbar */
+  .scrollbar-gradient {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: #f6760a transparent;
+  }
+
+  .scrollbar-gradient::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-gradient::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-gradient::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #f6760a, #0a8af6);
+    border-radius: 6px;
+    transition: background 0.3s ease;
+  }
+
+  .scrollbar-gradient::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #e55c00, #0575d8);
+  }
+
+  /* Option 4: Thick Rounded Pill Scrollbar */
+  .scrollbar-pill {
     overflow-y: overlay;
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
   }
 
-  .scrollbar-custom::-webkit-scrollbar {
-    width: 8px;
+  .scrollbar-pill::-webkit-scrollbar {
+    width: 12px;
   }
 
-  .scrollbar-custom::-webkit-scrollbar-track {
+  .scrollbar-pill::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .scrollbar-custom::-webkit-scrollbar-thumb {
+  .scrollbar-pill::-webkit-scrollbar-thumb {
     background: #cbd5e1;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+  }
+
+  .scrollbar-pill::-webkit-scrollbar-thumb:hover {
+    background: #0D71C9;
+  }
+
+  .dark .scrollbar-pill {
+    scrollbar-color: #475569 transparent;
+  }
+
+  .dark .scrollbar-pill::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+
+  .dark .scrollbar-pill::-webkit-scrollbar-thumb:hover {
+    background: #0D71C9;
+  }
+
+  /* Option 5: Blue Accent Scrollbar */
+  .scrollbar-blue {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: #0D71C9 transparent;
+  }
+
+  .scrollbar-blue::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-blue::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-blue::-webkit-scrollbar-thumb {
+    background: #0D71C9;
     border-radius: 4px;
     transition: background 0.3s ease;
   }
 
-  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+  .scrollbar-blue::-webkit-scrollbar-thumb:hover {
+    background: #0a5fa8;
   }
 
-  .dark .scrollbar-custom {
-    scrollbar-color: #475569 transparent;
-  }
-
-  .dark .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: #475569;
-  }
-
-  .dark .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+  .dark .scrollbar-blue {
+    scrollbar-color: #0D71C9 transparent;
   }
 }
