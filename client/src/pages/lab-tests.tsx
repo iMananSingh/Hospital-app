@@ -271,80 +271,90 @@ export default function LabTests() {
                   <div className="overflow-x-auto w-full h-full">
                     <table className="w-full table-fixed">
                       <tbody>
-                        {Object.entries(labTestsByStatus).map(([status, orders]) => {
-                          let rowNumber = 1;
-                          return (
-                            <Fragment key={status}>
-                              {/* Status Section Header */}
-                              <tr>
-                                <td colSpan={9} className="px-4 py-3 bg-blue-100">
-                                  <div className="flex items-center gap-2 justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-lg text-blue-900">
-                                        {status.charAt(0).toUpperCase() + status.slice(1)} Tests
-                                      </span>
+                        {(() => {
+                          // Define the desired order of statuses
+                          const statusOrder = ["ordered", "paid", "collected", "processing", "completed", "cancelled"];
+                          
+                          // Create ordered array of status entries, only including statuses that have data
+                          const orderedEntries = statusOrder
+                            .filter(status => labTestsByStatus[status])
+                            .map(status => [status, labTestsByStatus[status]] as const);
+                          
+                          return orderedEntries.map(([status, orders]) => {
+                            let rowNumber = 1;
+                            return (
+                              <Fragment key={status}>
+                                {/* Status Section Header */}
+                                <tr>
+                                  <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                                    <div className="flex items-center gap-2 justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-lg text-blue-900">
+                                          {status.charAt(0).toUpperCase() + status.slice(1)} Tests
+                                        </span>
+                                      </div>
+                                      <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
+                                        {(orders as any[]).length} orders
+                                      </Badge>
                                     </div>
-                                    <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-[#0D71C9] text-[#ffffff] pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
-                                      {(orders as any[]).length} orders
-                                    </Badge>
-                                  </div>
-                                </td>
-                              </tr>
-                              {/* Table Header for this Status Section */}
-                              <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
-                                <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
-                                <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
-                              </tr>
-                              {/* Order Rows */}
-                              {(orders as any[]).map((orderData: any) => (
-                                <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                    {formatDate(orderData.order.orderedDate)}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="font-medium">{orderData.order.orderId}</div>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm">
-                                    <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
-                                    <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                    {orderData.patient?.phone || 'N/A'}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                    {getDoctorName(orderData.order.doctorId)}
-                                  </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                    <Badge 
-                                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                                      data-testid={`status-${orderData.order.id}`}
-                                    >
-                                      {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
-                                    </Badge>
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                                    ₹{orderData.order.totalPrice}
-                                  </td>
-                                  <td className="px-4 py-3 text-center whitespace-nowrap">
-                                    <Link href={`/pathology`}>
-                                      <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
-                                        <Eye className="w-4 h-4" />
-                                      </Button>
-                                    </Link>
                                   </td>
                                 </tr>
-                              ))}
-                            </Fragment>
-                          );
-                        })}
+                                {/* Table Header for this Status Section */}
+                                <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                  <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                                  <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
+                                  <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                                </tr>
+                                {/* Order Rows */}
+                                {(orders as any[]).map((orderData: any) => (
+                                  <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                      {formatDate(orderData.order.orderedDate)}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <div className="font-medium">{orderData.order.orderId}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
+                                      <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                      {orderData.patient?.phone || 'N/A'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                      {getDoctorName(orderData.order.doctorId)}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                      <Badge 
+                                        className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
+                                        data-testid={`status-${orderData.order.id}`}
+                                      >
+                                        {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
+                                      </Badge>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                      ₹{orderData.order.totalPrice}
+                                    </td>
+                                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                                      <Link href={`/pathology`}>
+                                        <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                      </Link>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </Fragment>
+                            );
+                          });
+                        })()}
                       </tbody>
                     </table>
                   </div>
