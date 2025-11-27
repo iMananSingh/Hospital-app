@@ -357,8 +357,9 @@ export default function Diagnostics() {
                                     <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                                    <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Doctor</th>
                                     <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Fee</th>
                                     <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                                   </tr>
@@ -375,6 +376,9 @@ export default function Diagnostics() {
                                         <td className="px-4 py-3 text-sm">
                                           <div className="font-medium">{patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                          {patient?.gender ? patient.gender.charAt(0).toUpperCase() : '-'}/{patient?.age || '-'}
                                         </td>
                                         <td className="px-4 py-3 text-sm whitespace-nowrap">
                                           {patient?.phone || 'N/A'}
