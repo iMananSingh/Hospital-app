@@ -265,11 +265,16 @@ export default function OpdList() {
                       let rowNumber = 1;
                       return (
                         <Fragment key={doctorId}>
-                          {/* Doctor Section Header */}
+                          {/* Doctor Section Header - Collapsible */}
                           <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
-                            <td colSpan={9} className="px-4 py-3 bg-blue-100">
+                            <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleDoctorSection(doctorId)}>
                               <div className="flex items-center gap-2 justify-between">
                                 <div className="flex items-center gap-2">
+                                  {expandedDoctors.has(doctorId) ? (
+                                    <ChevronDown className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronRight className="w-5 h-5 text-blue-900 flex-shrink-0" />
+                                  )}
                                   <span className="font-semibold text-lg text-blue-900">
                                     {getDoctorName(doctorId)}
                                   </span>
@@ -283,63 +288,68 @@ export default function OpdList() {
                               </div>
                             </td>
                           </tr>
-                          {/* Table Header for this Doctor Section */}
-                          <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
-                            <th className="px-4 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
-                          </tr>
-                          {/* Patient Rows */}
-                          {(services as any[]).sort((a, b) => {
-                            const aDateTime = new Date(`${a.scheduledDate} ${a.scheduledTime}`);
-                            const bDateTime = new Date(`${b.scheduledDate} ${b.scheduledTime}`);
-                            return bDateTime.getTime() - aDateTime.getTime();
-                          }).map((visit: any) => (
-                            <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                {visit.scheduledDate ? (() => {
-                                  const d = new Date(visit.scheduledDate);
-                                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-                                })() : 'N/A'}
-                              </td>
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm">
-                                <div className="font-medium">{visit.patientName || 'Unknown'}</div>
-                                <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
-                              </td>
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
-                              </td>
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
-                              <td className="px-4 py-3 text-sm whitespace-nowrap">
-                                <Badge 
-                                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                                  variant={getStatusBadgeVariant(visit.status)}
-                                  data-testid={`status-${visit.id}`}
-                                >
-                                  {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-                                </Badge>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
-                                ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
-                              </td>
-                              <td className="px-4 py-3 text-center whitespace-nowrap">
-                                <Link href={`/patients/${visit.patientId}`}>
-                                  <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
+                          {/* Table Header and Rows - Show only when expanded */}
+                          {expandedDoctors.has(doctorId) && (
+                            <>
+                              {/* Table Header for this Doctor Section */}
+                              <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Date</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Time</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                                <th className="px-4 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                              </tr>
+                              {/* Patient Rows */}
+                              {(services as any[]).sort((a, b) => {
+                                const aDateTime = new Date(`${a.scheduledDate} ${a.scheduledTime}`);
+                                const bDateTime = new Date(`${b.scheduledDate} ${b.scheduledTime}`);
+                                return bDateTime.getTime() - aDateTime.getTime();
+                              }).map((visit: any) => (
+                                <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    {visit.scheduledDate ? (() => {
+                                      const d = new Date(visit.scheduledDate);
+                                      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                                    })() : 'N/A'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <div className="font-medium">{visit.patientName || 'Unknown'}</div>
+                                    <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
+                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                    <Badge 
+                                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
+                                      variant={getStatusBadgeVariant(visit.status)}
+                                      data-testid={`status-${visit.id}`}
+                                    >
+                                      {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                    ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
+                                  </td>
+                                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                                    <Link href={`/patients/${visit.patientId}`}>
+                                      <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
+                                        <Eye className="w-4 h-4" />
+                                      </Button>
+                                    </Link>
+                                  </td>
+                                </tr>
+                              ))}
+                            </>
+                          )}
                         </Fragment>
                       );
                     })}
