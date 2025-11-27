@@ -140,7 +140,7 @@ export default function OpdList() {
 
   return (
     <>
-      <div className="pt-[16px] pl-[24px] pr-[24px] pb-[24px]">
+      <div>
         <TopBar 
           title="OPD Appointments" 
           showDateFilter={true}
