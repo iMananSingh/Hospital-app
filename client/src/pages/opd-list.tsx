@@ -234,7 +234,7 @@ export default function OpdList() {
           </div>
 
           {/* Scrollable Table Content */}
-          <div className="flex-1 overflow-y-auto pb-[24px] ml-[0px] mr-[0px] scrollbar-orange">
+          <div className="flex-1 overflow-y-auto pb-[24px] ml-[0px] mr-[0px] scrollbar-blue">
           {Object.keys(opdServicesByDoctor).length === 0 ? (
             <div className="container mx-auto px-6 py-8 text-center">
               <Stethoscope className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
