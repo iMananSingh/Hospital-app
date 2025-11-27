@@ -322,7 +322,7 @@ export default function Diagnostics() {
               ) : (
                 <Card className="border bg-card text-card-foreground shadow-sm rounded-none rounded-b-md mt-[0px] mb-[0px] p-0 ml-[0px] mr-[0px] overflow-hidden">
                   <div className="overflow-x-auto w-full h-full">
-                    <table className="w-full">
+                    <table className="w-full table-fixed">
                       <tbody>
                         {Object.entries(diagnosticsByService).map(([serviceName, services]) => {
                           let rowNumber = 1;
@@ -353,7 +353,7 @@ export default function Diagnostics() {
                                 <>
                                   {/* Table Header for this Service Section */}
                                   <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                    <th className="px-4 py-3 text-left text-sm font-semibold w-12" style={{ color: '#6C757F' }}>S.No</th>
+                                    <th className="px-4 py-3 text-left text-sm font-semibold w-8" style={{ color: '#6C757F' }}>S.No</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Date</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
                                     <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
