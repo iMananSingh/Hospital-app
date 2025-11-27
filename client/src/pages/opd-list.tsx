@@ -283,7 +283,11 @@ export default function OpdList() {
                             <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                           </tr>
                           {/* Patient Rows */}
-                          {(services as any[]).map((visit: any) => (
+                          {(services as any[]).sort((a, b) => {
+                            const aDateTime = new Date(`${a.scheduledDate} ${a.scheduledTime}`);
+                            const bDateTime = new Date(`${b.scheduledDate} ${b.scheduledTime}`);
+                            return bDateTime.getTime() - aDateTime.getTime();
+                          }).map((visit: any) => (
                             <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
                               <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
                               <td className="px-4 py-3 text-sm whitespace-nowrap">
