@@ -300,7 +300,7 @@ export default function LabTests() {
                               <Fragment key={status}>
                                 {/* Status Section Header - Collapsible */}
                                 <tr>
-                                  <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleStatusSection(status)}>
+                                  <td colSpan={10} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleStatusSection(status)}>
                                     <div className="flex items-center gap-2 justify-between">
                                       <div className="flex items-center gap-2">
                                         {isExpanded ? (
