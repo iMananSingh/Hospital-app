@@ -121,7 +121,7 @@ export default function LabTests() {
     ? pathologyOrders.filter((orderData: any) => orderData?.order?.orderedDate?.split('T')[0] === today).length 
     : 0;
 
-  // Get unique statuses from pathology orders
+  // Get unique statuses from pathology orders in the specified order
   const availableStatuses = useMemo(() => {
     const statuses = new Set<string>();
     pathologyOrders.forEach((orderData: any) => {
@@ -129,7 +129,25 @@ export default function LabTests() {
         statuses.add(orderData.order.status);
       }
     });
-    return Array.from(statuses).sort();
+    
+    // Define the desired order
+    const statusOrder = ["ordered", "paid", "collected", "processing", "completed", "cancelled"];
+    
+    // Sort statuses based on the desired order
+    const sortedStatuses = Array.from(statuses).sort((a, b) => {
+      const indexA = statusOrder.indexOf(a);
+      const indexB = statusOrder.indexOf(b);
+      // If both are in the defined order, sort by that order
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      // If only a is in the order, it comes first
+      if (indexA !== -1) return -1;
+      // If only b is in the order, it comes first
+      if (indexB !== -1) return 1;
+      // Otherwise, sort alphabetically
+      return a.localeCompare(b);
+    });
+    
+    return sortedStatuses;
   }, [pathologyOrders]);
 
   if (isLoading) {
