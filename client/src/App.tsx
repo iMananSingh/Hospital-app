@@ -48,7 +48,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return (
     <div className="flex h-screen overflow-hidden bg-muted/30">
       <Sidebar />
-      <main className="flex-1 overflow-auto pt-[24px] pb-[24px]">
+      <main className="flex-1 overflow-auto pt-[0px] pb-[0px]">
         <Component />
       </main>
     </div>
