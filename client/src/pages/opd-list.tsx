@@ -267,7 +267,7 @@ export default function OpdList() {
                         <Fragment key={doctorId}>
                           {/* Doctor Section Header - Collapsible */}
                           <tr className={doctorIndex > 0 ? "border-t-2" : ""}>
-                            <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleDoctorSection(doctorId)}>
+                            <td colSpan={10} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleDoctorSection(doctorId)}>
                               <div className="flex items-center gap-2 justify-between">
                                 <div className="flex items-center gap-2">
                                   {expandedDoctors.has(doctorId) ? (
