@@ -119,7 +119,7 @@ export default function LabTests() {
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
     const doctor = doctors.find(d => d.id === doctorId);
-    return doctor ? `Dr. ${doctor.name}` : "Unknown Doctor";
+    return doctor ? doctor.name : "Unknown Doctor";
   };
 
   const formatDate = (dateString: string) => {
