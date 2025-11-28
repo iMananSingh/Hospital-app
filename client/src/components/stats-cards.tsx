@@ -22,6 +22,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Users,
       bgColor: "bg-blue-500/10",
       iconColor: "text-blue-500",
+      valueColor: "text-blue-500",
       changeColor: "text-blue-500",
       testId: "stat-opd",
       clickable: true,
@@ -35,6 +36,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: BedSingle,
       bgColor: "bg-green-500/10",
       iconColor: "text-green-500",
+      valueColor: "text-green-500",
       changeColor: "text-green-500",
       testId: "stat-inpatients",
       clickable: true,
@@ -48,6 +50,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Microscope,
       bgColor: "bg-pink-500/10",
       iconColor: "text-pink-500",
+      valueColor: "text-pink-500",
       changeColor: "text-pink-500",
       testId: "stat-labs",
       clickable: true,
@@ -61,6 +64,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: ClipboardPlus,
       bgColor: "bg-purple-500/10",
       iconColor: "text-purple-500",
+      valueColor: "text-purple-500",
       changeColor: "text-purple-500",
       testId: "stat-diagnostics",
       clickable: true,
@@ -93,7 +97,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
                     {stat.title}
                   </p>
                   <p
-                    className="text-2xl font-bold text-text-dark mt-1"
+                    className={`text-2xl font-bold mt-1 ${(stat as any).valueColor}`}
                     data-testid={`${stat.testId}-value`}
                   >
                     {stat.value}
