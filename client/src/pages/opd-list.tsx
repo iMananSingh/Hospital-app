@@ -350,7 +350,7 @@ export default function OpdList() {
                                 <th className="py-3 text-left text-sm font-semibold w-12 pl-[8px] pr-[8px]" style={{ color: '#6C757F' }}>Time</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Name</th>
-                                <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
+                                <th className="pl-4 pr-0 py-3 text-sm font-semibold w-20 text-center" style={{ color: '#6C757F' }}>Sex/Age</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                 <th className="py-3 text-sm font-semibold w-24 text-center pl-[0px] pr-[0px]" style={{ color: '#6C757F' }}>Status</th>
                                 <th className="py-3 text-right text-sm font-semibold w-20 pl-[24px] pr-[24px]" style={{ color: '#6C757F' }}>Fees</th>
