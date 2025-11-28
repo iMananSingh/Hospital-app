@@ -311,7 +311,7 @@ export default function OpdList() {
                                 return bDateTime.getTime() - aDateTime.getTime();
                               }).map((visit: any) => (
                                 <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                                  <td className="py-3 text-sm whitespace-nowrap text-center pl-4 pr-2">{rowNumber++}</td>
+                                  <td className="py-3 text-sm whitespace-nowrap pl-4 pr-2 text-left">{rowNumber++}</td>
                                   <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-left">
                                     {visit.scheduledDate ? (() => {
                                       const d = new Date(visit.scheduledDate);
