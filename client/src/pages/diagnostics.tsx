@@ -390,7 +390,7 @@ export default function Diagnostics() {
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {getDoctorName(service.doctorId)}
                                         </td>
-                                        <td className="py-3 text-sm text-right whitespace-nowrap pl-[16px] pr-[16px]">
+                                        <td className="py-3 text-sm whitespace-nowrap pl-[16px] pr-[16px] text-center">
                                           ₹{service.price}
                                         </td>
                                         <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
