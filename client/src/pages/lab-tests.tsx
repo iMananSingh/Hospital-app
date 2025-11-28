@@ -323,16 +323,16 @@ export default function LabTests() {
                                   <>
                                     {/* Table Header for this Status Section */}
                                     <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Date</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
-                                      <th className="px-4 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
-                                      <th className="px-4 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
-                                      <th className="px-4 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Date</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
+                                      <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
+                                      <th className="pl-4 pr-0 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                                     </tr>
                                     {/* Order Rows */}
                                     {(orders as any[]).map((orderData: any) => (
