@@ -395,36 +395,38 @@ export default function OpdList() {
                                   <td className="py-3 text-sm text-right whitespace-nowrap pl-[24px] pr-[24px]">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                                   </td>
-                                  <td className="py-3 text-center whitespace-nowrap flex gap-2 items-center justify-center pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
-                                    <Link href={`/patients/${visit.patientId}`}>
-                                      <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
-                                        <Eye className="w-4 h-4" />
-                                      </Button>
-                                    </Link>
-                                    <Select 
-                                      value={visit.status} 
-                                      onValueChange={(newStatus) => updateStatusMutation.mutate({ visitId: visit.id, status: newStatus })}
-                                      disabled={updateStatusMutation.isPending}
-                                    >
-                                      <SelectTrigger className="w-32" data-testid={`status-select-${visit.id}`}>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {(() => {
-                                          const enabledStatuses = getEnabledStatuses(visit.status);
-                                          return (
-                                            <>
-                                              <SelectItem value="scheduled" disabled={visit.status !== "scheduled"}>Scheduled</SelectItem>
-                                              <SelectItem value="paid" disabled>Paid</SelectItem>
-                                              <SelectItem value="completed" disabled={!enabledStatuses.has("completed")}>Completed</SelectItem>
-                                              <SelectItem value="referred" disabled={!enabledStatuses.has("referred")}>Referred</SelectItem>
-                                              <SelectItem value="admitted" disabled={!enabledStatuses.has("admitted")}>Admitted</SelectItem>
-                                              <SelectItem value="cancelled" disabled={!enabledStatuses.has("cancelled")}>Cancelled</SelectItem>
-                                            </>
-                                          );
-                                        })()}
-                                      </SelectContent>
-                                    </Select>
+                                  <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
+                                    <div className="flex gap-2 items-center justify-center">
+                                      <Link href={`/patients/${visit.patientId}`}>
+                                        <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                      </Link>
+                                      <Select 
+                                        value={visit.status} 
+                                        onValueChange={(newStatus) => updateStatusMutation.mutate({ visitId: visit.id, status: newStatus })}
+                                        disabled={updateStatusMutation.isPending}
+                                      >
+                                        <SelectTrigger className="w-32" data-testid={`status-select-${visit.id}`}>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {(() => {
+                                            const enabledStatuses = getEnabledStatuses(visit.status);
+                                            return (
+                                              <>
+                                                <SelectItem value="scheduled" disabled={visit.status !== "scheduled"}>Scheduled</SelectItem>
+                                                <SelectItem value="paid" disabled>Paid</SelectItem>
+                                                <SelectItem value="completed" disabled={!enabledStatuses.has("completed")}>Completed</SelectItem>
+                                                <SelectItem value="referred" disabled={!enabledStatuses.has("referred")}>Referred</SelectItem>
+                                                <SelectItem value="admitted" disabled={!enabledStatuses.has("admitted")}>Admitted</SelectItem>
+                                                <SelectItem value="cancelled" disabled={!enabledStatuses.has("cancelled")}>Cancelled</SelectItem>
+                                              </>
+                                            );
+                                          })()}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
