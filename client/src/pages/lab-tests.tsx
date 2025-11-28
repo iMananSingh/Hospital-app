@@ -354,7 +354,7 @@ export default function LabTests() {
                                           <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
                                         </td>
-                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap text-center">
                                           {orderData.patient?.gender ? orderData.patient.gender.charAt(0).toUpperCase() : '-'}/{orderData.patient?.age || '-'}
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
