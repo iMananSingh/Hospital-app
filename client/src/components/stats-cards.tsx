@@ -22,6 +22,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Users,
       bgColor: "bg-blue-500/10",
       iconColor: "text-blue-500",
+      changeColor: "text-blue-500",
       testId: "stat-opd",
       clickable: true,
       linkTo: "/opd-list",
@@ -34,6 +35,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: BedSingle,
       bgColor: "bg-green-500/10",
       iconColor: "text-green-500",
+      changeColor: "text-green-500",
       testId: "stat-inpatients",
       clickable: true,
       linkTo: "/admissions",
@@ -46,6 +48,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Microscope,
       bgColor: "bg-pink-500/10",
       iconColor: "text-pink-500",
+      changeColor: "text-pink-500",
       testId: "stat-labs",
       clickable: true,
       linkTo: "/lab-tests",
@@ -58,6 +61,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: ClipboardPlus,
       bgColor: "bg-purple-500/10",
       iconColor: "text-purple-500",
+      changeColor: "text-purple-500",
       testId: "stat-diagnostics",
       clickable: true,
       linkTo: "/diagnostics",
@@ -95,11 +99,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
                     {stat.value}
                   </p>
                   <p
-                    className={`text-sm font-medium mt-2 ${
-                      stat.changeType === "positive"
-                        ? "text-healthcare-green"
-                        : "text-medical-blue"
-                    }`}
+                    className={`text-sm font-medium mt-2 ${(stat as any).changeColor}`}
                   >
                     {stat.change}
                   </p>
