@@ -3051,9 +3051,6 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         return res.status(400).json({ error: "Status is required" });
       }
 
-      // Get OPD visit data before status update for audit log
-      const opdVisitToUpdate = await storage.getOpdVisitById(id); // Assuming getOpdVisitById exists
-
       const updated = await storage.updateOpdVisitStatus(
         id,
         status,
@@ -3065,19 +3062,17 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       }
 
       // Create audit log
-      if (opdVisitToUpdate) {
-        await storage.createAuditLog({
-          userId: req.user.id,
-          username: req.user.username,
-          action: "update_status",
-          tableName: "patient_visits", // Assuming patient_visits table for OPD
-          recordId: id,
-          oldValues: { status: opdVisitToUpdate.status },
-          newValues: { status: status },
-          ipAddress: req.ip,
-          userAgent: req.get("user-agent"),
-        });
-      }
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "update_status",
+        tableName: "patient_visits",
+        recordId: id,
+        oldValues: {},
+        newValues: { status: status },
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
 
       res.json(updated);
     } catch (error) {
