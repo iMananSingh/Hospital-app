@@ -354,7 +354,7 @@ export default function OpdList() {
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                 <th className="py-3 text-sm font-semibold w-24 text-center pl-[0px] pr-[0px]" style={{ color: '#6C757F' }}>Status</th>
                                 <th className="py-3 text-right text-sm font-semibold w-20 pl-[24px] pr-[24px]" style={{ color: '#6C757F' }}>Fees</th>
-                                <th className="py-3 text-center text-sm font-semibold pl-[16px] pr-[16px] border-l" style={{ color: '#6C757F', width: 'auto', borderLeftColor: '#D6E7FE' }}>Actions</th>
+                                <th className="py-3 text-center text-sm font-semibold pl-[16px] pr-[16px] border-l-2" style={{ color: '#6C757F', width: 'auto', borderLeftColor: '#D6E7FE' }}>Actions</th>
                               </tr>
                               {/* Patient Rows */}
                               {(services as any[]).sort((a, b) => {
@@ -395,7 +395,7 @@ export default function OpdList() {
                                   <td className="py-3 text-sm text-right whitespace-nowrap pl-[24px] pr-[24px]">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                                   </td>
-                                  <td className="py-3 text-center whitespace-nowrap flex gap-2 items-center justify-center pl-[16px] pr-[16px] border-l" style={{ borderLeftColor: '#D6E7FE' }}>
+                                  <td className="py-3 text-center whitespace-nowrap flex gap-2 items-center justify-center pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
                                     <Link href={`/patients/${visit.patientId}`}>
                                       <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
                                         <Eye className="w-4 h-4" />
