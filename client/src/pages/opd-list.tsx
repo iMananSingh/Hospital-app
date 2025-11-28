@@ -312,7 +312,7 @@ export default function OpdList() {
                               }).map((visit: any) => (
                                 <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
                                   <td className="py-3 text-sm whitespace-nowrap text-center pl-[0px] pr-[0px]">{rowNumber++}</td>
-                                  <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-center">
+                                  <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-left">
                                     {visit.scheduledDate ? (() => {
                                       const d = new Date(visit.scheduledDate);
                                       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
