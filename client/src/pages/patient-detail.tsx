@@ -1907,7 +1907,7 @@ export default function PatientDetail() {
       case "in-progress":
         return "bg-blue-100 text-blue-800";
       case "paid":
-        return "bg-green-100 text-green-800";
+        return "bg-blue-50 text-blue-800";
       case "scheduled":
         return "bg-orange-50 text-orange-800";
       case "referred":
