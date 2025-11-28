@@ -380,6 +380,7 @@ export default function OpdList() {
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="paid" disabled>Paid</SelectItem>
                                         <SelectItem value="completed">Completed</SelectItem>
                                         <SelectItem value="referred">Referred</SelectItem>
                                         <SelectItem value="cancelled">Cancelled</SelectItem>
