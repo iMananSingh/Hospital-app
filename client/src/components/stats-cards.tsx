@@ -22,6 +22,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Users,
       bgColor: "bg-blue-500/10",
       iconColor: "text-blue-500",
+      titleColor: "text-blue-500",
       valueColor: "text-blue-500",
       changeColor: "text-blue-500",
       testId: "stat-opd",
@@ -36,6 +37,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: BedSingle,
       bgColor: "bg-green-500/10",
       iconColor: "text-green-500",
+      titleColor: "text-green-500",
       valueColor: "text-green-500",
       changeColor: "text-green-500",
       testId: "stat-inpatients",
@@ -50,6 +52,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: Microscope,
       bgColor: "bg-pink-500/10",
       iconColor: "text-pink-500",
+      titleColor: "text-pink-500",
       valueColor: "text-pink-500",
       changeColor: "text-pink-500",
       testId: "stat-labs",
@@ -64,6 +67,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       icon: ClipboardPlus,
       bgColor: "bg-purple-500/10",
       iconColor: "text-purple-500",
+      titleColor: "text-purple-500",
       valueColor: "text-purple-500",
       changeColor: "text-purple-500",
       testId: "stat-diagnostics",
@@ -93,7 +97,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-text-muted text-sm font-medium">
+                  <p className={`text-sm font-medium ${(stat as any).titleColor}`}>
                     {stat.title}
                   </p>
                   <p
