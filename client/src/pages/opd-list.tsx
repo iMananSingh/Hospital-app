@@ -293,7 +293,7 @@ export default function OpdList() {
                             <>
                               {/* Table Header for this Doctor Section */}
                               <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                <th className="pl-4 pr-8 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
+                                <th className="pl-4 pr-2 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
                                 <th className="py-3 text-left text-sm font-semibold w-24 pl-[0px] pr-[0px]" style={{ color: '#6C757F' }}>Date</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
@@ -311,7 +311,7 @@ export default function OpdList() {
                                 return bDateTime.getTime() - aDateTime.getTime();
                               }).map((visit: any) => (
                                 <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                                  <td className="py-3 text-sm whitespace-nowrap text-center pl-4 pr-8">{rowNumber++}</td>
+                                  <td className="py-3 text-sm whitespace-nowrap text-center pl-4 pr-2">{rowNumber++}</td>
                                   <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-left">
                                     {visit.scheduledDate ? (() => {
                                       const d = new Date(visit.scheduledDate);
