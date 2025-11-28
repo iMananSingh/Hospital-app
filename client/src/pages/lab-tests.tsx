@@ -363,7 +363,7 @@ export default function LabTests() {
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {getDoctorName(orderData.order.doctorId)}
                                         </td>
-                                        <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
+                                        <td className="py-3 text-sm text-right whitespace-nowrap pl-[24px] pr-[24px]">
                                           ₹{orderData.order.totalPrice}
                                         </td>
                                         <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px]">
