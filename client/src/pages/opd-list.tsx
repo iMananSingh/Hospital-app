@@ -165,13 +165,24 @@ export default function OpdList() {
     return doctor?.specialization || "Unknown";
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "scheduled": return "default";
-      case "in-progress": return "secondary";
-      case "completed": return "default";
-      case "cancelled": return "destructive";
-      default: return "outline";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "in-progress":
+        return "bg-blue-100 text-blue-800";
+      case "paid":
+        return "bg-blue-50 text-blue-800";
+      case "scheduled":
+        return "bg-orange-50 text-orange-800";
+      case "referred":
+        return "bg-purple-100 text-purple-800";
+      case "admitted":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -374,8 +385,8 @@ export default function OpdList() {
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     <Badge 
-                                      className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                                      variant={getStatusBadgeVariant(visit.status)}
+                                      className={`${getStatusColor(visit.status)}`}
+                                      variant="secondary"
                                       data-testid={`status-${visit.id}`}
                                     >
                                       {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
