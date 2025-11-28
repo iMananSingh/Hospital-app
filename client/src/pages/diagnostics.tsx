@@ -393,7 +393,7 @@ export default function Diagnostics() {
                                         <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{service.price}
                                         </td>
-                                        <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
+                                        <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px]">
                                           <Link href={`/patients/${service.patientId}`}>
                                             <Button variant="ghost" size="icon" data-testid={`view-patient-${service.id}`}>
                                               <Eye className="w-4 h-4" />
