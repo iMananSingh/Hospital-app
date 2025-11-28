@@ -319,7 +319,7 @@ export default function OpdList() {
                                       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
                                     })() : 'N/A'}
                                   </td>
-                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
+                                  <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px]">{visit.scheduledTime || 'N/A'}</td>
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     <div className="font-medium">{visit.visitId || 'N/A'}</div>
                                   </td>
