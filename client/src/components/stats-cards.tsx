@@ -15,7 +15,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
   console.log("[StatsCards] Received stats:", stats);
   const statsData = [
     {
-      title: "OPD Patients",
+      title: "OPD Appointments",
       value: stats.opdPatients.toString(),
       change: "Today",
       changeType: "neutral" as const,
