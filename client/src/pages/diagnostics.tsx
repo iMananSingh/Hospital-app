@@ -369,7 +369,7 @@ export default function Diagnostics() {
                                     const patient = patients.find(p => p.id === service.patientId);
                                     return (
                                       <tr key={service.id} className="border-b hover:bg-muted/50 transition-colors">
-                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-center">{rowNumber++}</td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {formatDate(service.scheduledDate)}
                                         </td>
