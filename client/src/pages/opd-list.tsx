@@ -293,7 +293,7 @@ export default function OpdList() {
                             <>
                               {/* Table Header for this Doctor Section */}
                               <tr className="border-b" style={{ backgroundColor: '#f7f7f7' }}>
-                                <th className="pl-8 pr-2 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
+                                <th className="py-3 text-sm font-semibold text-left pl-[16px] pr-[16px]" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
                                 <th className="py-3 text-left text-sm font-semibold w-24 pl-[0px] pr-[0px]" style={{ color: '#6C757F' }}>Date</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
