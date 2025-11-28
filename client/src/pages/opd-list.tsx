@@ -392,7 +392,7 @@ export default function OpdList() {
                                       {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                                     </Badge>
                                   </td>
-                                  <td className="py-3 text-sm text-right whitespace-nowrap pl-[0px] pr-[0px]">
+                                  <td className="py-3 text-sm text-right whitespace-nowrap pl-[24px] pr-[24px]">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                                   </td>
                                   <td className="py-3 text-center whitespace-nowrap flex gap-2 items-center justify-center pl-[16px] pr-[16px]">
