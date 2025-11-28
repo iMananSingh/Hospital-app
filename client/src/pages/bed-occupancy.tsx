@@ -182,12 +182,8 @@ export default function BedOccupancyPage() {
                           {room.isOccupied && (
                             <TooltipContent>
                               <div className="p-2">
-                                <p className="font-medium">Room {room.roomNumber}</p>
-                                {room.floor && <p className="text-sm">Floor: {room.floor}</p>}
-                                {room.building && <p className="text-sm">Building: {room.building}</p>}
-                                <p className="text-sm">Capacity: {room.capacity}</p>
                                 {room.isOccupied && room.occupyingPatient && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <div>
                                     <p className="text-sm font-medium">
                                       {room.occupyingPatient.name}
                                     </p>
