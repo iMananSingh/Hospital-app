@@ -44,6 +44,19 @@ export default function OpdList() {
     setExpandedDoctors(newExpanded);
   };
 
+  // Helper function to determine which statuses are enabled for current status
+  const getEnabledStatuses = (currentStatus: string): Set<string> => {
+    const workflows: Record<string, Set<string>> = {
+      scheduled: new Set(["cancelled"]), // paid is automatic
+      paid: new Set(["completed", "cancelled"]),
+      completed: new Set(["referred", "admitted"]),
+      referred: new Set([]),
+      cancelled: new Set([]),
+      admitted: new Set([]),
+    };
+    return workflows[currentStatus] || new Set([]);
+  };
+
   // Mutation for updating OPD visit status
   const updateStatusMutation = useMutation({
     mutationFn: async ({ visitId, status }: { visitId: string; status: string }) => {
@@ -379,11 +392,19 @@ export default function OpdList() {
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="paid" disabled>Paid</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="referred">Referred</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                        {(() => {
+                                          const enabledStatuses = getEnabledStatuses(visit.status);
+                                          return (
+                                            <>
+                                              <SelectItem value="scheduled" disabled={visit.status !== "scheduled"}>Scheduled</SelectItem>
+                                              <SelectItem value="paid" disabled>Paid</SelectItem>
+                                              <SelectItem value="completed" disabled={!enabledStatuses.has("completed")}>Completed</SelectItem>
+                                              <SelectItem value="referred" disabled={!enabledStatuses.has("referred")}>Referred</SelectItem>
+                                              <SelectItem value="admitted" disabled={!enabledStatuses.has("admitted")}>Admitted</SelectItem>
+                                              <SelectItem value="cancelled" disabled={!enabledStatuses.has("cancelled")}>Cancelled</SelectItem>
+                                            </>
+                                          );
+                                        })()}
                                       </SelectContent>
                                     </Select>
                                     <Link href={`/patients/${visit.patientId}`}>

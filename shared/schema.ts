@@ -92,7 +92,7 @@ export const patientVisits = sqliteTable("patient_visits", {
   prescription: text("prescription"),
   consultationFee: real("consultation_fee").default(0), // fee for this visit
   receiptNumber: text("receipt_number"), // receipt number for OPD visits
-  status: text("status").notNull().default("scheduled"), // scheduled, active, completed, cancelled
+  status: text("status").notNull().default("scheduled"), // scheduled, paid, completed, referred, cancelled, admitted
   admissionDate: text("admission_date"), // for inpatients
   dischargeDate: text("discharge_date"), // for inpatients
   roomNumber: text("room_number"), // for inpatients
