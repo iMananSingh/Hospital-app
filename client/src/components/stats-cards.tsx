@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, BedSingle, Microscope, Stethoscope } from "lucide-react";
+import { Users, BedSingle, Microscope, ClipboardPlus } from "lucide-react";
 import { Link } from "wouter";
 
 interface StatsCardsProps {
@@ -55,7 +55,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       value: stats.diagnostics.toString(),
       change: "Completed",
       changeType: "positive" as const,
-      icon: Stethoscope,
+      icon: ClipboardPlus,
       bgColor: "bg-purple-500/10",
       iconColor: "text-purple-500",
       testId: "stat-diagnostics",
