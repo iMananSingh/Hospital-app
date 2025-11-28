@@ -300,7 +300,7 @@ export default function LabTests() {
                               <Fragment key={status}>
                                 {/* Status Section Header - Collapsible */}
                                 <tr>
-                                  <td colSpan={10} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleStatusSection(status)}>
+                                  <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleStatusSection(status)}>
                                     <div className="flex items-center gap-2 justify-between">
                                       <div className="flex items-center gap-2">
                                         {isExpanded ? (
@@ -330,7 +330,6 @@ export default function LabTests() {
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
-                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
                                       <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
                                       <th className="pl-4 pr-0 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
                                     </tr>
@@ -359,14 +358,6 @@ export default function LabTests() {
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {getDoctorName(orderData.order.doctorId)}
-                                        </td>
-                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
-                                          <Badge 
-                                            className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
-                                            data-testid={`status-${orderData.order.id}`}
-                                          >
-                                            {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
-                                          </Badge>
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{orderData.order.totalPrice}
