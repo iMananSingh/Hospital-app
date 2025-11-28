@@ -261,7 +261,6 @@ export default function OpdList() {
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="scheduled">Scheduled</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="referred">Referred</SelectItem>
                       <SelectItem value="admitted">Admitted</SelectItem>
