@@ -1909,7 +1909,7 @@ export default function PatientDetail() {
       case "paid":
         return "bg-green-100 text-green-800";
       case "scheduled":
-        return "bg-amber-100 text-amber-800";
+        return "bg-orange-50 text-orange-800";
       case "referred":
         return "bg-purple-100 text-purple-800";
       case "admitted":
