@@ -311,27 +311,27 @@ export default function OpdList() {
                                 return bDateTime.getTime() - aDateTime.getTime();
                               }).map((visit: any) => (
                                 <tr key={visit.id} className="border-b hover:bg-muted/50 transition-colors">
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     {visit.scheduledDate ? (() => {
                                       const d = new Date(visit.scheduledDate);
                                       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                                       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
                                     })() : 'N/A'}
                                   </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.scheduledTime || 'N/A'}</td>
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     <div className="font-medium">{visit.visitId || 'N/A'}</div>
                                   </td>
-                                  <td className="px-4 py-3 text-sm">
+                                  <td className="pl-4 pr-0 py-3 text-sm">
                                     <div className="font-medium">{visit.patientName || 'Unknown'}</div>
                                     <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
                                   </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
                                   </td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
-                                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                     <Badge 
                                       className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
                                       variant={getStatusBadgeVariant(visit.status)}
@@ -340,10 +340,10 @@ export default function OpdList() {
                                       {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                                     </Badge>
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                                   </td>
-                                  <td className="px-4 py-3 text-center whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
                                     <Link href={`/patients/${visit.patientId}`}>
                                       <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
                                         <Eye className="w-4 h-4" />

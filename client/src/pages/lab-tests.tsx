@@ -337,30 +337,30 @@ export default function LabTests() {
                                     {/* Order Rows */}
                                     {(orders as any[]).map((orderData: any) => (
                                       <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {formatDate(orderData.order.orderedDate)}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {orderData.order.orderedDate ? (() => {
                                             const time = orderData.order.orderedDate.split('T')[1]?.substring(0, 5) || 'N/A';
                                             return time;
                                           })() : 'N/A'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm">
+                                        <td className="pl-4 pr-0 py-3 text-sm">
                                           <div className="font-medium">{orderData.order.orderId}</div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm">
+                                        <td className="pl-4 pr-0 py-3 text-sm">
                                           <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {orderData.patient?.phone || 'N/A'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {getDoctorName(orderData.order.doctorId)}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           <Badge 
                                             className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent text-primary-foreground hover:bg-primary/80 bg-[#0a8af6]"
                                             data-testid={`status-${orderData.order.id}`}
@@ -368,10 +368,10 @@ export default function LabTests() {
                                             {orderData.order.status.charAt(0).toUpperCase() + orderData.order.status.slice(1)}
                                           </Badge>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{orderData.order.totalPrice}
                                         </td>
-                                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
                                           <Link href={`/pathology`}>
                                             <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
                                               <Eye className="w-4 h-4" />

@@ -368,28 +368,28 @@ export default function Diagnostics() {
                                     const patient = patients.find(p => p.id === service.patientId);
                                     return (
                                       <tr key={service.id} className="border-b hover:bg-muted/50 transition-colors">
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {formatDate(service.scheduledDate)}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
-                                        <td className="px-4 py-3 text-sm">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
+                                        <td className="pl-4 pr-0 py-3 text-sm">
                                           <div className="font-medium">{patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {patient?.gender ? patient.gender.charAt(0).toUpperCase() : '-'}/{patient?.age || '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {patient?.phone || 'N/A'}
                                         </td>
-                                        <td className="px-4 py-3 text-sm whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {getDoctorName(service.doctorId)}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{service.price}
                                         </td>
-                                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                                        <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
                                           <Link href={`/patients/${service.patientId}`}>
                                             <Button variant="ghost" size="icon" data-testid={`view-patient-${service.id}`}>
                                               <Eye className="w-4 h-4" />
