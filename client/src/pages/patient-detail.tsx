@@ -1716,6 +1716,8 @@ export default function PatientDetail() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
       queryClient.invalidateQueries({ queryKey: ["/api/patient-payments"] });
+      // Invalidate OPD visits to update OPD list page immediately
+      queryClient.invalidateQueries({ queryKey: ["/api/opd-visits"] });
       // Invalidate doctor earnings queries to update salary tab immediately
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
       queryClient.invalidateQueries({
