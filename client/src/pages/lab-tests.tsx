@@ -366,7 +366,7 @@ export default function LabTests() {
                                         <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{orderData.order.totalPrice}
                                         </td>
-                                        <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
+                                        <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px]">
                                           <Link href={`/pathology`}>
                                             <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
                                               <Eye className="w-4 h-4" />
