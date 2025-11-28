@@ -332,7 +332,7 @@ export default function LabTests() {
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
                                       <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
-                                      <th className="pl-4 pr-0 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                                      <th className="py-3 text-center text-sm font-semibold w-12 pl-[16px] pr-[16px]" style={{ color: '#6C757F' }}>View</th>
                                     </tr>
                                     {/* Order Rows */}
                                     {(orders as any[]).map((orderData: any) => (
