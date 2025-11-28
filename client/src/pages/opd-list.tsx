@@ -174,7 +174,7 @@ export default function OpdList() {
       case "paid":
         return "bg-blue-50 text-blue-800";
       case "scheduled":
-        return "bg-orange-50 text-orange-800";
+        return "bg-[#FFEDD5] text-orange-800";
       case "referred":
         return "bg-purple-100 text-purple-800";
       case "admitted":
