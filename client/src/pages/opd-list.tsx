@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { PatientService, Patient, Doctor } from "@shared/schema";
 
 export default function OpdList() {
@@ -30,6 +32,7 @@ export default function OpdList() {
   const [selectedFromDate, setSelectedFromDate] = useState<string>("");
   const [selectedToDate, setSelectedToDate] = useState<string>("");
   const [expandedDoctors, setExpandedDoctors] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
 
   const toggleDoctorSection = (doctorId: string) => {
     const newExpanded = new Set(expandedDoctors);
@@ -40,6 +43,29 @@ export default function OpdList() {
     }
     setExpandedDoctors(newExpanded);
   };
+
+  // Mutation for updating OPD visit status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ visitId, status }: { visitId: string; status: string }) => {
+      const response = await fetch(`/api/opd-visits/${visitId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) throw new Error("Failed to update status");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ description: "Status updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/opd-visits"] });
+    },
+    onError: () => {
+      toast({ description: "Failed to update status", variant: "destructive" });
+    },
+  });
 
   // Fetch server's today date for consistent timezone handling
   const { data: todayData } = useQuery<{ today: string }>({
@@ -302,7 +328,7 @@ export default function OpdList() {
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                 <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Status</th>
                                 <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Fees</th>
-                                <th className="pl-4 pr-0 py-3 text-center text-sm font-semibold w-12" style={{ color: '#6C757F' }}>View</th>
+                                <th className="pl-4 pr-0 py-3 text-center text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>Actions</th>
                               </tr>
                               {/* Patient Rows */}
                               {(services as any[]).sort((a, b) => {
@@ -343,7 +369,23 @@ export default function OpdList() {
                                   <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
                                   </td>
-                                  <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-center whitespace-nowrap flex gap-2 items-center justify-center">
+                                    <Select 
+                                      value={visit.status} 
+                                      onValueChange={(newStatus) => updateStatusMutation.mutate({ visitId: visit.id, status: newStatus })}
+                                      disabled={updateStatusMutation.isPending}
+                                    >
+                                      <SelectTrigger className="w-32" data-testid={`status-select-${visit.id}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="paid">Paid</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="referred">Referred</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                     <Link href={`/patients/${visit.patientId}`}>
                                       <Button variant="ghost" size="icon" data-testid={`view-patient-${visit.id}`}>
                                         <Eye className="w-4 h-4" />
