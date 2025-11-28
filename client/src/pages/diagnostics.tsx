@@ -330,7 +330,7 @@ export default function Diagnostics() {
                             <Fragment key={serviceName}>
                               {/* Service Section Header - Collapsible */}
                               <tr>
-                                <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleServiceSection(serviceName)}>
+                                <td colSpan={10} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors" onClick={() => toggleServiceSection(serviceName)}>
                                   <div className="flex items-center gap-2 justify-between">
                                     <div className="flex items-center gap-2">
                                       {expandedServices.has(serviceName) ? (
@@ -356,6 +356,7 @@ export default function Diagnostics() {
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold" style={{ color: '#6C757F', width: 'auto' }}>S.No</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Date</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
+                                    <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Order ID</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
@@ -373,6 +374,9 @@ export default function Diagnostics() {
                                           {formatDate(service.scheduledDate)}
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
+                                          <div className="font-medium">{(service as any).orderId || 'N/A'}</div>
+                                        </td>
                                         <td className="pl-4 pr-0 py-3 text-sm">
                                           <div className="font-medium">{patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{patient?.patientId || 'N/A'}</div>
