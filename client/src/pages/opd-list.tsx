@@ -379,7 +379,7 @@ export default function OpdList() {
                                     <div className="font-medium">{visit.patientName || 'Unknown'}</div>
                                     <div className="text-xs text-muted-foreground">{visit.patientPatientId || 'N/A'}</div>
                                   </td>
-                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
+                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap text-center">
                                     {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
                                   </td>
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
