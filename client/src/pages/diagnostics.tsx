@@ -374,7 +374,7 @@ export default function Diagnostics() {
                                           {formatDate(service.scheduledDate)}
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{formatTime(service.scheduledTime)}</td>
-                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
+                                        <td className="py-3 text-sm whitespace-nowrap pl-[16px] pr-[16px]">
                                           <div className="font-medium">{(service as any).orderId || 'N/A'}</div>
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm">
