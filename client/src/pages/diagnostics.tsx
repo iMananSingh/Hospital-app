@@ -362,7 +362,7 @@ export default function Diagnostics() {
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                     <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Doctor</th>
                                     <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Fee</th>
-                                    <th className="py-3 text-center text-sm font-semibold w-12 pl-[16px] pr-[16px]" style={{ color: '#6C757F' }}>View</th>
+                                    <th className="py-3 text-center text-sm font-semibold w-12 pl-[16px] pr-[16px] border-l-2" style={{ color: '#6C757F', borderLeftColor: '#D6E7FE' }}>View</th>
                                   </tr>
                                   {/* Service Rows */}
                                   {(services as any[]).map((service: PatientService) => {
@@ -393,7 +393,7 @@ export default function Diagnostics() {
                                         <td className="pl-4 pr-0 py-3 text-sm text-right whitespace-nowrap">
                                           ₹{service.price}
                                         </td>
-                                        <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px]">
+                                        <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
                                           <Link href={`/patients/${service.patientId}`}>
                                             <Button variant="ghost" size="icon" data-testid={`view-patient-${service.id}`}>
                                               <Eye className="w-4 h-4" />
