@@ -109,7 +109,7 @@ export default function BedOccupancyPage() {
           {/* Room Types and Rooms */}
           <div>
             {bedOccupancy.map((roomType) => (
-              <Card key={roomType.id}>
+              <Card key={roomType.id} className="rounded-lg border bg-card text-card-foreground shadow-sm mt-[24px] mb-[24px]">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     {getCategoryIcon(roomType.category)}
