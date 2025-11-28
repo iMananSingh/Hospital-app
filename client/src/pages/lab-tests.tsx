@@ -300,7 +300,7 @@ export default function LabTests() {
                               <Fragment key={status}>
                                 {/* Status Section Header - Collapsible */}
                                 <tr>
-                                  <td colSpan={9} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleStatusSection(status)}>
+                                  <td colSpan={10} className="px-4 py-3 bg-blue-100 cursor-pointer hover:bg-blue-200 transition-colors w-full" onClick={() => toggleStatusSection(status)}>
                                     <div className="flex items-center gap-2 justify-between">
                                       <div className="flex items-center gap-2">
                                         {isExpanded ? (
@@ -328,6 +328,7 @@ export default function LabTests() {
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-16" style={{ color: '#6C757F' }}>Time</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-32" style={{ color: '#6C757F' }}>Order ID</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold flex-grow min-w-48" style={{ color: '#6C757F' }}>Patient Name</th>
+                                      <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-20" style={{ color: '#6C757F' }}>Sex/Age</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-32" style={{ color: '#6C757F' }}>Contact</th>
                                       <th className="pl-4 pr-0 py-3 text-left text-sm font-semibold w-40" style={{ color: '#6C757F' }}>Doctor</th>
                                       <th className="pl-4 pr-0 py-3 text-right text-sm font-semibold w-24" style={{ color: '#6C757F' }}>Amount</th>
@@ -352,6 +353,9 @@ export default function LabTests() {
                                         <td className="pl-4 pr-0 py-3 text-sm">
                                           <div className="font-medium">{orderData.patient?.name || 'Unknown'}</div>
                                           <div className="text-xs text-muted-foreground">{orderData.patient?.patientId || 'N/A'}</div>
+                                        </td>
+                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
+                                          {orderData.patient?.gender ? orderData.patient.gender.charAt(0).toUpperCase() : '-'}/{orderData.patient?.age || '-'}
                                         </td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {orderData.patient?.phone || 'N/A'}
