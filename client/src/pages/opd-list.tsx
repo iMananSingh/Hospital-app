@@ -383,7 +383,7 @@ export default function OpdList() {
                                     {visit.patientGender ? visit.patientGender.charAt(0).toUpperCase() : '-'}/{visit.patientAge || '-'}
                                   </td>
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
-                                  <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap text-center">
+                                  <td className="py-3 text-sm whitespace-nowrap text-center pl-[0px] pr-[0px]">
                                     <Badge 
                                       className={`${getStatusColor(visit.status)}`}
                                       variant="secondary"
