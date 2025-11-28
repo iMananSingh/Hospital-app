@@ -336,7 +336,7 @@ export default function LabTests() {
                                     {/* Order Rows */}
                                     {(orders as any[]).map((orderData: any) => (
                                       <tr key={orderData.order.id} className="border-b hover:bg-muted/50 transition-colors">
-                                        <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{rowNumber++}</td>
+                                        <td className="py-3 text-sm whitespace-nowrap pl-[0px] pr-[0px] text-center">{rowNumber++}</td>
                                         <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">
                                           {formatDate(orderData.order.orderedDate)}
                                         </td>
