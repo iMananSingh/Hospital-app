@@ -7688,6 +7688,11 @@ export class SqliteStorage implements IStorage {
       console.log(
         `Created earning ${earning.earningId} for visit ${visitId}: ₹${earnedAmount}`,
       );
+
+      // Update OPD visit status to "paid" after successful payment
+      const updatedVisit = await this.updateOpdVisitStatus(visit.id, "paid");
+      console.log(`Updated OPD visit ${visitId} status to "paid"`);
+
       return earning;
     } catch (error) {
       console.error("Error calculating doctor earning for visit:", error);
