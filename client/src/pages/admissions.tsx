@@ -207,7 +207,7 @@ export default function InPatientManagement() {
 
         {/* Admissions Table */}
         <Card>
-          <CardHeader style={{ backgroundColor: '#ffffff' }} className="rounded-t-lg pl-[48px] pr-[48px] pt-[0px] pb-[0px]">
+          <CardHeader style={{ backgroundColor: '#ffffff' }} className="rounded-t-lg pl-[48px] pr-[48px] pt-[24px] pb-[0px]">
             <CardTitle>
               Patient Admissions
             </CardTitle>
