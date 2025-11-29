@@ -219,7 +219,7 @@ export default function InPatientManagement() {
           <CardContent className="p-6">
             {/* Inner Card */}
             <Card>
-              <CardHeader style={{ backgroundColor: '#FDE4CE' }} className="rounded-t-lg pt-[16px] pb-[16px]">
+              <CardHeader style={{ backgroundColor: '#FDE4CE' }} className="rounded-t-lg pt-[16px] pb-[16px] pl-[16px] pr-[16px]">
                 {/* Search and Filters */}
                 <div className="flex gap-4">
                   <div className="relative flex-1">
