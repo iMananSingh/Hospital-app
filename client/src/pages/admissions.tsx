@@ -253,6 +253,22 @@ export default function InPatientManagement() {
                     </div>
                   ) : filteredAdmissions.length > 0 ? (
                     <>
+                      <div style={{ overflowY: 'scroll', overflowX: 'hidden', height: 0 }}>
+                        <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
+                          <TableHeader>
+                            <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission ID</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
+                              <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
+                              <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Admission Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Discharge Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
+                              <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '10%' }}>View</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                        </Table>
+                      </div>
                       <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
