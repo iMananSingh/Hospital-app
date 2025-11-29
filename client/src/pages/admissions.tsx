@@ -258,7 +258,7 @@ export default function InPatientManagement() {
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="w-40">Admission ID</TableHead>
                             <TableHead style={{ width: '272px' }}>Patient</TableHead>
-                            <TableHead style={{ width: '96px' }}>Sex/Age</TableHead>
+                            <TableHead className="text-center" style={{ width: '96px' }}>Sex/Age</TableHead>
                             <TableHead>Ward/Room</TableHead>
                             <TableHead>Admission Date</TableHead>
                             <TableHead>Discharge Date</TableHead>
