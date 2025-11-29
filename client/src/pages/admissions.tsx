@@ -260,7 +260,7 @@ export default function InPatientManagement() {
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '272px' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '96px' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '128px' }}>Ward/Room</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]">Admission Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '112px' }}>Admission Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]">Discharge Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]">Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]">View</TableHead>
