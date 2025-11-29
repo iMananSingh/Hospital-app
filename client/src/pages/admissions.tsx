@@ -247,8 +247,7 @@ export default function InPatientManagement() {
                     <TableHead>Admission ID</TableHead>
                     <TableHead>Patient</TableHead>
                     <TableHead>Sex/Age</TableHead>
-                    <TableHead>Ward/Room Type</TableHead>
-                    <TableHead>Room Number</TableHead>
+                    <TableHead>Ward/Room</TableHead>
                     <TableHead>Admission Date</TableHead>
                     <TableHead>Discharge Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -268,8 +267,12 @@ export default function InPatientManagement() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
-                      <TableCell>{admission.currentWardType || "Not specified"}</TableCell>
-                      <TableCell>{admission.currentRoomNumber || "TBA"}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                          <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-gray-400" />
