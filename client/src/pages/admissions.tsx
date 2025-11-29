@@ -256,7 +256,7 @@ export default function InPatientManagement() {
                       <Table className="border-collapse">
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead className="w-40 pt-[0px] pb-[0px]">Admission ID</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '160px' }}>Admission ID</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '272px' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '96px' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '128px' }}>Ward/Room</TableHead>
@@ -272,7 +272,7 @@ export default function InPatientManagement() {
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
                               <TableRow key={admission.id}>
-                                <TableCell className="font-medium w-40">
+                                <TableCell className="font-medium" style={{ width: '160px' }}>
                                   {admission.admissionId}
                                 </TableCell>
                                 <TableCell style={{ width: '272px' }}>
