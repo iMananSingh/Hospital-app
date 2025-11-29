@@ -129,7 +129,7 @@ export default function InPatientManagement() {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "admitted": return "default";
-      case "discharged": return "destructive";
+      case "discharged": return "default";
       case "transferred": return "outline";
       default: return "outline";
     }
@@ -138,7 +138,7 @@ export default function InPatientManagement() {
   const getStatusBadgeClassName = (status: string) => {
     switch (status) {
       case "admitted": return "bg-green-100 text-green-800 hover:bg-green-100/80";
-      case "discharged": return "";
+      case "discharged": return "bg-red-100 text-red-700 hover:bg-red-100/80";
       default: return "";
     }
   };
