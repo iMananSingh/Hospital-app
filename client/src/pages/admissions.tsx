@@ -120,6 +120,14 @@ export default function InPatientManagement() {
     return patient?.patientId || "N/A";
   };
 
+  const getPatientSexAge = (patientId: string) => {
+    const patient = patients.find(p => p.id === patientId);
+    if (!patient) return "N/A";
+    const sex = patient.gender ? patient.gender.charAt(0).toUpperCase() : '-';
+    const age = patient.age || '-';
+    return `${sex}/${age}`;
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "admitted": return "default";
@@ -238,6 +246,7 @@ export default function InPatientManagement() {
                   <TableRow>
                     <TableHead>Admission ID</TableHead>
                     <TableHead>Patient</TableHead>
+                    <TableHead>Sex/Age</TableHead>
                     <TableHead>Ward/Room Type</TableHead>
                     <TableHead>Room Number</TableHead>
                     <TableHead>Admission Date</TableHead>
@@ -258,6 +267,7 @@ export default function InPatientManagement() {
                           <div className="text-sm text-gray-500">ID: {getPatientId(admission.patientId)}</div>
                         </div>
                       </TableCell>
+                      <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
                       <TableCell>{admission.currentWardType || "Not specified"}</TableCell>
                       <TableCell>{admission.currentRoomNumber || "TBA"}</TableCell>
                       <TableCell>
