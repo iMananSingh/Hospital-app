@@ -276,14 +276,14 @@ export default function InPatientManagement() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-gray-400" />
-                          {new Date(admission.admissionDate).toLocaleDateString()}
+                          {new Date(admission.admissionDate).toLocaleString()}
                         </div>
                       </TableCell>
                       <TableCell>
                         {admission.dischargeDate ? (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3 text-gray-400" />
-                            {new Date(admission.dischargeDate).toLocaleDateString()}
+                            {new Date(admission.dischargeDate).toLocaleString()}
                           </div>
                         ) : (
                           <span className="text-gray-400">N/A</span>
