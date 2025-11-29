@@ -14,7 +14,6 @@ import {
   Bed, 
   User, 
   Search,
-  Building2,
   UserCheck,
   UserX,
   Eye
@@ -208,9 +207,8 @@ export default function InPatientManagement() {
 
         {/* Admissions Table */}
         <Card>
-          <CardHeader style={{ backgroundColor: '#fafafa' }} className="rounded-t-lg pt-[16px] pb-[16px]">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
+          <CardHeader style={{ backgroundColor: '#ffffff' }} className="rounded-t-lg pt-[16px] pb-[16px]">
+            <CardTitle>
               Patient Admissions
             </CardTitle>
             <CardDescription>
