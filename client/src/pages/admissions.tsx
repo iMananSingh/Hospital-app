@@ -282,7 +282,7 @@ export default function InPatientManagement() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-center" style={{ width: '96px' }}>{getPatientSexAge(admission.patientId)}</TableCell>
-                                <TableCell>
+                                <TableCell style={{ width: '128px' }}>
                                   <div>
                                     <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
                                     <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
