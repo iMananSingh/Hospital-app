@@ -256,14 +256,14 @@ export default function InPatientManagement() {
                       <Table className="border-collapse">
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead>Admission ID</TableHead>
-                            <TableHead>Patient</TableHead>
-                            <TableHead>Sex/Age</TableHead>
-                            <TableHead>Ward/Room</TableHead>
-                            <TableHead>Admission Date</TableHead>
-                            <TableHead>Discharge Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="border-l-2 text-center">View</TableHead>
+                            <TableHead className="w-24">Admission ID</TableHead>
+                            <TableHead className="w-32">Patient</TableHead>
+                            <TableHead className="w-16">Sex/Age</TableHead>
+                            <TableHead className="w-28">Ward/Room</TableHead>
+                            <TableHead className="w-24">Admission Date</TableHead>
+                            <TableHead className="w-24">Discharge Date</TableHead>
+                            <TableHead className="w-20">Status</TableHead>
+                            <TableHead className="w-16 border-l-2 text-center">View</TableHead>
                           </TableRow>
                         </TableHeader>
                       </Table>
@@ -272,29 +272,29 @@ export default function InPatientManagement() {
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
                               <TableRow key={admission.id}>
-                                <TableCell className="font-medium">
+                                <TableCell className="w-24 font-medium">
                                   {admission.admissionId}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="w-32">
                                   <div>
                                     <div className="font-medium">{getPatientName(admission.patientId)}</div>
                                     <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
-                                <TableCell>
+                                <TableCell className="w-16 text-center">{getPatientSexAge(admission.patientId)}</TableCell>
+                                <TableCell className="w-28">
                                   <div>
                                     <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
                                     <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="w-24">
                                   <div>
                                     <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
                                     <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="w-24">
                                   {admission.dischargeDate ? (
                                     <div>
                                       <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
@@ -304,12 +304,12 @@ export default function InPatientManagement() {
                                     <span className="text-gray-400">N/A</span>
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="w-20">
                                   <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="border-l-2 text-center">
+                                <TableCell className="w-16 border-l-2 text-center">
                                   <Link href={`/patients/${admission.patientId}`}>
                                     <Button variant="outline" size="sm">
                                       <Eye className="h-4 w-4" />
