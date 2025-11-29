@@ -246,77 +246,82 @@ export default function InPatientManagement() {
 
               {/* Table */}
               <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
-                <div className="h-[calc(100vh-480px)] overflow-y-auto">
-                  {/* Table */}
-                  {isLoadingAdmissions || isLoadingPatients ? (
+                {/* Table */}
+                {isLoadingAdmissions || isLoadingPatients ? (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Loading admissions data...</p>
                     </div>
                   ) : filteredAdmissions.length > 0 ? (
-                    <Table>
-                      <TableHeader className="sticky top-0 z-10">
-                        <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                          <TableHead>Admission ID</TableHead>
-                          <TableHead>Patient</TableHead>
-                          <TableHead>Sex/Age</TableHead>
-                          <TableHead>Ward/Room</TableHead>
-                          <TableHead>Admission Date</TableHead>
-                          <TableHead>Discharge Date</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="border-l-2">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAdmissions.map((admission) => (
-                          <TableRow key={admission.id}>
-                            <TableCell className="font-medium">
-                              {admission.admissionId}
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{getPatientName(admission.patientId)}</div>
-                                <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
-                            <TableCell>
-                              <div>
-                                <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                                <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
-                                <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {admission.dischargeDate ? (
-                                <div>
-                                  <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
-                                  <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">N/A</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
-                                {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="border-l-2">
-                              <Link href={`/patients/${admission.patientId}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </TableCell>
+                    <>
+                      <Table className="border-collapse">
+                        <TableHeader>
+                          <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                            <TableHead>Admission ID</TableHead>
+                            <TableHead>Patient</TableHead>
+                            <TableHead>Sex/Age</TableHead>
+                            <TableHead>Ward/Room</TableHead>
+                            <TableHead>Admission Date</TableHead>
+                            <TableHead>Discharge Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="border-l-2">Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                      </Table>
+                      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 480px - 49px)' }}>
+                        <Table className="border-collapse">
+                          <TableBody>
+                            {filteredAdmissions.map((admission) => (
+                              <TableRow key={admission.id}>
+                                <TableCell className="font-medium">
+                                  {admission.admissionId}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{getPatientName(admission.patientId)}</div>
+                                    <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                                    <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
+                                    <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {admission.dischargeDate ? (
+                                    <div>
+                                      <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
+                                      <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">N/A</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
+                                    {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="border-l-2">
+                                  <Link href={`/patients/${admission.patientId}`}>
+                                    <Button variant="outline" size="sm">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </Link>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </>
                   ) : (
                     <div className="text-center py-8 px-6">
                       <Bed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -332,7 +337,6 @@ export default function InPatientManagement() {
                       )}
                     </div>
                   )}
-                </div>
               </CardContent>
             </Card>
           </CardContent>
