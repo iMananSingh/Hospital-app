@@ -267,7 +267,7 @@ export default function InPatientManagement() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{getPatientName(admission.patientId)}</div>
-                          <div className="text-sm text-gray-500">ID: {getPatientId(admission.patientId)}</div>
+                          <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
