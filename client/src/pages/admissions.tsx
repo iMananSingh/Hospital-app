@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
@@ -17,27 +17,14 @@ import {
   Building2,
   UserCheck,
   UserX,
-  Eye,
-  ChevronDown,
-  ChevronRight
+  Eye
 } from "lucide-react";
 import type { Admission, Patient, RoomType } from "@shared/schema";
 
 export default function InPatientManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [expandedWards, setExpandedWards] = useState<Set<string>>(new Set());
   const { user } = useAuth();
-
-  const toggleWardSection = (wardType: string) => {
-    const newExpanded = new Set(expandedWards);
-    if (newExpanded.has(wardType)) {
-      newExpanded.delete(wardType);
-    } else {
-      newExpanded.add(wardType);
-    }
-    setExpandedWards(newExpanded);
-  };
   
   // Check if user has appropriate role for admission creation
   const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
@@ -253,125 +240,95 @@ export default function InPatientManagement() {
             </div>
           </CardHeader>
 
-          {/* Nested Card with Collapsible Wards */}
+          {/* Table */}
           <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
-            {isLoadingAdmissions || isLoadingPatients ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading admissions data...</p>
-              </div>
-            ) : filteredAdmissions.length === 0 ? (
-              <div className="text-center py-8 px-6">
-                <Bed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  {searchQuery ? "No admissions match your search criteria." : "No patient admissions found."}
-                </p>
-                {!isBillingStaff && (
-                  <Link href="/patients">
-                    <Button className="mt-4">
-                      Admit New Patient
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <Card className="border bg-card text-card-foreground shadow-sm rounded-none rounded-b-md mt-[0px] mb-[0px] p-0 ml-[0px] mr-[0px] overflow-hidden">
-                <div className="h-[calc(100vh-480px)] overflow-y-auto">
-                  <table className="w-full">
-                    <tbody>
-                      {Object.entries(
-                        filteredAdmissions.reduce((acc: Record<string, typeof filteredAdmissions>, admission) => {
-                          const ward = admission.currentWardType || "Unspecified";
-                          if (!acc[ward]) acc[ward] = [];
-                          acc[ward].push(admission);
-                          return acc;
-                        }, {})
-                      ).map(([wardType, wardAdmissions], wardIndex) => (
-                        <Fragment key={wardType}>
-                          {/* Ward Section Header - Collapsible */}
-                          <tr className={wardIndex > 0 ? "border-t-2" : ""}>
-                            <td colSpan={8} className="px-4 py-3 bg-orange-100 cursor-pointer hover:bg-orange-200 transition-colors w-full" onClick={() => toggleWardSection(wardType)}>
-                              <div className="flex items-center gap-2 justify-between">
-                                <div className="flex items-center gap-2">
-                                  {expandedWards.has(wardType) ? (
-                                    <ChevronDown className="w-5 h-5 text-orange-900 flex-shrink-0" />
-                                  ) : (
-                                    <ChevronRight className="w-5 h-5 text-orange-900 flex-shrink-0" />
-                                  )}
-                                  <span className="font-semibold text-lg text-orange-900">
-                                    {wardType}
-                                  </span>
-                                </div>
-                                <Badge className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-orange-600 text-white pl-[12px] pr-[12px] pt-[4px] pb-[4px]">
-                                  {(wardAdmissions as any[]).length} patients
-                                </Badge>
-                              </div>
-                            </td>
-                          </tr>
-                          {/* Table Header and Rows - Show only when expanded */}
-                          {expandedWards.has(wardType) && (
-                            <>
-                              {/* Table Header */}
-                              <tr className="border-b" style={{ backgroundColor: '#F7F7F7' }}>
-                                <th className="py-3 text-sm font-semibold text-left pl-4 pr-2">Admission ID</th>
-                                <th className="py-3 text-sm font-semibold text-left pl-4 pr-2">Patient</th>
-                                <th className="py-3 text-sm font-semibold text-center pl-2 pr-2">Sex/Age</th>
-                                <th className="py-3 text-sm font-semibold text-left pl-4 pr-2">Room</th>
-                                <th className="py-3 text-sm font-semibold text-left pl-4 pr-2">Admission Date</th>
-                                <th className="py-3 text-sm font-semibold text-left pl-4 pr-2">Discharge Date</th>
-                                <th className="py-3 text-sm font-semibold text-center pl-2 pr-2">Status</th>
-                                <th className="py-3 text-sm font-semibold text-center pl-4 pr-4">Actions</th>
-                              </tr>
-                              {/* Patient Rows */}
-                              {(wardAdmissions as any[]).map((admission) => (
-                                <tr key={admission.id} className="border-b hover:bg-muted/50 transition-colors">
-                                  <td className="py-3 text-sm pl-4 pr-2 font-medium">
-                                    {admission.admissionId}
-                                  </td>
-                                  <td className="py-3 text-sm pl-4 pr-2">
-                                    <div className="font-medium">{getPatientName(admission.patientId)}</div>
-                                    <div className="text-xs text-gray-500">{getPatientId(admission.patientId)}</div>
-                                  </td>
-                                  <td className="py-3 text-sm text-center pl-2 pr-2">{getPatientSexAge(admission.patientId)}</td>
-                                  <td className="py-3 text-sm pl-4 pr-2">
-                                    <div className="font-medium">{admission.currentRoomNumber || "TBA"}</div>
-                                  </td>
-                                  <td className="py-3 text-sm pl-4 pr-2">
-                                    <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
-                                    <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                  </td>
-                                  <td className="py-3 text-sm pl-4 pr-2">
-                                    {admission.dischargeDate ? (
-                                      <div>
-                                        <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
-                                        <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-400">N/A</span>
-                                    )}
-                                  </td>
-                                  <td className="py-3 text-sm text-center pl-2 pr-2">
-                                    <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
-                                      {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
-                                    </Badge>
-                                  </td>
-                                  <td className="py-3 text-sm text-center pl-4 pr-4">
-                                    <Link href={`/patients/${admission.patientId}`}>
-                                      <Button variant="outline" size="sm">
-                                        <Eye className="h-4 w-4" />
-                                      </Button>
-                                    </Link>
-                                  </td>
-                                </tr>
-                              ))}
-                            </>
-                          )}
-                        </Fragment>
-                      ))}
-                    </tbody>
-                  </table>
+            <div className="h-[calc(100vh-480px)] overflow-y-auto">
+              {/* Table */}
+              {isLoadingAdmissions || isLoadingPatients ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading admissions data...</p>
                 </div>
-              </Card>
-            )}
+              ) : filteredAdmissions.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                      <TableHead>Admission ID</TableHead>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Sex/Age</TableHead>
+                      <TableHead>Ward/Room</TableHead>
+                      <TableHead>Admission Date</TableHead>
+                      <TableHead>Discharge Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAdmissions.map((admission) => (
+                      <TableRow key={admission.id}>
+                        <TableCell className="font-medium">
+                          {admission.admissionId}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{getPatientName(admission.patientId)}</div>
+                            <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                            <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {admission.dischargeDate ? (
+                            <div>
+                              <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
+                              <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
+                            {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Link href={`/patients/${admission.patientId}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-8 px-6">
+                  <Bed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "No admissions match your search criteria." : "No patient admissions found."}
+                  </p>
+                  {!isBillingStaff && (
+                    <Link href="/patients">
+                      <Button className="mt-4">
+                        Admit New Patient
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
