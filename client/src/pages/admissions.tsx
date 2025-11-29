@@ -262,7 +262,7 @@ export default function InPatientManagement() {
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '128px' }}>Ward/Room</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '144px' }}>Admission Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '144px' }}>Discharge Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]">Status</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '90px', minWidth: '90px', maxWidth: '90px' }}>Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]">View</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -304,7 +304,7 @@ export default function InPatientManagement() {
                                     <span className="text-gray-400">N/A</span>
                                   )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell style={{ width: '90px', minWidth: '90px', maxWidth: '90px' }}>
                                   <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
