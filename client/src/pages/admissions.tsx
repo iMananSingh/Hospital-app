@@ -263,7 +263,7 @@ export default function InPatientManagement() {
                           <TableHead>Admission Date</TableHead>
                           <TableHead>Discharge Date</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Actions</TableHead>
+                          <TableHead className="border-l">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
