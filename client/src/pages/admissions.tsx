@@ -252,7 +252,7 @@ export default function InPatientManagement() {
             ) : filteredAdmissions.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow style={{ backgroundColor: '#FDE4CE' }}>
                     <TableHead>Admission ID</TableHead>
                     <TableHead>Patient</TableHead>
                     <TableHead>Sex/Age</TableHead>
