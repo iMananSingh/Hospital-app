@@ -258,7 +258,7 @@ export default function InPatientManagement() {
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="w-40">Admission ID</TableHead>
                             <TableHead style={{ width: '272px' }}>Patient</TableHead>
-                            <TableHead>Sex/Age</TableHead>
+                            <TableHead style={{ width: '96px' }}>Sex/Age</TableHead>
                             <TableHead>Ward/Room</TableHead>
                             <TableHead>Admission Date</TableHead>
                             <TableHead>Discharge Date</TableHead>
@@ -281,7 +281,7 @@ export default function InPatientManagement() {
                                     <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
+                                <TableCell className="text-center" style={{ width: '96px' }}>{getPatientSexAge(admission.patientId)}</TableCell>
                                 <TableCell>
                                   <div>
                                     <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
