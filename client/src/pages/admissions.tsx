@@ -263,7 +263,7 @@ export default function InPatientManagement() {
                             <TableHead>Admission Date</TableHead>
                             <TableHead>Discharge Date</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="border-l-2 text-center pr-2">View</TableHead>
+                            <TableHead className="border-l-2 text-center">View</TableHead>
                           </TableRow>
                         </TableHeader>
                       </Table>
@@ -309,7 +309,7 @@ export default function InPatientManagement() {
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="border-l-2 text-center pr-2">
+                                <TableCell className="border-l-2 text-center">
                                   <Link href={`/patients/${admission.patientId}`}>
                                     <Button variant="outline" size="sm">
                                       <Eye className="h-4 w-4" />
