@@ -306,7 +306,7 @@ export default function InPatientManagement() {
                                 {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                               </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="border-l">
                               <Link href={`/patients/${admission.patientId}`}>
                                 <Button variant="outline" size="sm">
                                   <Eye className="h-4 w-4" />
