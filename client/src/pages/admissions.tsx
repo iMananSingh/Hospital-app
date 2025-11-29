@@ -216,119 +216,127 @@ export default function InPatientManagement() {
             <CardDescription>
               Manage all patient admissions and discharges
             </CardDescription>
-            {/* Search and Filters */}
-            <div className="flex gap-4 mt-4 pt-[16px]">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search patients, admission ID, or ward type..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Patients</SelectItem>
-                  <SelectItem value="admitted">Admitted</SelectItem>
-                  <SelectItem value="discharged">Discharged</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </CardHeader>
 
-          {/* Table */}
-          <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
-            <div className="h-[calc(100vh-480px)] overflow-y-auto">
-              {/* Table */}
-              {isLoadingAdmissions || isLoadingPatients ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Loading admissions data...</p>
+          <CardContent className="p-6">
+            {/* Inner Card */}
+            <Card>
+              <CardHeader style={{ backgroundColor: '#FDE4CE' }} className="rounded-t-lg pt-[16px] pb-[16px]">
+                {/* Search and Filters */}
+                <div className="flex gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search patients, admission ID, or ward type..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Patients</SelectItem>
+                      <SelectItem value="admitted">Admitted</SelectItem>
+                      <SelectItem value="discharged">Discharged</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : filteredAdmissions.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                      <TableHead>Admission ID</TableHead>
-                      <TableHead>Patient</TableHead>
-                      <TableHead>Sex/Age</TableHead>
-                      <TableHead>Ward/Room</TableHead>
-                      <TableHead>Admission Date</TableHead>
-                      <TableHead>Discharge Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAdmissions.map((admission) => (
-                      <TableRow key={admission.id}>
-                        <TableCell className="font-medium">
-                          {admission.admissionId}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{getPatientName(admission.patientId)}</div>
-                            <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                            <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
-                            <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {admission.dischargeDate ? (
-                            <div>
-                              <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
-                              <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
-                            {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Link href={`/patients/${admission.patientId}`}>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 px-6">
-                  <Bed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    {searchQuery ? "No admissions match your search criteria." : "No patient admissions found."}
-                  </p>
-                  {!isBillingStaff && (
-                    <Link href="/patients">
-                      <Button className="mt-4">
-                        Admit New Patient
-                      </Button>
-                    </Link>
+              </CardHeader>
+
+              {/* Table */}
+              <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
+                <div className="h-[calc(100vh-480px)] overflow-y-auto">
+                  {/* Table */}
+                  {isLoadingAdmissions || isLoadingPatients ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading admissions data...</p>
+                    </div>
+                  ) : filteredAdmissions.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                          <TableHead>Admission ID</TableHead>
+                          <TableHead>Patient</TableHead>
+                          <TableHead>Sex/Age</TableHead>
+                          <TableHead>Ward/Room</TableHead>
+                          <TableHead>Admission Date</TableHead>
+                          <TableHead>Discharge Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAdmissions.map((admission) => (
+                          <TableRow key={admission.id}>
+                            <TableCell className="font-medium">
+                              {admission.admissionId}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{getPatientName(admission.patientId)}</div>
+                                <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">{getPatientSexAge(admission.patientId)}</TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                                <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
+                                <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {admission.dischargeDate ? (
+                                <div>
+                                  <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
+                                  <div className="text-xs text-gray-500">{new Date(admission.dischargeDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
+                                {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Link href={`/patients/${admission.patientId}`}>
+                                <Button variant="outline" size="sm">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8 px-6">
+                      <Bed className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {searchQuery ? "No admissions match your search criteria." : "No patient admissions found."}
+                      </p>
+                      {!isBillingStaff && (
+                        <Link href="/patients">
+                          <Button className="mt-4">
+                            Admit New Patient
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </div>
