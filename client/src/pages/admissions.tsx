@@ -256,14 +256,14 @@ export default function InPatientManagement() {
                       <Table className="border-collapse">
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead className="w-40">Admission ID</TableHead>
-                            <TableHead style={{ width: '272px' }}>Patient</TableHead>
-                            <TableHead className="text-center" style={{ width: '96px' }}>Sex/Age</TableHead>
-                            <TableHead>Ward/Room</TableHead>
-                            <TableHead>Admission Date</TableHead>
-                            <TableHead>Discharge Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="border-l-2 text-center">View</TableHead>
+                            <TableHead className="w-40 pt-[0px] pb-[0px]">Admission ID</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '272px' }}>Patient</TableHead>
+                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '96px' }}>Sex/Age</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]">Ward/Room</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]">Admission Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]">Discharge Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]">Status</TableHead>
+                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]">View</TableHead>
                           </TableRow>
                         </TableHeader>
                       </Table>
