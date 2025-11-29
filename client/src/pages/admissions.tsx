@@ -226,8 +226,8 @@ export default function InPatientManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Patients</SelectItem>
-                  <SelectItem value="admitted">Admitted Only</SelectItem>
-                  <SelectItem value="discharged">Discharged Only</SelectItem>
+                  <SelectItem value="admitted">Admitted</SelectItem>
+                  <SelectItem value="discharged">Discharged</SelectItem>
                 </SelectContent>
               </Select>
             </div>
