@@ -207,10 +207,20 @@ export default function InPatientManagement() {
           </Link>
         </div>
 
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
+        {/* Admissions Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Patient Admissions
+            </CardTitle>
+            <CardDescription>
+              Manage all patient admissions and discharges
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Search and Filters */}
+            <div className="flex gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -231,21 +241,8 @@ export default function InPatientManagement() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Admissions Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Patient Admissions
-            </CardTitle>
-            <CardDescription>
-              Manage all patient admissions and discharges
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            {/* Table */}
             {isLoadingAdmissions || isLoadingPatients ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Loading admissions data...</p>
