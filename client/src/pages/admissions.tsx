@@ -267,7 +267,7 @@ export default function InPatientManagement() {
                           </TableRow>
                         </TableHeader>
                       </Table>
-                      <div className="overflow-y-auto" style={{ height: 'calc(100vh - 480px - 49px)' }}>
+                      <div className="overflow-y-auto scrollbar-blue" style={{ height: 'calc(100vh - 480px - 49px)' }}>
                         <Table className="border-collapse">
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
