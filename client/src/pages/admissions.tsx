@@ -146,7 +146,6 @@ export default function InPatientManagement() {
   return (
     <div>
       <TopBar title="In-Patient Management" />
-      
       <div className="px-6 pb-6 pt-4">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -219,7 +218,7 @@ export default function InPatientManagement() {
             </CardDescription>
           </CardHeader>
           {/* Search and Filters */}
-          <div style={{ backgroundColor: '#FDE4CE' }} className="px-6 py-4 -mx-6 -mt-6 mb-6">
+          <div style={{ backgroundColor: '#FDE4CE' }} className="px-6 py-4 -mx-6 -mt-6 mb-6 ml-[0px] mr-[0px]">
             <div className="flex gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
