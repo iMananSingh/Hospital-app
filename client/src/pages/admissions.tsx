@@ -13,8 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Bed, 
   User, 
-  Calendar, 
-  Clock,
   Search,
   Building2,
   UserCheck,
