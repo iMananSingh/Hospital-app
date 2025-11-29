@@ -263,7 +263,7 @@ export default function InPatientManagement() {
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '144px' }}>Admission Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '144px' }}>Discharge Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '122px', minWidth: '122px', maxWidth: '122px' }}>Status</TableHead>
-                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '122px', minWidth: '122px', maxWidth: '122px' }}>View</TableHead>
+                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '112px', minWidth: '112px', maxWidth: '112px' }}>View</TableHead>
                           </TableRow>
                         </TableHeader>
                       </Table>
@@ -309,7 +309,7 @@ export default function InPatientManagement() {
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="border-l-2" style={{ width: '122px', minWidth: '122px', maxWidth: '122px' }}>
+                                <TableCell className="border-l-2" style={{ width: '112px', minWidth: '112px', maxWidth: '112px' }}>
                                   <Link href={`/patients/${admission.patientId}`}>
                                     <Button variant="outline" size="sm">
                                       <Eye className="h-4 w-4" />
