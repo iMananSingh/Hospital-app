@@ -260,7 +260,7 @@ export default function InPatientManagement() {
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '272px' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '96px' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '128px' }}>Ward/Room</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '112px' }}>Admission Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '120px' }}>Admission Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]">Discharge Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]">Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]">View</TableHead>
@@ -288,7 +288,7 @@ export default function InPatientManagement() {
                                     <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell style={{ width: '112px' }}>
+                                <TableCell style={{ width: '120px' }}>
                                   <div>
                                     <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
                                     <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
