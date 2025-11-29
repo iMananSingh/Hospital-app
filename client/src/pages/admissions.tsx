@@ -33,12 +33,12 @@ export default function InPatientManagement() {
   const isBillingStaff = currentUserRoles.includes('billing_staff') && !currentUserRoles.includes('admin') && !currentUserRoles.includes('super_user');
 
   // Fetch all admissions
-  const { data: admissions = [] } = useQuery<Admission[]>({
+  const { data: admissions = [], isLoading: isLoadingAdmissions } = useQuery<Admission[]>({
     queryKey: ["/api/admissions"],
   });
 
   // Fetch patients
-  const { data: patients = [] } = useQuery<Patient[]>({
+  const { data: patients = [], isLoading: isLoadingPatients } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
@@ -240,7 +240,11 @@ export default function InPatientManagement() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredAdmissions.length > 0 ? (
+            {isLoadingAdmissions || isLoadingPatients ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading admissions data...</p>
+              </div>
+            ) : filteredAdmissions.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
