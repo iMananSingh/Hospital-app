@@ -257,7 +257,7 @@ export default function InPatientManagement() {
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="w-40">Admission ID</TableHead>
-                            <TableHead className="w-68">Patient</TableHead>
+                            <TableHead style={{ width: '272px' }}>Patient</TableHead>
                             <TableHead>Sex/Age</TableHead>
                             <TableHead>Ward/Room</TableHead>
                             <TableHead>Admission Date</TableHead>
@@ -275,7 +275,7 @@ export default function InPatientManagement() {
                                 <TableCell className="font-medium w-40">
                                   {admission.admissionId}
                                 </TableCell>
-                                <TableCell className="w-68">
+                                <TableCell style={{ width: '272px' }}>
                                   <div>
                                     <div className="font-medium">{getPatientName(admission.patientId)}</div>
                                     <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
