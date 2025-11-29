@@ -288,7 +288,7 @@ export default function InPatientManagement() {
                                     <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell style={{ width: '112px' }}>
                                   <div>
                                     <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
                                     <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
