@@ -299,4 +299,33 @@
   .dark .scrollbar-blue {
     scrollbar-color: #DBEAFE transparent;
   }
+
+  /* Peach Accent Scrollbar */
+  .scrollbar-peach {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: #FDE4CE transparent;
+  }
+
+  .scrollbar-peach::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-peach::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-peach::-webkit-scrollbar-thumb {
+    background: #FDE4CE;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+
+  .scrollbar-peach::-webkit-scrollbar-thumb:hover {
+    background: #F5B896;
+  }
+
+  .dark .scrollbar-peach {
+    scrollbar-color: #FDE4CE transparent;
+  }
 }
