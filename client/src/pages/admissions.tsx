@@ -257,8 +257,8 @@ export default function InPatientManagement() {
                         <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                           <TableHeader>
                             <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '26%' }}>Patient</TableHead>
                               <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                               <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
@@ -272,8 +272,8 @@ export default function InPatientManagement() {
                       <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '26%' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
@@ -288,10 +288,10 @@ export default function InPatientManagement() {
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
                               <TableRow key={admission.id}>
-                                <TableCell className="font-medium" style={{ width: '18%' }}>
+                                <TableCell className="font-medium" style={{ width: '15%' }}>
                                   {admission.admissionId}
                                 </TableCell>
-                                <TableCell style={{ width: '23%' }}>
+                                <TableCell style={{ width: '26%' }}>
                                   <div>
                                     <div className="font-medium">{getPatientName(admission.patientId)}</div>
                                     <div className="text-gray-500 text-[12px]">{getPatientId(admission.patientId)}</div>
