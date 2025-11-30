@@ -80,7 +80,7 @@ export default function CurrentlyAdmittedPage() {
         <Card>
           <CardHeader>
             <div>
-              <p className="text-muted-foreground text-[16px]">
+              <p className="text-muted-foreground text-[16px] pl-[24px] pr-[24px]">
                 All patients currently admitted to the hospital
               </p>
             </div>
