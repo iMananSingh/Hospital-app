@@ -76,7 +76,7 @@ export default function CurrentlyAdmittedPage() {
       <div className="px-6 flex-1 overflow-hidden pt-4 pb-4">
         <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-col space-y-1.5 pt-[24px] pb-[24px] pl-[24px] pr-[24px]">
-            <p className="text-sm text-muted-foreground pl-[16px] pr-[16px]">View all currently admitted patient details</p>
+            <p className="text-sm text-muted-foreground pl-[0px] pr-[0px]">View all currently admitted patient details</p>
           </CardHeader>
           <Card className="flex-1 flex flex-col overflow-hidden m-0 ml-[24px] mr-[24px]">
             <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
