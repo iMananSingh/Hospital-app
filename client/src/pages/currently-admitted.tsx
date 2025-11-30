@@ -110,6 +110,7 @@ export default function CurrentlyAdmittedPage() {
                         <TableHead>Doctor</TableHead>
                         <TableHead>Stay Duration</TableHead>
                         <TableHead>Daily Cost</TableHead>
+                        <TableHead>Total Cost</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -167,9 +168,9 @@ export default function CurrentlyAdmittedPage() {
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
-                            <div className="text-xs text-gray-500">
-                              Total: ₹{admission.totalCost.toLocaleString()}
-                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
                           </TableCell>
                           <TableCell>
                             <Link href={`/patients/${admission.patientId}`}>
