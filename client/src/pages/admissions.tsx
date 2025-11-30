@@ -262,7 +262,7 @@ export default function InPatientManagement() {
                             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '11%', backgroundColor: '#F7F7F7' }}>Ward/Room</th>
                             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '13%', backgroundColor: '#F7F7F7' }}>Admission Date</th>
                             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '13%', backgroundColor: '#F7F7F7' }}>Discharge Date</th>
-                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '10%', backgroundColor: '#F7F7F7' }}>Status</th>
+                            <th className="h-12 px-4 align-middle font-medium text-muted-foreground pt-[0px] pb-[0px] text-center" style={{ width: '10%', backgroundColor: '#F7F7F7' }}>Status</th>
                             <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground border-l-2 pt-[0px] pb-[0px]" style={{ width: '8%', backgroundColor: '#F7F7F7' }}>View</th>
                           </tr>
                         </thead>
