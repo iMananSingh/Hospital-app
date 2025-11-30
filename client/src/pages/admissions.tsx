@@ -306,7 +306,7 @@ export default function InPatientManagement() {
                                   {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                 </Badge>
                               </td>
-                              <td className="p-4 align-middle border-l-2" style={{ width: '8%' }}>
+                              <td className="p-4 align-middle border-l-2 text-center" style={{ width: '8%' }}>
                                 <Link href={`/patients/${admission.patientId}`}>
                                   <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
