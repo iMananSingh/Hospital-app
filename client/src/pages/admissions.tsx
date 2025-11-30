@@ -259,11 +259,11 @@ export default function InPatientManagement() {
                             <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
-                              <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
-                              <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
+                              <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '4%' }}>Sex/Age</TableHead>
+                              <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '7%' }}>Ward/Room</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Discharge Date</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '6%' }}>Status</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '24%' }}>Discharge Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '4%' }}>Status</TableHead>
                               <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -274,11 +274,11 @@ export default function InPatientManagement() {
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
-                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
-                            <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
+                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '4%' }}>Sex/Age</TableHead>
+                            <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '7%' }}>Ward/Room</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Discharge Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '6%' }}>Status</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '24%' }}>Discharge Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '4%' }}>Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -297,8 +297,8 @@ export default function InPatientManagement() {
                                     <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell className="text-center" style={{ width: '8%' }}>{getPatientSexAge(admission.patientId)}</TableCell>
-                                <TableCell style={{ width: '11%' }}>
+                                <TableCell className="text-center" style={{ width: '4%' }}>{getPatientSexAge(admission.patientId)}</TableCell>
+                                <TableCell style={{ width: '7%' }}>
                                   <div>
                                     <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
                                     <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
@@ -320,7 +320,7 @@ export default function InPatientManagement() {
                                     <span className="text-gray-400">N/A</span>
                                   )}
                                 </TableCell>
-                                <TableCell style={{ width: '6%' }}>
+                                <TableCell style={{ width: '4%' }}>
                                   <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
