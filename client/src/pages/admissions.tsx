@@ -147,7 +147,7 @@ export default function InPatientManagement() {
       <TopBar title="In-Patient Management" />
       
       {/* Stats Navbar */}
-      <div className="border-b border-gray-300 bg-white">
+      <div className="bg-white">
         <div className="flex gap-0 overflow-x-auto" style={{ marginLeft: '48px' }}>
           <Link href="/bed-occupancy">
             <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-105 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
