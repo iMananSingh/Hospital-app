@@ -301,7 +301,7 @@ export default function InPatientManagement() {
                                 <TableCell style={{ width: '11%' }}>
                                   <div>
                                     <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                                    <div className="text-sm text-gray-500">Room: {admission.currentRoomNumber || "TBA"}</div>
+                                    <div className="text-gray-500 text-[13px]">Room: {admission.currentRoomNumber || "TBA"}</div>
                                   </div>
                                 </TableCell>
                                 <TableCell style={{ width: '14%' }}>
