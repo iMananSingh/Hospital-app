@@ -77,35 +77,27 @@ export default function CurrentlyAdmittedPage() {
       <TopBar title="Currently Admitted Patients" />
 
       <div className="px-6 pb-6 pt-4">
-        {/* Removed Summary Stats */}
-
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by patient name, ID, admission ID, ward type, or doctor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Patients Table */}
+        {/* Single Card with Search in Header */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Currently Admitted Patients ({filteredPatients.length})
-            </CardTitle>
-            <CardDescription>
-              All patients currently admitted to the hospital
-            </CardDescription>
+            <div className="mb-4">
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Currently Admitted Patients ({filteredPatients.length})
+              </CardTitle>
+              <CardDescription>
+                All patients currently admitted to the hospital
+              </CardDescription>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by patient name, ID, admission ID, ward type, or doctor..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {filteredPatients.length > 0 ? (
