@@ -149,7 +149,7 @@ export default function InPatientManagement() {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link href="/bed-occupancy">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <Bed className="h-8 w-8 text-blue-600" />
@@ -163,7 +163,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/currently-admitted">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <User className="h-8 w-8 text-green-600" />
@@ -177,7 +177,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/admitted-today">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <UserCheck className="h-8 w-8 text-blue-600" />
@@ -191,7 +191,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/discharged-today">
-            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center">
                   <UserX className="h-8 w-8 text-red-600" />
