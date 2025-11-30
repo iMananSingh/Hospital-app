@@ -145,65 +145,61 @@ export default function InPatientManagement() {
   return (
     <div className="flex flex-col h-full">
       <TopBar title="In-Patient Management" />
-      <div className="flex-1 flex flex-col min-h-0 px-6 pb-6 pt-4">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      
+      {/* Stats Navbar */}
+      <div className="border-b border-gray-200 bg-white px-6 py-3">
+        <div className="flex gap-3 overflow-x-auto pb-1">
           <Link href="/bed-occupancy">
-            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <Bed className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Bed Occupancy</p>
-                    <p className="text-2xl font-bold text-gray-900">{occupiedBeds}/{totalBeds}</p>
-                  </div>
+            <div className="flex-shrink-0 px-4 py-2 rounded-full border border-gray-300 cursor-pointer hover:scale-105 transition-transform shadow-sm hover:shadow-md whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <Bed className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Bed Occupancy</p>
+                  <p className="text-sm font-bold text-gray-900">{occupiedBeds}/{totalBeds}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
 
           <Link href="/currently-admitted">
-            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <User className="h-8 w-8 text-green-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Currently Admitted</p>
-                    <p className="text-2xl font-bold text-gray-900">{currentlyAdmitted}</p>
-                  </div>
+            <div className="flex-shrink-0 px-4 py-2 rounded-full border border-gray-300 cursor-pointer hover:scale-105 transition-transform shadow-sm hover:shadow-md whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Currently Admitted</p>
+                  <p className="text-sm font-bold text-gray-900">{currentlyAdmitted}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
 
           <Link href="/admitted-today">
-            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <UserCheck className="h-8 w-8 text-blue-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Admitted Today</p>
-                    <p className="text-2xl font-bold text-gray-900">{admittedToday}</p>
-                  </div>
+            <div className="flex-shrink-0 px-4 py-2 rounded-full border border-gray-300 cursor-pointer hover:scale-105 transition-transform shadow-sm hover:shadow-md whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Admitted Today</p>
+                  <p className="text-sm font-bold text-gray-900">{admittedToday}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
 
           <Link href="/discharged-today">
-            <Card className="shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center">
-                  <UserX className="h-8 w-8 text-red-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Discharged Today</p>
-                    <p className="text-2xl font-bold text-gray-900">{dischargedToday}</p>
-                  </div>
+            <div className="flex-shrink-0 px-4 py-2 rounded-full border border-gray-300 cursor-pointer hover:scale-105 transition-transform shadow-sm hover:shadow-md whitespace-nowrap">
+              <div className="flex items-center gap-2">
+                <UserX className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600">Discharged Today</p>
+                  <p className="text-sm font-bold text-gray-900">{dischargedToday}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Link>
         </div>
+      </div>
+
+      <div className="flex-1 flex flex-col min-h-0 px-6 pb-6 pt-4">
 
         {/* Admissions Table */}
         <Card className="flex-1 flex flex-col min-h-0">
