@@ -148,7 +148,7 @@ export default function InPatientManagement() {
       
       {/* Stats Navbar */}
       <div className="bg-white">
-        <div className="flex gap-0 overflow-x-auto pb-2" style={{ marginLeft: '48px' }}>
+        <div className="flex gap-0 overflow-x-auto pb-2 pl-2" style={{ marginLeft: '48px' }}>
           <Link href="/bed-occupancy">
             <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-110 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
               <div className="flex items-center gap-2">
