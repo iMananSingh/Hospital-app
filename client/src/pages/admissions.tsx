@@ -301,7 +301,7 @@ export default function InPatientManagement() {
                                   <span className="text-gray-400">N/A</span>
                                 )}
                               </td>
-                              <td className="p-4 align-middle" style={{ width: '10%' }}>
+                              <td className="p-4 align-middle text-center" style={{ width: '10%' }}>
                                 <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                   {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                 </Badge>
