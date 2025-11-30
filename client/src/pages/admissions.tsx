@@ -257,14 +257,14 @@ export default function InPatientManagement() {
                         <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                           <TableHeader>
                             <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission ID</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
                               <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                               <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Admission Date</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Discharge Date</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
-                              <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '10%' }}>View</TableHead>
+                              <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                             </TableRow>
                           </TableHeader>
                         </Table>
@@ -272,14 +272,14 @@ export default function InPatientManagement() {
                       <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission ID</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '18%' }}>Admission ID</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '23%' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Admission Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '12%' }}>Discharge Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
-                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '10%' }}>View</TableHead>
+                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                           </TableRow>
                         </TableHeader>
                       </Table>
@@ -288,7 +288,7 @@ export default function InPatientManagement() {
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
                               <TableRow key={admission.id}>
-                                <TableCell className="font-medium" style={{ width: '14%' }}>
+                                <TableCell className="font-medium" style={{ width: '18%' }}>
                                   {admission.admissionId}
                                 </TableCell>
                                 <TableCell style={{ width: '23%' }}>
@@ -325,7 +325,7 @@ export default function InPatientManagement() {
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="border-l-2" style={{ width: '10%' }}>
+                                <TableCell className="border-l-2" style={{ width: '6%' }}>
                                   <Link href={`/patients/${admission.patientId}`}>
                                     <Button variant="outline" size="sm">
                                       <Eye className="h-4 w-4" />
