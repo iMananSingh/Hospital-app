@@ -143,9 +143,9 @@ export default function InPatientManagement() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       <TopBar title="In-Patient Management" />
-      <div className="px-6 pb-6 pt-4 h-full flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 px-6 pb-6 pt-4">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link href="/bed-occupancy">
@@ -206,7 +206,7 @@ export default function InPatientManagement() {
         </div>
 
         {/* Admissions Table */}
-        <Card>
+        <Card className="flex-1 flex flex-col min-h-0">
           <CardHeader style={{ backgroundColor: '#ffffff' }} className="rounded-t-lg pl-[48px] pr-[48px] pt-[24px] pb-[0px]">
             <CardTitle>
               Patient Admissions
@@ -216,9 +216,9 @@ export default function InPatientManagement() {
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-6">
+          <CardContent className="p-6 flex-1 flex flex-col min-h-0">
             {/* Inner Card */}
-            <Card>
+            <Card className="flex-1 flex flex-col min-h-0">
               <CardHeader style={{ backgroundColor: '#FDE4CE' }} className="rounded-t-lg pt-[16px] pb-[16px] pl-[16px] pr-[16px]">
                 {/* Search and Filters */}
                 <div className="flex gap-4">
@@ -245,14 +245,14 @@ export default function InPatientManagement() {
               </CardHeader>
 
               {/* Table */}
-              <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
+              <CardContent className="p-6 pt-0 pl-[0px] pr-[0px] flex-1 flex flex-col min-h-0">
                 {/* Table */}
                 {isLoadingAdmissions || isLoadingPatients ? (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">Loading admissions data...</p>
                     </div>
                   ) : filteredAdmissions.length > 0 ? (
-                    <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable' }}>
+                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-peach" style={{ scrollbarGutter: 'stable' }}>
                       <table className="w-full caption-bottom text-sm border-collapse" style={{ tableLayout: 'fixed' }}>
                         <thead className="[&_tr]:border-b" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                           <tr className="border-b" style={{ backgroundColor: '#F7F7F7' }}>
