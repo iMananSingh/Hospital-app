@@ -184,10 +184,6 @@ export default function CurrentlyAdmittedPage() {
                               <TableCell colSpan={7} className="p-4">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                   <div>
-                                    <p className="text-xs font-semibold text-gray-600 uppercase">Admission ID</p>
-                                    <p className="text-sm font-medium mt-1">{admission.admissionId}</p>
-                                  </div>
-                                  <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
                                     <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleDateString()}</p>
                                   </div>
