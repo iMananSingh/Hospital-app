@@ -98,7 +98,7 @@ export default function CurrentlyAdmittedPage() {
                   />
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pl-[16px] pr-[16px] pt-[0px] pb-[0px]">
                 {filteredPatients.length > 0 ? (
                   <Table>
                     <TableHeader>
