@@ -328,4 +328,33 @@
   .dark .scrollbar-peach {
     scrollbar-color: #FDE4CE transparent;
   }
+
+  /* Green Accent Scrollbar */
+  .scrollbar-green {
+    overflow-y: overlay;
+    scrollbar-width: thin;
+    scrollbar-color: #CBFFC9 transparent;
+  }
+
+  .scrollbar-green::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-green::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-green::-webkit-scrollbar-thumb {
+    background: #CBFFC9;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+
+  .scrollbar-green::-webkit-scrollbar-thumb:hover {
+    background: #7FFF7F;
+  }
+
+  .dark .scrollbar-green {
+    scrollbar-color: #CBFFC9 transparent;
+  }
 }
