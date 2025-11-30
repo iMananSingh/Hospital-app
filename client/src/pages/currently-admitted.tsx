@@ -74,9 +74,9 @@ export default function CurrentlyAdmittedPage() {
   }
 
   return (
-    <div>
+    <div className="h-screen flex flex-col">
       <TopBar title="Currently Admitted Patients" />
-      <div className="px-6 pb-6 pt-4">
+      <div className="px-6 pb-6 pt-4 flex-1 overflow-auto">
         {/* Single Card with Search in Header */}
         <Card>
           <CardHeader>
