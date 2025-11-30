@@ -185,7 +185,7 @@ export default function CurrentlyAdmittedPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
-                                    <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleDateString()}</p>
+                                    <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleString()}</p>
                                   </div>
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Stay Duration</p>
