@@ -6,14 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   User, 
   Calendar, 
-  Eye,
-  Search,
-  Bed,
   Clock,
-  DollarSign
+  Search,
+  Building2,
+  Stethoscope,
+  Phone,
+  MapPin
 } from "lucide-react";
 import type { Admission, Patient, Doctor } from "@shared/schema";
 
@@ -28,7 +30,7 @@ export default function CurrentlyAdmittedPage() {
   // Fetch currently admitted patients
   const { data: admittedPatients = [], isLoading } = useQuery<AdmissionWithDetails[]>({
     queryKey: ["/api/inpatients/currently-admitted"],
-    staleTime: 0,
+    staleTime: 0, // Always refetch for real-time data
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -56,13 +58,6 @@ export default function CurrentlyAdmittedPage() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
-
-  // Calculate stats
-  const totalAdmitted = admittedPatients.length;
-  const totalDailyCost = admittedPatients.reduce((sum, a) => sum + a.dailyCost, 0);
-  const avgStayDays = totalAdmitted > 0 
-    ? Math.round(admittedPatients.reduce((sum, a) => sum + calculateDays(a.admissionDate), 0) / totalAdmitted)
-    : 0;
 
   if (isLoading) {
     return (
