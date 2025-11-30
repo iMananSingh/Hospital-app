@@ -145,7 +145,7 @@ export default function InPatientManagement() {
   return (
     <div>
       <TopBar title="In-Patient Management" />
-      <div className="px-6 pb-6 pt-4">
+      <div className="px-6 pb-6 pt-4 h-full flex flex-col">
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link href="/bed-occupancy">
