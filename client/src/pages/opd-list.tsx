@@ -216,7 +216,7 @@ export default function OpdList() {
           <Card className="flex flex-col h-full overflow-hidden rounded-b-md pl-[24px] pr-[24px]">
             {/* Fixed Header Section */}
             <div className="container mx-auto px-6 pt-6 pb-0 flex-shrink-0 pl-[0px] pr-[0px]">
-            <div className="flex justify-between items-center mb-6 pl-[15px] pr-[15px]">
+            <div className="flex justify-between items-center mb-6 pl-[16px] pr-[16px]">
               <div>
                 <p className="text-muted-foreground">
                   Manage and view all OPD consultations by doctor
