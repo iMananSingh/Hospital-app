@@ -95,7 +95,7 @@ export default function CurrentlyAdmittedPage() {
 
               {/* Table Section */}
               {filteredPatients.length > 0 ? (
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-y-auto pb-[24px] ml-[0px] mr-[0px] scrollbar-blue">
                   <Table>
                     <TableHeader>
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
