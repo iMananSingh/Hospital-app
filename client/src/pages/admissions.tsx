@@ -262,8 +262,8 @@ export default function InPatientManagement() {
                               <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                               <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Discharge Date</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Discharge Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '6%' }}>Status</TableHead>
                               <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -277,8 +277,8 @@ export default function InPatientManagement() {
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Admission Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Discharge Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '14%' }}>Discharge Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '6%' }}>Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '6%' }}>View</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -310,7 +310,7 @@ export default function InPatientManagement() {
                                     <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell style={{ width: '10%' }}>
+                                <TableCell style={{ width: '14%' }}>
                                   {admission.dischargeDate ? (
                                     <div>
                                       <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
@@ -320,7 +320,7 @@ export default function InPatientManagement() {
                                     <span className="text-gray-400">N/A</span>
                                   )}
                                 </TableCell>
-                                <TableCell style={{ width: '10%' }}>
+                                <TableCell style={{ width: '6%' }}>
                                   <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                     {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                   </Badge>
