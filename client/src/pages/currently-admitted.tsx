@@ -90,10 +90,6 @@ export default function CurrentlyAdmittedPage() {
                   className="pl-10 bg-white border-0"
                 />
               </div>
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-gray-200">
-                <span className="text-sm text-gray-600">All Patients</span>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
-              </div>
             </div>
 
             {/* Table Section */}
