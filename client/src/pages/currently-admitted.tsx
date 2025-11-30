@@ -80,15 +80,6 @@ export default function CurrentlyAdmittedPage() {
         {/* Single Card with Search in Header */}
         <Card>
           <CardHeader>
-            <div className="mb-4">
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Currently Admitted Patients ({filteredPatients.length})
-              </CardTitle>
-              <CardDescription>
-                All patients currently admitted to the hospital
-              </CardDescription>
-            </div>
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
