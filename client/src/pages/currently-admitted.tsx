@@ -79,7 +79,7 @@ export default function CurrentlyAdmittedPage() {
         {/* Single Card with Search in Header */}
         <Card>
           <CardHeader>
-            <div className="mb-4">
+            <div>
               <p className="text-muted-foreground text-[16px]">
                 All patients currently admitted to the hospital
               </p>
