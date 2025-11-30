@@ -148,14 +148,9 @@ export default function CurrentlyAdmittedPage() {
                           </TableCell>
                           <TableCell>
                             {admission.doctor ? (
-                              <div>
-                                <div className="font-medium text-sm flex items-center gap-1">
-                                  <Stethoscope className="h-3 w-3" />
-                                  {admission.doctor.name}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {admission.doctor.specialization}
-                                </div>
+                              <div className="font-medium text-sm flex items-center gap-1">
+                                <Stethoscope className="h-3 w-3" />
+                                {admission.doctor.name}
                               </div>
                             ) : (
                               <span className="text-gray-400">No doctor assigned</span>
