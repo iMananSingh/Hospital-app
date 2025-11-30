@@ -78,116 +78,118 @@ export default function CurrentlyAdmittedPage() {
           <CardHeader className="flex flex-col space-y-1.5 pt-[24px] pb-[24px] pl-[24px] pr-[24px]">
             <p className="text-sm text-muted-foreground">View all currently admitted patient details</p>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
-            {/* Search and Filter Section */}
-            <div className="px-6 flex gap-3 items-center bg-[#FDE4CE] rounded-t-md pl-[16px] pr-[16px] pt-[16px] pb-[16px]">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by patient name, ID, admission ID, ward type, or doctor..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white border-0"
-                />
-              </div>
-            </div>
-
-            {/* Table Section */}
-            {filteredPatients.length > 0 ? (
-              <div className="flex-1 overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Patient Details</TableHead>
-                      <TableHead>Admission Info</TableHead>
-                      <TableHead>Ward/Room</TableHead>
-                      <TableHead>Doctor</TableHead>
-                      <TableHead>Stay Duration</TableHead>
-                      <TableHead>Daily Cost</TableHead>
-                      <TableHead>Total Cost</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPatients.map((admission) => (
-                      <TableRow key={admission.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{admission.patient?.name}</div>
-                            <div className="text-gray-500 text-[12px]">
-                              ID: {admission.patient?.patientId}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {admission.patient?.phone}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-sm">{admission.admissionId}</div>
-                            <div className="text-sm text-gray-500 flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(admission.admissionDate).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                            <div className="text-sm text-gray-500">
-                              Room: {admission.currentRoomNumber || "TBA"}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {admission.doctor ? (
-                            <div className="font-medium text-sm">
-                              {admission.doctor.name}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">No doctor assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {calculateDays(admission.admissionDate)} days
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Link href={`/patients/${admission.patientId}`}>
-                            <Button variant="outline" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery ? "No patients match your search criteria." : "No patients are currently admitted."}
-                  </p>
-                  <Link href="/patients">
-                    <Button>
-                      Admit New Patient
-                    </Button>
-                  </Link>
+          <Card className="flex-1 flex flex-col overflow-hidden m-0">
+            <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+              {/* Search and Filter Section */}
+              <div className="px-6 flex gap-3 items-center bg-[#FDE4CE] rounded-t-md pl-[16px] pr-[16px] pt-[16px] pb-[16px]">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by patient name, ID, admission ID, ward type, or doctor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-white border-0"
+                  />
                 </div>
               </div>
-            )}
-          </CardContent>
+
+              {/* Table Section */}
+              {filteredPatients.length > 0 ? (
+                <div className="flex-1 overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Patient Details</TableHead>
+                        <TableHead>Admission Info</TableHead>
+                        <TableHead>Ward/Room</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Stay Duration</TableHead>
+                        <TableHead>Daily Cost</TableHead>
+                        <TableHead>Total Cost</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPatients.map((admission) => (
+                        <TableRow key={admission.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{admission.patient?.name}</div>
+                              <div className="text-gray-500 text-[12px]">
+                                ID: {admission.patient?.patientId}
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {admission.patient?.phone}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium text-sm">{admission.admissionId}</div>
+                              <div className="text-sm text-gray-500 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(admission.admissionDate).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                              <div className="text-sm text-gray-500">
+                                Room: {admission.currentRoomNumber || "TBA"}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {admission.doctor ? (
+                              <div className="font-medium text-sm">
+                                {admission.doctor.name}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">No doctor assigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {calculateDays(admission.admissionDate)} days
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Link href={`/patients/${admission.patientId}`}>
+                              <Button variant="outline" size="icon">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <User className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery ? "No patients match your search criteria." : "No patients are currently admitted."}
+                    </p>
+                    <Link href="/patients">
+                      <Button>
+                        Admit New Patient
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </Card>
       </div>
     </div>
