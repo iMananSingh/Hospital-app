@@ -15,7 +15,8 @@ import {
   Building2,
   Stethoscope,
   Phone,
-  MapPin
+  MapPin,
+  Eye
 } from "lucide-react";
 import type { Admission, Patient, Doctor } from "@shared/schema";
 
@@ -172,8 +173,8 @@ export default function CurrentlyAdmittedPage() {
                           </TableCell>
                           <TableCell>
                             <Link href={`/patients/${admission.patientId}`}>
-                              <Button variant="outline" size="sm">
-                                View Patient
+                              <Button variant="outline" size="icon">
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
                           </TableCell>
