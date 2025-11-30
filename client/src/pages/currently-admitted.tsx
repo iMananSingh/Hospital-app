@@ -81,7 +81,7 @@ export default function CurrentlyAdmittedPage() {
           <Card className="flex-1 flex flex-col overflow-hidden m-0 ml-[24px] mr-[24px]">
             <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
               {/* Search and Filter Section */}
-              <div className="px-6 flex gap-3 items-center bg-[#FDE4CE] rounded-t-md pl-[16px] pr-[16px] pt-[16px] pb-[16px]">
+              <div className="px-6 flex gap-3 items-center rounded-t-md pl-[16px] pr-[16px] pt-[16px] pb-[16px] bg-[#cbffc9]">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
