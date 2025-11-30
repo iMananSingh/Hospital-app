@@ -255,15 +255,15 @@ export default function InPatientManagement() {
                     <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable' }}>
                       <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
                         <TableHeader>
-                          <TableRow style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0, zIndex: 10 }}>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%' }}>Patient</TableHead>
-                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
-                            <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Admission Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Discharge Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
-                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>View</TableHead>
+                          <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Admission ID</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Patient</TableHead>
+                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Sex/Age</TableHead>
+                            <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Admission Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Discharge Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Status</TableHead>
+                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '8%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>View</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
