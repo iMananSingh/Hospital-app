@@ -245,7 +245,7 @@ export default function InPatientManagement() {
               </CardHeader>
 
               {/* Table */}
-              <CardContent className="p-6 pt-0 pl-[0px] pr-[0px]">
+              <CardContent className="p-6 pt-0 pl-[0px] pr-[0px] overflow-hidden">
                 {/* Table */}
                 {isLoadingAdmissions || isLoadingPatients ? (
                     <div className="text-center py-8">
@@ -254,7 +254,7 @@ export default function InPatientManagement() {
                   ) : filteredAdmissions.length > 0 ? (
                     <>
                       <div style={{ overflowY: 'scroll', overflowX: 'hidden', height: 0 }}>
-                        <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
+                        <Table className="border-collapse" style={{ width: 'calc(100% - 17px)', tableLayout: 'fixed' }}>
                           <TableHeader>
                             <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
@@ -269,7 +269,7 @@ export default function InPatientManagement() {
                           </TableHeader>
                         </Table>
                       </div>
-                      <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
+                      <Table className="border-collapse" style={{ width: 'calc(100% - 17px)', tableLayout: 'fixed' }}>
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
@@ -283,8 +283,8 @@ export default function InPatientManagement() {
                           </TableRow>
                         </TableHeader>
                       </Table>
-                      <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable' }}>
-                        <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
+                      <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable', width: 'calc(100% + 17px)', marginRight: '-17px' }}>
+                        <Table className="border-collapse" style={{ width: 'calc(100% - 17px)', tableLayout: 'fixed' }}>
                           <TableBody>
                             {filteredAdmissions.map((admission) => (
                               <TableRow key={admission.id}>
