@@ -150,7 +150,7 @@ export default function InPatientManagement() {
       <div className="bg-white">
         <div className="flex gap-0 overflow-x-auto pb-2" style={{ marginLeft: '48px' }}>
           <Link href="/bed-occupancy">
-            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-105 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
+            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-115 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
               <div className="flex items-center gap-2">
                 <Bed className="h-5 w-5 text-blue-600" />
                 <div>
@@ -162,7 +162,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/currently-admitted">
-            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-105 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
+            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-115 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-green-600" />
                 <div>
@@ -174,7 +174,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/admitted-today">
-            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-105 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
+            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-115 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
               <div className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-blue-600" />
                 <div>
@@ -186,7 +186,7 @@ export default function InPatientManagement() {
           </Link>
 
           <Link href="/discharged-today">
-            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-105 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
+            <div className="flex-shrink-0 px-6 py-3 rounded-b-2xl border border-gray-300 border-t-0 cursor-pointer hover:scale-115 transition-transform whitespace-nowrap bg-white" style={{ marginTop: '-1px' }}>
               <div className="flex items-center gap-2">
                 <UserX className="h-5 w-5 text-red-600" />
                 <div>
