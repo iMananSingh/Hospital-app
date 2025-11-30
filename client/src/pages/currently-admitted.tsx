@@ -98,15 +98,15 @@ export default function CurrentlyAdmittedPage() {
                 <div className="flex-1 overflow-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Patient Details</TableHead>
-                        <TableHead>Admission Info</TableHead>
-                        <TableHead>Ward/Room</TableHead>
-                        <TableHead>Doctor</TableHead>
-                        <TableHead>Stay Duration</TableHead>
-                        <TableHead>Daily Cost</TableHead>
-                        <TableHead>Total Cost</TableHead>
-                        <TableHead>Actions</TableHead>
+                      <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Stay Duration</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Daily Cost</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Total Cost</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
