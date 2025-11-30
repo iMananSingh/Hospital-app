@@ -87,7 +87,7 @@ export default function CurrentlyAdmittedPage() {
           </CardHeader>
           <CardContent>
             <Card>
-              <CardHeader className="pt-[16px] pb-[16px] pl-[16px] pr-[16px]">
+              <CardHeader className="pt-[16px] pb-[16px] pl-[16px] pr-[16px]" style={{ backgroundColor: '#DBFEEA' }}>
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
