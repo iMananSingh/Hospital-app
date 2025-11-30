@@ -81,10 +81,6 @@ export default function CurrentlyAdmittedPage() {
         <Card>
           <CardHeader>
             <div className="mb-4">
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Currently Admitted Patients ({filteredPatients.length})
-              </CardTitle>
               <CardDescription>
                 All patients currently admitted to the hospital
               </CardDescription>
