@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
@@ -24,6 +24,17 @@ interface AdmissionWithDetails extends Admission {
 
 export default function CurrentlyAdmittedPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleRow = (admissionId: string) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(admissionId)) {
+      newExpanded.delete(admissionId);
+    } else {
+      newExpanded.add(admissionId);
+    }
+    setExpandedRows(newExpanded);
+  };
 
   // Fetch currently admitted patients
   const { data: admittedPatients = [], isLoading } = useQuery<AdmissionWithDetails[]>({
@@ -99,6 +110,7 @@ export default function CurrentlyAdmittedPage() {
                   <Table>
                     <TableHeader>
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                        <TableHead style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
@@ -111,64 +123,117 @@ export default function CurrentlyAdmittedPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredPatients.map((admission) => (
-                        <TableRow key={admission.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{admission.patient?.name}</div>
-                              <div className="text-gray-500 text-[12px]">
-                                ID: {admission.patient?.patientId}
+                        <Fragment key={admission.id}>
+                          <TableRow className="cursor-pointer hover:bg-gray-50" onClick={() => toggleRow(admission.id)}>
+                            <TableCell className="w-10">
+                              <ChevronDown 
+                                className={`h-4 w-4 transition-transform ${expandedRows.has(admission.id) ? 'rotate-180' : ''}`}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{admission.patient?.name}</div>
+                                <div className="text-gray-500 text-[12px]">
+                                  ID: {admission.patient?.patientId}
+                                </div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {admission.patient?.phone}
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {admission.patient?.phone}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium text-sm">{admission.admissionId}</div>
+                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {new Date(admission.admissionDate).toLocaleDateString()}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium text-sm">{admission.admissionId}</div>
-                              <div className="text-sm text-gray-500 flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(admission.admissionDate).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
+                                <div className="text-sm text-gray-500">
+                                  Room: {admission.currentRoomNumber || "TBA"}
+                                </div>
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                              <div className="text-sm text-gray-500">
-                                Room: {admission.currentRoomNumber || "TBA"}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {admission.doctor ? (
-                              <div className="font-medium text-sm">
-                                {admission.doctor.name}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400">No doctor assigned</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {calculateDays(admission.admissionDate)} days
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Link href={`/patients/${admission.patientId}`}>
-                              <Button variant="outline" size="icon">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
+                            </TableCell>
+                            <TableCell>
+                              {admission.doctor ? (
+                                <div className="font-medium text-sm">
+                                  {admission.doctor.name}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">No doctor assigned</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {calculateDays(admission.admissionDate)} days
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
+                            </TableCell>
+                            <TableCell>
+                              <Link href={`/patients/${admission.patientId}`}>
+                                <Button variant="outline" size="icon">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </TableCell>
+                          </TableRow>
+                          {expandedRows.has(admission.id) && (
+                            <TableRow className="bg-gray-50">
+                              <TableCell colSpan={9} className="p-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Admission ID</p>
+                                    <p className="text-sm font-medium mt-1">{admission.admissionId}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
+                                    <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleDateString()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Stay Duration</p>
+                                    <p className="text-sm font-medium mt-1">{calculateDays(admission.admissionDate)} days</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Ward Type</p>
+                                    <p className="text-sm font-medium mt-1">{admission.currentWardType || "Not specified"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Room Number</p>
+                                    <p className="text-sm font-medium mt-1">{admission.currentRoomNumber || "TBA"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Attending Doctor</p>
+                                    <p className="text-sm font-medium mt-1">{admission.doctor?.name || "Not assigned"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Daily Cost</p>
+                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.dailyCost.toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Total Cost</p>
+                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.totalCost.toLocaleString()}</p>
+                                  </div>
+                                  {admission.notes && (
+                                    <div className="col-span-2 md:col-span-3">
+                                      <p className="text-xs font-semibold text-gray-600 uppercase">Notes</p>
+                                      <p className="text-sm mt-1 text-gray-700">{admission.notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>
