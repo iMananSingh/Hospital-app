@@ -116,8 +116,6 @@ export default function CurrentlyAdmittedPage() {
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Stay Duration</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Daily Cost</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Total Cost</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -174,12 +172,6 @@ export default function CurrentlyAdmittedPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <div className="font-medium">₹{admission.dailyCost.toLocaleString()}</div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">₹{admission.totalCost.toLocaleString()}</div>
-                            </TableCell>
-                            <TableCell>
                               <Link href={`/patients/${admission.patientId}`}>
                                 <Button variant="outline" size="icon">
                                   <Eye className="h-4 w-4" />
@@ -189,7 +181,7 @@ export default function CurrentlyAdmittedPage() {
                           </TableRow>
                           {expandedRows.has(admission.id) && (
                             <TableRow className="bg-gray-50">
-                              <TableCell colSpan={9} className="p-4">
+                              <TableCell colSpan={7} className="p-4">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission ID</p>
