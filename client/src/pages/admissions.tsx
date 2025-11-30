@@ -258,11 +258,11 @@ export default function InPatientManagement() {
                           <TableHeader>
                             <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '26%' }}>Patient</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%' }}>Patient</TableHead>
                               <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                               <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '11%' }}>Admission Date</TableHead>
-                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '11%' }}>Discharge Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Admission Date</TableHead>
+                              <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Discharge Date</TableHead>
                               <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
                               <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>View</TableHead>
                             </TableRow>
@@ -273,11 +273,11 @@ export default function InPatientManagement() {
                         <TableHeader>
                           <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '26%' }}>Patient</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
                             <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%' }}>Ward/Room</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '11%' }}>Admission Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '11%' }}>Discharge Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Admission Date</TableHead>
+                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%' }}>Discharge Date</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%' }}>Status</TableHead>
                             <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>View</TableHead>
                           </TableRow>
@@ -291,7 +291,7 @@ export default function InPatientManagement() {
                                 <TableCell className="font-medium" style={{ width: '15%' }}>
                                   {admission.admissionId}
                                 </TableCell>
-                                <TableCell style={{ width: '26%' }}>
+                                <TableCell style={{ width: '22%' }}>
                                   <div>
                                     <div className="font-medium">{getPatientName(admission.patientId)}</div>
                                     <div className="text-gray-500 text-[12px]">{getPatientId(admission.patientId)}</div>
@@ -304,13 +304,13 @@ export default function InPatientManagement() {
                                     <div className="text-gray-500 text-[13px]">Room: {admission.currentRoomNumber || "TBA"}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell style={{ width: '11%' }}>
+                                <TableCell style={{ width: '13%' }}>
                                   <div>
                                     <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
                                     <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                   </div>
                                 </TableCell>
-                                <TableCell style={{ width: '11%' }}>
+                                <TableCell style={{ width: '13%' }}>
                                   {admission.dischargeDate ? (
                                     <div>
                                       <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
