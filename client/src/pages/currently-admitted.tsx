@@ -75,13 +75,12 @@ export default function CurrentlyAdmittedPage() {
   return (
     <div>
       <TopBar title="Currently Admitted Patients" />
-
       <div className="px-6 pb-6 pt-4">
         {/* Single Card with Search in Header */}
         <Card>
           <CardHeader>
             <div className="mb-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-[16px]">
                 All patients currently admitted to the hospital
               </p>
             </div>
