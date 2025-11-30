@@ -254,8 +254,8 @@ export default function InPatientManagement() {
                   ) : filteredAdmissions.length > 0 ? (
                     <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable' }}>
                       <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
-                        <TableHeader style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                          <TableRow style={{ backgroundColor: '#F7F7F7' }}>
+                        <TableHeader>
+                          <TableRow style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0, zIndex: 10 }}>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%' }}>Admission ID</TableHead>
                             <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%' }}>Patient</TableHead>
                             <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%' }}>Sex/Age</TableHead>
