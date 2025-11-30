@@ -253,45 +253,45 @@ export default function InPatientManagement() {
                     </div>
                   ) : filteredAdmissions.length > 0 ? (
                     <div className="overflow-y-auto scrollbar-peach" style={{ height: 'calc(100vh - 480px - 49px)', scrollbarGutter: 'stable' }}>
-                      <Table className="border-collapse" style={{ width: '100%', tableLayout: 'fixed' }}>
-                        <TableHeader>
-                          <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '15%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Admission ID</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '22%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Patient</TableHead>
-                            <TableHead className="text-center pt-[0px] pb-[0px]" style={{ width: '8%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Sex/Age</TableHead>
-                            <TableHead className="text-left pt-[0px] pb-[0px]" style={{ width: '11%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Admission Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '13%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Discharge Date</TableHead>
-                            <TableHead className="pt-[0px] pb-[0px]" style={{ width: '10%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>Status</TableHead>
-                            <TableHead className="border-l-2 text-center pt-[0px] pb-[0px]" style={{ width: '8%', position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#F7F7F7' }}>View</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                      <table className="w-full caption-bottom text-sm border-collapse" style={{ tableLayout: 'fixed' }}>
+                        <thead className="[&_tr]:border-b" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                          <tr className="border-b" style={{ backgroundColor: '#F7F7F7' }}>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '15%', backgroundColor: '#F7F7F7' }}>Admission ID</th>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '22%', backgroundColor: '#F7F7F7' }}>Patient</th>
+                            <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '8%', backgroundColor: '#F7F7F7' }}>Sex/Age</th>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '11%', backgroundColor: '#F7F7F7' }}>Ward/Room</th>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '13%', backgroundColor: '#F7F7F7' }}>Admission Date</th>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '13%', backgroundColor: '#F7F7F7' }}>Discharge Date</th>
+                            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground pt-[0px] pb-[0px]" style={{ width: '10%', backgroundColor: '#F7F7F7' }}>Status</th>
+                            <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground border-l-2 pt-[0px] pb-[0px]" style={{ width: '8%', backgroundColor: '#F7F7F7' }}>View</th>
+                          </tr>
+                        </thead>
+                        <tbody className="[&_tr:last-child]:border-0">
                           {filteredAdmissions.map((admission) => (
-                            <TableRow key={admission.id}>
-                              <TableCell className="font-medium" style={{ width: '15%' }}>
+                            <tr key={admission.id} className="border-b transition-colors hover:bg-muted/50">
+                              <td className="p-4 align-middle font-medium" style={{ width: '15%' }}>
                                 {admission.admissionId}
-                              </TableCell>
-                              <TableCell style={{ width: '22%' }}>
+                              </td>
+                              <td className="p-4 align-middle" style={{ width: '22%' }}>
                                 <div>
                                   <div className="font-medium">{getPatientName(admission.patientId)}</div>
                                   <div className="text-gray-500 text-[12px]">{getPatientId(admission.patientId)}</div>
                                 </div>
-                              </TableCell>
-                              <TableCell className="text-center" style={{ width: '8%' }}>{getPatientSexAge(admission.patientId)}</TableCell>
-                              <TableCell style={{ width: '11%' }}>
+                              </td>
+                              <td className="p-4 align-middle text-center" style={{ width: '8%' }}>{getPatientSexAge(admission.patientId)}</td>
+                              <td className="p-4 align-middle" style={{ width: '11%' }}>
                                 <div>
                                   <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
                                   <div className="text-gray-500 text-[13px]">Room: {admission.currentRoomNumber || "TBA"}</div>
                                 </div>
-                              </TableCell>
-                              <TableCell style={{ width: '13%' }}>
+                              </td>
+                              <td className="p-4 align-middle" style={{ width: '13%' }}>
                                 <div>
                                   <div>{new Date(admission.admissionDate).toLocaleDateString()}</div>
                                   <div className="text-xs text-gray-500">{new Date(admission.admissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                 </div>
-                              </TableCell>
-                              <TableCell style={{ width: '13%' }}>
+                              </td>
+                              <td className="p-4 align-middle" style={{ width: '13%' }}>
                                 {admission.dischargeDate ? (
                                   <div>
                                     <div>{new Date(admission.dischargeDate).toLocaleDateString()}</div>
@@ -300,23 +300,23 @@ export default function InPatientManagement() {
                                 ) : (
                                   <span className="text-gray-400">N/A</span>
                                 )}
-                              </TableCell>
-                              <TableCell style={{ width: '10%' }}>
+                              </td>
+                              <td className="p-4 align-middle" style={{ width: '10%' }}>
                                 <Badge variant={getStatusBadgeVariant(admission.status)} className={getStatusBadgeClassName(admission.status)}>
                                   {admission.status.charAt(0).toUpperCase() + admission.status.slice(1)}
                                 </Badge>
-                              </TableCell>
-                              <TableCell className="border-l-2" style={{ width: '8%' }}>
+                              </td>
+                              <td className="p-4 align-middle border-l-2" style={{ width: '8%' }}>
                                 <Link href={`/patients/${admission.patientId}`}>
                                   <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                 </Link>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           ))}
-                        </TableBody>
-                      </Table>
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
                     <div className="text-center py-8 px-6">
