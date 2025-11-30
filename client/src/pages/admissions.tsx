@@ -294,7 +294,7 @@ export default function InPatientManagement() {
                                 <TableCell style={{ width: '23%' }}>
                                   <div>
                                     <div className="font-medium">{getPatientName(admission.patientId)}</div>
-                                    <div className="text-sm text-gray-500">{getPatientId(admission.patientId)}</div>
+                                    <div className="text-gray-500 text-[12px]">{getPatientId(admission.patientId)}</div>
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-center" style={{ width: '8%' }}>{getPatientSexAge(admission.patientId)}</TableCell>
