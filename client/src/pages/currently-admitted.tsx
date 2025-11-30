@@ -120,7 +120,7 @@ export default function CurrentlyAdmittedPage() {
                           <TableCell>
                             <div>
                               <div className="font-medium">{admission.patient?.name}</div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-gray-500 text-[12px]">
                                 ID: {admission.patient?.patientId}
                               </div>
                               <div className="text-sm text-gray-500 flex items-center gap-1">
