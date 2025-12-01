@@ -156,7 +156,7 @@ export default function CurrentlyAdmittedPage() {
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                         <TableHead style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
