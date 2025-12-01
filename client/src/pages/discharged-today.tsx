@@ -176,9 +176,6 @@ export default function DischargedTodayPage() {
                           <div className="text-sm text-gray-500">
                             Room: {admission.currentRoomNumber || "N/A"}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            Daily: ₹{admission.dailyCost.toLocaleString()}
-                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
