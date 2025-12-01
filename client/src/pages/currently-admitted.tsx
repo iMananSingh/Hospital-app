@@ -152,11 +152,11 @@ export default function CurrentlyAdmittedPage() {
               {filteredPatients.length > 0 ? (
                 <div className="flex-1 overflow-y-auto pb-[24px] ml-[0px] mr-[0px] scrollbar-green">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="sticky top-0 z-50">
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                         <TableHead style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Age/Sex/Phone</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
