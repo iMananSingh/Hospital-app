@@ -1400,11 +1400,15 @@ export default function ServiceManagement() {
           </div>
         ) : activeTab !== "pathology" ? (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 {getServiceCategoryIcon(activeTab)}
                 {serviceCategories.find((cat) => cat.key === activeTab)?.label}
               </CardTitle>
+              <Button onClick={() => openServiceDialog()} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Service
+              </Button>
             </CardHeader>
             <CardContent>
               {filteredServices.length > 0 ? (
