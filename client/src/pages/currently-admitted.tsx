@@ -258,10 +258,6 @@ export default function CurrentlyAdmittedPage() {
                                     <p className="text-sm font-medium mt-1">{calculateExpectedStay(admission.admissionDate, expectedDischargeDates[admission.id])}</p>
                                   </div>
                                   <div>
-                                    <p className="text-xs font-semibold text-gray-600 uppercase">Room Number</p>
-                                    <p className="text-sm font-medium mt-1">{admission.currentRoomNumber || "TBA"}</p>
-                                  </div>
-                                  <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Attending Doctor</p>
                                     <p className="text-sm font-medium mt-1">{admission.doctor?.name || "Not assigned"}</p>
                                   </div>
