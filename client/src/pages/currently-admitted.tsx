@@ -25,6 +25,7 @@ interface AdmissionWithDetails extends Admission {
 export default function CurrentlyAdmittedPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [expectedDischargeDates, setExpectedDischargeDates] = useState<Record<string, string>>({});
 
   const toggleRow = (admissionId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -185,11 +186,24 @@ export default function CurrentlyAdmittedPage() {
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
-                                    <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                    <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                                   </div>
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Stay Duration</p>
                                     <p className="text-sm font-medium mt-1">{calculateDays(admission.admissionDate)} days</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Expected Discharge Date</p>
+                                    <Input
+                                      type="date"
+                                      value={expectedDischargeDates[admission.id] || ""}
+                                      onChange={(e) => setExpectedDischargeDates(prev => ({
+                                        ...prev,
+                                        [admission.id]: e.target.value
+                                      }))}
+                                      className="text-sm mt-1"
+                                      data-testid={`input-expected-discharge-${admission.id}`}
+                                    />
                                   </div>
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Ward Type</p>
