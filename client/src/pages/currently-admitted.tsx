@@ -192,7 +192,7 @@ export default function CurrentlyAdmittedPage() {
                           {expandedRows.has(admission.id) && (
                             <TableRow className="bg-gray-50">
                               <TableCell colSpan={7} className="p-4 pl-[64px] pr-[64px]">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
                                     <p className="text-sm font-medium mt-1">{new Date(admission.admissionDate).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
@@ -239,7 +239,7 @@ export default function CurrentlyAdmittedPage() {
                                     <p className="text-sm font-medium mt-1 text-green-600">₹{admission.totalCost.toLocaleString()}</p>
                                   </div>
                                   {admission.notes && (
-                                    <div className="col-span-2 md:col-span-3">
+                                    <div className="col-span-2 md:col-span-4">
                                       <p className="text-xs font-semibold text-gray-600 uppercase">Notes</p>
                                       <p className="text-sm mt-1 text-gray-700">{admission.notes}</p>
                                     </div>
