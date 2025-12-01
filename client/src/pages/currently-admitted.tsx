@@ -26,6 +26,7 @@ export default function CurrentlyAdmittedPage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expectedDischargeDates, setExpectedDischargeDates] = useState<Record<string, string>>({});
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState<Record<string, string>>({});
+  const [notesStatus, setNotesStatus] = useState<Record<string, string>>({});
 
   // Load expected discharge dates from localStorage on mount
   useEffect(() => {
@@ -60,6 +61,23 @@ export default function CurrentlyAdmittedPage() {
   useEffect(() => {
     localStorage.setItem("primaryDiagnosis", JSON.stringify(primaryDiagnosis));
   }, [primaryDiagnosis]);
+
+  // Load notes/status from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("notesStatus");
+    if (stored) {
+      try {
+        setNotesStatus(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse notes/status from localStorage", e);
+      }
+    }
+  }, []);
+
+  // Save notes/status to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("notesStatus", JSON.stringify(notesStatus));
+  }, [notesStatus]);
 
   const toggleRow = (admissionId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -273,6 +291,20 @@ export default function CurrentlyAdmittedPage() {
                                       }))}
                                       className="text-sm mt-1"
                                       data-testid={`input-primary-diagnosis-${admission.id}`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Notes / Status</p>
+                                    <Input
+                                      type="text"
+                                      placeholder="Enter notes or status"
+                                      value={notesStatus[admission.id] || ""}
+                                      onChange={(e) => setNotesStatus(prev => ({
+                                        ...prev,
+                                        [admission.id]: e.target.value
+                                      }))}
+                                      className="text-sm mt-1"
+                                      data-testid={`input-notes-status-${admission.id}`}
                                     />
                                   </div>
                                   <div>
