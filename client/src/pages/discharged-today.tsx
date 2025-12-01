@@ -93,7 +93,6 @@ export default function DischargedTodayPage() {
   return (
     <div>
       <TopBar title="Patients Discharged Today" />
-
       <div className="px-6 pb-6 pt-4">
         {/* Search and Filters */}
         <Card className="mb-6">
@@ -128,7 +127,7 @@ export default function DischargedTodayPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Patient Details</TableHead>
+                    <TableHead>Patient</TableHead>
                     <TableHead>Stay Details</TableHead>
                     <TableHead>Ward/Room</TableHead>
                     <TableHead>Doctor</TableHead>
