@@ -201,7 +201,7 @@ export default function CurrentlyAdmittedPage() {
                             <TableCell>
                               <div>
                                 <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
-                                <div className="text-sm text-gray-500">
+                                <div className="text-gray-500 text-[13px]">
                                   Room: {admission.currentRoomNumber || "TBA"}
                                 </div>
                               </div>
