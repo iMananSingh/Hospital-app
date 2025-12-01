@@ -181,8 +181,7 @@ export default function DischargedTodayPage() {
                       </TableCell>
                       <TableCell>
                         {admission.doctor ? (
-                          <div className="font-medium text-sm flex items-center gap-1">
-                            <Stethoscope className="h-3 w-3" />
+                          <div className="font-medium text-sm">
                             {admission.doctor.name}
                           </div>
                         ) : (
