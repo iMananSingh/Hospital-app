@@ -151,45 +151,45 @@ export default function CurrentlyAdmittedPage() {
               {/* Table Section */}
               {filteredPatients.length > 0 ? (
                 <div className="flex-1 overflow-y-auto pb-[24px] ml-[0px] mr-[0px] scrollbar-green">
-                  <Table>
-                    <TableHeader style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#F7F7F7' }}>
-                      <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                        <TableHead style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Age/Sex/Phone</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Stay Duration</TableHead>
-                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <table className="w-full caption-bottom text-sm border-collapse">
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 50, backgroundColor: '#F7F7F7', display: 'table-header-group' }}>
+                      <tr style={{ backgroundColor: '#F7F7F7', borderBottom: '1px solid hsl(var(--border))' }}>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', width: '40px', backgroundColor: '#F7F7F7' }}></th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Patient</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Age/Sex/Phone</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Admission Info</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Ward/Room</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Doctor</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Stay Duration</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {filteredPatients.map((admission) => (
                         <Fragment key={admission.id}>
-                          <TableRow className="cursor-pointer hover:bg-gray-50" onClick={() => toggleRow(admission.id)}>
-                            <TableCell className="w-10">
+                          <tr className="border-b transition-colors hover:bg-gray-50 cursor-pointer" onClick={() => toggleRow(admission.id)}>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }} className="w-10">
                               <ChevronDown 
                                 className={`h-4 w-4 transition-transform ${expandedRows.has(admission.id) ? 'rotate-180' : ''}`}
                               />
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <div>
                                 <div className="font-medium">{admission.patient?.name}</div>
                                 <div className="text-gray-500 text-[12px]">
                                   ID: {admission.patient?.patientId}
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <div className="text-sm text-gray-500">
                                 {admission.patient?.age}/{admission.patient?.gender?.charAt(0).toUpperCase()}
                               </div>
                               <div className="text-gray-500 text-[13px]">
                                 {admission.patient?.phone || 'N/A'}
                               </div>
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <div>
                                 <div className="font-medium text-sm">{admission.admissionId}</div>
                                 <div className="text-gray-500 flex items-center gap-1 text-[13px]">
@@ -197,16 +197,16 @@ export default function CurrentlyAdmittedPage() {
                                   {new Date(admission.admissionDate).toLocaleDateString()}
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <div>
                                 <div className="font-medium">{admission.currentWardType || "Not specified"}</div>
                                 <div className="text-gray-500 text-[13px]">
                                   Room: {admission.currentRoomNumber || "TBA"}
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               {admission.doctor ? (
                                 <div className="font-medium text-sm">
                                   {admission.doctor.name}
@@ -214,23 +214,23 @@ export default function CurrentlyAdmittedPage() {
                               ) : (
                                 <span className="text-gray-400">No doctor assigned</span>
                               )}
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <Badge variant="outline">
                                 {calculateDays(admission.admissionDate)} days
                               </Badge>
-                            </TableCell>
-                            <TableCell>
+                            </td>
+                            <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                               <Link href={`/patients/${admission.patientId}`}>
                                 <Button variant="outline" size="icon">
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </Link>
-                            </TableCell>
-                          </TableRow>
+                            </td>
+                          </tr>
                           {expandedRows.has(admission.id) && (
-                            <TableRow className="bg-gray-50">
-                              <TableCell colSpan={8} className="p-4 pl-[64px] pr-[64px]">
+                            <tr style={{ backgroundColor: '#f9fafb' }}>
+                              <td colSpan={8} style={{ padding: '16px 64px' }}>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
@@ -306,13 +306,13 @@ export default function CurrentlyAdmittedPage() {
                                     </div>
                                   )}
                                 </div>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           )}
                         </Fragment>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center">
