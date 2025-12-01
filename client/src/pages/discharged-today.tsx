@@ -94,25 +94,26 @@ export default function DischargedTodayPage() {
     <div>
       <TopBar title="Patients Discharged Today" />
       <div className="px-6 pb-6 pt-4">
-        {/* Search and Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by patient name, ID, admission ID, ward type, doctor, or diagnosis..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Discharges Table */}
         <Card>
+          {/* Search and Filters */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by patient name, ID, admission ID, ward type, doctor, or diagnosis..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Discharges Table */}
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserX className="h-5 w-5" />
@@ -230,6 +231,7 @@ export default function DischargedTodayPage() {
               </div>
             )}
           </CardContent>
+        </Card>
         </Card>
       </div>
     </div>
