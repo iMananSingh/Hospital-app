@@ -115,10 +115,6 @@ export default function DischargedTodayPage() {
           {/* Discharges Table */}
           <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserX className="h-5 w-5" />
-              Today's Discharges ({filteredDischarges.length})
-            </CardTitle>
             <CardDescription>
               Patients discharged today (IST timezone) - {new Date().toLocaleDateString('en-IN')}
             </CardDescription>
