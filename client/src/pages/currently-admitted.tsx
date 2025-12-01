@@ -293,7 +293,7 @@ export default function CurrentlyAdmittedPage() {
                                       data-testid={`input-primary-diagnosis-${admission.id}`}
                                     />
                                   </div>
-                                  <div>
+                                  <div className="col-span-2 md:col-span-2">
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Notes / Status</p>
                                     <Input
                                       type="text"
