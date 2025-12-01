@@ -133,7 +133,7 @@ export default function CurrentlyAdmittedPage() {
   if (isLoading) {
     return (
       <div>
-        <TopBar title="Patient Admissions" />
+        <TopBar title="Currently Admitted Patients" />
         <div className="px-6 pb-6 pt-4">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -145,7 +145,7 @@ export default function CurrentlyAdmittedPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <TopBar title="Patient Admissions" />
+      <TopBar title="Currently Admitted Patients" />
       <div className="px-6 flex-1 overflow-hidden pt-4 pb-4">
         <Card className="flex flex-col h-full">
           <CardHeader className="flex flex-col space-y-1.5 pt-[24px] pb-[24px] pl-[40px] pr-[40px]">
