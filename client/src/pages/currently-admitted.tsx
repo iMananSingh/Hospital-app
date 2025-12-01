@@ -12,7 +12,6 @@ import {
   Calendar, 
   Search,
   Eye,
-  Phone,
   ChevronDown
 } from "lucide-react";
 import type { Admission, Patient, Doctor } from "@shared/schema";
@@ -179,10 +178,6 @@ export default function CurrentlyAdmittedPage() {
                                 <div className="font-medium">{admission.patient?.name}</div>
                                 <div className="text-gray-500 text-[12px]">
                                   ID: {admission.patient?.patientId}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {admission.patient?.phone}
                                 </div>
                               </div>
                             </TableCell>
