@@ -207,12 +207,6 @@ export default function DischargedTodayPage() {
                         <div className="text-xs text-gray-500">
                           Deposit: ₹{(admission.initialDeposit || 0).toLocaleString()}
                         </div>
-                        <Badge 
-                          variant={admission.status === 'discharged' ? 'default' : 'secondary'}
-                          className="mt-1"
-                        >
-                          Discharged
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Link href={`/patients/${admission.patientId}`}>
