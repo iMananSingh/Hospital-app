@@ -266,14 +266,6 @@ export default function CurrentlyAdmittedPage() {
                                     <p className="text-sm font-medium mt-1">{admission.doctor?.name || "Not assigned"}</p>
                                   </div>
                                   <div>
-                                    <p className="text-xs font-semibold text-gray-600 uppercase">Daily Cost</p>
-                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.dailyCost.toLocaleString()}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold text-gray-600 uppercase">Total Cost</p>
-                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.totalCost.toLocaleString()}</p>
-                                  </div>
-                                  <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Primary Diagnosis</p>
                                     <Input
                                       type="text"
@@ -286,6 +278,14 @@ export default function CurrentlyAdmittedPage() {
                                       className="text-sm mt-1"
                                       data-testid={`input-primary-diagnosis-${admission.id}`}
                                     />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Daily Cost</p>
+                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.dailyCost.toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Total Cost</p>
+                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.totalCost.toLocaleString()}</p>
                                   </div>
                                   {admission.notes && (
                                     <div className="col-span-2 md:col-span-4">
