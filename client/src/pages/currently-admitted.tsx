@@ -174,7 +174,7 @@ export default function CurrentlyAdmittedPage() {
                       <tr style={{ backgroundColor: '#F7F7F7', borderBottom: '1px solid hsl(var(--border))' }}>
                         <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', width: '40px', backgroundColor: '#F7F7F7' }}></th>
                         <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Patient</th>
-                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Age/Sex/Phone</th>
+                        <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Patient Details</th>
                         <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Admission Info</th>
                         <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Ward/Room</th>
                         <th style={{ height: '48px', paddingLeft: '16px', paddingRight: '16px', textAlign: 'left', fontWeight: 500, color: 'hsl(var(--muted-foreground))', backgroundColor: '#F7F7F7' }}>Doctor</th>
