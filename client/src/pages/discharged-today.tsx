@@ -17,7 +17,8 @@ import {
   Phone,
   IndianRupee,
   TrendingUp,
-  User
+  User,
+  Eye
 } from "lucide-react";
 import { useTimezone } from "@/hooks/use-timezone";
 import type { Admission, Patient, Doctor } from "@shared/schema";
@@ -207,8 +208,8 @@ export default function DischargedTodayPage() {
                       </TableCell>
                       <TableCell>
                         <Link href={`/patients/${admission.patientId}`}>
-                          <Button variant="outline" size="sm">
-                            View Patient
+                          <Button variant="outline" size="icon">
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
                       </TableCell>
