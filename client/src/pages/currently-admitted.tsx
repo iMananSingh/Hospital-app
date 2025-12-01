@@ -192,7 +192,7 @@ export default function CurrentlyAdmittedPage() {
                             <TableCell>
                               <div>
                                 <div className="font-medium text-sm">{admission.admissionId}</div>
-                                <div className="text-sm text-gray-500 flex items-center gap-1">
+                                <div className="text-gray-500 flex items-center gap-1 text-[13px]">
                                   <Calendar className="h-3 w-3" />
                                   {new Date(admission.admissionDate).toLocaleDateString()}
                                 </div>
