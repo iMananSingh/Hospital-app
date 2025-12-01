@@ -154,14 +154,14 @@ export default function CurrentlyAdmittedPage() {
                   <Table>
                     <TableHeader>
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Patient</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Age/Sex/Phone</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Stay Duration</TableHead>
-                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7' }}>Actions</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', width: '40px', position: 'sticky', top: 0 }}></TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Patient</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Age/Sex/Phone</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Admission Info</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Ward/Room</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Doctor</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Stay Duration</TableHead>
+                        <TableHead className="sticky top-0 z-50" style={{ backgroundColor: '#F7F7F7', position: 'sticky', top: 0 }}>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
