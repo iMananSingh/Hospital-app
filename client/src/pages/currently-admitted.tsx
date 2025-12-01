@@ -28,6 +28,23 @@ export default function CurrentlyAdmittedPage() {
   const [expectedDischargeDates, setExpectedDischargeDates] = useState<Record<string, string>>({});
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState<Record<string, string>>({});
 
+  // Load expected discharge dates from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("expectedDischargeDates");
+    if (stored) {
+      try {
+        setExpectedDischargeDates(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse expected discharge dates from localStorage", e);
+      }
+    }
+  }, []);
+
+  // Save expected discharge dates to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("expectedDischargeDates", JSON.stringify(expectedDischargeDates));
+  }, [expectedDischargeDates]);
+
   // Load primary diagnosis from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("primaryDiagnosis");
