@@ -201,9 +201,6 @@ export default function DischargedTodayPage() {
                         <div className="font-medium text-green-600">
                           ₹{(admission.totalCost || 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          Deposit: ₹{(admission.initialDeposit || 0).toLocaleString()}
-                        </div>
                       </TableCell>
                       <TableCell>
                         <Link href={`/patients/${admission.patientId}`}>
