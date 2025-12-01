@@ -182,7 +182,7 @@ export default function CurrentlyAdmittedPage() {
                           </TableRow>
                           {expandedRows.has(admission.id) && (
                             <TableRow className="bg-gray-50">
-                              <TableCell colSpan={7} className="p-4">
+                              <TableCell colSpan={7} className="p-4 pl-[64px] pr-[64px]">
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
