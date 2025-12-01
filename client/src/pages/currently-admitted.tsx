@@ -280,6 +280,10 @@ export default function CurrentlyAdmittedPage() {
                                     />
                                   </div>
                                   <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Initial Deposit</p>
+                                    <p className="text-sm font-medium mt-1 text-green-600">₹{admission.initialDeposit.toLocaleString()}</p>
+                                  </div>
+                                  <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Daily Cost</p>
                                     <p className="text-sm font-medium mt-1 text-green-600">₹{admission.dailyCost.toLocaleString()}</p>
                                   </div>
