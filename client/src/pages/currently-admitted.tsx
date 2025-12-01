@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import TopBar from "@/components/layout/topbar";
@@ -26,6 +26,24 @@ export default function CurrentlyAdmittedPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [expectedDischargeDates, setExpectedDischargeDates] = useState<Record<string, string>>({});
+  const [primaryDiagnosis, setPrimaryDiagnosis] = useState<Record<string, string>>({});
+
+  // Load primary diagnosis from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("primaryDiagnosis");
+    if (stored) {
+      try {
+        setPrimaryDiagnosis(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse primary diagnosis from localStorage", e);
+      }
+    }
+  }, []);
+
+  // Save primary diagnosis to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("primaryDiagnosis", JSON.stringify(primaryDiagnosis));
+  }, [primaryDiagnosis]);
 
   const toggleRow = (admissionId: string) => {
     const newExpanded = new Set(expandedRows);
@@ -237,6 +255,20 @@ export default function CurrentlyAdmittedPage() {
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Total Cost</p>
                                     <p className="text-sm font-medium mt-1 text-green-600">₹{admission.totalCost.toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Primary Diagnosis</p>
+                                    <Input
+                                      type="text"
+                                      placeholder="Enter primary diagnosis"
+                                      value={primaryDiagnosis[admission.id] || ""}
+                                      onChange={(e) => setPrimaryDiagnosis(prev => ({
+                                        ...prev,
+                                        [admission.id]: e.target.value
+                                      }))}
+                                      className="text-sm mt-1"
+                                      data-testid={`input-primary-diagnosis-${admission.id}`}
+                                    />
                                   </div>
                                   {admission.notes && (
                                     <div className="col-span-2 md:col-span-4">
