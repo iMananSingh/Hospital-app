@@ -69,6 +69,15 @@ export default function CurrentlyAdmittedPage() {
     return diffDays;
   };
 
+  const calculateExpectedStay = (admissionDate: string, dischargeDate: string | undefined) => {
+    if (!dischargeDate) return "-";
+    const admission = new Date(admissionDate);
+    const discharge = new Date(dischargeDate);
+    const diffTime = Math.abs(discharge.getTime() - admission.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? `${diffDays} days` : "-";
+  };
+
   if (isLoading) {
     return (
       <div>
@@ -204,6 +213,10 @@ export default function CurrentlyAdmittedPage() {
                                       className="text-sm mt-1"
                                       data-testid={`input-expected-discharge-${admission.id}`}
                                     />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-600 uppercase">Expected Total Stay</p>
+                                    <p className="text-sm font-medium mt-1">{calculateExpectedStay(admission.admissionDate, expectedDischargeDates[admission.id])}</p>
                                   </div>
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Ward Type</p>
