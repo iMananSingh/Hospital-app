@@ -128,6 +128,7 @@ export default function DischargedTodayPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patient</TableHead>
+                    <TableHead>Patient Details</TableHead>
                     <TableHead>Stay Details</TableHead>
                     <TableHead>Ward/Room</TableHead>
                     <TableHead>Doctor</TableHead>
@@ -144,6 +145,16 @@ export default function DischargedTodayPage() {
                           <div className="font-medium">{admission.patient?.name}</div>
                           <div className="text-sm text-gray-500">
                             ID: {admission.patient?.patientId}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="text-sm text-gray-500">
+                            {admission.patient?.age}/{admission.patient?.gender?.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {admission.patient?.phone || 'N/A'}
                           </div>
                         </div>
                       </TableCell>
