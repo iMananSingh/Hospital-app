@@ -157,6 +157,7 @@ export default function CurrentlyAdmittedPage() {
                       <TableRow style={{ backgroundColor: '#F7F7F7' }}>
                         <TableHead style={{ backgroundColor: '#F7F7F7', width: '40px' }}></TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
+                        <TableHead style={{ backgroundColor: '#F7F7F7' }}>Patient Details</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Admission Info</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Ward/Room</TableHead>
                         <TableHead style={{ backgroundColor: '#F7F7F7' }}>Doctor</TableHead>
@@ -183,6 +184,14 @@ export default function CurrentlyAdmittedPage() {
                                   <Phone className="h-3 w-3" />
                                   {admission.patient?.phone}
                                 </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-gray-500">
+                                Age: {admission.patient?.age}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Gender: {admission.patient?.gender}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -226,7 +235,7 @@ export default function CurrentlyAdmittedPage() {
                           </TableRow>
                           {expandedRows.has(admission.id) && (
                             <TableRow className="bg-gray-50">
-                              <TableCell colSpan={7} className="p-4 pl-[64px] pr-[64px]">
+                              <TableCell colSpan={8} className="p-4 pl-[64px] pr-[64px]">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                   <div>
                                     <p className="text-xs font-semibold text-gray-600 uppercase">Admission Date</p>
