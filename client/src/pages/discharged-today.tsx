@@ -146,10 +146,6 @@ export default function DischargedTodayPage() {
                           <div className="text-sm text-gray-500">
                             ID: {admission.patient?.patientId}
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {admission.patient?.phone}
-                          </div>
                           <div className="text-sm text-gray-500">
                             Age: {admission.patient?.age} • {admission.patient?.gender}
                           </div>
