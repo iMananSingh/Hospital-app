@@ -185,7 +185,7 @@ export default function CurrentlyAdmittedPage() {
                               <div className="text-sm text-gray-500">
                                 {admission.patient?.age}/{admission.patient?.gender?.charAt(0).toUpperCase()}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-gray-500 text-[13px]">
                                 {admission.patient?.phone || 'N/A'}
                               </div>
                             </TableCell>
