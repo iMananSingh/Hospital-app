@@ -7397,14 +7397,9 @@ export class SqliteStorage implements IStorage {
 
             if (!serviceExists) {
               // Service doesn't exist in the table - it's a placeholder
-              // For pathology, use pathology_test_placeholder; for OPD, use opd_consultation_placeholder
-              if (rate.serviceCategory === "pathology") {
-                serviceId = "pathology_test_placeholder";
-              } else if (rate.serviceCategory === "opd") {
-                serviceId = "opd_consultation_placeholder";
-              } else {
-                serviceId = null;
-              }
+              // Set to null to satisfy FK constraint (serviceId is nullable in schema)
+              // The serviceName and serviceCategory fields store the information
+              serviceId = null;
             }
           }
 

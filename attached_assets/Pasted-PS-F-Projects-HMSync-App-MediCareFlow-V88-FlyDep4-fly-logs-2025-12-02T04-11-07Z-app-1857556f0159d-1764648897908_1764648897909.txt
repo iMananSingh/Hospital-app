@@ -1,0 +1,101 @@
+PS F:\Projects\HMSync App\MediCareFlow-V88-FlyDep4> fly logs
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:36798
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:24360
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at /app/node_modules/jsonwebtoken/verify.js:261:12
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at getSecret (/app/node_modules/jsonwebtoken/verify.js:97:14)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at module.exports [as verify] (/app/node_modules/jsonwebtoken/verify.js:101:10)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at f (file:///app/dist/index.js:614:24273)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5) {
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]}
+2025-12-02T04:11:07Z app[1857556f0159d8] bom [info]4:11:07 AM [express] PUT /api/doctors/1b1cf4f465453d9d557337700d561351/salary-rates 500 in 3ms :: {"…
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Saving 1 service rates for doctor 1b1cf4f465453d9d557337700d561351
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Error saving doctor service rates: SqliteError: FOREIGN KEY constraint failed
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at PreparedQuery.get (file:///app/node_modules/drizzle-orm/better-sqlite3/session.js:88:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at QueryPromise.get (file:///app/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:164:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.createDoctorServiceRate (file:///app/dist/index.js:614:9454)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.saveDoctorServiceRates (file:///app/dist/index.js:614:13304)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:36798
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:24360
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at /app/node_modules/jsonwebtoken/verify.js:261:12
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at getSecret (/app/node_modules/jsonwebtoken/verify.js:97:14)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at module.exports [as verify] (/app/node_modules/jsonwebtoken/verify.js:101:10)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at f (file:///app/dist/index.js:614:24273)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5) {
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]}
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Error saving doctor salary rates: SqliteError: FOREIGN KEY constraint failed
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at PreparedQuery.get (file:///app/node_modules/drizzle-orm/better-sqlite3/session.js:88:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at QueryPromise.get (file:///app/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:164:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.createDoctorServiceRate (file:///app/dist/index.js:614:9454)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.saveDoctorServiceRates (file:///app/dist/index.js:614:13304)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:36798
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:24360
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at /app/node_modules/jsonwebtoken/verify.js:261:12
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at getSecret (/app/node_modules/jsonwebtoken/verify.js:97:14)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at module.exports [as verify] (/app/node_modules/jsonwebtoken/verify.js:101:10)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at f (file:///app/dist/index.js:614:24273)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5) {
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]}
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]4:11:08 AM [express] PUT /api/doctors/1b1cf4f465453d9d557337700d561351/salary-rates 500 in 4ms :: {"…
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Saving 1 service rates for doctor 1b1cf4f465453d9d557337700d561351
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Error saving doctor service rates: SqliteError: FOREIGN KEY constraint failed
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at PreparedQuery.get (file:///app/node_modules/drizzle-orm/better-sqlite3/session.js:88:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at QueryPromise.get (file:///app/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:164:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.createDoctorServiceRate (file:///app/dist/index.js:614:9454)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.saveDoctorServiceRates (file:///app/dist/index.js:614:13304)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:36798
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:24360
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at /app/node_modules/jsonwebtoken/verify.js:261:12
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at getSecret (/app/node_modules/jsonwebtoken/verify.js:97:14)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at module.exports [as verify] (/app/node_modules/jsonwebtoken/verify.js:101:10)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at f (file:///app/dist/index.js:614:24273)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5) {
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]}
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]Error saving doctor salary rates: SqliteError: FOREIGN KEY constraint failed
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at PreparedQuery.get (file:///app/node_modules/drizzle-orm/better-sqlite3/session.js:88:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at QueryPromise.get (file:///app/node_modules/drizzle-orm/sqlite-core/query-builders/insert.js:164:28)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.createDoctorServiceRate (file:///app/dist/index.js:614:9454)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at tt.saveDoctorServiceRates (file:///app/dist/index.js:614:13304)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:36798
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at file:///app/dist/index.js:614:24360
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at /app/node_modules/jsonwebtoken/verify.js:261:12
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at getSecret (/app/node_modules/jsonwebtoken/verify.js:97:14)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at module.exports [as verify] (/app/node_modules/jsonwebtoken/verify.js:101:10)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at f (file:///app/dist/index.js:614:24273)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at next (/app/node_modules/express/lib/router/route.js:149:13)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Route.dispatch (/app/node_modules/express/lib/router/route.js:119:3)
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5) {
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]  code: 'SQLITE_CONSTRAINT_FOREIGNKEY'
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]}
+2025-12-02T04:11:08Z app[1857556f0159d8] bom [info]4:11:08 AM [express] PUT /api/doctors/1b1cf4f465453d9d557337700d561351/salary-rates 500 in 4ms :: {"…
+2025-12-02T04:11:17Z app[1857556f0159d8] bom [info]Saving 1 service rates for doctor 1b1cf4f465453d9d557337700d561351
+2025-12-02T04:11:17Z app[1857556f0159d8] bom [info]Successfully saved service rates for doctor 1b1cf4f465453d9d557337700d561351
+2025-12-02T04:11:17Z app[1857556f0159d8] bom [info]Audit log created: update on doctor_service_rates by root
+2025-12-02T04:11:17Z app[1857556f0159d8] bom [info]4:11:17 AM [express] PUT /api/doctors/1b1cf4f465453d9d557337700d561351/salary-rates 200 in 5ms :: {"…
+2025-12-02T04:11:17Z app[1857556f0159d8] bom [info]4:11:17 AM [express] GET /api/doctors/1b1cf4f465453d9d557337700d561351/salary-rates 200 in 2ms :: [{…
