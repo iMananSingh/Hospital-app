@@ -3717,10 +3717,6 @@ export class SqliteStorage implements IStorage {
 
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
-        const earningsToProcess: Array<{
-          patientService: PatientService;
-          service: Service;
-        }> = [];
 
         for (const serviceData of servicesData) {
           console.log("=== BATCH SERVICE CREATION DEBUG ===");
@@ -3782,82 +3778,9 @@ export class SqliteStorage implements IStorage {
             );
           }
 
-          // Calculate doctor earnings if doctor is assigned and service exists
-          if (serviceData.doctorId && serviceData.serviceId) {
-            // Get service details for earnings calculation
-            let serviceForEarnings = tx
-              .select()
-              .from(schema.services)
-              .where(eq(schema.services.id, serviceData.serviceId))
-              .get();
-
-            // If service not found by ID, try fallback match by name and category
-            if (
-              !serviceForEarnings &&
-              serviceData.serviceName &&
-              serviceData.serviceType
-            ) {
-              console.log(
-                `Batch: Service not found by ID ${serviceData.serviceId}, trying fallback by name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
-              );
-              serviceForEarnings = tx
-                .select()
-                .from(schema.services)
-                .where(
-                  and(
-                    eq(schema.services.name, serviceData.serviceName),
-                    eq(schema.services.category, serviceData.serviceType),
-                  ),
-                )
-                .get();
-
-              if (serviceForEarnings) {
-                console.log(
-                  `✓ Batch fallback service match found: ${serviceForEarnings.id} - ${serviceForEarnings.name}`,
-                );
-              } else {
-                console.log(
-                  `Batch: No service match found for name: ${serviceData.serviceName}, type: ${serviceData.serviceType}`,
-                );
-              }
-            }
-
-            console.log(
-              `Batch patient service created with doctor ${serviceData.doctorId}, service exists: ${!!serviceForEarnings}`,
-            );
-            if (serviceForEarnings) {
-              console.log(
-                `Queueing earnings calculation for doctor ${serviceData.doctorId} and service ${serviceForEarnings.id}`,
-              );
-              // Queue for processing after transaction
-              earningsToProcess.push({
-                patientService: created,
-                service: serviceForEarnings,
-              });
-            } else {
-              console.log(
-                `⚠️ No service found for serviceId: ${serviceData.serviceId} in batch, cannot calculate earnings`,
-              );
-            }
-          }
+          // Note: Doctor earnings for services are now calculated only when payment is made,
+          // not when the service is first scheduled. This prevents duplicate earnings.
         }
-
-        // Process earnings calculations after transaction completes
-        setImmediate(async () => {
-          for (const { patientService, service } of earningsToProcess) {
-            try {
-              console.log(
-                `Processing queued earnings calculation for service ${patientService.id}`,
-              );
-              await this.calculateDoctorEarning(patientService, service);
-            } catch (error) {
-              console.error(
-                `❌ Error calculating earnings for service ${patientService.id}:`,
-                error,
-              );
-            }
-          }
-        });
 
         return createdServices;
       });
