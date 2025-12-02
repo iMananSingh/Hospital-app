@@ -720,6 +720,10 @@ export default function Doctors() {
           case "icu":
             categories.admissions.push(serviceItem);
             break;
+          case "pathology":
+          case "pathology_lab":
+            // Skip pathology services - they're represented by "Pathology Lab (All Tests)"
+            break;
           default:
             categories.services.push(serviceItem);
             break;
