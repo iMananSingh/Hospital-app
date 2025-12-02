@@ -1228,6 +1228,29 @@ async function createDemoData() {
       console.log("Created pathology_test_placeholder service");
     }
 
+    // Check and create opd_consultation_placeholder service (for doctor earnings)
+    const existingOpdService = db
+      .select()
+      .from(schema.services)
+      .where(eq(schema.services.id, "opd_consultation_placeholder"))
+      .get();
+    if (!existingOpdService) {
+      db.insert(schema.services)
+        .values({
+          id: "opd_consultation_placeholder",
+          name: "OPD Consultation",
+          category: "opd",
+          price: 0,
+          description:
+            "Placeholder for doctor-specific OPD consultation fees",
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+      console.log("Created opd_consultation_placeholder service");
+    }
+
     // Create demo pathology categories and tests
     const existingDemoCat1 = db
       .select()
@@ -7397,9 +7420,14 @@ export class SqliteStorage implements IStorage {
 
             if (!serviceExists) {
               // Service doesn't exist in the table - it's a placeholder
-              // Set to null to satisfy FK constraint (serviceId is nullable in schema)
-              // The serviceName and serviceCategory fields store the information
-              serviceId = null;
+              // For pathology, use pathology_test_placeholder; for OPD, use opd_consultation_placeholder
+              if (rate.serviceCategory === "pathology") {
+                serviceId = "pathology_test_placeholder";
+              } else if (rate.serviceCategory === "opd") {
+                serviceId = "opd_consultation_placeholder";
+              } else {
+                serviceId = null;
+              }
             }
           }
 
