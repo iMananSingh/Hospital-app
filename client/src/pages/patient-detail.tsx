@@ -385,7 +385,7 @@ export default function PatientDetail() {
 
       return {
         type: "service" as const,
-        id: event.receiptNumber,
+        id: event.orderId || event.receiptNumber,
         title: `Service Order - ${event.services.length} service${event.services.length > 1 ? "s" : ""}`,
         date: firstService.sortTimestamp,
         amount: event.totalCost,
@@ -399,6 +399,7 @@ export default function PatientDetail() {
           patientAge: patient?.age,
           patientGender: patient?.gender,
           doctorName: event.doctorName || getDoctorName(),
+          orderId: event.orderId,
           receiptNumber: event.receiptNumber,
         },
       };
