@@ -3,6 +3,16 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Service Order Display Fix in Record Payment Dialog - December 02, 2025 at 4:21 PM
+[x] Fixed service order display showing receipt number instead of order number
+- **Issue**: In Record Payment dialog's "Billable Item" dropdown, service orders were displaying the receipt number (e.g., "251202-SRV-0001") instead of the order number (e.g., "SER-2025-00072")
+- **Root Cause**: Line 4543 in server/storage.ts used `orderData.receipt || orderId` which preferred the receipt number over the order ID
+- **Solution**: Changed the label and value to use `orderId` directly instead of the receipt number
+- **File Modified**: `server/storage.ts` (lines 4545-4555)
+- **Before**: "Service - Service Order - 251202-SRV-0001"
+- **After**: "Service - Service Order - SER-2025-00072"
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Environment Migration - December 02, 2025 at 4:16 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
