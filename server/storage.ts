@@ -4460,15 +4460,15 @@ export class SqliteStorage implements IStorage {
       .all();
 
     admissions.forEach((admission) => {
-      const itemValue = `Admission - ${admission.admissionId}`;
+      const itemValue = admission.admissionId;
       const amount = admission.dailyCost || 0;
-      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const paidAmount = paidAmounts.get(`Admission - ${itemValue}`) || 0;
       const isFullyPaid = paidAmount >= amount;
 
       billableItems.push({
         type: "admission",
         id: admission.id,
-        label: `Admission - ${admission.admissionId}`,
+        label: admission.admissionId,
         value: itemValue,
         date: admission.admissionDate,
         amount,
@@ -4494,7 +4494,7 @@ export class SqliteStorage implements IStorage {
     for (const order of pathologyOrders) {
       const itemValue = order.orderId;
       const amount = order.totalPrice || 0;
-      const paidAmount = paidAmounts.get(itemValue) || 0;
+      const paidAmount = paidAmounts.get(`Pathology - ${itemValue}`) || 0;
       // CRITICAL: Check order.status === 'paid' FIRST - this is the authoritative source
       // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
       const isFullyPaid = order.status === 'paid' || (paidAmount >= amount && amount > 0);
@@ -4502,7 +4502,7 @@ export class SqliteStorage implements IStorage {
       billableItems.push({
         type: "pathology",
         id: order.id,
-        label: `Pathology - ${order.orderId}`,
+        label: order.orderId,
         value: itemValue,
         date: order.orderedDate,
         amount,
