@@ -4540,7 +4540,7 @@ export class SqliteStorage implements IStorage {
     });
 
     serviceOrderMap.forEach((orderData, orderId) => {
-      const itemValue = `Service Order - ${orderId}`;
+      const itemValue = `Service - ${orderId}`;
       const amount = orderData.total;
       const paidAmount = paidAmounts.get(itemValue) || 0;
       const isFullyPaid = paidAmount >= amount;
@@ -4548,7 +4548,7 @@ export class SqliteStorage implements IStorage {
       billableItems.push({
         type: "service",
         id: orderId,
-        label: `Service Order - ${orderId}`,
+        label: `Service - ${orderId}`,
         value: itemValue,
         date: orderData.date,
         amount,
