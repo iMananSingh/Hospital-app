@@ -674,7 +674,7 @@ export default function Doctors() {
 
     // Add a single representative entry for all Pathology Lab tests
     categories.labTests.push({
-      id: "pathology_lab_representative",
+      id: "pathology_test_placeholder",
       name: "Pathology Lab (All Tests)",
       category: "pathology",
       price: 0,
@@ -793,7 +793,7 @@ export default function Doctors() {
         // If serviceId is null, determine the representative ID based on category
         if (!serviceId) {
           if (rate.serviceCategory === "pathology") {
-            serviceId = "pathology_lab_representative";
+            serviceId = "pathology_test_placeholder";
           } else if (rate.serviceCategory === "opd") {
             serviceId = "opd_consultation_placeholder";
           }
