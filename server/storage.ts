@@ -2129,6 +2129,158 @@ export class SqliteStorage implements IStorage {
     }
   }
 
+  // Calculate and create doctor earning for service order (order-level, not per-service)
+  async calculateServiceOrderEarning(
+    serviceOrderId: string,
+  ): Promise<void> {
+    try {
+      // Get all services for this order
+      const services = db
+        .select()
+        .from(schema.patientServices)
+        .where(eq(schema.patientServices.orderId, serviceOrderId))
+        .all();
+
+      if (services.length === 0) {
+        console.log(`⚠️  No services found for order: ${serviceOrderId}`);
+        return;
+      }
+
+      // Get the first service to check for doctor
+      const firstService = services[0];
+
+      if (!firstService.doctorId) {
+        console.log(
+          `Skipping service order earning - no doctor assigned for order ${serviceOrderId}`,
+        );
+        return;
+      }
+
+      // Calculate total price for all services in the order
+      const totalPrice = services.reduce((sum, service) => sum + (service.price || 0), 0);
+
+      if (!totalPrice || totalPrice === 0) {
+        console.log(
+          `Skipping service order earning - zero total price for order ${serviceOrderId}`,
+        );
+        return;
+      }
+
+      console.log(
+        `Starting service order earnings calculation for doctor ${firstService.doctorId}, order ${serviceOrderId}, total: ₹${totalPrice}`,
+      );
+
+      // Check if earning already exists for this order to prevent duplicates
+      const existingEarning = db
+        .select()
+        .from(schema.doctorEarnings)
+        .where(
+          eq(
+            schema.doctorEarnings.notes,
+            `Service order - ${serviceOrderId}`,
+          ),
+        )
+        .get();
+
+      if (existingEarning) {
+        console.log(
+          `Earning already exists for order ${serviceOrderId}, skipping creation`,
+        );
+        return;
+      }
+
+      // Get the actual service from database to find a configured rate
+      const serviceData = await this.getServiceById(firstService.serviceId);
+      if (!serviceData) {
+        console.log(
+          `No service found for serviceId: ${firstService.serviceId}`,
+        );
+        return;
+      }
+
+      // Find doctor rate for this specific service
+      let serviceRate = db
+        .select()
+        .from(schema.doctorServiceRates)
+        .where(
+          and(
+            eq(schema.doctorServiceRates.doctorId, firstService.doctorId),
+            eq(schema.doctorServiceRates.serviceId, firstService.serviceId),
+            eq(schema.doctorServiceRates.isActive, true),
+          ),
+        )
+        .get();
+
+      // If not found by exact serviceId, try matching by service name and category
+      if (!serviceRate) {
+        console.log(
+          `No exact serviceId match, trying name+category match for ${serviceData.name} in ${serviceData.category}`,
+        );
+        serviceRate = db
+          .select()
+          .from(schema.doctorServiceRates)
+          .where(
+            and(
+              eq(schema.doctorServiceRates.doctorId, firstService.doctorId),
+              eq(schema.doctorServiceRates.serviceName, serviceData.name),
+              eq(schema.doctorServiceRates.serviceCategory, serviceData.category),
+              eq(schema.doctorServiceRates.isActive, true),
+            ),
+          )
+          .get();
+      }
+
+      if (!serviceRate) {
+        console.log(
+          `No service rate found for doctor ${firstService.doctorId} for service ${serviceData.name} (${serviceData.category})`,
+        );
+        return;
+      }
+
+      console.log(
+        `Found service rate: ${serviceRate.rateType} = ${serviceRate.rateAmount}`,
+      );
+
+      // Calculate earning amount based on rate type using total order amount
+      let earnedAmount = 0;
+
+      if (serviceRate.rateType === "percentage") {
+        earnedAmount = (totalPrice * serviceRate.rateAmount) / 100;
+      } else if (serviceRate.rateType === "amount") {
+        earnedAmount = serviceRate.rateAmount;
+      } else if (serviceRate.rateType === "per_instance") {
+        earnedAmount = serviceRate.rateAmount;
+      }
+
+      console.log(
+        `Calculated service order earning: ₹${earnedAmount} (${serviceRate.rateType} of ₹${totalPrice})`,
+      );
+
+      // Create doctor earning record
+      await this.createDoctorEarning({
+        doctorId: firstService.doctorId,
+        patientId: firstService.patientId,
+        serviceId: firstService.serviceId,
+        patientServiceId: firstService.id,
+        serviceName: serviceData.name,
+        serviceCategory: serviceData.category,
+        serviceDate: firstService.scheduledDate,
+        rateType: serviceRate.rateType,
+        rateAmount: serviceRate.rateAmount,
+        servicePrice: totalPrice,
+        earnedAmount,
+        status: "pending",
+        notes: `Service order - ${serviceOrderId}`,
+      });
+
+      console.log(
+        `✓ Created service order earning for doctor ${firstService.doctorId} amount ₹${earnedAmount}`,
+      );
+    } catch (error) {
+      console.error("Error calculating service order earning:", error);
+    }
+  }
+
   async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
   }
