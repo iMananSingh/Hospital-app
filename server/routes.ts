@@ -4273,6 +4273,70 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           console.log(`✗ Not a pathology payment`);
         }
 
+        // Check if payment is for services (Services, Diagnostics, Admissions) and trigger earning calculation
+        // Format: "Service - SER-YYYY-NNNNN" or "Diagnostic - DIA-..." or "Admission - ADM-..."
+        const isServicePayment = reason && (reason.includes("Service - SER-") || reason.includes("Diagnostic - ") || reason.includes("Admission - "));
+        
+        if (isServicePayment) {
+          console.log(`✓ Service/Diagnostic/Admission payment detected`);
+          try {
+            // Extract order ID or service identifier from reason
+            let orderId: string | null = null;
+            
+            if (reason.includes("Service - SER-")) {
+              const match = reason.match(/SER-\d{4}-\d+/);
+              orderId = match ? match[0] : null;
+            } else if (reason.includes("Diagnostic - ")) {
+              const match = reason.match(/DIA-[\d\-]+/);
+              orderId = match ? match[0] : null;
+            } else if (reason.includes("Admission - ")) {
+              const match = reason.match(/ADM-\d{4}-\d+/);
+              orderId = match ? match[0] : null;
+            }
+            
+            console.log(`Order/Service ID extracted: ${orderId}`);
+            
+            if (orderId) {
+              // Get all patient services and find those matching the orderId
+              const allServices = await storage.getPatientServices(patientId);
+              console.log(`Found ${allServices.length} services for patient`);
+              
+              const matchingServices = allServices.filter((service: any) => {
+                // Check if service matches the order criteria
+                if (reason.includes("Service - SER-")) {
+                  return service.orderId === orderId;
+                } else if (reason.includes("Diagnostic - ")) {
+                  return service.serviceCategory === "diagnostics" && service.orderId === orderId;
+                } else if (reason.includes("Admission - ")) {
+                  return service.serviceCategory === "admission" && service.orderId === orderId;
+                }
+                return false;
+              });
+              
+              console.log(`Found ${matchingServices.length} matching services for ${orderId}`);
+              
+              // Calculate and create earnings for each matching service
+              for (const patientService of matchingServices) {
+                if (patientService.doctorId) {
+                  try {
+                    // Get the service details to pass to earning calculation
+                    const service = await storage.getServiceById(patientService.serviceId);
+                    if (service) {
+                      // Call the earning calculation through the recalculate method
+                      await storage.recalculateDoctorEarnings(patientService.doctorId);
+                      console.log(`✓ Calculated earnings for doctor ${patientService.doctorId} for service ${patientService.serviceName}`);
+                    }
+                  } catch (earningError) {
+                    console.error(`Error calculating earning for service ${patientService.id}:`, earningError);
+                  }
+                }
+              }
+            }
+          } catch (earningError) {
+            console.error("Error calculating service earnings:", earningError);
+          }
+        }
+
         res.json(payment);
       } catch (error: any) {
         console.error("Error creating patient payment:", error);
