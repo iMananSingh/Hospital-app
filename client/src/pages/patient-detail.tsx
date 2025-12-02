@@ -1150,8 +1150,8 @@ export default function PatientDetail() {
       const servicesWithReceipt = data.map((service: any) => ({
         ...service,
         receiptNumber: receiptNumber,
-        // Include doctorId for OPD services, otherwise null
-        doctorId: service.serviceType === "opd" ? service.doctorId : null,
+        // Include doctorId for all service types
+        doctorId: service.doctorId,
       }));
 
       const response = await fetch("/api/patient-services/batch", {
