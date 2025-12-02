@@ -4317,14 +4317,59 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
               
               // Calculate and create earnings for each matching service
               for (const patientService of matchingServices) {
-                if (patientService.doctorId) {
+                if (patientService.doctorId && patientService.serviceId) {
                   try {
                     // Get the service details to pass to earning calculation
                     const service = await storage.getServiceById(patientService.serviceId);
                     if (service) {
-                      // Call the earning calculation through the recalculate method
-                      await storage.recalculateDoctorEarnings(patientService.doctorId);
-                      console.log(`✓ Calculated earnings for doctor ${patientService.doctorId} for service ${patientService.serviceName}`);
+                      // Check if earning already exists for this patient service to prevent duplicates
+                      const existingEarning = await storage.getDoctorEarningByPatientServiceId(patientService.id);
+                      if (!existingEarning) {
+                        // Get doctor service rate
+                        const doctorRate = await storage.getDoctorServiceRate(
+                          patientService.doctorId,
+                          service.id,
+                          service.name,
+                          service.category
+                        );
+                        
+                        if (doctorRate) {
+                          // Calculate earning amount based on rate type
+                          let earnedAmount = 0;
+                          const servicePrice = patientService.calculatedAmount || patientService.price || service.price;
+                          
+                          if (doctorRate.rateType === "percentage") {
+                            earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
+                          } else if (doctorRate.rateType === "amount") {
+                            earnedAmount = doctorRate.rateAmount;
+                          } else if (doctorRate.rateType === "fixed_daily") {
+                            earnedAmount = doctorRate.rateAmount;
+                          }
+                          
+                          // Create doctor earning record
+                          await storage.createDoctorEarning({
+                            doctorId: patientService.doctorId,
+                            patientId: patientService.patientId,
+                            serviceId: service.id,
+                            patientServiceId: patientService.id,
+                            serviceName: service.name,
+                            serviceCategory: doctorRate.serviceCategory,
+                            serviceDate: patientService.scheduledDate,
+                            rateType: doctorRate.rateType,
+                            rateAmount: doctorRate.rateAmount,
+                            servicePrice,
+                            earnedAmount,
+                            status: "pending",
+                            notes: `Automatic calculation for ${service.name}`,
+                          });
+                          
+                          console.log(`✓ Created doctor earning for doctor ${patientService.doctorId} for service ${patientService.serviceName}: ₹${earnedAmount}`);
+                        } else {
+                          console.log(`⚠️ No service rate found for doctor ${patientService.doctorId} for service ${service.name}`);
+                        }
+                      } else {
+                        console.log(`ℹ️ Earning already exists for service ${patientService.id}, skipping creation`);
+                      }
                     }
                   } catch (earningError) {
                     console.error(`Error calculating earning for service ${patientService.id}:`, earningError);
