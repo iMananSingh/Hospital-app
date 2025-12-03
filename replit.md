@@ -10,7 +10,34 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-**November 25, 2025** - Logo Replacement & Toast Notification System Redesign ✅
+**December 3, 2025** - Admission Services Table Separation
+- **New admission_services Table**: Created dedicated table for admission-related services, separate from patient_services
+  - Stores services linked to hospital admissions via admissionId
+  - Includes all admission-specific fields: serviceName, category, unitPrice, quantity, isPerDiem
+  - Auto-calculates daily charges based on stay duration for per-diem services
+  
+- **Automatic Database Migration**: 
+  - Migration runs on server startup to move existing admission services from patient_services
+  - Handles duplicates correctly - skips already-migrated records
+  - Deletes old records from patient_services after successful migration
+  
+- **Complete API Implementation**:
+  - GET /api/admission-services (with ?admissionId filter)
+  - POST /api/admission-services (single service creation with Zod validation)
+  - POST /api/admission-services/batch (batch creation with per-item Zod validation)
+  - PUT /api/admission-services/:id (update)
+  - DELETE /api/admission-services/:id (delete)
+  - All routes include authentication, role-based access control, and audit logging
+  
+- **Updated Billing Calculations**:
+  - Billing now sums charges from both patient_services and admission_services tables
+  - Admission services calculated separately with stay-duration awareness
+  
+- **Frontend Updates**:
+  - patient-detail.tsx and dashboard.tsx use new /api/admission-services endpoints
+  - Proper cache invalidation for admission services queries
+
+**November 25, 2025** - Logo Replacement & Toast Notification System Redesign
 - **New HMSync Logo Integration**
   - Replaced Hospital icon with custom HMSync logo on login page (stored as `attached_assets/hmsync-logo.svg`)
   - Replaced Hospital icon with custom logo in sidebar next to "HMSync Hospital Management"
