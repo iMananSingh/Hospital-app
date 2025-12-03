@@ -1526,7 +1526,7 @@ export default function PatientDetail() {
         body: admissionData,
       });
 
-      // Create selected admission services
+      // Create selected admission services in the new admission_services table
       if (selectedServices.length > 0) {
         const servicesToCreate = [];
         const selectedDoctorId = data.doctorId;
@@ -1534,31 +1534,28 @@ export default function PatientDetail() {
         for (const service of selectedServices) {
           servicesToCreate.push({
             patientId: patientId,
-            serviceType: "admission",
+            admissionId: admissionResult.id,
             serviceName: service.name,
             serviceId: service.id,
             price: service.price,
-            quantity: 1,
             notes: `Admission service - ${service.name}`,
             scheduledDate: utcAdmissionDate.split("T")[0],
             scheduledTime: utcAdmissionDate.split("T")[1].slice(0, 5),
             status: "scheduled",
             doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
-            calculatedAmount: service.price,
-            billingQuantity: 1,
           });
         }
 
-        // Create services if any selected
+        // Create admission services using the new endpoint
         if (servicesToCreate.length > 0) {
           if (servicesToCreate.length === 1) {
-            await apiRequest("/api/patient-services", {
+            await apiRequest("/api/admission-services", {
               method: "POST",
               body: servicesToCreate[0],
             });
           } else {
-            await apiRequest("/api/patient-services/batch", {
+            await apiRequest("/api/admission-services/batch", {
               method: "POST",
               body: servicesToCreate,
             });
@@ -1569,6 +1566,9 @@ export default function PatientDetail() {
       // Refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/admissions", patientId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admission-services"],
       });
       queryClient.invalidateQueries({
         queryKey: ["/api/patient-services", patientId],

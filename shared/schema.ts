@@ -316,6 +316,37 @@ export const admissionEvents = sqliteTable("admission_events", {
     .default(sql`(datetime('now'))`),
 });
 
+// Admission Services - Services linked to patient admissions (separate from patient_services)
+export const admissionServices = sqliteTable("admission_services", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`(lower(hex(randomblob(16))))`),
+  admissionId: text("admission_id")
+    .notNull()
+    .references(() => admissions.id),
+  serviceId: text("service_id").notNull().references(() => services.id),
+  patientId: text("patient_id")
+    .notNull()
+    .references(() => patients.id),
+  doctorId: text("doctor_id").references(() => doctors.id),
+  serviceName: text("service_name").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  scheduledDate: text("scheduled_date").notNull(),
+  scheduledTime: text("scheduled_time").notNull().default("09:00"),
+  completedDate: text("completed_date"),
+  notes: text("notes"),
+  price: real("price").notNull().default(0),
+  billingType: text("billing_type").notNull().default("per_date"), // per_date, per_24_hours, per_instance
+  billingQuantity: real("billing_quantity").default(1),
+  calculatedAmount: real("calculated_amount").notNull().default(0),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 // Hospital settings for system configuration
 export const hospitalSettings = sqliteTable("hospital_settings", {
   id: text("id")
@@ -860,6 +891,26 @@ export const insertAdmissionEventSchema = createInsertSchema(
   createdAt: true,
 });
 
+export const insertAdmissionServiceSchema = createInsertSchema(admissionServices)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    admissionId: z.string().min(1, "Admission ID is required"),
+    serviceId: z.string().min(1, "Service ID is required"),
+    patientId: z.string().min(1, "Patient ID is required"),
+    serviceName: z.string().min(1, "Service name is required"),
+    scheduledDate: z.string().min(1, "Scheduled date is required"),
+    scheduledTime: z.string().min(1, "Scheduled time is required"),
+    billingType: z
+      .enum(["per_date", "per_24_hours", "per_instance"])
+      .default("per_date"),
+    billingQuantity: z.number().optional().default(1),
+    calculatedAmount: z.number().default(0),
+  });
+
 export const insertPathologyTestSchema = createInsertSchema(
   pathologyTests,
 ).omit({
@@ -1088,6 +1139,8 @@ export type Admission = typeof admissions.$inferSelect;
 export type InsertAdmission = z.infer<typeof insertAdmissionSchema>;
 export type AdmissionEvent = typeof admissionEvents.$inferSelect;
 export type InsertAdmissionEvent = z.infer<typeof insertAdmissionEventSchema>;
+export type AdmissionService = typeof admissionServices.$inferSelect;
+export type InsertAdmissionService = z.infer<typeof insertAdmissionServiceSchema>;
 export type RoomType = typeof roomTypes.$inferSelect;
 export type InsertRoomType = z.infer<typeof insertRoomTypeSchema>;
 export type Room = typeof rooms.$inferSelect;

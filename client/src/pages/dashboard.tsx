@@ -981,6 +981,7 @@ export default function Dashboard() {
         body: admissionData,
       });
 
+      // Create admission services in the new admission_services table
       if (selectedAdmissionServices.length > 0) {
         const servicesToCreate = [];
         const selectedDoctorId = data.doctorId;
@@ -988,30 +989,27 @@ export default function Dashboard() {
         for (const service of selectedAdmissionServices) {
           servicesToCreate.push({
             patientId: data.patientId,
-            serviceType: "admission",
+            admissionId: admissionResult.id,
             serviceName: service.name,
             serviceId: service.id,
             price: service.price,
-            quantity: 1,
             notes: `Admission service - ${service.name}`,
             scheduledDate: data.admissionDate.split("T")[0],
             scheduledTime: data.admissionDate.split("T")[1] || "00:00",
             status: "scheduled",
             doctorId: selectedDoctorId,
             billingType: service.billingType || "per_instance",
-            calculatedAmount: service.price,
-            billingQuantity: 1,
           });
         }
 
         if (servicesToCreate.length > 0) {
           if (servicesToCreate.length === 1) {
-            await apiRequest("/api/patient-services", {
+            await apiRequest("/api/admission-services", {
               method: "POST",
               body: servicesToCreate[0],
             });
           } else {
-            await apiRequest("/api/patient-services/batch", {
+            await apiRequest("/api/admission-services/batch", {
               method: "POST",
               body: servicesToCreate,
             });
@@ -1019,6 +1017,7 @@ export default function Dashboard() {
         }
       }
 
+      queryClient.invalidateQueries({ queryKey: ["/api/admission-services"] });
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/inpatients/currently-admitted"],

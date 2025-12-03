@@ -28,6 +28,8 @@ import type {
   InsertAdmission,
   AdmissionEvent,
   InsertAdmissionEvent,
+  AdmissionService,
+  InsertAdmissionService,
   AuditLog,
   InsertAuditLog,
   PathologyCategory,
@@ -336,6 +338,26 @@ async function initializeDatabase() {
         receipt_number TEXT,
         created_by TEXT REFERENCES users(id),
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS admission_services (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        admission_id TEXT NOT NULL REFERENCES admissions(id),
+        service_id TEXT NOT NULL REFERENCES services(id),
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        doctor_id TEXT REFERENCES doctors(id),
+        service_name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'scheduled',
+        scheduled_date TEXT NOT NULL,
+        scheduled_time TEXT NOT NULL DEFAULT '09:00',
+        completed_date TEXT,
+        notes TEXT,
+        price REAL NOT NULL DEFAULT 0,
+        billing_type TEXT NOT NULL DEFAULT 'per_date',
+        billing_quantity REAL DEFAULT 1,
+        calculated_amount REAL NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
       CREATE TABLE IF NOT EXISTS room_types (
@@ -1043,6 +1065,125 @@ async function initializeDatabase() {
       // Index already exists, ignore error
     }
 
+    // Migration: Move existing admission services from patient_services to admission_services
+    try {
+      // Check if migration is needed by looking for admission-type services in patient_services
+      const admissionServicesCount = db.$client.prepare(`
+        SELECT COUNT(*) as count FROM patient_services WHERE service_type = 'admission'
+      `).get() as { count: number };
+
+      if (admissionServicesCount.count > 0) {
+        console.log(`Found ${admissionServicesCount.count} admission services in patient_services. Starting migration...`);
+
+        // Get all admission services from patient_services
+        const admissionServicesToMigrate = db.$client.prepare(`
+          SELECT 
+            ps.*,
+            a.id as matching_admission_id
+          FROM patient_services ps
+          LEFT JOIN admissions a ON ps.patient_id = a.patient_id 
+            AND DATE(ps.scheduled_date) = DATE(a.admission_date)
+          WHERE ps.service_type = 'admission'
+        `).all() as Array<{
+          id: string;
+          service_id: string;
+          patient_id: string;
+          doctor_id: string | null;
+          service_name: string;
+          status: string;
+          scheduled_date: string;
+          scheduled_time: string;
+          completed_date: string | null;
+          notes: string | null;
+          price: number;
+          billing_type: string;
+          billing_quantity: number;
+          calculated_amount: number;
+          created_at: string;
+          updated_at: string;
+          matching_admission_id: string | null;
+        }>;
+
+        let migratedCount = 0;
+        let skippedCount = 0;
+
+        for (const service of admissionServicesToMigrate) {
+          // Find the admission for this service
+          let admissionId = service.matching_admission_id;
+          
+          // If no matching admission by date, try to find by patient
+          if (!admissionId) {
+            const patientAdmission = db.$client.prepare(`
+              SELECT id FROM admissions WHERE patient_id = ? ORDER BY admission_date DESC LIMIT 1
+            `).get(service.patient_id) as { id: string } | undefined;
+            
+            if (patientAdmission) {
+              admissionId = patientAdmission.id;
+            }
+          }
+
+          if (admissionId) {
+            // Check if already migrated - check by ID first, then by admission/service/patient combo
+            const existingById = db.$client.prepare(`
+              SELECT id FROM admission_services WHERE id = ?
+            `).get(service.id);
+
+            const existingByCombo = db.$client.prepare(`
+              SELECT id FROM admission_services 
+              WHERE admission_id = ? AND service_id = ? AND patient_id = ?
+            `).get(admissionId, service.service_id, service.patient_id);
+
+            if (!existingById && !existingByCombo) {
+              // Insert into admission_services
+              db.$client.prepare(`
+                INSERT INTO admission_services (
+                  id, admission_id, service_id, patient_id, doctor_id, service_name,
+                  status, scheduled_date, scheduled_time, completed_date, notes,
+                  price, billing_type, billing_quantity, calculated_amount,
+                  created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).run(
+                service.id,
+                admissionId,
+                service.service_id,
+                service.patient_id,
+                service.doctor_id,
+                service.service_name,
+                service.status,
+                service.scheduled_date,
+                service.scheduled_time,
+                service.completed_date,
+                service.notes,
+                service.price,
+                service.billing_type || 'per_date',
+                service.billing_quantity || 1,
+                service.calculated_amount || service.price,
+                service.created_at,
+                service.updated_at
+              );
+              migratedCount++;
+            } else {
+              // Already migrated - just count as skipped
+              skippedCount++;
+            }
+
+            // Always delete the original record from patient_services if it exists
+            db.$client.prepare(`
+              DELETE FROM patient_services WHERE id = ?
+            `).run(service.id);
+          } else {
+            console.log(`Could not find admission for patient ${service.patient_id} - skipping service ${service.id}`);
+            skippedCount++;
+          }
+        }
+
+        console.log(`Migration complete: ${migratedCount} services migrated, ${skippedCount} skipped`);
+      }
+    } catch (error) {
+      console.error("Error migrating admission services:", error);
+      // Don't throw - allow app to continue even if migration fails
+    }
+
     // Always ensure demo users and data exist on every restart
     await createDemoData();
 
@@ -1485,6 +1626,24 @@ export interface IStorage {
     userId: string,
     dischargeDateTime?: string,
   ): Promise<Admission | undefined>;
+
+  // Admission Services (separate from patient_services)
+  createAdmissionService(
+    service: InsertAdmissionService,
+    userId?: string,
+  ): Promise<AdmissionService>;
+  createAdmissionServicesBatch(
+    services: InsertAdmissionService[],
+    userId?: string,
+  ): Promise<AdmissionService[]>;
+  getAdmissionServices(admissionId?: string): Promise<AdmissionService[]>;
+  getAdmissionServicesByPatient(patientId: string): Promise<AdmissionService[]>;
+  getAdmissionServiceById(id: string): Promise<AdmissionService | undefined>;
+  updateAdmissionService(
+    id: string,
+    service: Partial<InsertAdmissionService>,
+  ): Promise<AdmissionService | undefined>;
+  deleteAdmissionService(id: string): Promise<void>;
 
   // Dashboard stats
   getDashboardStats(): Promise<any>;
@@ -4803,7 +4962,7 @@ export class SqliteStorage implements IStorage {
         totalCharges += order.totalPrice || 0;
       });
 
-      // 4. Other patient services charges (with daily calculation for admission services)
+      // 4. Other patient services charges (excluding admission services which are now in admission_services table)
       const otherServices = db
         .select({
           id: schema.patientServices.id,
@@ -4824,56 +4983,53 @@ export class SqliteStorage implements IStorage {
         .all();
 
       otherServices.forEach((service) => {
-        let charge = service.amount || service.price || 0;
+        const charge = service.amount || service.price || 0;
+        totalCharges += charge;
+      });
 
-        // For admission services, calculate based on stay duration
-        if (service.serviceType === "admission") {
-          // Get admissions for this patient
-          const patientAdmissions = db
-            .select()
-            .from(schema.admissions)
-            .where(eq(schema.admissions.patientId, patientId))
-            .all();
+      // 4b. Admission services charges from new admission_services table
+      const admissionServicesList = db
+        .select({
+          id: schema.admissionServices.id,
+          admissionId: schema.admissionServices.admissionId,
+          serviceName: schema.admissionServices.serviceName,
+          price: schema.admissionServices.price,
+          billingType: schema.admissionServices.billingType,
+          scheduledDate: schema.admissionServices.scheduledDate,
+        })
+        .from(schema.admissionServices)
+        .where(eq(schema.admissionServices.patientId, patientId))
+        .all();
 
-          if (patientAdmissions.length > 0) {
-            // Find relevant admission
-            let relevantAdmission = patientAdmissions[0];
+      // Get patient admissions for stay duration calculations
+      const patientAdmissionsForServices = db
+        .select()
+        .from(schema.admissions)
+        .where(eq(schema.admissions.patientId, patientId))
+        .all();
 
-            const matchingAdmission = patientAdmissions.find((admission) => {
-              const admissionDate = new Date(
-                admission.admissionDate,
-              ).toDateString();
-              const serviceDate = new Date(
-                service.scheduledDate || service.createdAt,
-              ).toDateString();
-              return admissionDate === serviceDate;
-            });
+      admissionServicesList.forEach((service) => {
+        let charge = service.price || 0;
 
-            if (matchingAdmission) {
-              relevantAdmission = matchingAdmission;
+        // Find the matching admission for stay duration calculation
+        const matchingAdmission = patientAdmissionsForServices.find(
+          (a) => a.id === service.admissionId
+        );
+
+        if (matchingAdmission) {
+          const endDate =
+            matchingAdmission.dischargeDate || new Date().toISOString();
+          const stayDuration = calculateStayDays(
+            matchingAdmission.admissionDate,
+            endDate,
+          );
+
+          if (stayDuration > 0) {
+            // Calculate charges based on billing type
+            if (service.billingType === "per_date" || service.billingType === "per_24_hours") {
+              charge = (service.price || 0) * stayDuration;
             }
-
-            // Use the calculateStayDays function that was imported at the top
-            const endDate =
-              relevantAdmission.dischargeDate || new Date().toISOString();
-            const stayDuration = calculateStayDays(
-              relevantAdmission.admissionDate,
-              endDate,
-            );
-
-            if (stayDuration > 0) {
-              if (service.serviceName.toLowerCase().includes("bed charges")) {
-                // Bed charges: charge for each completed 24-hour period
-                charge = (service.price || 0) * stayDuration;
-              } else if (
-                service.serviceName.toLowerCase().includes("doctor charges") ||
-                service.serviceName.toLowerCase().includes("nursing charges") ||
-                service.serviceName.toLowerCase().includes("rmo charges")
-              ) {
-                // Other admission services: charge for each calendar day
-                charge = (service.price || 0) * stayDuration;
-              }
-            }
+            // per_instance billing type uses the base price without multiplication
           }
         }
 
@@ -5400,6 +5556,106 @@ export class SqliteStorage implements IStorage {
         throw transactionError;
       }
     });
+  }
+
+  // Admission Services Implementation
+  async createAdmissionService(
+    service: InsertAdmissionService,
+    userId?: string,
+  ): Promise<AdmissionService> {
+    const created = db
+      .insert(schema.admissionServices)
+      .values({
+        ...service,
+        calculatedAmount: service.calculatedAmount || service.price || 0,
+      })
+      .returning()
+      .get();
+
+    // Log the activity if userId provided
+    if (userId) {
+      this.logActivity(
+        userId,
+        "admission_service_created",
+        "Admission Service Created",
+        `Created admission service: ${service.serviceName}`,
+        created.id,
+        "admission_service",
+        { admissionId: service.admissionId, serviceName: service.serviceName },
+      );
+    }
+
+    return created;
+  }
+
+  async createAdmissionServicesBatch(
+    services: InsertAdmissionService[],
+    userId?: string,
+  ): Promise<AdmissionService[]> {
+    const createdServices: AdmissionService[] = [];
+
+    for (const service of services) {
+      const created = await this.createAdmissionService(service, userId);
+      createdServices.push(created);
+    }
+
+    return createdServices;
+  }
+
+  async getAdmissionServices(admissionId?: string): Promise<AdmissionService[]> {
+    if (admissionId) {
+      return db
+        .select()
+        .from(schema.admissionServices)
+        .where(eq(schema.admissionServices.admissionId, admissionId))
+        .orderBy(schema.admissionServices.createdAt)
+        .all();
+    }
+
+    return db
+      .select()
+      .from(schema.admissionServices)
+      .orderBy(schema.admissionServices.createdAt)
+      .all();
+  }
+
+  async getAdmissionServicesByPatient(patientId: string): Promise<AdmissionService[]> {
+    return db
+      .select()
+      .from(schema.admissionServices)
+      .where(eq(schema.admissionServices.patientId, patientId))
+      .orderBy(schema.admissionServices.createdAt)
+      .all();
+  }
+
+  async getAdmissionServiceById(id: string): Promise<AdmissionService | undefined> {
+    return db
+      .select()
+      .from(schema.admissionServices)
+      .where(eq(schema.admissionServices.id, id))
+      .get();
+  }
+
+  async updateAdmissionService(
+    id: string,
+    service: Partial<InsertAdmissionService>,
+  ): Promise<AdmissionService | undefined> {
+    return db
+      .update(schema.admissionServices)
+      .set({
+        ...service,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.admissionServices.id, id))
+      .returning()
+      .get();
+  }
+
+  async deleteAdmissionService(id: string): Promise<void> {
+    await db
+      .delete(schema.admissionServices)
+      .where(eq(schema.admissionServices.id, id))
+      .run();
   }
 
   async getHospitalSettings(): Promise<any> {
@@ -6854,63 +7110,11 @@ export class SqliteStorage implements IStorage {
         }
       });
 
-      // Add patient services with daily calculation for admission services
+      // Add patient services (non-admission services only)
       patientServices.forEach((ps) => {
-        let serviceAmount =
+        const serviceAmount =
           (ps.calculatedAmount as number) || (ps.price as number) || 0;
-        let serviceQuantity = ps.billingQuantity || 1;
-
-        // For admission services, calculate based on patient's stay duration
-        if (ps.serviceType === "admission") {
-          // Find the admission for this patient to get stay duration
-          const patientAdmissions = admissions.filter(
-            (admission) => admission.patientId === patientId,
-          );
-
-          if (patientAdmissions.length > 0) {
-            // Use the most recent admission or find matching admission by date
-            let relevantAdmission = patientAdmissions[0];
-
-            // Try to find admission that matches the service date
-            const matchingAdmission = patientAdmissions.find((admission) => {
-              const admissionDate = new Date(
-                admission.admissionDate,
-              ).toDateString();
-              const serviceDate = new Date(
-                ps.scheduledDate || ps.createdAt,
-              ).toDateString();
-              return admissionDate === serviceDate;
-            });
-
-            if (matchingAdmission) {
-              relevantAdmission = matchingAdmission;
-            }
-
-            // Calculate stay duration using the calculateStayDays function
-            const endDate =
-              relevantAdmission.dischargeDate || new Date().toISOString();
-            const stayDuration = calculateStayDays(
-              relevantAdmission.admissionDate,
-              endDate,
-            );
-
-            if (stayDuration > 0) {
-              if (ps.serviceName.toLowerCase().includes("bed charges")) {
-                // Bed charges: charge for each completed 24-hour period
-                serviceQuantity = stayDuration;
-                serviceAmount = (ps.price || 0) * serviceQuantity;
-              } else if (
-                ps.serviceName.toLowerCase().includes("doctor charges") ||
-                ps.serviceName.toLowerCase().includes("nursing charges") ||
-                ps.serviceName.toLowerCase().includes("rmo charges")
-              ) {
-                // Other admission services: charge for each calendar day
-                serviceQuantity = stayDuration;
-                serviceAmount = (ps.price || 0) * serviceQuantity;
-              }
-            }
-          }
-        }
+        const serviceQuantity = ps.billingQuantity || 1;
 
         if (serviceAmount > 0) {
           billItems.push({
@@ -6930,6 +7134,63 @@ export class SqliteStorage implements IStorage {
               calculatedAmount: serviceAmount,
               notes: ps.notes,
               quantity: serviceQuantity,
+            },
+          });
+        }
+      });
+
+      // Add admission services from admission_services table
+      const admissionServicesList = db
+        .select()
+        .from(schema.admissionServices)
+        .where(eq(schema.admissionServices.patientId, patientId))
+        .all();
+
+      admissionServicesList.forEach((as) => {
+        let serviceAmount = as.price || 0;
+        let serviceQuantity = 1;
+
+        // Find the matching admission for stay duration calculation
+        const matchingAdmission = admissions.find(
+          (a) => a.id === as.admissionId
+        );
+
+        if (matchingAdmission) {
+          const endDate =
+            matchingAdmission.dischargeDate || new Date().toISOString();
+          const stayDuration = calculateStayDays(
+            matchingAdmission.admissionDate,
+            endDate,
+          );
+
+          if (stayDuration > 0) {
+            // Calculate charges based on billing type
+            if (as.billingType === "per_date" || as.billingType === "per_24_hours") {
+              serviceQuantity = stayDuration;
+              serviceAmount = (as.price || 0) * serviceQuantity;
+            }
+          }
+        }
+
+        if (serviceAmount > 0) {
+          billItems.push({
+            type: "admission_service",
+            id: as.id,
+            date: as.scheduledDate || as.createdAt,
+            description: as.serviceName,
+            amount: serviceAmount,
+            category: "Admission Services",
+            details: {
+              serviceId: as.serviceId,
+              serviceName: as.serviceName,
+              serviceType: "admission",
+              billingType: as.billingType,
+              billingQuantity: 1,
+              unitPrice: as.price,
+              calculatedAmount: serviceAmount,
+              notes: as.notes,
+              quantity: serviceQuantity,
+              admissionId: as.admissionId,
             },
           });
         }

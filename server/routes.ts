@@ -25,6 +25,7 @@ import {
   insertAdmissionSchema,
   insertPatientVisitSchema,
   insertPatientServiceSchema,
+  insertAdmissionServiceSchema,
   insertRoomSchema, // Import Room schema
 } from "@shared/schema";
 import { updatePatientSchema } from "../shared/schema";
@@ -2570,6 +2571,229 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       res.json(service);
     } catch (error) {
       console.error("Error updating patient service:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admission Services Routes (separate from patient_services)
+  app.get("/api/admission-services", authenticateToken, async (req, res) => {
+    try {
+      const { admissionId, patientId } = req.query;
+      
+      let services;
+      if (admissionId) {
+        services = await storage.getAdmissionServices(admissionId as string);
+      } else if (patientId) {
+        services = await storage.getAdmissionServicesByPatient(patientId as string);
+      } else {
+        services = await storage.getAdmissionServices();
+      }
+      
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching admission services:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admission-services/:id", authenticateToken, async (req, res) => {
+    try {
+      const service = await storage.getAdmissionServiceById(req.params.id);
+      if (!service) {
+        return res.status(404).json({ error: "Admission service not found" });
+      }
+      res.json(service);
+    } catch (error) {
+      console.error("Error fetching admission service:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.post(
+    "/api/admission-services",
+    authenticateToken,
+    async (req: any, res) => {
+      try {
+        // Check if user has billing staff role and restrict access
+        const userRoles = req.user.roles || [req.user.role];
+        const isBillingStaff =
+          userRoles.includes("billing_staff") &&
+          !userRoles.includes("admin") &&
+          !userRoles.includes("super_user");
+
+        if (isBillingStaff) {
+          return res.status(403).json({
+            message:
+              "Access denied. Billing staff cannot create admission services.",
+          });
+        }
+
+        // Validate request body with Zod schema
+        const validationResult = insertAdmissionServiceSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: validationResult.error.errors,
+          });
+        }
+
+        const service = await storage.createAdmissionService(
+          validationResult.data,
+          req.user.id,
+        );
+
+        // Create audit log
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: "create",
+          tableName: "admission_services",
+          recordId: service.id,
+          oldValues: null,
+          newValues: service,
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+
+        res.status(201).json(service);
+      } catch (error: any) {
+        console.error("Error creating admission service:", error);
+        res.status(400).json({
+          message: "Failed to create admission service",
+          error: error.message,
+        });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admission-services/batch",
+    authenticateToken,
+    async (req: any, res) => {
+      try {
+        // Check if user has billing staff role and restrict access
+        const userRoles = req.user.roles || [req.user.role];
+        const isBillingStaff =
+          userRoles.includes("billing_staff") &&
+          !userRoles.includes("admin") &&
+          !userRoles.includes("super_user");
+
+        if (isBillingStaff) {
+          return res.status(403).json({
+            message:
+              "Access denied. Billing staff cannot create admission services.",
+          });
+        }
+
+        // Validate each service in the batch with Zod schema
+        if (!Array.isArray(req.body)) {
+          return res.status(400).json({
+            message: "Validation error",
+            error: "Request body must be an array of admission services",
+          });
+        }
+
+        const validatedServices = [];
+        for (let i = 0; i < req.body.length; i++) {
+          const validationResult = insertAdmissionServiceSchema.safeParse(req.body[i]);
+          if (!validationResult.success) {
+            return res.status(400).json({
+              message: `Validation error in service at index ${i}`,
+              errors: validationResult.error.errors,
+            });
+          }
+          validatedServices.push(validationResult.data);
+        }
+
+        const services = await storage.createAdmissionServicesBatch(
+          validatedServices,
+          req.user.id,
+        );
+
+        // Create audit log for batch creation
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: "batch_create",
+          tableName: "admission_services",
+          recordId: services.length > 0 ? services[0].admissionId : "batch",
+          oldValues: null,
+          newValues: {
+            serviceCount: services.length,
+            services: services.map((s) => ({
+              id: s.id,
+              serviceName: s.serviceName,
+            })),
+          },
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+
+        res.json(services);
+      } catch (error: any) {
+        console.error("Batch admission service creation error:", error);
+        res.status(400).json({
+          message: "Failed to create batch admission services",
+          error: error.message,
+        });
+      }
+    },
+  );
+
+  app.put("/api/admission-services/:id", authenticateToken, async (req, res) => {
+    try {
+      const serviceId = req.params.id;
+      const serviceToUpdate = await storage.getAdmissionServiceById(serviceId);
+
+      const service = await storage.updateAdmissionService(serviceId, req.body);
+
+      if (serviceToUpdate) {
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: "update",
+          tableName: "admission_services",
+          recordId: serviceId,
+          oldValues: serviceToUpdate,
+          newValues: service,
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+      }
+
+      res.json(service);
+    } catch (error) {
+      console.error("Error updating admission service:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/admission-services/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const serviceId = req.params.id;
+      const serviceToDelete = await storage.getAdmissionServiceById(serviceId);
+
+      if (!serviceToDelete) {
+        return res.status(404).json({ error: "Admission service not found" });
+      }
+
+      await storage.deleteAdmissionService(serviceId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        username: req.user.username,
+        action: "delete",
+        tableName: "admission_services",
+        recordId: serviceId,
+        oldValues: serviceToDelete,
+        newValues: null,
+        ipAddress: req.ip,
+        userAgent: req.get("user-agent"),
+      });
+
+      res.json({ message: "Admission service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting admission service:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
