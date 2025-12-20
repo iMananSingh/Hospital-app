@@ -3,26 +3,6 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
-### Service and Pathology Earnings Calculation Triggers - December 20, 2025 at 10:33 PM
-[x] Fixed missing earnings calculations for patient services
-- **Issue**: Service earnings were never being calculated despite having rates configured (similar to the OPD duplicate rate issue)
-- **Root Cause**: The `calculateDoctorEarning()` function existed but was NEVER called from any route. No trigger existed to calculate service earnings when services were created or updated.
-- **Solution**:
-  1. Changed `calculateDoctorEarning()` from private to public method in storage.ts
-  2. Made the service parameter optional - function now fetches it from database if not provided
-  3. Added earnings calculation trigger in THREE places:
-     - Single service creation route (POST /api/patient-services)
-     - Batch service creation route (POST /api/patient-services/batch)
-     - Service update route (PUT /api/patient-services/:id)
-- **Changes Made**:
-  - `server/storage.ts`: Made calculateDoctorEarning public, added auto-fetch of service data
-  - `server/routes.ts`: Added calculateDoctorEarning calls in service creation (line 2333) and batch creation (lines 2480-2489) and update (line 2543) routes
-- **Earnings Flow Summary**:
-  - **OPD Earnings**: Triggered when OPD visit is created (already working)
-  - **Service Earnings**: Now triggered when service is created/updated with a doctor assigned
-  - **Pathology Earnings**: Triggered when payment is made (already working)
-- **Status**: Application restarted successfully, all earnings triggers now active ✓
-
 ### OPD Earnings Rate Calculation Fix - December 20, 2025 at 10:18 PM
 [x] Fixed OPD earnings being calculated with wrong rate (50% instead of 100%)
 - **Issue**: Service rate for OPD consultation for Dr. John S was set to 100%, but earnings were being calculated at 50%
