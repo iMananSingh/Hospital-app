@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,14 @@ export default function Diagnostics() {
     queryKey: ["/api/today"],
   });
   const today = todayData?.today || "";
+
+  // Set default date range to today when data loads
+  useEffect(() => {
+    if (today && !selectedFromDate && !selectedToDate) {
+      setSelectedFromDate(today);
+      setSelectedToDate(today);
+    }
+  }, [today]);
 
   // Fetch all patient services
   const { data: patientServices = [], isLoading } = useQuery({

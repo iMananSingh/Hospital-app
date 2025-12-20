@@ -3,6 +3,21 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Default Date Range to Today for Multiple Pages (December 20, 2025 at 9:33 PM)
+[x] Set default date range to today for OPD Appointments, Lab Tests, and Diagnostics pages
+- **Change**: Modified three pages to automatically set date range to today on page load
+- **Implementation**:
+  - Added `useEffect` hook to detect when `today` data is fetched
+  - Automatically sets `selectedFromDate` and `selectedToDate` to today's date
+  - Only applies on initial load (doesn't override user selections)
+  - When pages open, shows only today's items by default
+  - Users can still change the date range using the date picker
+- **Files Modified**: 
+  - `client/src/pages/opd-list.tsx` (lines 1, 92-98)
+  - `client/src/pages/lab-tests.tsx` (lines 1, 49-55)
+  - `client/src/pages/diagnostics.tsx` (lines 1, 52-58)
+- **Status**: Application running successfully, changes hot-reloaded ✓
+
 ### Environment Migration - December 20, 2025 at 9:18 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully

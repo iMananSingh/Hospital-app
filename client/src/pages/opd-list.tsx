@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,14 @@ export default function OpdList() {
     queryKey: ["/api/today"],
   });
   const today = todayData?.today || "";
+
+  // Set default date range to today when data loads
+  useEffect(() => {
+    if (today && !selectedFromDate && !selectedToDate) {
+      setSelectedFromDate(today);
+      setSelectedToDate(today);
+    }
+  }, [today]);
 
   // Fetch all OPD visits
   const { data: opdServices = [], isLoading } = useQuery<any[]>({
