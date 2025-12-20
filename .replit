@@ -8,15 +8,11 @@ packages = ["sqlite"]
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+run = ["node", "./dist/index.cjs"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34387
-externalPort = 4200
 
 [[ports]]
 localPort = 34593
