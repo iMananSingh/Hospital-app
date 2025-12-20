@@ -2324,6 +2324,16 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           JSON.stringify(service, null, 2),
         );
 
+        // Calculate doctor earning if service has a doctor assigned
+        if (service && service.doctorId) {
+          try {
+            await storage.calculateDoctorEarning(service);
+          } catch (earningError) {
+            console.error('Error calculating doctor earning:', earningError);
+            // Don't fail the request if earning calculation fails
+          }
+        }
+
         // Log activity for service scheduling
         const patient = await storage.getPatientById(serviceData.patientId);
 
@@ -2463,6 +2473,18 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           `Successfully created ${services.length} services with shared orderId: ${services[0]?.orderId}`,
         );
 
+        // Calculate doctor earnings for all services with assigned doctors
+        for (const svc of services) {
+          if (svc && svc.doctorId) {
+            try {
+              await storage.calculateDoctorEarning(svc);
+            } catch (earningError) {
+              console.error(`Error calculating earning for service ${svc.id}:`, earningError);
+              // Don't fail the request if earning calculation fails
+            }
+          }
+        }
+
         // Log activity for service scheduling
         if (services.length > 0) {
           const patient = await storage.getPatientById(
@@ -2533,6 +2555,16 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         req.body,
         req.user.id,
       );
+
+      // Calculate doctor earning if service has a doctor assigned
+      if (service && service.doctorId) {
+        try {
+          await storage.calculateDoctorEarning(service);
+        } catch (earningError) {
+          console.error('Error calculating doctor earning:', earningError);
+          // Don't fail the request if earning calculation fails
+        }
+      }
 
       // Log activity if service is being completed
       if (req.body.status === "completed") {

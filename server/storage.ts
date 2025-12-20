@@ -1964,16 +1964,33 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate and create doctor earning record for a patient service
-  private async calculateDoctorEarning(
+  async calculateDoctorEarning(
     patientService: PatientService,
-    service: Service,
+    service?: Service,
   ): Promise<void> {
     try {
+      // If service is not provided, fetch it
+      let serviceData = service;
+      if (!serviceData) {
+        serviceData = db
+          .select()
+          .from(schema.services)
+          .where(eq(schema.services.id, patientService.serviceId!))
+          .get();
+      }
+
+      if (!serviceData) {
+        console.log(
+          `Cannot calculate earning - service not found for patient service ${patientService.id}`,
+        );
+        return;
+      }
+
       console.log(
         `Starting earnings calculation for doctor ${patientService.doctorId}, patient service ${patientService.id}`,
       );
       console.log(
-        `Service details - ID: ${service.id}, Name: ${service.name}, Category: ${service.category}`,
+        `Service details - ID: ${serviceData.id}, Name: ${serviceData.name}, Category: ${serviceData.category}`,
       );
 
       // Check if earning already exists for this patient service to prevent duplicates
@@ -1997,7 +2014,7 @@ export class SqliteStorage implements IStorage {
         .where(
           and(
             eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
-            eq(schema.doctorServiceRates.serviceId, service.id),
+            eq(schema.doctorServiceRates.serviceId, serviceData.id),
             eq(schema.doctorServiceRates.isActive, true),
           ),
         )
@@ -2007,7 +2024,7 @@ export class SqliteStorage implements IStorage {
       // If not found by serviceId, try matching by service name and category
       if (!doctorRate) {
         console.log(
-          `No exact serviceId match, trying name+category match for ${service.name} in ${service.category}`,
+          `No exact serviceId match, trying name+category match for ${serviceData.name} in ${serviceData.category}`,
         );
         doctorRate = db
           .select()
@@ -2015,8 +2032,8 @@ export class SqliteStorage implements IStorage {
           .where(
             and(
               eq(schema.doctorServiceRates.doctorId, patientService.doctorId!),
-              eq(schema.doctorServiceRates.serviceName, service.name),
-              eq(schema.doctorServiceRates.serviceCategory, service.category),
+              eq(schema.doctorServiceRates.serviceName, serviceData.name),
+              eq(schema.doctorServiceRates.serviceCategory, serviceData.category),
               eq(schema.doctorServiceRates.isActive, true),
             ),
           )
@@ -2026,13 +2043,13 @@ export class SqliteStorage implements IStorage {
 
       if (!doctorRate) {
         console.log(
-          `No salary rate found for doctor ${patientService.doctorId}, service ${service.name} (${service.category})`,
+          `No salary rate found for doctor ${patientService.doctorId}, service ${serviceData.name} (${serviceData.category})`,
         );
         return;
       }
 
       console.log(
-        `Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${service.name}`,
+        `Found doctor rate: ${doctorRate.rateType} = ${doctorRate.rateAmount} for service ${serviceData.name}`,
       );
 
       // Calculate earning amount based on rate type
@@ -2040,7 +2057,7 @@ export class SqliteStorage implements IStorage {
       const servicePrice =
         patientService.calculatedAmount ||
         patientService.price ||
-        service.price;
+        serviceData.price;
 
       if (doctorRate.rateType === "percentage") {
         earnedAmount = (servicePrice * doctorRate.rateAmount) / 100;
@@ -2058,9 +2075,9 @@ export class SqliteStorage implements IStorage {
       await this.createDoctorEarning({
         doctorId: patientService.doctorId!,
         patientId: patientService.patientId,
-        serviceId: service.id,
+        serviceId: serviceData.id,
         patientServiceId: patientService.id,
-        serviceName: service.name,
+        serviceName: serviceData.name,
         serviceCategory: doctorRate.serviceCategory,
         serviceDate: patientService.scheduledDate,
         rateType: doctorRate.rateType,
@@ -2068,7 +2085,7 @@ export class SqliteStorage implements IStorage {
         servicePrice,
         earnedAmount,
         status: "pending",
-        notes: `Automatic calculation for ${service.name}`,
+        notes: `Automatic calculation for ${serviceData.name}`,
       });
 
       console.log(
