@@ -3,6 +3,23 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### OPD Earnings Rate Calculation Fix - December 20, 2025 at 10:18 PM
+[x] Fixed OPD earnings being calculated with wrong rate (50% instead of 100%)
+- **Issue**: Service rate for OPD consultation for Dr. John S was set to 100%, but earnings were being calculated at 50%
+- **Root Cause**: Duplicate OPD consultation rates existed in database (one 50%, one 100%). Query was retrieving the first record (50%) instead of the most recent one (100%)
+- **Solution**:
+  1. Deleted the old 50% OPD rate record from doctor_service_rates table
+  2. Updated ALL earnings calculation functions to query for most recent rate when duplicates exist:
+     - `calculateOpdEarning()` - OPD consultation earnings
+     - `calculateServiceEarning()` - Service-related earnings (by serviceId match)
+     - `calculateServiceEarning()` - Service-related earnings (by name+category match)
+     - `calculatePathologyOrderEarning()` - Pathology order earnings
+- **Changes Made**: 
+  - `server/storage.ts` lines 2007, 2026, 2131, 2246: Added `.orderBy(desc(schema.doctorServiceRates.createdAt))` to all rate queries
+  - Database: Deleted duplicate 50% OPD rate record
+- **Prevention**: Future rate saves will now always use the most recent rate, preventing calculation errors if duplicates occur
+- **Status**: Application restarted successfully, fix deployed ✓
+
 ### Environment Migration - December 20, 2025 at 10:14 PM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully

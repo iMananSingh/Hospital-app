@@ -2001,6 +2001,7 @@ export class SqliteStorage implements IStorage {
             eq(schema.doctorServiceRates.isActive, true),
           ),
         )
+        .orderBy(desc(schema.doctorServiceRates.createdAt))
         .get();
 
       // If not found by serviceId, try matching by service name and category
@@ -2019,6 +2020,7 @@ export class SqliteStorage implements IStorage {
               eq(schema.doctorServiceRates.isActive, true),
             ),
           )
+          .orderBy(desc(schema.doctorServiceRates.createdAt))
           .get();
       }
 
@@ -2114,7 +2116,7 @@ export class SqliteStorage implements IStorage {
         return;
       }
 
-      // Find doctor OPD consultation rate
+      // Find doctor OPD consultation rate (get most recent if multiple exist)
       const opdRate = db
         .select()
         .from(schema.doctorServiceRates)
@@ -2125,6 +2127,7 @@ export class SqliteStorage implements IStorage {
             eq(schema.doctorServiceRates.isActive, true),
           ),
         )
+        .orderBy(desc(schema.doctorServiceRates.createdAt))
         .get();
 
       if (!opdRate) {
@@ -2225,6 +2228,7 @@ export class SqliteStorage implements IStorage {
       }
 
       // Find doctor rate for pathology representative service (category='pathology', serviceId='pathology_test_placeholder')
+      // Get most recent if multiple exist
       const pathologyRate = db
         .select()
         .from(schema.doctorServiceRates)
@@ -2236,6 +2240,7 @@ export class SqliteStorage implements IStorage {
             eq(schema.doctorServiceRates.isActive, true),
           ),
         )
+        .orderBy(desc(schema.doctorServiceRates.createdAt))
         .get();
 
       if (!pathologyRate) {
