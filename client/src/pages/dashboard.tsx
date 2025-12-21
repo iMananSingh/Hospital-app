@@ -1450,9 +1450,9 @@ export default function Dashboard() {
                           activity.activityType !== "service_created" &&
                           activity.activityType !== "service_deleted" && (
                             <div
-                              className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center"
+                              className="w-8 h-8 bg-[#e6fcf5] rounded-full flex items-center justify-center"
                             >
-                              <Wallet className="h-4 w-4 text-green-700" />
+                              <Wallet className="h-4 w-4 text-[#087f5b]" strokeWidth={1.5} />
                             </div>
                           )}
                         <div className="flex-1">
