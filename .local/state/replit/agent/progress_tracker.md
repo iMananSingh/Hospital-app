@@ -1,3 +1,4 @@
+
 [x] 1. Install the required packages
 [x] 2. Restart the workflow to see if the project is working
 [x] 3. Verify the project is working using the screenshot tool
@@ -56,3 +57,17 @@
 - **Issue**: Workflow failed with "sh: 1: tsx: not found"
 - **Solution**: Installed tsx package via npm
 - **Status**: Application now running successfully on port 5000 ✓
+
+### Auto Backup Message Display Update - December 21, 2025 at 5:22 PM
+[x] Updated auto backup message display for monthly and weekly schedules
+- **Changes Made**:
+  1. Updated monthly format: "Automatically backup data on the 22nd of every month at 20:45"
+     - Uses ordinal suffix (st, nd, rd, th) based on the configured backup date
+  2. Added weekly format: "Automatically backup data every [day name] at 20:45"
+     - Uses the configured backup day name (e.g., Monday, Tuesday, etc.)
+- **File Modified**:
+  - `client/src/pages/settings.tsx` (lines 1307-1313)
+- **Implementation Details**:
+  - For monthly: `return Automatically backup data on the ${dateNum}${getOrdinal(dateNum)} of every month at ${time};`
+  - For weekly: `return Automatically backup data every ${dayName} at ${time};`
+- **Status**: Changes applied and hot-reloaded successfully ✓

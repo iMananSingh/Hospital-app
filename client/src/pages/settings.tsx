@@ -1301,7 +1301,13 @@ export default function Settings() {
                                           return "th";
                                       }
                                     };
-                                    return `Automatically backup data monthly on the ${date}${getOrdinal(dateNum)} at ${time}`;
+                                    return `Automatically backup data on the ${dateNum}${getOrdinal(dateNum)} of every month at ${time}`;
+                                  }
+                                  if (freq === "weekly") {
+                                    const dayName =
+                                      pendingSystemSettings.backupDay ||
+                                      "Sunday";
+                                    return `Automatically backup data every ${dayName} at ${time}`;
                                   }
                                   return `Automatically backup data ${freq} at ${time}`;
                                 })()
