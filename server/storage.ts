@@ -1827,33 +1827,54 @@ export class SqliteStorage implements IStorage {
 
   private generateServiceOrderId(): string {
     const year = new Date().getFullYear();
-    // Count DISTINCT orderIds instead of all services to get correct sequential number
+    // Parse sequence numbers from all orderIds and find the maximum
     const existingOrderIds = db
       .select({ orderId: schema.patientServices.orderId })
       .from(schema.patientServices)
       .where(isNotNull(schema.patientServices.orderId))
       .all();
 
-    // Get unique orderIds
-    const uniqueOrderIds = new Set(existingOrderIds.map((row) => row.orderId));
-    const count = uniqueOrderIds.size + 1;
+    // Find the highest sequence number
+    let maxSequence = 0;
+    for (const row of existingOrderIds) {
+      if (row.orderId) {
+        // Parse format: SER-YYYY-##### or SER-YYYY-#
+        const match = row.orderId.match(/SER-\d+-(\d+)/);
+        if (match) {
+          const sequenceNum = parseInt(match[1], 10);
+          maxSequence = Math.max(maxSequence, sequenceNum);
+        }
+      }
+    }
 
     // Use SER prefix with 5-digit padding (auto-expands beyond 99999)
-    return `SER-${year}-${count.toString().padStart(5, "0")}`;
+    return `SER-${year}-${(maxSequence + 1).toString().padStart(5, "0")}`;
   }
 
   generateMultipleServiceOrderIds(count: number): string[] {
     const year = new Date().getFullYear();
-    // Get the current highest order ID
+    // Get the current highest order ID by parsing sequence numbers
     const existingOrderIds = db
       .select({ orderId: schema.patientServices.orderId })
       .from(schema.patientServices)
       .where(isNotNull(schema.patientServices.orderId))
       .all();
 
-    // Get unique orderIds and find the highest number
-    const uniqueOrderIds = new Set(existingOrderIds.map((row) => row.orderId));
-    let startCount = uniqueOrderIds.size + 1;
+    // Parse sequence numbers from all orderIds and find the maximum
+    let maxSequence = 0;
+    for (const row of existingOrderIds) {
+      if (row.orderId) {
+        // Parse format: SER-YYYY-##### or SER-YYYY-#
+        const match = row.orderId.match(/SER-\d+-(\d+)/);
+        if (match) {
+          const sequenceNum = parseInt(match[1], 10);
+          maxSequence = Math.max(maxSequence, sequenceNum);
+        }
+      }
+    }
+
+    // Start from the next number after the highest found
+    let startCount = maxSequence + 1;
 
     // Generate the requested number of sequential order IDs
     const generatedIds: string[] = [];
