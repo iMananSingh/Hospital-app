@@ -96,6 +96,8 @@ export default function Settings() {
   const [autoBackupSettings, setAutoBackupSettings] = useState({
     frequency: "daily",
     time: "02:00",
+    day: "Sunday",
+    date: "1",
   });
   const [pendingSystemSettings, setPendingSystemSettings] = useState<any>(null);
   const [timezoneOpen, setTimezoneOpen] = useState(false);
@@ -797,6 +799,8 @@ export default function Settings() {
       setAutoBackupSettings({
         frequency: pendingSystemSettings?.backupFrequency || "daily",
         time: pendingSystemSettings?.backupTime || "02:00",
+        day: pendingSystemSettings?.backupDay || "Sunday",
+        date: pendingSystemSettings?.backupDate || "1",
       });
       setShowAutoBackupConfig(true);
       return;
@@ -848,6 +852,8 @@ export default function Settings() {
       autoBackup: true,
       backupFrequency: autoBackupSettings.frequency,
       backupTime: autoBackupSettings.time,
+      backupDay: autoBackupSettings.day,
+      backupDate: autoBackupSettings.date,
     };
 
     setPendingSystemSettings(updatedSettings);
@@ -2437,13 +2443,60 @@ export default function Settings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly (Sundays)</SelectItem>
-                  <SelectItem value="monthly">
-                    Monthly (1st of month)
-                  </SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {autoBackupSettings.frequency === "weekly" && (
+              <div className="space-y-2">
+                <Label htmlFor="backup-day">Day of Week</Label>
+                <Select
+                  value={autoBackupSettings.day}
+                  onValueChange={(value) =>
+                    setAutoBackupSettings((prev) => ({
+                      ...prev,
+                      day: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Monday">Monday</SelectItem>
+                    <SelectItem value="Tuesday">Tuesday</SelectItem>
+                    <SelectItem value="Wednesday">Wednesday</SelectItem>
+                    <SelectItem value="Thursday">Thursday</SelectItem>
+                    <SelectItem value="Friday">Friday</SelectItem>
+                    <SelectItem value="Saturday">Saturday</SelectItem>
+                    <SelectItem value="Sunday">Sunday</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {autoBackupSettings.frequency === "monthly" && (
+              <div className="space-y-2">
+                <Label htmlFor="backup-date">Date of Month</Label>
+                <Input
+                  id="backup-date"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={autoBackupSettings.date}
+                  onChange={(e) =>
+                    setAutoBackupSettings((prev) => ({
+                      ...prev,
+                      date: e.target.value,
+                    }))
+                  }
+                  className="w-full"
+                  placeholder="1-31"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="backup-time">Backup Time</Label>
@@ -2470,12 +2523,12 @@ export default function Settings() {
                 <div className="text-sm">
                   <p className="font-medium text-blue-800">Schedule Preview</p>
                   <p className="text-blue-700">
-                    Backups will run {autoBackupSettings.frequency} at{" "}
-                    {autoBackupSettings.time} IST
+                    Backups will run {autoBackupSettings.frequency}
                     {autoBackupSettings.frequency === "weekly" &&
-                      " (every Sunday)"}
+                      ` on ${autoBackupSettings.day}s`}
                     {autoBackupSettings.frequency === "monthly" &&
-                      " (on the 1st of each month)"}
+                      ` on the ${autoBackupSettings.date} of each month`}{" "}
+                    at {autoBackupSettings.time} IST
                   </p>
                 </div>
               </div>
