@@ -2453,32 +2453,32 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
         console.log("Generated receipt number:", receiptNumber);
 
-        // Generate unique order IDs for all services BEFORE the transaction
-        const orderIds = storage.generateMultipleServiceOrderIds(req.body.length);
-        console.log("Pre-generated order IDs:", orderIds);
+        // Generate a SINGLE order ID for the entire batch (groups related services)
+        const orderId = storage.generateServiceOrderId();
+        console.log("Pre-generated order ID for batch:", orderId);
 
-        // Add receipt number to all services
+        // Add receipt number and order ID to all services
         const servicesWithReceipt = req.body.map((service: any) => ({
           ...service,
           receiptNumber: receiptNumber,
+          orderId: orderId, // All services in this batch share the same order ID
         }));
 
         console.log(
-          `Creating batch of ${servicesWithReceipt.length} services with receipt number: ${receiptNumber}`,
+          `Creating batch of ${servicesWithReceipt.length} services with receipt number: ${receiptNumber} and order ID: ${orderId}`,
         );
 
         const services = await storage.createPatientServicesBatch(
           servicesWithReceipt,
           req.user.id,
-          orderIds,
         );
 
         console.log(
-          `Successfully created ${services.length} services with unique orderIds`
+          `Successfully created ${services.length} services with order ID: ${orderId}`
         );
         if (services.length > 0) {
           console.log(
-            `Order IDs: ${services.map((s) => s.orderId).join(", ")}`
+            `All services in batch share order ID: ${services[0].orderId}`
           );
         }
 

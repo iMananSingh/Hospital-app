@@ -3,6 +3,22 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Batch Service Order ID Grouping Fix - December 21, 2025 at 10:05 AM
+[x] Fixed batch service scheduling to assign same order ID to all services in a single batch
+- **Issue**: When scheduling 2+ services together in a single batch, each service was getting a unique order ID (e.g., SER-2025-00083, SER-2025-00084) instead of sharing one order ID
+- **Root Cause**: Code was calling `generateMultipleServiceOrderIds(count)` which generated a different ID for each service
+- **Solution**:
+  1. Changed routes.ts to call `generateServiceOrderId()` ONCE instead of `generateMultipleServiceOrderIds(count)`
+  2. Assign the same order ID to ALL services in the batch (before transaction)
+  3. Removed the orderIds parameter from batch creation since orderId is now in each service's data
+  4. Made `generateServiceOrderId()` public for use in routes
+- **Result**: All services in a single batch now share the same order ID while having unique receipt numbers
+  - Example: Batch with Dressing + ECG → Both get `SER-2025-00085` (same order ID), but receipt numbers `251221-SRV-0025` and `251221-SRV-0026`
+- **Files Modified**:
+  - `server/routes.ts`: Changed order ID generation from multiple to single, assign to all batch services
+  - `server/storage.ts`: Removed `orderIds` parameter from `createPatientServicesBatch`, made `generateServiceOrderId()` public
+- **Status**: Application restarted successfully ✓
+
 ### Batch Service Order ID Increment Fix - December 21, 2025 at 9:51 AM
 [x] Fixed service order IDs not incrementing in batch service scheduling
 - **Issue**: When batch scheduling multiple services, all services in the batch were receiving the same order ID (e.g., SER-2025-00045 for all)

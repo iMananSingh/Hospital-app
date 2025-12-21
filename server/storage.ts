@@ -1825,7 +1825,7 @@ export class SqliteStorage implements IStorage {
     return `LAB-${year}-${count.toString().padStart(5, "0")}`;
   }
 
-  private generateServiceOrderId(): string {
+  generateServiceOrderId(): string {
     const year = new Date().getFullYear();
     // Parse sequence numbers from all orderIds and find the maximum
     const existingOrderIds = db
@@ -3931,14 +3931,10 @@ export class SqliteStorage implements IStorage {
   async createPatientServicesBatch(
     servicesData: InsertPatientService[],
     userId?: string,
-    orderIds?: string[],
   ): Promise<PatientService[]> {
     try {
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import("./smart-costing");
-
-      // If order IDs not provided, generate them now (before transaction)
-      const finalOrderIds = orderIds || this.generateMultipleServiceOrderIds(servicesData.length);
 
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
@@ -3950,15 +3946,11 @@ export class SqliteStorage implements IStorage {
           console.log("Doctor ID from request:", serviceData.doctorId);
           console.log("Doctor ID type:", typeof serviceData.doctorId);
           console.log("Service Type:", serviceData.serviceType);
-
-          // Use pre-generated order ID
-          const orderId = finalOrderIds[index];
-          console.log("Using order ID:", orderId);
+          console.log("Order ID from request:", serviceData.orderId);
 
           // Ensure doctor ID is properly preserved for all service types
           const finalServiceData = {
             ...serviceData,
-            orderId: orderId,
             // Always preserve the doctor ID exactly as sent from frontend
             doctorId: serviceData.doctorId,
           };
