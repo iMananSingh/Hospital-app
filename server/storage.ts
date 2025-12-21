@@ -5891,8 +5891,23 @@ export class SqliteStorage implements IStorage {
   // Backup functionality
   private generateBackupId(): string {
     const year = new Date().getFullYear();
-    const count = db.select().from(schema.backupLogs).all().length + 1;
-    return `BACKUP-${year}-${count.toString().padStart(3, "0")}`;
+    
+    // Find the highest backup ID number for this year
+    const allBackups = db.select().from(schema.backupLogs).all() as any[];
+    let maxNum = 0;
+    
+    for (const backup of allBackups) {
+      const match = backup.backupId.match(/BACKUP-(\d{4})-(\d+)/);
+      if (match && parseInt(match[1]) === year) {
+        const num = parseInt(match[2]);
+        if (num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+    
+    const nextNum = maxNum + 1;
+    return `BACKUP-${year}-${nextNum.toString().padStart(3, "0")}`;
   }
 
   async createBackup(

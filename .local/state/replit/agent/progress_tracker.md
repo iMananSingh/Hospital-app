@@ -3,6 +3,25 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Backup Creation UNIQUE Constraint Fix - December 21, 2025 at 11:50 AM
+[x] Fixed "Failed to create backup" error with UNIQUE constraint failure
+- **Issue**: `UNIQUE constraint failed: backup_logs.backup_id` when creating manual backups
+- **Root Cause**: The `generateBackupId()` function was using a simple count of all backup records, which:
+  - Failed when records were deleted (count didn't match actual max ID)
+  - Created duplicate IDs if backups were created in quick succession
+  - Didn't properly track the highest backup ID number
+- **Solution**: Modified `generateBackupId()` to:
+  1. Retrieve all existing backups from database
+  2. Parse each backup ID using regex to extract the year and number
+  3. Find the maximum number for the current year
+  4. Increment from that maximum to generate the next unique ID
+  5. Return `BACKUP-{year}-{nextNum}` with proper zero-padding
+- **Code Changed**: `server/storage.ts` lines 5895-5914
+  - Old: `const count = db.select().from(schema.backupLogs).all().length + 1;`
+  - New: Loop through backups, parse IDs, find max, increment properly
+- **Status**: Application restarted successfully, fix deployed ✓
+- **Testing**: Backup creation should now work without constraint failures
+
 ### Environment Migration - December 21, 2025 at 11:47 AM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
