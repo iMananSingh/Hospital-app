@@ -119,8 +119,8 @@
 - **Status**: Recovered from tsx not found error, application running successfully on port 5000 ✓
 
 ### UI Update - December 21, 2025 at 8:05 PM
-[x] Replaced letter 'D' with Wallet icon in Dashboard activity feed and styled green
+[x] Updated Wallet icon styling in Dashboard activity feed
 - **Changes**: 
-  - Updated `client/src/pages/dashboard.tsx` to use `Wallet` icon from `lucide-react`.
-  - Applied `bg-green-500` color to the icon container to match payment accepted styling.
-- **Status**: Icon updated and styled successfully ✓
+  - Switched to `bg-green-100` background and `text-green-700` for the `Wallet` icon.
+  - This matches the lighter green styling of the currency/payment icon shown in the reference image.
+- **Status**: Styling refined to match reference ✓
