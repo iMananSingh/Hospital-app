@@ -1613,7 +1613,33 @@ export default function Settings() {
                     <p>
                       Auto backup:{" "}
                       {systemSettings?.autoBackup
-                        ? `${systemSettings.backupFrequency} at ${systemSettings.backupTime}`
+                        ? (() => {
+                            const freq = systemSettings.backupFrequency || "daily";
+                            const time = systemSettings.backupTime || "02:00";
+                            if (freq === "monthly") {
+                              const date = systemSettings.backupDate || "1";
+                              const dateNum = parseInt(date);
+                              const getOrdinal = (n: number) => {
+                                if (n > 3 && n < 21) return "th";
+                                switch (n % 10) {
+                                  case 1:
+                                    return "st";
+                                  case 2:
+                                    return "nd";
+                                  case 3:
+                                    return "rd";
+                                  default:
+                                    return "th";
+                                }
+                              };
+                              return `on the ${dateNum}${getOrdinal(dateNum)} of every month at ${time}`;
+                            }
+                            if (freq === "weekly") {
+                              const dayName = systemSettings.backupDay || "Sunday";
+                              return `every ${dayName} at ${time}`;
+                            }
+                            return `${freq} at ${time}`;
+                          })()
                         : "Disabled"}
                     </p>
                     <p>

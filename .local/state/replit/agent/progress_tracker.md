@@ -71,3 +71,17 @@
   - For monthly: `return Automatically backup data on the ${dateNum}${getOrdinal(dateNum)} of every month at ${time};`
   - For weekly: `return Automatically backup data every ${dayName} at ${time};`
 - **Status**: Changes applied and hot-reloaded successfully ✓
+
+### Backup History Section Message Update - December 21, 2025 at 5:28 PM
+[x] Updated backup history section auto backup message format
+- **Changes Made**:
+  1. Updated monthly format: "on the 22nd of every month at 20:45"
+     - Uses ordinal suffix (st, nd, rd, th) based on the configured backup date
+  2. Added weekly format: "every [day name] at 20:45"
+     - Uses the configured backup day name (e.g., Monday, Tuesday, etc.)
+- **File Modified**:
+  - `client/src/pages/settings.tsx` (lines 1616-1646)
+- **Implementation Details**:
+  - For monthly: `return on the ${dateNum}${getOrdinal(dateNum)} of every month at ${time};`
+  - For weekly: `return every ${dayName} at ${time};`
+- **Status**: Changes applied and hot-reloaded successfully ✓
