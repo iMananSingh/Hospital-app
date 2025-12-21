@@ -3839,6 +3839,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         await backupScheduler.enableAutoBackup(
           settings.backupFrequency,
           settings.backupTime,
+          settings.backupDate,
         );
       } else {
         await backupScheduler.disableAutoBackup();

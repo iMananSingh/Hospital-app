@@ -31,7 +31,7 @@ export class BackupScheduler {
     }
   }
 
-  async updateSchedule(frequency: string, time: string): Promise<void> {
+  async updateSchedule(frequency: string, time: string, date?: string): Promise<void> {
     try {
       // Stop existing scheduler
       this.stopScheduler();
@@ -54,7 +54,12 @@ export class BackupScheduler {
           cronExpression = `${minutes} ${hours} * * 0`; // Sunday
           break;
         case 'monthly':
-          cronExpression = `${minutes} ${hours} 1 * *`; // First day of month
+          // Use user-configured date or default to 1st
+          const dayOfMonth = date ? parseInt(date) : 1;
+          if (isNaN(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
+            throw new Error('Invalid date for monthly backup. Expected 1-31');
+          }
+          cronExpression = `${minutes} ${hours} ${dayOfMonth} * *`;
           break;
         default:
           throw new Error(`Unsupported backup frequency: ${frequency}`);
@@ -134,8 +139,8 @@ export class BackupScheduler {
     }
   }
 
-  async enableAutoBackup(frequency: string, time: string): Promise<void> {
-    await this.updateSchedule(frequency, time);
+  async enableAutoBackup(frequency: string, time: string, date?: string): Promise<void> {
+    await this.updateSchedule(frequency, time, date);
   }
 
   async disableAutoBackup(): Promise<void> {
