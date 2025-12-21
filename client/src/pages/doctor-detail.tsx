@@ -28,6 +28,7 @@ import {
   IndianRupee,
   Calculator,
   Wallet,
+  ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
@@ -93,6 +94,7 @@ export default function DoctorDetail() {
 
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch doctor details
@@ -122,6 +124,12 @@ export default function DoctorDetail() {
     DoctorPayment[]
   >({
     queryKey: ["/api/doctors", doctorId, "payments"],
+    enabled: !!doctorId,
+  });
+
+  // Fetch doctor salary history
+  const { data: salaryHistory = {} } = useQuery({
+    queryKey: ["/api/doctors", doctorId, "salary-history"],
     enabled: !!doctorId,
   });
 
@@ -619,6 +627,9 @@ export default function DoctorDetail() {
             <TabsTrigger value="payments" data-testid="tab-payments">
               Payments
             </TabsTrigger>
+            <TabsTrigger value="salary-history" data-testid="tab-salary-history">
+              Salary History
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="salary-rates">
@@ -890,6 +901,89 @@ export default function DoctorDetail() {
                           ))}
                       </TableBody>
                     </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="salary-history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Salary History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(salaryHistory).length === 0 ? (
+                  <div className="text-center py-8">
+                    <IndianRupee className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No salary history recorded
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.keys(salaryHistory)
+                      .sort()
+                      .reverse()
+                      .map((year: string) => {
+                        const isExpanded = expandedYears.has(year);
+                        const toggleYear = () => {
+                          const newSet = new Set(expandedYears);
+                          if (newSet.has(year)) {
+                            newSet.delete(year);
+                          } else {
+                            newSet.add(year);
+                          }
+                          setExpandedYears(newSet);
+                        };
+                        
+                        const months = salaryHistory[year];
+                        const monthKeys = Object.keys(months).sort().reverse();
+
+                        return (
+                          <div key={year} className="border rounded-lg">
+                            <button
+                              onClick={toggleYear}
+                              className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                              data-testid={`button-year-${year}`}
+                            >
+                              <span className="font-semibold text-base">
+                                {year}
+                              </span>
+                              <ChevronDown
+                                className={`w-5 h-5 transition-transform ${
+                                  isExpanded ? "rotate-180" : ""
+                                }`}
+                              />
+                            </button>
+                            
+                            {isExpanded && (
+                              <div className="px-4 py-3 border-t space-y-2 bg-muted/20">
+                                {monthKeys.map((month: string) => {
+                                  const monthNum = parseInt(month);
+                                  const monthName = new Date(2024, monthNum - 1).toLocaleDateString('en-US', { month: 'long' });
+                                  const amount = months[month];
+                                  
+                                  return (
+                                    <div
+                                      key={`${year}-${month}`}
+                                      className="flex justify-between items-center p-2 bg-background rounded hover:bg-muted/50"
+                                      data-testid={`row-salary-${year}-${month}`}
+                                    >
+                                      <span className="text-sm text-muted-foreground">
+                                        {monthName}
+                                      </span>
+                                      <span className="font-medium text-green-600">
+                                        {formatCurrency(amount)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
               </CardContent>

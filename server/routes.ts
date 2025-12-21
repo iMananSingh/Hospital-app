@@ -866,6 +866,37 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     }
   });
 
+  app.get("/api/doctors/:doctorId/salary-history", authenticateToken, async (req, res) => {
+    try {
+      const { doctorId } = req.params;
+      const payments = await storage.getDoctorPayments(doctorId);
+      
+      const salaryByYearMonth: { [key: string]: { [key: string]: number } } = {};
+      
+      payments.forEach((payment: any) => {
+        const date = new Date(payment.paymentDate);
+        const year = date.getFullYear().toString();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const monthKey = `${year}-${month}`;
+        
+        if (!salaryByYearMonth[year]) {
+          salaryByYearMonth[year] = {};
+        }
+        
+        if (!salaryByYearMonth[year][month]) {
+          salaryByYearMonth[year][month] = 0;
+        }
+        
+        salaryByYearMonth[year][month] += payment.totalAmount;
+      });
+      
+      res.json(salaryByYearMonth);
+    } catch (error) {
+      console.error("Error fetching doctor salary history:", error);
+      res.status(500).json({ message: "Failed to fetch salary history" });
+    }
+  });
+
   app.put("/api/doctors/:doctorId/mark-paid", authenticateToken, async (req: any, res) => {
     try {
       const { doctorId } = req.params;

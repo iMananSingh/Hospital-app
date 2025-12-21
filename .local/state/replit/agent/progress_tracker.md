@@ -3,6 +3,35 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Salary History Tab Implementation - December 21, 2025 at 10:44 AM
+[x] Created new "Salary History" tab in doctor detail page showing monthly salary aggregated from payments
+- **Features Implemented**:
+  1. New tab "Salary History" added to doctor detail page alongside "Salary Rates", "Earnings", "Payments"
+  2. Years displayed as collapsible/expandable toggles (newest years first)
+  3. Only years with recorded payments are shown (future years excluded if doctor was created recently)
+  4. Under each expanded year, months are displayed with total salary amount for that month
+  5. Months displayed in reverse chronological order (newest first)
+  6. Used ChevronDown icon for visual toggle indicator
+  7. Added proper test IDs for all interactive elements
+- **API Implementation**:
+  - New endpoint: `/api/doctors/:doctorId/salary-history` (GET)
+  - Aggregates all doctor payments by year and month
+  - Returns structure: `{ "2025": { "12": 15000, "11": 20000 }, "2024": { "12": 25000 } }`
+- **Frontend Changes** (`client/src/pages/doctor-detail.tsx`):
+  - Added `expandedYears` state to track which year toggles are open
+  - Added salary history query hook using `/api/doctors/:doctorId/salary-history`
+  - Implemented year/month expandable UI with proper styling
+  - Displays formatted currency amounts using existing `formatCurrency` utility
+  - Shows empty state with icon if no salary history exists
+- **Backend Changes** (`server/routes.ts`):
+  - Added new GET route to aggregate doctor payments by year/month
+  - Uses existing `getDoctorPayments` method to fetch payment data
+  - Aggregates payments into nested structure by year → month
+- **Files Modified**:
+  - `client/src/pages/doctor-detail.tsx`: Added tab, query hook, state, and UI
+  - `server/routes.ts`: Added new salary history endpoint
+- **Status**: Application restarted successfully, salary history tab working with hot-reload ✓
+
 ### Environment Migration - December 21, 2025 at 10:36 AM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully
