@@ -1279,18 +1279,26 @@ export default function Settings() {
                           <p className="text-sm text-muted-foreground">
                             {pendingSystemSettings?.autoBackup
                               ? (() => {
-                                  const freq = pendingSystemSettings.backupFrequency || "daily";
-                                  const time = pendingSystemSettings.backupTime || "02:00";
+                                  const freq =
+                                    pendingSystemSettings.backupFrequency ||
+                                    "daily";
+                                  const time =
+                                    pendingSystemSettings.backupTime || "02:00";
                                   if (freq === "monthly") {
-                                    const date = pendingSystemSettings.backupDate || "1";
+                                    const date =
+                                      pendingSystemSettings.backupDate || "1";
                                     const dateNum = parseInt(date);
                                     const getOrdinal = (n: number) => {
                                       if (n > 3 && n < 21) return "th";
                                       switch (n % 10) {
-                                        case 1: return "st";
-                                        case 2: return "nd";
-                                        case 3: return "rd";
-                                        default: return "th";
+                                        case 1:
+                                          return "st";
+                                        case 2:
+                                          return "nd";
+                                        case 3:
+                                          return "rd";
+                                        default:
+                                          return "th";
                                       }
                                     };
                                     return `Automatically backup data monthly on the ${date}${getOrdinal(dateNum)} at ${time}`;
