@@ -83,6 +83,7 @@ import {
   Database,
   DatabaseZap,
   Pencil,
+  Wallet,
 } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
@@ -1451,7 +1452,7 @@ export default function Dashboard() {
                             <div
                               className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}
                             >
-                              <span className="text-white text-xs">{icon}</span>
+                              <Wallet className="h-4 w-4 text-white" />
                             </div>
                           )}
                         <div className="flex-1">
