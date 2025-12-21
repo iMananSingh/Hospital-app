@@ -434,7 +434,7 @@ export default function DoctorDetail() {
 
   return (
     <div>
-      <TopBar title={`Dr. ${doctor.name}`} />
+      <TopBar title={doctor.name} />
 
       <div className="p-6 space-y-6">
         {/* Header */}
