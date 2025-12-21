@@ -72,6 +72,7 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useTimezone } from "@/hooks/use-timezone";
 import type { Service, User } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
 import { clearTimezoneCache } from "@/lib/timezone";
@@ -89,6 +90,7 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { formatDateTime: tzFormatDateTime } = useTimezone();
 
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [selectedBackupFile, setSelectedBackupFile] = useState<string>("");
@@ -893,16 +895,6 @@ export default function Settings() {
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  };
 
   const auditTables = [
     "all",
@@ -1874,7 +1866,7 @@ export default function Settings() {
                           {auditLogs.map((log: any) => (
                             <TableRow key={log.id}>
                               <TableCell className="text-sm">
-                                {formatDateTime(log.createdAt)}
+                                {tzFormatDateTime(log.createdAt)}
                               </TableCell>
                               <TableCell>{log.username}</TableCell>
                               <TableCell>
