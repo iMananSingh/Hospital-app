@@ -83,7 +83,6 @@ import {
   Database,
   DatabaseZap,
   Pencil,
-  Wallet,
 } from "lucide-react";
 import { UserStarIcon } from "@/components/ui/user-star-icon";
 
@@ -1450,9 +1449,9 @@ export default function Dashboard() {
                           activity.activityType !== "service_created" &&
                           activity.activityType !== "service_deleted" && (
                             <div
-                              className="w-8 h-8 bg-[#e6fcf5] rounded-full flex items-center justify-center"
+                              className={`w-8 h-8 ${color} rounded-full flex items-center justify-center`}
                             >
-                              <Wallet className="h-4 w-4 text-[#087f5b]" strokeWidth={1.5} />
+                              <span className="text-white text-xs">{icon}</span>
                             </div>
                           )}
                         <div className="flex-1">
