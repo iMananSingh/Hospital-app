@@ -569,10 +569,21 @@ export default function DoctorDetail() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    Total Services
+                    Monthly Earnings
                   </p>
                   <p className="text-xl font-semibold text-blue-600">
-                    {earnings.length}
+                    {formatCurrency(
+                      earnings
+                        .filter((earning: DoctorEarning) => {
+                          const earningDate = new Date(earning.serviceDate);
+                          const today = new Date();
+                          return (
+                            earningDate.getMonth() === today.getMonth() &&
+                            earningDate.getFullYear() === today.getFullYear()
+                          );
+                        })
+                        .reduce((sum: number, earning: DoctorEarning) => sum + earning.earnedAmount, 0)
+                    )}
                   </p>
                 </div>
               </div>
