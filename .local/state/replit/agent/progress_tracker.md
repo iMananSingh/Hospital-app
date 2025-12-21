@@ -3,6 +3,20 @@
 [x] 3. Verify the project is working using the screenshot tool
 [x] 4. Inform user the import is completed and they can start building, mark the import as completed using the complete_project_import tool
 
+### Batch Service Order ID Increment Fix - December 21, 2025 at 9:47 AM
+[x] Fixed service order IDs not incrementing in batch service scheduling
+- **Issue**: When batch scheduling multiple services, all services in the batch were receiving the same order ID instead of incrementing unique IDs
+- **Root Cause**: The `createPatientServicesBatch` method was generating a single order ID once and assigning it to all services in the batch
+- **Solution**:
+  1. Moved `this.generateServiceOrderId()` call INSIDE the service loop in `createPatientServicesBatch` (server/storage.ts line 3910)
+  2. Each service in a batch now receives its own unique, incrementing order ID
+  3. Updated API logging to display all unique order IDs for batch operations (server/routes.ts lines 2474-2481)
+- **Changes Made**:
+  - `server/storage.ts` (line 3910): Moved order ID generation inside loop for unique IDs per service
+  - `server/routes.ts` (lines 2474-2481): Updated logging to show unique order IDs
+- **Result**: Batch scheduled services now each get incrementing unique order IDs (SER-2025-00074, SER-2025-00075, SER-2025-00076, etc.)
+- **Status**: Application restarted successfully ✓
+
 ### Environment Migration - December 21, 2025 at 9:43 AM
 [x] Successfully configured workflow with webview output type and port 5000
 - **Workflow Status**: Running successfully

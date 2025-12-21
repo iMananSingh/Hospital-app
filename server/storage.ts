@@ -3893,9 +3893,6 @@ export class SqliteStorage implements IStorage {
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import("./smart-costing");
 
-      // Generate a single order ID for all services in this batch
-      const orderId = this.generateServiceOrderId();
-
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
 
@@ -3905,6 +3902,10 @@ export class SqliteStorage implements IStorage {
           console.log("Doctor ID from request:", serviceData.doctorId);
           console.log("Doctor ID type:", typeof serviceData.doctorId);
           console.log("Service Type:", serviceData.serviceType);
+
+          // Generate a unique order ID for each service in the batch
+          const orderId = this.generateServiceOrderId();
+          console.log("Generated order ID:", orderId);
 
           // Ensure doctor ID is properly preserved for all service types
           const finalServiceData = {

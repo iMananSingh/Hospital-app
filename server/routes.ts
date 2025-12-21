@@ -2377,7 +2377,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     },
   );
 
-  // Batch service creation - multiple services with same order ID
+  // Batch service creation - each service gets unique order ID
   app.post(
     "/api/patient-services/batch",
     authenticateToken,
@@ -2411,7 +2411,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           return res.status(400).json({ message: "No services provided" });
         }
 
-        // Generate a single receipt number and orderId for the entire batch
+        // Get daily count for receipt numbering (using first service's date for reference)
         const firstService = req.body[0];
         const serviceType =
           firstService.serviceType === "opd" ? "opd" : "service";
@@ -2419,7 +2419,6 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           .toISOString()
           .split("T")[0];
 
-        // Get daily count for receipt numbering
         let count;
         try {
           const response = await fetch(
@@ -2470,8 +2469,13 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         );
 
         console.log(
-          `Successfully created ${services.length} services with shared orderId: ${services[0]?.orderId}`,
+          `Successfully created ${services.length} services with unique orderIds`
         );
+        if (services.length > 0) {
+          console.log(
+            `Order IDs: ${services.map((s) => s.orderId).join(", ")}`
+          );
+        }
 
         // Calculate doctor earnings for all services with assigned doctors
         for (const svc of services) {
