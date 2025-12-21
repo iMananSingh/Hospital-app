@@ -869,15 +869,14 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
   app.get("/api/doctors/:doctorId/salary-history", authenticateToken, async (req, res) => {
     try {
       const { doctorId } = req.params;
-      const payments = await storage.getDoctorPayments(doctorId);
+      const earnings = await storage.getDoctorEarnings(doctorId);
       
       const salaryByYearMonth: { [key: string]: { [key: string]: number } } = {};
       
-      payments.forEach((payment: any) => {
-        const date = new Date(payment.paymentDate);
+      earnings.forEach((earning: any) => {
+        const date = new Date(earning.serviceDate);
         const year = date.getFullYear().toString();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const monthKey = `${year}-${month}`;
         
         if (!salaryByYearMonth[year]) {
           salaryByYearMonth[year] = {};
@@ -887,7 +886,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           salaryByYearMonth[year][month] = 0;
         }
         
-        salaryByYearMonth[year][month] += payment.totalAmount;
+        salaryByYearMonth[year][month] += earning.earnedAmount;
       });
       
       res.json(salaryByYearMonth);
