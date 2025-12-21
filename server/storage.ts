@@ -885,6 +885,25 @@ async function initializeDatabase() {
       // Column already exists, ignore error
     }
 
+    // Add backup configuration columns to system_settings table if they don't exist
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN backup_day TEXT DEFAULT 'Sunday';
+      `);
+      console.log("Added backup_day column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE system_settings ADD COLUMN backup_date TEXT DEFAULT '1';
+      `);
+      console.log("Added backup_date column to system_settings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
     // Add new columns to audit_log table if they don't exist
     try {
       db.$client.exec(`
@@ -5828,6 +5847,8 @@ export class SqliteStorage implements IStorage {
           auditLogging: true,
           backupFrequency: "daily",
           backupTime: "02:00",
+          backupDay: "Sunday",
+          backupDate: "1",
           lastBackupDate: null,
           backupRetentionDays: 30,
           fiscalYearStartMonth: 4,

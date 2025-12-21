@@ -33,3 +33,20 @@
 - **Backup Scheduler**: Running monthly at 20:17
 - **Application**: Serving on port 5000 ✓
 - **Migration Status**: All 4 import tasks marked complete [x] ✓
+
+### Database Schema Fix - December 21, 2025 at 3:07 PM
+[x] Fixed missing backupDate and backupDay columns in system_settings table
+- **Root Cause**: The system_settings table in the database was missing `backupDate` and `backupDay` columns, causing monthly backup configuration to fail silently
+- **Solution Applied**:
+  1. Added `backupDate` column to `shared/schema.ts` (line 394) - defaults to "1" (1-31 for monthly backups)
+  2. Added `backupDay` column to `shared/schema.ts` (line 393) - defaults to "Sunday" (for weekly backups)
+  3. Updated `getSystemSettings()` in `server/storage.ts` to include these new fields in default settings
+  4. Added migration code in `server/storage.ts` (lines 891-908) to add columns to existing databases via ALTER TABLE
+- **Files Modified**:
+  - `shared/schema.ts` (lines 393-394)
+  - `server/storage.ts` (lines 5834-5835, 891-908)
+- **Migration Status**: Database columns added successfully ✓
+- **Testing**: Workflow restarted and verified columns were created - logs show:
+  - "Added backup_day column to system_settings table"
+  - "Added backup_date column to system_settings table"
+- **Status**: Fix complete, ready for user testing with monthly backup configuration ✓

@@ -387,6 +387,8 @@ export const systemSettings = sqliteTable("system_settings", {
     .default(true),
   backupFrequency: text("backup_frequency").notNull().default("daily"), // daily, weekly, monthly
   backupTime: text("backup_time").notNull().default("02:00"), // HH:MM format
+  backupDay: text("backup_day").notNull().default("Sunday"), // Sunday, Monday, etc. for weekly backups
+  backupDate: text("backup_date").notNull().default("1"), // 1-31 for monthly backups
   lastBackupDate: text("last_backup_date"),
   backupRetentionDays: integer("backup_retention_days").notNull().default(30),
   fiscalYearStartMonth: integer("fiscal_year_start_month").notNull().default(4), // 1-12, default April (4)
