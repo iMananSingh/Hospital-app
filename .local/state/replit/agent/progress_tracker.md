@@ -111,3 +111,9 @@
   - `server/storage.ts` (lines 4147-4152) - removed async earnings calculation from createPatientService
   - `server/routes.ts` (lines 2515-2519) - removed duplicate earnings calculation loop from batch route
 - **Status**: Workflow restarted and application running successfully ✓
+
+### Session Recovery - December 21, 2025 at 8:03 PM
+[x] Recovered from tsx not found error
+- **Issue**: Workflow failed with "sh: 1: tsx: not found" after package installation reset
+- **Solution**: Installed tsx package via npm and restarted workflow
+- **Status**: Application running successfully on port 5000 ✓
