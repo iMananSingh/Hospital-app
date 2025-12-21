@@ -1842,6 +1842,28 @@ export class SqliteStorage implements IStorage {
     return `SER-${year}-${count.toString().padStart(5, "0")}`;
   }
 
+  generateMultipleServiceOrderIds(count: number): string[] {
+    const year = new Date().getFullYear();
+    // Get the current highest order ID
+    const existingOrderIds = db
+      .select({ orderId: schema.patientServices.orderId })
+      .from(schema.patientServices)
+      .where(isNotNull(schema.patientServices.orderId))
+      .all();
+
+    // Get unique orderIds and find the highest number
+    const uniqueOrderIds = new Set(existingOrderIds.map((row) => row.orderId));
+    let startCount = uniqueOrderIds.size + 1;
+
+    // Generate the requested number of sequential order IDs
+    const generatedIds: string[] = [];
+    for (let i = 0; i < count; i++) {
+      generatedIds.push(`SER-${year}-${(startCount + i).toString().padStart(5, "0")}`);
+    }
+
+    return generatedIds;
+  }
+
   private generateAdmissionId(): string {
     const year = new Date().getFullYear();
     try {
@@ -3888,24 +3910,29 @@ export class SqliteStorage implements IStorage {
   async createPatientServicesBatch(
     servicesData: InsertPatientService[],
     userId?: string,
+    orderIds?: string[],
   ): Promise<PatientService[]> {
     try {
       // Import smart costing here to avoid circular dependencies
       const { SmartCostingEngine } = await import("./smart-costing");
 
+      // If order IDs not provided, generate them now (before transaction)
+      const finalOrderIds = orderIds || this.generateMultipleServiceOrderIds(servicesData.length);
+
       return db.transaction((tx) => {
         const createdServices: PatientService[] = [];
 
-        for (const serviceData of servicesData) {
+        for (let index = 0; index < servicesData.length; index++) {
+          const serviceData = servicesData[index];
           console.log("=== BATCH SERVICE CREATION DEBUG ===");
           console.log("Service Name:", serviceData.serviceName);
           console.log("Doctor ID from request:", serviceData.doctorId);
           console.log("Doctor ID type:", typeof serviceData.doctorId);
           console.log("Service Type:", serviceData.serviceType);
 
-          // Generate a unique order ID for each service in the batch
-          const orderId = this.generateServiceOrderId();
-          console.log("Generated order ID:", orderId);
+          // Use pre-generated order ID
+          const orderId = finalOrderIds[index];
+          console.log("Using order ID:", orderId);
 
           // Ensure doctor ID is properly preserved for all service types
           const finalServiceData = {
