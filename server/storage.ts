@@ -4144,32 +4144,9 @@ export class SqliteStorage implements IStorage {
         );
       }
 
-      // Calculate doctor earnings if doctor is assigned and service has rates
-      if (serviceData.doctorId) {
-        console.log(
-          `Patient service created with doctor ${serviceData.doctorId}, service exists: ${!!service}`,
-        );
-        if (service) {
-          console.log(
-            `Triggering earnings calculation for doctor ${serviceData.doctorId} and service ${service.id}`,
-          );
-          // Calculate earnings asynchronously to avoid blocking
-          setImmediate(async () => {
-            try {
-              await this.calculateDoctorEarning(created, service);
-            } catch (error) {
-              console.error(
-                `Error in async earnings calculation for doctor ${serviceData.doctorId}:`,
-                error,
-              );
-            }
-          });
-        } else {
-          console.log(
-            `No service found for serviceId: ${serviceData.serviceId}, cannot calculate earnings`,
-          );
-        }
-      }
+      // Note: Doctor earnings are now calculated only when payment is made, not when the service is created.
+      // This prevents duplicate earnings that would occur if both service creation and service order calculation were triggered.
+      // Earnings will be calculated via calculateServiceOrderEarning when payment is processed.
 
       return created;
     } catch (error) {

@@ -2512,17 +2512,8 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           );
         }
 
-        // Calculate doctor earnings for all services with assigned doctors
-        for (const svc of services) {
-          if (svc && svc.doctorId) {
-            try {
-              await storage.calculateDoctorEarning(svc);
-            } catch (earningError) {
-              console.error(`Error calculating earning for service ${svc.id}:`, earningError);
-              // Don't fail the request if earning calculation fails
-            }
-          }
-        }
+        // Note: Doctor earnings are calculated automatically in createPatientService() when each service is created
+        // No need to recalculate here to avoid duplicate earnings
 
         // Log activity for service scheduling
         if (services.length > 0) {

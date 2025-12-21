@@ -91,3 +91,23 @@
 - **Issue**: Workflow failed with "sh: 1: tsx: not found" after package installation reset
 - **Solution**: Re-ran npm install to restore dependencies and restarted workflow
 - **Status**: Application running successfully on port 5000 ✓
+
+### Duplicate Earnings Fix - December 21, 2025 at 6:38 PM
+[x] Fixed duplicate earnings for services created twice
+- **Issue**: When services were created, earnings were being generated twice for the same service (e.g., ECG service with two identical earning records)
+- **Root Cause**: 
+  - `createPatientService` was calling `calculateDoctorEarning` asynchronously (lines 4157-4166 in storage.ts)
+  - `createPatientServicesBatch` method had a comment stating earnings should ONLY be calculated when payment is made, not at service creation time
+  - Inconsistency between the intended design (earnings at payment time) and actual implementation (earnings at both creation and payment time)
+- **Solution Applied**:
+  1. Removed the async earnings calculation from `createPatientService` method (lines 4147-4172 in storage.ts)
+  2. Added explanatory comment: "Doctor earnings are now calculated only when payment is made, not when the service is created. This prevents duplicate earnings."
+  3. Removed duplicate earnings calculation loop from batch service creation route (lines 2515-2525 in routes.ts) - was calling `calculateDoctorEarning` again
+- **How It Works Now**:
+  - Services are created without triggering earnings calculation
+  - Earnings are calculated ONLY when payment is processed via `calculateServiceOrderEarning`
+  - No more duplicate earnings entries
+- **Files Modified**:
+  - `server/storage.ts` (lines 4147-4152) - removed async earnings calculation from createPatientService
+  - `server/routes.ts` (lines 2515-2519) - removed duplicate earnings calculation loop from batch route
+- **Status**: Workflow restarted and application running successfully ✓
