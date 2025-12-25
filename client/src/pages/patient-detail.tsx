@@ -1381,8 +1381,8 @@ export default function PatientDetail() {
                   hours: service.quantity || 1,
                 });
               } else if (service.billingType === "variable") {
-                // For variable billing, use the entered price from form data
-                const variablePrice = data.price || service.price || 0;
+                // For variable billing, use the entered price from the service's variablePrice field
+                const variablePrice = (service as any).variablePrice || service.price || 0;
                 serviceData.billingParameters = JSON.stringify({
                   price: variablePrice,
                 });
@@ -1406,8 +1406,8 @@ export default function PatientDetail() {
                 serviceData.calculatedAmount = calculatedAmount;
                 serviceData.price = calculatedAmount;
               } else if (service.billingType === "variable") {
-                // For variable billing, use the exact price entered from form (quantity is always 1)
-                const variablePrice = data.price || service.price || 0;
+                // For variable billing, use the exact price entered for this service (quantity is always 1)
+                const variablePrice = (service as any).variablePrice || service.price || 0;
                 serviceData.calculatedAmount = variablePrice;
                 serviceData.price = variablePrice;
                 serviceData.billingQuantity = 1;
@@ -4369,7 +4369,32 @@ export default function PatientDetail() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {service.price === 0 ? (
+                                  {isSelected && service.price === 0 ? (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={
+                                        selectedServices.find(
+                                          (s) => s.id === service.id,
+                                        )?.variablePrice || ""
+                                      }
+                                      onChange={(e) => {
+                                        const variablePrice =
+                                          parseFloat(e.target.value) || 0;
+                                        setSelectedServices(
+                                          selectedServices.map((s) =>
+                                            s.id === service.id
+                                              ? { ...s, variablePrice } as any
+                                              : s,
+                                          ),
+                                        );
+                                      }}
+                                      placeholder="Enter price"
+                                      className="w-24 h-8 text-right"
+                                      data-testid={`input-variable-price-${service.id}`}
+                                    />
+                                  ) : service.price === 0 ? (
                                     <Badge variant="secondary">Variable</Badge>
                                   ) : (
                                     `₹${service.price}`
@@ -4550,30 +4575,6 @@ export default function PatientDetail() {
                       </div>
                     )}
 
-                    {/* Variable Billing */}
-                    {selectedCatalogService.billingType === "variable" && (
-                      <div className="space-y-2">
-                        <Label>Variable Price (₹)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={serviceForm.watch("price") || 0}
-                          onChange={(e) =>
-                            serviceForm.setValue(
-                              "price",
-                              parseFloat(e.target.value) || 0,
-                            )
-                          }
-                          placeholder="Enter variable price"
-                          data-testid="input-variable-price"
-                        />
-                        <p className="text-sm text-gray-500">
-                          Enter the exact amount to be charged (quantity is
-                          always 1)
-                        </p>
-                      </div>
-                    )}
 
                     {/* Per Date Billing */}
                     {selectedCatalogService.billingType === "per_date" && (
@@ -4600,44 +4601,41 @@ export default function PatientDetail() {
                   </>
                 )}
 
-                {/* Custom Service Input */}
-                <div className="space-y-2">
-                  <Label>Custom Service Name</Label>
-                  <Input
-                    value={serviceForm.watch("serviceName")}
-                    onChange={(e) =>
-                      serviceForm.setValue("serviceName", e.target.value)
-                    }
-                    placeholder="Enter custom service name"
-                    disabled={!!serviceForm.watch("serviceType")}
-                    data-testid="input-custom-service-name"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Only available when no catalog service is selected
-                  </p>
-                </div>
+                {/* Custom Service Input - Only available when no catalog services selected */}
+                {selectedServices.length === 0 && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Custom Service Name</Label>
+                      <Input
+                        value={serviceForm.watch("serviceName")}
+                        onChange={(e) =>
+                          serviceForm.setValue("serviceName", e.target.value)
+                        }
+                        placeholder="Enter custom service name"
+                        data-testid="input-custom-service-name"
+                      />
+                      <p className="text-sm text-gray-500">
+                        Only available when no catalog service is selected
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    value={serviceForm.watch("price") || ""}
-                    onChange={(e) =>
-                      serviceForm.setValue(
-                        "price",
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    placeholder="Enter price"
-                    disabled={!!billingPreview}
-                    data-testid="input-service-price"
-                  />
-                  {billingPreview && (
-                    <p className="text-sm text-green-600">
-                      Price calculated automatically based on billing parameters
-                    </p>
-                  )}
-                </div>
+                    <div className="space-y-2">
+                      <Label>Price (₹) *</Label>
+                      <Input
+                        type="number"
+                        value={serviceForm.watch("price") || ""}
+                        onChange={(e) =>
+                          serviceForm.setValue(
+                            "price",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="Enter price"
+                        data-testid="input-service-price"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Services Summary */}
                 {selectedServices.length > 0 && (
@@ -4646,29 +4644,37 @@ export default function PatientDetail() {
                       Selected Services Summary
                     </h4>
                     <div className="space-y-2">
-                      {selectedServices.map((service) => (
-                        <div
-                          key={service.id}
-                          className="flex justify-between items-center text-sm"
-                        >
-                          <span className="font-medium">{service.name}</span>
-                          <span>
-                            {service.price === 0 ? (
-                              <Badge variant="secondary">Variable</Badge>
-                            ) : (
-                              `₹${(service.price * (service.quantity || 1)).toLocaleString()}`
-                            )}
-                          </span>
-                        </div>
-                      ))}
+                      {selectedServices.map((service) => {
+                        const priceToUse = service.price === 0 ? (service as any).variablePrice || 0 : service.price;
+                        const quantity = service.quantity || 1;
+                        const total = priceToUse * quantity;
+                        
+                        return (
+                          <div
+                            key={service.id}
+                            className="flex justify-between items-center text-sm"
+                          >
+                            <span className="font-medium">{service.name}</span>
+                            <span>
+                              {service.price === 0 && !(service as any).variablePrice ? (
+                                <Badge variant="secondary">Variable (Not Set)</Badge>
+                              ) : (
+                                `₹${total.toLocaleString()}`
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total ({selectedServices.length} services)</span>
                         <span>
                           ₹
                           {selectedServices
                             .reduce(
-                              (total, service) =>
-                                total + service.price * (service.quantity || 1),
+                              (total, service) => {
+                                const priceToUse = service.price === 0 ? (service as any).variablePrice || 0 : service.price;
+                                return total + priceToUse * (service.quantity || 1);
+                              },
                               0,
                             )
                             .toLocaleString()}
