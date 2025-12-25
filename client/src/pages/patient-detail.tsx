@@ -1343,12 +1343,20 @@ export default function PatientDetail() {
             const actualDoctorId = serviceForm.watch("doctorId");
             console.log("Actual doctor ID to use:", actualDoctorId);
 
+            // For variable pricing, get the price from the service's variablePrice field
+            const initialPrice = service.price === 0 
+              ? (service as any).variablePrice || 0 
+              : service.price * (service.quantity || 1);
+            const initialCalculatedAmount = service.price === 0
+              ? (service as any).variablePrice || 0
+              : Number(data.price) || (service.price * (service.quantity || 1));
+
             let serviceData: any = {
               patientId: patientId,
               serviceType: mapCategoryToServiceType(service.category),
               serviceName: service.name,
               serviceId: service.id,
-              price: service.price * (service.quantity || 1),
+              price: initialPrice,
               quantity: service.quantity || 1,
               notes: data.notes,
               scheduledDate: data.scheduledDate,
@@ -1361,7 +1369,7 @@ export default function PatientDetail() {
                   ? actualDoctorId
                   : null,
               billingType: "per_instance",
-              calculatedAmount: Number(data.price),
+              calculatedAmount: initialCalculatedAmount,
             };
 
             console.log("Final service data doctor ID:", serviceData.doctorId);
