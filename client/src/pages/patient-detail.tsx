@@ -105,6 +105,12 @@ interface Service {
   quantity?: number; // Added quantity property
 }
 
+interface CustomService {
+  id: string;
+  name: string;
+  price: string;
+  quantity: string;
+}
 export default function PatientDetail() {
   const params = useParams();
   const [, navigate] = useLocation();
@@ -149,6 +155,9 @@ export default function PatientDetail() {
     useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [variablePriceErrors, setVariablePriceErrors] = useState<Record<string, string>>({});
+  const [customServices, setCustomServices] = useState<CustomService[]>([]);
+  const [customServiceErrors, setCustomServiceErrors] = useState<Record<string, { name?: string; price?: string; quantity?: string }>>({});
 
   // For Comprehensive Bill
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
@@ -258,6 +267,8 @@ export default function PatientDetail() {
         return "payment";
       case "discount":
         return "discount";
+      case "refund":
+        return "refund";
       case "opd_visit": // Handle OPD visits
         return "opd";
       default:
@@ -505,7 +516,8 @@ export default function PatientDetail() {
         | "pathology"
         | "admission"
         | "payment"
-        | "discount",
+        | "discount"
+        | "refund",
       id: event.id,
       title:
         eventType === "opd_visit"
@@ -690,6 +702,21 @@ export default function PatientDetail() {
         },
       });
       if (!response.ok) throw new Error("Failed to fetch discounts");
+      return response.json();
+    },
+    enabled: !!patientId,
+  });
+
+  // Fetch patient refunds
+  const { data: patientRefunds = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "refunds"],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/refunds`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch refunds");
       return response.json();
     },
     enabled: !!patientId,
@@ -1001,6 +1028,79 @@ export default function PatientDetail() {
     }
   }, [systemSettings?.timezone, isDischargeDialogOpen]);
 
+  const validateVariablePrices = () => {
+    const errors: Record<string, string> = {};
+    let isValid = true;
+    selectedServices.forEach(service => {
+      if (service.price === 0) { // Variable price service
+        const variablePrice = (service as any).variablePrice;
+        if (variablePrice === undefined || variablePrice === null || String(variablePrice).trim() === '') {
+          errors[service.id] = "Price is required.";
+          isValid = false;
+        } else {
+          const priceNum = Number(variablePrice);
+          if (!Number.isInteger(priceNum) || priceNum < 1) {
+            errors[service.id] = "Must be a positive integer.";
+            isValid = false;
+          }
+        }
+      }
+    });
+    setVariablePriceErrors(errors);
+    return isValid;
+  };
+
+  const addCustomService = () => {
+    setCustomServices(prev => [...prev, { id: `custom-${Date.now()}`, name: '', price: '', quantity: '1' }]);
+  };
+
+  const removeCustomService = (id: string) => {
+    setCustomServices(prev => prev.filter(s => s.id !== id));
+    setCustomServiceErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[id];
+      return newErrors;
+    });
+  };
+
+  const handleCustomServiceChange = (id: string, field: keyof CustomService, value: string) => {
+    setCustomServices(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  };
+
+  const validateCustomServices = () => {
+    const errors: Record<string, { name?: string; price?: string; quantity?: string }> = {};
+    let isValid = true;
+    customServices.forEach(service => {
+      errors[service.id] = {};
+      if (!service.name.trim()) {
+        errors[service.id].name = "Name is required.";
+        isValid = false;
+      }
+      if (!service.price.trim()) {
+        errors[service.id].price = "Price is required.";
+        isValid = false;
+      } else if (Number(service.price) < 1 || !Number.isInteger(Number(service.price))) {
+        errors[service.id].price = "Must be a positive integer.";
+        isValid = false;
+      }
+      if (!service.quantity.trim()) {
+        errors[service.id].quantity = "Qty is required.";
+        isValid = false;
+      } else if (Number(service.quantity) < 1 || !Number.isInteger(Number(service.quantity))) {
+        errors[service.id].quantity = "Must be a positive integer.";
+        isValid = false;
+      }
+    });
+    setCustomServiceErrors(errors);
+    return isValid;
+  };
+
+  useEffect(() => {
+    if (isServiceDialogOpen) {
+      validateCustomServices();
+    }
+  }, [customServices, isServiceDialogOpen]);
+
   const watchedServiceValues = serviceForm.watch();
 
   // Sync form fields with component state
@@ -1008,6 +1108,12 @@ export default function PatientDetail() {
     serviceForm.setValue("serviceType", selectedServiceType);
     serviceForm.setValue("selectedServicesCount", selectedServices.length);
   }, [selectedServiceType, selectedServices.length]);
+
+  useEffect(() => {
+    if (isServiceDialogOpen) {
+      validateVariablePrices();
+    }
+  }, [selectedServices, isServiceDialogOpen]);
 
   // Calculate billing preview when service or parameters change
   useEffect(() => {
@@ -1176,6 +1282,8 @@ export default function PatientDetail() {
       setSelectedServiceCategory("");
       setSelectedCatalogService(null);
       setBillingPreview(null);
+      setSelectedServices([]);
+      setCustomServices([]);
       serviceForm.reset({
         patientId: patientId || "",
         serviceType: "",
@@ -1239,248 +1347,123 @@ export default function PatientDetail() {
   const [isCreatingAdmission, setIsCreatingAdmission] = useState(false);
 
   const onServiceSubmit = async (data: any) => {
+    const areVariablePricesValid = validateVariablePrices();
+    const areCustomServicesValid = validateCustomServices();
+
+    if (!areVariablePricesValid || !areCustomServicesValid) {
+      toast({
+        title: "Invalid Input",
+        description: "Please fix the errors in the service prices or custom services.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       console.log("Submit button clicked");
       console.log("Form data:", data);
 
-      // Manual validation for required fields
-      if (!data.patientId) {
-        toast({
-          title: "Error",
-          description: "Patient ID is required",
-          variant: "destructive",
-        });
+      if (!data.patientId || !data.scheduledDate || !data.scheduledTime) {
+        toast({ title: "Error", description: "Patient, date, and time are required.", variant: "destructive" });
         return;
       }
 
-      if (!data.scheduledDate) {
-        toast({
-          title: "Error",
-          description: "Scheduled date is required",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!data.scheduledTime) {
-        toast({
-          title: "Error",
-          description: "Scheduled time is required",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const servicesToCreate = [];
+      const catalogServicesToCreate: any[] = [];
+      const customServicesToCreate: any[] = [];
+      
       const selectedDoctorId = serviceForm.watch("doctorId");
-      const selectedDoctor = doctors.find(
-        (d: Doctor) => d.id === selectedDoctorId,
-      );
-      const consultationFee = selectedDoctor
-        ? selectedDoctor.consultationFee
-        : 0;
 
-      if (selectedServiceType === "opd") {
-        // Get selected doctor and consultation fee
-        console.log("Selected Doctor ID from form:", selectedDoctorId);
-
-        if (
-          !selectedDoctorId ||
-          selectedDoctorId === "none" ||
-          selectedDoctorId === "" ||
-          selectedDoctorId === "external"
-        ) {
-          console.log("No doctor selected for OPD consultation");
-          toast({
-            title: "Doctor Required",
-            description: "Please select a doctor for OPD consultation",
-            variant: "destructive",
-          });
-          return; // Stop execution if no doctor selected for OPD
-        }
-
-        // Validate consultation fee is positive
-        if (!consultationFee || consultationFee <= 0) {
-          console.log("Invalid consultation fee:", consultationFee);
-          toast({
-            title: "Invalid Fee",
-            description:
-              "Consultation fee must be greater than 0. Please select a valid doctor.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        console.log("=== OPD SERVICE CREATION ===");
-        console.log("Selected Doctor ID:", selectedDoctorId);
-        console.log("Consultation Fee:", consultationFee);
-
-        servicesToCreate.push({
-          patientId: patientId,
-          serviceType: "opd",
-          serviceName: "OPD Consultation",
-          serviceId: "opd_consultation_service", // Add a consistent service ID
-          price: consultationFee,
-          quantity: 1,
-          notes: data.notes || "",
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: "scheduled",
-          doctorId: selectedDoctorId,
-          billingType: "per_instance",
-          calculatedAmount: Number(data.price),
-          billingQuantity: 1,
-        });
-      } else {
-        // Handle selected catalog services
-        if (selectedServices.length > 0) {
-          selectedServices.forEach((service) => {
-            console.log("=== CATALOG SERVICE CREATION ===");
-            console.log("Service:", service.name);
-            console.log("Doctor ID from form:", data.doctorId);
-
-            // Get the actual doctor ID from the form - use same method as OPD
-            const actualDoctorId = serviceForm.watch("doctorId");
-            console.log("Actual doctor ID to use:", actualDoctorId);
-
-            // For variable pricing, get the price from the service's variablePrice field
-            const initialPrice = service.price === 0 
-              ? (service as any).variablePrice || 0 
-              : service.price * (service.quantity || 1);
-            const initialCalculatedAmount = service.price === 0
-              ? (service as any).variablePrice || 0
-              : Number(data.price) || (service.price * (service.quantity || 1));
-
-            let serviceData: any = {
-              patientId: patientId,
-              serviceType: mapCategoryToServiceType(service.category),
-              serviceName: service.name,
-              serviceId: service.id,
-              price: initialPrice,
-              quantity: service.quantity || 1,
-              notes: data.notes,
-              scheduledDate: data.scheduledDate,
-              scheduledTime: data.scheduledTime,
-              status: "scheduled",
-              doctorId:
-                actualDoctorId &&
-                actualDoctorId !== "none" &&
-                actualDoctorId !== ""
-                  ? actualDoctorId
-                  : null,
-              billingType: "per_instance",
-              calculatedAmount: initialCalculatedAmount,
-            };
-
-            console.log("Final service data doctor ID:", serviceData.doctorId);
-
-            // Add smart billing parameters if service has special billing type
-            if (service.billingType) {
-              serviceData.billingType = service.billingType;
-              serviceData.billingQuantity = service.quantity || 1;
-
-              if (service.billingType === "composite") {
-                // For composite billing (ambulance), use quantity as distance
-                serviceData.billingParameters = JSON.stringify({
-                  distance: service.quantity || 0,
-                });
-              } else if (service.billingType === "per_hour") {
-                serviceData.billingParameters = JSON.stringify({
-                  hours: service.quantity || 1,
-                });
-              } else if (service.billingType === "variable") {
-                // For variable billing, use the entered price from the service's variablePrice field
-                const variablePrice = (service as any).variablePrice || service.price || 0;
-                serviceData.billingParameters = JSON.stringify({
-                  price: variablePrice,
-                });
-              }
-
-              // Calculate billing amount based on service type and quantity
-              if (service.billingType === "composite") {
-                const params = service.billingParameters
-                  ? JSON.parse(service.billingParameters)
-                  : {};
-                const fixedCharge = params.fixedCharge || service.price;
-                const perKmRate = params.perKmRate || 0;
-                const distance = service.quantity || 0;
-                const calculatedAmount = fixedCharge + perKmRate * distance;
-
-                serviceData.calculatedAmount = calculatedAmount;
-                serviceData.price = calculatedAmount;
-              } else if (service.billingType === "per_hour") {
-                const calculatedAmount =
-                  service.price * (service.quantity || 1);
-                serviceData.calculatedAmount = calculatedAmount;
-                serviceData.price = calculatedAmount;
-              } else if (service.billingType === "variable") {
-                // For variable billing, use the exact price entered for this service (quantity is always 1)
-                const variablePrice = (service as any).variablePrice || service.price || 0;
-                serviceData.calculatedAmount = variablePrice;
-                serviceData.price = variablePrice;
-                serviceData.billingQuantity = 1;
-              }
-            }
-
-            servicesToCreate.push(serviceData);
-          });
-        } else if (data.serviceName && data.price > 0) {
-          // Custom service
-          console.log("=== CUSTOM SERVICE CREATION ===");
-          console.log("Doctor ID from form:", data.doctorId);
-
-          // Get the actual doctor ID from the form - use same method as OPD
-          const actualDoctorId = serviceForm.watch("doctorId");
-          console.log(
-            "Actual doctor ID to use for custom service:",
-            actualDoctorId,
-          );
-
-          servicesToCreate.push({
+      // Handle selected catalog services
+      if (selectedServices.length > 0) {
+        selectedServices.forEach((service) => {
+          let serviceData: any = {
             patientId: patientId,
-            serviceType: "service",
-            serviceName: data.serviceName,
-            price: data.price,
-            quantity: 1,
+            serviceType: mapCategoryToServiceType(service.category),
+            serviceName: service.name,
+            serviceId: service.id,
+            price: service.price,
+            quantity: service.quantity || 1,
             notes: data.notes,
             scheduledDate: data.scheduledDate,
             scheduledTime: data.scheduledTime,
             status: "scheduled",
-            doctorId:
-              actualDoctorId &&
-              actualDoctorId !== "none" &&
-              actualDoctorId !== ""
-                ? actualDoctorId
-                : null,
-          });
+            doctorId: selectedDoctorId && selectedDoctorId !== "none" && selectedDoctorId !== "" ? selectedDoctorId : null,
+            billingType: service.billingType || "per_instance",
+            billingQuantity: service.quantity || 1,
+          };
 
-          console.log(
-            "Custom service doctor ID:",
-            servicesToCreate[servicesToCreate.length - 1].doctorId,
-          );
-        }
+          if (service.billingType) {
+            if (service.billingType === "composite") {
+              const params = service.billingParameters ? JSON.parse(service.billingParameters) : {};
+              const fixedCharge = params.fixedCharge || service.price;
+              const perKmRate = params.perKmRate || 0;
+              const distance = service.quantity || 0;
+              const calculatedAmount = fixedCharge + perKmRate * distance;
+              serviceData.calculatedAmount = calculatedAmount;
+              serviceData.price = calculatedAmount;
+            } else if (service.billingType === "per_hour") {
+              const calculatedAmount = service.price * (service.quantity || 1);
+              serviceData.calculatedAmount = calculatedAmount;
+              serviceData.price = calculatedAmount;
+            } else if (service.billingType === "variable") {
+              const unitPrice = Number((service as any).variablePrice) || 0;
+              const quantity = service.quantity || 1;
+              const totalAmount = unitPrice * quantity;
+              serviceData.calculatedAmount = totalAmount;
+              serviceData.price = totalAmount;
+              serviceData.billingParameters = JSON.stringify({ price: unitPrice });
+            }
+          } else {
+             serviceData.calculatedAmount = service.price * (service.quantity || 1);
+          }
+          catalogServicesToCreate.push(serviceData);
+        });
+      }
+      
+      // Handle custom services
+      if (customServices.length > 0) {
+        customServices.forEach(service => {
+          const unitPrice = Number(service.price) || 0;
+          const quantity = Number(service.quantity) || 1;
+          const totalAmount = unitPrice * quantity;
+          customServicesToCreate.push({
+            patientId: patientId,
+            serviceType: "service",
+            serviceName: service.name,
+            serviceId: null,
+            price: totalAmount,
+            quantity: quantity,
+            notes: data.notes,
+            scheduledDate: data.scheduledDate,
+            scheduledTime: data.scheduledTime,
+            status: "scheduled",
+            doctorId: selectedDoctorId && selectedDoctorId !== "none" && selectedDoctorId !== "" ? selectedDoctorId : null,
+            billingType: 'per_instance',
+            calculatedAmount: totalAmount,
+            billingQuantity: quantity,
+          });
+        });
       }
 
-      // Call the mutation function with the services to create
-      // The createServiceMutation handles the batch or single API call logic internally
-      if (servicesToCreate.length === 0) {
+      const allServicesToCreate = [...catalogServicesToCreate, ...customServicesToCreate];
+
+      if (allServicesToCreate.length === 0) {
         toast({
-          title: "Error",
-          description: "No services to create",
+          title: "No Services to Schedule",
+          description: "Please select at least one catalog service or add a custom service.",
           variant: "destructive",
         });
         return;
       }
 
-      // Use the createServiceMutation which properly handles isPending state
-      console.log("Creating services:", servicesToCreate);
-      createServiceMutation.mutate(servicesToCreate);
+      console.log("Creating services:", allServicesToCreate);
+      createServiceMutation.mutate(allServicesToCreate);
+
     } catch (error) {
       console.error("Error in onServiceSubmit:", error);
       toast({
         title: "Form Submission Error",
-        description:
-          "An unexpected error occurred during form submission. Please check your inputs.",
+        description: "An unexpected error occurred during form submission. Please check your inputs.",
         variant: "destructive",
       });
     }
@@ -1753,7 +1736,12 @@ export default function PatientDetail() {
   });
 
   const addRefundMutation = useMutation({
-    mutationFn: async (data: { amount: number; reason: string }) => {
+    mutationFn: async (data: {
+      amount: number;
+      reason: string;
+      refundMethod: string;
+      originalBillableItemId: string; // Add this to link to the item being refunded
+    }) => {
       const response = await fetch(`/api/patients/${patientId}/refunds`, {
         method: "POST",
         headers: {
@@ -1763,6 +1751,8 @@ export default function PatientDetail() {
         body: JSON.stringify({
           amount: data.amount,
           reason: data.reason,
+          refundMethod: data.refundMethod,
+          originalBillableItemId: data.originalBillableItemId, // Pass to backend
           refundDate: new Date().toISOString(),
         }),
       });
@@ -1780,6 +1770,12 @@ export default function PatientDetail() {
         queryKey: ["/api/doctors/all-earnings"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "refunds"], // Invalidate refunds query
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "billable-items"], // Invalidate billable-items to reflect changes
+      });
       setIsRefundDialogOpen(false);
       setRefundAmount("");
       setRefundReason("");
@@ -2137,6 +2133,59 @@ export default function PatientDetail() {
     setPaymentMethod("cash"); // Reset method
     setSelectedBillableItem(""); // Reset billable item
     setIsPaymentDialogOpen(true);
+  };
+
+  const handleRefundForPayment = (payment: any) => {
+    let billableItem;
+
+    // First, try to find the billable item using payment.originalBillableItemId if available
+    if (payment.originalBillableItemId) {
+      billableItem = billableItems.find(
+        (item: any) => item.value === payment.originalBillableItemId && item.isFullyPaid
+      );
+    }
+
+    // If not found by originalBillableItemId or originalBillableItemId was not present,
+    // fall back to finding by matching payment reason (less robust)
+    if (!billableItem) {
+      billableItem = billableItems.find(
+        (item: any) => formatBillableItemLabel(item) === payment.reason && item.isFullyPaid
+      );
+    }
+  
+    if (billableItem) {
+      const isAlreadyRefunded = patientRefunds.some(
+        (refund: any) => refund.originalBillableItemId === billableItem.value
+      );
+  
+      if (isAlreadyRefunded) {
+        toast({
+          title: "Item Already Refunded",
+          description: "This item has already been fully or partially refunded.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If found, pre-populate the refund dialog with the item's details
+      setIsRefundDialogOpen(true);
+      setSelectedRefundBillableItem(billableItem.value);
+      setRefundAmount(billableItem.amount.toString());
+      setRefundReason(`Refund for ${formatBillableItemLabel(billableItem)}`);
+    } else {
+      // If no matching billable item is found, open the generic refund dialog
+      // and prefill the amount from the payment. The user will have to select the item.
+      setIsRefundDialogOpen(true);
+      setRefundAmount(payment.amount.toString());
+      setRefundReason(`Refund related to payment for: ${payment.reason}`);
+      setSelectedRefundBillableItem(""); // Clear selection, user must choose
+      toast({
+        title: "Please select the item to refund",
+        description: `We've pre-filled the amount from the payment. Now, please select the corresponding service or item from the list that this refund applies to.`,
+        variant: "default",
+        duration: 7000,
+      });
+    }
   };
 
   if (!patient) {
@@ -3387,6 +3436,25 @@ export default function PatientDetail() {
                       });
                     }
 
+                    // Add refunds
+                    if (patientRefunds && patientRefunds.length > 0) {
+                      patientRefunds.forEach((refund: any) => {
+                        const refundDateTime = new Date(
+                          refund.refundDate || refund.createdAt,
+                        );
+
+                        allEvents.push({
+                          type: "refund",
+                          data: {
+                            ...refund,
+                            sortTimestamp: refundDateTime.getTime(),
+                          },
+                          timestamp: refundDateTime,
+                          sortTimestamp: refundDateTime.getTime(),
+                        });
+                      });
+                    }
+
                     // Add admissions and related events
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
@@ -3533,6 +3601,12 @@ export default function PatientDetail() {
                               bgColor: "bg-red-50",
                               iconColor: "text-red-600",
                             };
+                          case "refund":
+                            return {
+                              borderColor: "border-l-indigo-500",
+                              bgColor: "bg-indigo-50",
+                              iconColor: "text-indigo-600",
+                            };
                           // case "payment":
                           //   return {
                           //     borderColor: "border-l-green-500",
@@ -3614,6 +3688,8 @@ export default function PatientDetail() {
                                       return `Payment Received - ${event.data.paymentMethod || "Cash"}`;
                                     case "discount":
                                       return `Discount Applied - ${event.data.discountType || "Manual"}`;
+                                    case "refund":
+                                      return `Refund Issued - ${event.data.refundMethod || "Cash"}`;
                                     default:
                                       return "Timeline Event";
                                   }
@@ -4027,6 +4103,33 @@ export default function PatientDetail() {
                                         )}
                                       </div>
                                     );
+                                  case "refund":
+                                    return (
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="font-medium">
+                                            Amount:
+                                          </span>{" "}
+                                          <span className="text-indigo-600 font-semibold">
+                                            ₹{event.data.amount}
+                                          </span>
+                                        </div>
+                                        <div>
+                                          <span className="font-medium">
+                                            Method:
+                                          </span>{" "}
+                                          {event.data.refundMethod || "Cash"}
+                                        </div>
+                                        {event.data.reason && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Reason:
+                                            </span>{" "}
+                                            {event.data.reason}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
                                   default:
                                     return (
                                       <div>Event details not available</div>
@@ -4378,30 +4481,34 @@ export default function PatientDetail() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {isSelected && service.price === 0 ? (
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={
-                                        selectedServices.find(
-                                          (s) => s.id === service.id,
-                                        )?.variablePrice || ""
-                                      }
-                                      onChange={(e) => {
-                                        const variablePrice =
-                                          parseFloat(e.target.value) || 0;
-                                        setSelectedServices(
-                                          selectedServices.map((s) =>
-                                            s.id === service.id
-                                              ? { ...s, variablePrice } as any
-                                              : s,
-                                          ),
-                                        );
-                                      }}
-                                      placeholder="Enter price"
-                                      className="w-24 h-8 text-right"
-                                      data-testid={`input-variable-price-${service.id}`}
-                                    />
+                                    <div className="flex flex-col items-end">
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={
+                                          selectedServices.find(
+                                            (s) => s.id === service.id,
+                                          )?.variablePrice || ""
+                                        }
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          const newSelectedServices = selectedServices.map((s) => {
+                                            if (s.id === service.id) {
+                                              return { ...s, variablePrice: value };
+                                            }
+                                            return s;
+                                          });
+                                          setSelectedServices(newSelectedServices as any);
+                                        }}
+                                        placeholder="Enter price"
+                                        className={`w-24 h-8 text-right ${variablePriceErrors[service.id] ? 'border-red-500' : ''}`}
+                                        data-testid={`input-variable-price-${service.id}`}
+                                      />
+                                      {variablePriceErrors[service.id] && (
+                                        <p className="text-xs text-red-600 mt-1">{variablePriceErrors[service.id]}</p>
+                                      )}
+                                    </div>
                                   ) : service.price === 0 ? (
                                     <Badge variant="secondary">Variable</Badge>
                                   ) : (
@@ -4609,44 +4716,65 @@ export default function PatientDetail() {
                   </>
                 )}
 
-                {/* Custom Service Input - Only available when no catalog services selected */}
-                {selectedServices.length === 0 && (
-                  <>
-                    <div className="space-y-2">
-                      <Label>Custom Service Name</Label>
-                      <Input
-                        value={serviceForm.watch("serviceName")}
-                        onChange={(e) =>
-                          serviceForm.setValue("serviceName", e.target.value)
-                        }
-                        placeholder="Enter custom service name"
-                        data-testid="input-custom-service-name"
-                      />
-                      <p className="text-sm text-gray-500">
-                        Only available when no catalog service is selected
-                      </p>
+                {/* Custom Services */}
+                <div className="space-y-4 pt-4">
+                  <div>
+                    <Label className="font-medium">Custom Services</Label>
+                    <div className="mt-2">
+                      <Button type="button" variant="outline" size="sm" onClick={addCustomService}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Custom Service
+                      </Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label>Price (₹) *</Label>
-                      <Input
-                        type="number"
-                        value={serviceForm.watch("price") || ""}
-                        onChange={(e) =>
-                          serviceForm.setValue(
-                            "price",
-                            parseFloat(e.target.value) || 0,
-                          )
-                        }
-                        placeholder="Enter price"
-                        data-testid="input-service-price"
-                      />
-                    </div>
-                  </>
-                )}
+                  </div>
+                  <div className="space-y-3">
+                    {customServices.map((service) => (
+                      <div key={service.id} className="grid grid-cols-12 gap-2 items-start p-2 border rounded-lg bg-gray-50">
+                        <div className="col-span-5">
+                          <Label className="text-xs text-muted-foreground">Service Name</Label>
+                          <Input
+                            placeholder="e.g., Special Dressing"
+                            value={service.name}
+                            onChange={(e) => handleCustomServiceChange(service.id, 'name', e.target.value)}
+                            className={customServiceErrors[service.id]?.name ? 'border-red-500' : ''}
+                          />
+                          {customServiceErrors[service.id]?.name && <p className="text-xs text-red-600 mt-1">{customServiceErrors[service.id]?.name}</p>}
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs text-muted-foreground">Price (₹)</Label>
+                          <Input
+                            placeholder="Price"
+                            type="number"
+                            value={service.price}
+                            onChange={(e) => handleCustomServiceChange(service.id, 'price', e.target.value)}
+                            className={customServiceErrors[service.id]?.price ? 'border-red-500' : ''}
+                          />
+                          {customServiceErrors[service.id]?.price && <p className="text-xs text-red-600 mt-1">{customServiceErrors[service.id]?.price}</p>}
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs text-muted-foreground">Quantity</Label>
+                          <Input
+                            placeholder="Qty"
+                            type="number"
+                            min="1"
+                            value={service.quantity}
+                            onChange={(e) => handleCustomServiceChange(service.id, 'quantity', e.target.value)}
+                            className={customServiceErrors[service.id]?.quantity ? 'border-red-500' : ''}
+                          />
+                          {customServiceErrors[service.id]?.quantity && <p className="text-xs text-red-600 mt-1">{customServiceErrors[service.id]?.quantity}</p>}
+                        </div>
+                        <div className="col-span-3 flex items-end h-full">
+                          <Button type="button" size="sm" variant="destructive" onClick={() => removeCustomService(service.id)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Services Summary */}
-                {selectedServices.length > 0 && (
+                {(selectedServices.length > 0 || customServices.length > 0) && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-medium mb-3">
                       Selected Services Summary
@@ -4662,7 +4790,7 @@ export default function PatientDetail() {
                             key={service.id}
                             className="flex justify-between items-center text-sm"
                           >
-                            <span className="font-medium">{service.name}</span>
+                            <span className="font-medium">{service.name} <Badge variant="outline">Catalog</Badge></span>
                             <span>
                               {service.price === 0 && !(service as any).variablePrice ? (
                                 <Badge variant="secondary">Variable (Not Set)</Badge>
@@ -4673,19 +4801,42 @@ export default function PatientDetail() {
                           </div>
                         );
                       })}
+                      {customServices.map((service) => {
+                        const price = Number(service.price) || 0;
+                        const quantity = Number(service.quantity) || 0;
+                        const total = price * quantity;
+                        return (
+                          <div
+                            key={service.id}
+                            className="flex justify-between items-center text-sm"
+                          >
+                            <span className="font-medium">{service.name || "Custom Service"} <Badge variant="outline">Custom</Badge></span>
+                            <span>
+                              {`₹${total.toLocaleString()}`}
+                            </span>
+                          </div>
+                        );
+                      })}
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
-                        <span>Total ({selectedServices.length} services)</span>
+                        <span>Total ({selectedServices.length + customServices.length} services)</span>
                         <span>
                           ₹
-                          {selectedServices
-                            .reduce(
+                          {(
+                            selectedServices.reduce(
                               (total, service) => {
                                 const priceToUse = service.price === 0 ? (service as any).variablePrice || 0 : service.price;
-                                return total + priceToUse * (service.quantity || 1);
+                                const quantity = service.quantity || 1;
+                                return total + (Number(priceToUse) * quantity);
+                              },
+                              0,
+                            ) +
+                            customServices.reduce(
+                              (total, service) => {
+                                return total + (Number(service.price) * Number(service.quantity));
                               },
                               0,
                             )
-                            .toLocaleString()}
+                          ).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -4761,6 +4912,7 @@ export default function PatientDetail() {
                   setSelectedServiceType("");
                   setSelectedServiceCategory("");
                   setSelectedServices([]); // Clear selected services
+                  setCustomServices([]); // Clear custom services
                   setSelectedServiceSearchQuery(""); // Clear search query on close
                   setSelectedCatalogService(null); // Reset selected service
                   setBillingPreview(null); // Reset billing preview
@@ -5804,19 +5956,35 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="refundReason">Refund Reason</Label>
+                <Textarea
+                  id="refundReason"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Enter reason for refund (e.g., duplicate payment, service cancelled)"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="refundBillableItem">Billable Item *</Label>
                 <Select
                   value={selectedRefundBillableItem}
                   onValueChange={(value) => {
                     setSelectedRefundBillableItem(value);
-                    // Auto-populate amount from selected billable item
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
                         (item: any) => item.value === value,
                       );
                       if (selectedItem && selectedItem.amount) {
                         setRefundAmount(selectedItem.amount.toString());
+                        setRefundReason(`Refund for ${formatBillableItemLabel(selectedItem)}`);
+                      } else {
+                        setRefundAmount("");
+                        setRefundReason("");
                       }
+                    } else {
+                      setRefundAmount(""); // Clear refund amount if "none" is selected
+                      setRefundReason(""); // Clear refund reason if "none" is selected
                     }
                   }}
                 >
@@ -5826,18 +5994,21 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
-                        .filter((item: any) => item.isFullyPaid)
+                        .filter((item: any) => item.isFullyPaid) // Only show items that are fully paid
                         .map((item: any) => (
-                        <SelectItem
-                          key={item.id}
-                          value={item.value}
-                        >
-                          {formatBillableItemLabel(item)}
-                        </SelectItem>
-                      ))
+                          <SelectItem
+                            key={item.id}
+                            value={item.value}
+                            className={
+                              item.isFullyPaid ? "" : "opacity-50 text-gray-400"
+                            }
+                          >
+                            {formatBillableItemLabel(item)}
+                          </SelectItem>
+                        ))
                     ) : (
                       <SelectItem value="none" disabled>
-                        No paid billable items available
+                        No paid billable items available for refund
                       </SelectItem>
                     )}
                   </SelectContent>
@@ -5873,7 +6044,9 @@ export default function PatientDetail() {
                 if (amount > 0) {
                   addRefundMutation.mutate({
                     amount: amount,
-                    reason: "Manual refund",
+                    reason: refundReason.trim() || "Manual refund", // Use refundReason state
+                    refundMethod: refundMethod, // Pass refundMethod
+                    originalBillableItemId: selectedRefundBillableItem, // Pass originalBillableItemId
                   });
                 } else {
                   toast({

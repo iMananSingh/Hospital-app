@@ -20,6 +20,7 @@ export const users = sqliteTable("users", {
   profilePicture: text("profile_picture"),
   roles: text("roles").notNull(), // JSON array: ["super_user", "admin", "doctor", "receptionist", "billing_staff"]
   primaryRole: text("primary_role").notNull(), // Primary role for display purposes
+  role: text("role"),
   isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
@@ -583,6 +584,8 @@ export const patientPayments = sqliteTable("patient_payments", {
   paymentDate: text("payment_date").notNull(),
   reason: text("reason"), // Optional reason/notes for payment
   receiptNumber: text("receipt_number"),
+  billable_type: text("billable_type"),
+  billable_id: text("billable_id"),
   processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
@@ -608,6 +611,32 @@ export const patientDiscounts = sqliteTable("patient_discounts", {
   reason: text("reason").notNull(),
   discountDate: text("discount_date").notNull(),
   approvedBy: text("approved_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// Patient Refunds - Independent of admissions
+export const patientRefunds = sqliteTable("patient_refunds", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`(lower(hex(randomblob(16))))`),
+  refundId: text("refund_id").notNull().unique(), // REF-2024-001 format
+  patientId: text("patient_id")
+    .notNull()
+    .references(() => patients.id),
+  amount: real("amount").notNull(),
+  refundMethod: text("refund_method").notNull(), // cash, card, upi, bank_transfer
+  refundDate: text("refund_date").notNull(),
+  reason: text("reason"),
+  originalBillableItemId: text("original_billable_item_id"), // To link to the item being refunded
+  receiptNumber: text("receipt_number"),
+  processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
   createdAt: text("created_at")
@@ -1007,6 +1036,24 @@ export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts)
     approvedBy: z.string().min(1, "Approved by user ID is required"),
   });
 
+export const insertPatientRefundSchema = createInsertSchema(patientRefunds)
+  .omit({
+    id: true,
+    refundId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    patientId: z.string().min(1, "Patient ID is required"),
+    amount: z.number().min(0.01, "Refund amount must be greater than 0"),
+    refundMethod: z.enum(["cash", "card", "upi", "bank_transfer"]),
+    refundDate: z.string().min(1, "Refund date is required"),
+    processedBy: z.string().min(1, "Processed by user ID is required"),
+    reason: z.string().optional(),
+    originalBillableItemId: z.string().optional(),
+    receiptNumber: z.string().optional(),
+  });
+
 export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
   id: true,
   createdAt: true,
@@ -1158,6 +1205,8 @@ export type PatientPayment = typeof patientPayments.$inferSelect;
 export type InsertPatientPayment = z.infer<typeof insertPatientPaymentSchema>;
 export type PatientDiscount = typeof patientDiscounts.$inferSelect;
 export type InsertPatientDiscount = z.infer<typeof insertPatientDiscountSchema>;
+export type PatientRefund = typeof patientRefunds.$inferSelect;
+export type InsertPatientRefund = z.infer<typeof insertPatientRefundSchema>;
 export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
 export type PathologyCategory = typeof pathologyCategories.$inferSelect;
 export type InsertPathologyCategory = z.infer<
