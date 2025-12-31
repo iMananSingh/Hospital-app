@@ -4370,94 +4370,34 @@ export default function PatientDetail() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {isSelected ? (
-                                    <div className="flex flex-col gap-2">
-                                      <div className="flex items-center justify-end gap-2">
-                                        {service.price === 0 ? (
-                                          <Input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            placeholder="Price (₹)"
-                                            value={
-                                              selectedServices.find(
-                                                (s) => s.id === service.id,
-                                              )?.price || ""
-                                            }
-                                            onChange={(e) => {
-                                              const price =
-                                                parseFloat(e.target.value) || 0;
-                                              setSelectedServices(
-                                                selectedServices.map((s) =>
-                                                  s.id === service.id
-                                                    ? { ...s, price }
-                                                    : s,
-                                                ),
-                                              );
-                                            }}
-                                            className="w-24 h-8"
-                                            data-testid={`input-service-price-${service.id}`}
-                                          />
-                                        ) : (
-                                          <span className="text-sm font-medium">₹{service.price}</span>
-                                        )}
+                                    <div className="flex flex-col gap-2 items-end">
+                                      {service.price === 0 ? (
                                         <Input
                                           type="number"
-                                          min={isAmbulanceService ? "0" : "1"}
-                                          step={
-                                            service.billingType === "per_hour"
-                                              ? "0.5"
-                                              : isAmbulanceService
-                                                ? "0.1"
-                                                : "1"
-                                          }
+                                          min="0"
+                                          step="0.01"
+                                          placeholder="Price (₹)"
                                           value={
                                             selectedServices.find(
                                               (s) => s.id === service.id,
-                                            )?.quantity ||
-                                            (isAmbulanceService ? 0 : 1)
+                                            )?.price || ""
                                           }
                                           onChange={(e) => {
-                                            const quantity =
-                                              parseFloat(e.target.value) ||
-                                              (isAmbulanceService ? 0 : 1);
+                                            const price =
+                                              parseFloat(e.target.value) || 0;
                                             setSelectedServices(
                                               selectedServices.map((s) =>
                                                 s.id === service.id
-                                                  ? { ...s, quantity }
+                                                  ? { ...s, price }
                                                   : s,
                                               ),
                                             );
-
-                                            // Update form fields for billing calculation
-                                            if (isAmbulanceService) {
-                                              serviceForm.setValue(
-                                                "distance",
-                                                quantity,
-                                              );
-                                            } else if (
-                                              service.billingType === "per_hour"
-                                            ) {
-                                              serviceForm.setValue(
-                                                "hours",
-                                                quantity,
-                                              );
-                                            } else {
-                                              serviceForm.setValue(
-                                                "quantity",
-                                                quantity,
-                                              );
-                                            }
                                           }}
-                                          className="w-20 h-8"
-                                          placeholder={
-                                            isAmbulanceService ? "km" : "qty"
-                                          }
+                                          className="w-24 h-8"
+                                          data-testid={`input-service-price-${service.id}`}
                                         />
-                                      </div>
-                                      {isAmbulanceService && (
-                                        <span className="text-xs text-gray-500 text-right">
-                                          km
-                                        </span>
+                                      ) : (
+                                        <span className="text-sm font-medium">₹{service.price}</span>
                                       )}
                                     </div>
                                   ) : (
@@ -4467,8 +4407,73 @@ export default function PatientDetail() {
                                       ) : (
                                         `₹${service.price}`
                                       )}
-                                      <span className="text-gray-400">-</span>
                                     </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isSelected ? (
+                                    <div className="flex flex-col gap-2 items-end">
+                                      <Input
+                                        type="number"
+                                        min={isAmbulanceService ? "0" : "1"}
+                                        step={
+                                          service.billingType === "per_hour"
+                                            ? "0.5"
+                                            : isAmbulanceService
+                                              ? "0.1"
+                                              : "1"
+                                        }
+                                        value={
+                                          selectedServices.find(
+                                            (s) => s.id === service.id,
+                                          )?.quantity ||
+                                          (isAmbulanceService ? 0 : 1)
+                                        }
+                                        onChange={(e) => {
+                                          const quantity =
+                                            parseFloat(e.target.value) ||
+                                            (isAmbulanceService ? 0 : 1);
+                                          setSelectedServices(
+                                            selectedServices.map((s) =>
+                                              s.id === service.id
+                                                ? { ...s, quantity }
+                                                : s,
+                                            ),
+                                          );
+
+                                          // Update form fields for billing calculation
+                                          if (isAmbulanceService) {
+                                            serviceForm.setValue(
+                                              "distance",
+                                              quantity,
+                                            );
+                                          } else if (
+                                            service.billingType === "per_hour"
+                                          ) {
+                                            serviceForm.setValue(
+                                              "hours",
+                                              quantity,
+                                            );
+                                          } else {
+                                            serviceForm.setValue(
+                                              "quantity",
+                                              quantity,
+                                            );
+                                          }
+                                        }}
+                                        className="w-20 h-8"
+                                        placeholder={
+                                          isAmbulanceService ? "km" : "qty"
+                                        }
+                                      />
+                                      {isAmbulanceService && (
+                                        <span className="text-xs text-gray-500 mt-1">
+                                          km
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400">-</span>
                                   )}
                                 </TableCell>
                               </TableRow>
