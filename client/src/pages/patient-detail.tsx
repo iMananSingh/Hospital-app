@@ -4369,76 +4369,106 @@ export default function PatientDetail() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  {service.price === 0 ? (
-                                    <Badge variant="secondary">Variable</Badge>
-                                  ) : (
-                                    `₹${service.price}`
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right">
                                   {isSelected ? (
-                                    <div className="flex flex-col">
-                                      <Input
-                                        type="number"
-                                        min={isAmbulanceService ? "0" : "1"}
-                                        step={
-                                          service.billingType === "per_hour"
-                                            ? "0.5"
-                                            : isAmbulanceService
-                                              ? "0.1"
-                                              : "1"
-                                        }
-                                        value={
-                                          selectedServices.find(
-                                            (s) => s.id === service.id,
-                                          )?.quantity ||
-                                          (isAmbulanceService ? 0 : 1)
-                                        }
-                                        onChange={(e) => {
-                                          const quantity =
-                                            parseFloat(e.target.value) ||
-                                            (isAmbulanceService ? 0 : 1);
-                                          setSelectedServices(
-                                            selectedServices.map((s) =>
-                                              s.id === service.id
-                                                ? { ...s, quantity }
-                                                : s,
-                                            ),
-                                          );
-
-                                          // Update form fields for billing calculation
-                                          if (isAmbulanceService) {
-                                            serviceForm.setValue(
-                                              "distance",
-                                              quantity,
-                                            );
-                                          } else if (
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex items-center justify-end gap-2">
+                                        {service.price === 0 ? (
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="Price (₹)"
+                                            value={
+                                              selectedServices.find(
+                                                (s) => s.id === service.id,
+                                              )?.price || ""
+                                            }
+                                            onChange={(e) => {
+                                              const price =
+                                                parseFloat(e.target.value) || 0;
+                                              setSelectedServices(
+                                                selectedServices.map((s) =>
+                                                  s.id === service.id
+                                                    ? { ...s, price }
+                                                    : s,
+                                                ),
+                                              );
+                                            }}
+                                            className="w-24 h-8"
+                                            data-testid={`input-service-price-${service.id}`}
+                                          />
+                                        ) : (
+                                          <span className="text-sm font-medium">₹{service.price}</span>
+                                        )}
+                                        <Input
+                                          type="number"
+                                          min={isAmbulanceService ? "0" : "1"}
+                                          step={
                                             service.billingType === "per_hour"
-                                          ) {
-                                            serviceForm.setValue(
-                                              "hours",
-                                              quantity,
-                                            );
-                                          } else {
-                                            serviceForm.setValue(
-                                              "quantity",
-                                              quantity,
-                                            );
+                                              ? "0.5"
+                                              : isAmbulanceService
+                                                ? "0.1"
+                                                : "1"
                                           }
-                                        }}
-                                        className="w-20 h-8"
-                                        placeholder={
-                                          isAmbulanceService ? "km" : "qty"
-                                        }
-                                      />
+                                          value={
+                                            selectedServices.find(
+                                              (s) => s.id === service.id,
+                                            )?.quantity ||
+                                            (isAmbulanceService ? 0 : 1)
+                                          }
+                                          onChange={(e) => {
+                                            const quantity =
+                                              parseFloat(e.target.value) ||
+                                              (isAmbulanceService ? 0 : 1);
+                                            setSelectedServices(
+                                              selectedServices.map((s) =>
+                                                s.id === service.id
+                                                  ? { ...s, quantity }
+                                                  : s,
+                                              ),
+                                            );
+
+                                            // Update form fields for billing calculation
+                                            if (isAmbulanceService) {
+                                              serviceForm.setValue(
+                                                "distance",
+                                                quantity,
+                                              );
+                                            } else if (
+                                              service.billingType === "per_hour"
+                                            ) {
+                                              serviceForm.setValue(
+                                                "hours",
+                                                quantity,
+                                              );
+                                            } else {
+                                              serviceForm.setValue(
+                                                "quantity",
+                                                quantity,
+                                              );
+                                            }
+                                          }}
+                                          className="w-20 h-8"
+                                          placeholder={
+                                            isAmbulanceService ? "km" : "qty"
+                                          }
+                                        />
+                                      </div>
                                       {isAmbulanceService && (
-                                        <span className="text-xs text-gray-500 mt-1">
+                                        <span className="text-xs text-gray-500 text-right">
                                           km
                                         </span>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-gray-400">-</span>
+                                    <div className="flex items-center justify-end gap-2">
+                                      {service.price === 0 ? (
+                                        <Badge variant="secondary">Variable</Badge>
+                                      ) : (
+                                        `₹${service.price}`
+                                      )}
+                                      <span className="text-gray-400">-</span>
+                                    </div>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -4449,6 +4479,31 @@ export default function PatientDetail() {
                     </TableBody>
                   </Table>
                 </div>
+
+                {/* Custom Service Input - only visible when no catalog service is selected */}
+                {selectedServices.length === 0 && (
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-2">
+                      <Label>Custom Service Name</Label>
+                      <Input
+                        {...serviceForm.register("serviceName")}
+                        placeholder="Enter service name..."
+                        data-testid="input-custom-service-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Custom Service Price (₹)</Label>
+                      <Input
+                        type="number"
+                        {...serviceForm.register("price", {
+                          valueAsNumber: true,
+                        })}
+                        placeholder="0.00"
+                        data-testid="input-custom-service-price"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Smart Billing Parameters */}
                 {selectedCatalogService && (
