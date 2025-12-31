@@ -4380,17 +4380,17 @@ export default function PatientDetail() {
                                           value={
                                             selectedServices.find(
                                               (s) => s.id === service.id,
-                                            )?.price || ""
+                                            )?.price ?? ""
                                           }
                                           onChange={(e) => {
                                             const price =
                                               parseFloat(e.target.value) || 0;
-                                            setSelectedServices(
-                                              selectedServices.map((s) =>
+                                            setSelectedServices(prev => 
+                                              prev.map((s) =>
                                                 s.id === service.id
                                                   ? { ...s, price }
                                                   : s,
-                                              ),
+                                              )
                                             );
                                           }}
                                           className="w-24 h-8"
@@ -4426,40 +4426,19 @@ export default function PatientDetail() {
                                         value={
                                           selectedServices.find(
                                             (s) => s.id === service.id,
-                                          )?.quantity ||
-                                          (isAmbulanceService ? 0 : 1)
+                                          )?.quantity ?? 1
                                         }
                                         onChange={(e) => {
                                           const quantity =
-                                            parseFloat(e.target.value) ||
-                                            (isAmbulanceService ? 0 : 1);
-                                          setSelectedServices(
-                                            selectedServices.map((s) =>
+                                            parseFloat(e.target.value) || 1;
+                                          
+                                          setSelectedServices(prev =>
+                                            prev.map((s) =>
                                               s.id === service.id
                                                 ? { ...s, quantity }
                                                 : s,
-                                            ),
+                                            )
                                           );
-
-                                          // Update form fields for billing calculation
-                                          if (isAmbulanceService) {
-                                            serviceForm.setValue(
-                                              "distance",
-                                              quantity,
-                                            );
-                                          } else if (
-                                            service.billingType === "per_hour"
-                                          ) {
-                                            serviceForm.setValue(
-                                              "hours",
-                                              quantity,
-                                            );
-                                          } else {
-                                            serviceForm.setValue(
-                                              "quantity",
-                                              quantity,
-                                            );
-                                          }
                                         }}
                                         className="w-20 h-8"
                                         placeholder={
