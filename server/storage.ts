@@ -3972,6 +3972,8 @@ export class SqliteStorage implements IStorage {
             ...serviceData,
             // Always preserve the doctor ID exactly as sent from frontend
             doctorId: serviceData.doctorId,
+            // Fallback for serviceId if not provided (custom services)
+            serviceId: serviceData.serviceId || `CUSTOM-${Date.now()}-${index}`,
           };
 
           console.log("Final service data before DB insert:", {
