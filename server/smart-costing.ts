@@ -11,6 +11,7 @@ export interface BillingCalculationInput {
   startDateTime?: string;
   endDateTime?: string;
   customParameters?: Record<string, any>;
+  timezone?: string; // Add timezone to input
 }
 
 export interface BillingCalculationResult {
@@ -31,7 +32,7 @@ export class SmartCostingEngine {
    * Calculate billing amount based on service type and parameters
    */
   static calculateBilling(input: BillingCalculationInput): BillingCalculationResult {
-    const { service, quantity = 1, startDateTime, endDateTime, customParameters = {} } = input;
+    const { service, quantity = 1, startDateTime, endDateTime, customParameters = {}, timezone = 'UTC' } = input;
     
     switch (service.billingType) {
       case 'per_instance':
@@ -50,7 +51,7 @@ export class SmartCostingEngine {
         return this.calculateVariable(service, customParameters);
         
       case 'per_date':
-        return this.calculatePerDate(service, startDateTime, endDateTime);
+        return this.calculatePerDate(service, startDateTime, endDateTime, timezone);
         
       default:
         return this.calculatePerInstance(service, quantity);
@@ -206,22 +207,35 @@ export class SmartCostingEngine {
   /**
    * Per calendar date billing (different from 24-hour billing)
    */
-  private static calculatePerDate(service: any, startDateTime?: string, endDateTime?: string): BillingCalculationResult {
+  private static calculatePerDate(service: any, startDateTime?: string, endDateTime?: string, timezone: string = 'UTC'): BillingCalculationResult {
     const startDate = startDateTime ? new Date(startDateTime) : new Date();
     const endDate = endDateTime ? new Date(endDateTime) : new Date();
 
-    // Use IST (UTC+5:30) for calendar date calculations
-    const toIST = (date: Date) => {
-      const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-      return new Date(utc + (3600000 * 5.5));
+    // Use Intl.DateTimeFormat to get the date parts in the configured timezone
+    const getParts = (date: Date, tz: string) => {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      });
+      const parts: Record<string, number> = {};
+      formatter.formatToParts(date).forEach(({ type, value }) => {
+        if (type !== 'literal') parts[type] = parseInt(value, 10);
+      });
+      return parts;
     };
 
-    const istStart = toIST(startDate);
-    const istEnd = toIST(endDate);
+    const p1 = getParts(startDate, timezone);
+    const p2 = getParts(endDate, timezone);
 
-    // Reset times to midnight IST for date comparison
-    const d1 = new Date(istStart.getFullYear(), istStart.getMonth(), istStart.getDate());
-    const d2 = new Date(istEnd.getFullYear(), istEnd.getMonth(), istEnd.getDate());
+    // Create dates at midnight in the respective timezone days
+    const d1 = new Date(Date.UTC(p1.year, p1.month - 1, p1.day));
+    const d2 = new Date(Date.UTC(p2.year, p2.month - 1, p2.day));
 
     // Calculate difference in calendar dates
     const timeDiff = d2.getTime() - d1.getTime();
@@ -239,7 +253,7 @@ export class SmartCostingEngine {
         subtotal: totalAmount,
         description: `${service.name} (${billingDays} calendar day${billingDays > 1 ? 's' : ''})`
       }],
-      billingDetails: `Per calendar date: ₹${service.price} × ${billingDays} day${billingDays > 1 ? 's' : ''} = ₹${totalAmount}`
+      billingDetails: `Per calendar date: ₹${service.price} × ${billingDays} day${billingDays > 1 ? 's' : ''} = ₹${totalAmount} (${timezone} time)`
     };
   }
 
