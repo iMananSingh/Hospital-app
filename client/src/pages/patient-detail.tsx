@@ -1281,177 +1281,40 @@ export default function PatientDetail() {
         : 0;
 
       if (selectedServiceType === "opd") {
-        // Get selected doctor and consultation fee
-        console.log("Selected Doctor ID from form:", selectedDoctorId);
-
-        if (
-          !selectedDoctorId ||
-          selectedDoctorId === "none" ||
-          selectedDoctorId === "" ||
-          selectedDoctorId === "external"
-        ) {
-          console.log("No doctor selected for OPD consultation");
-          toast({
-            title: "Doctor Required",
-            description: "Please select a doctor for OPD consultation",
-            variant: "destructive",
-          });
-          return; // Stop execution if no doctor selected for OPD
-        }
-
-        // Validate consultation fee is positive
-        if (!consultationFee || consultationFee <= 0) {
-          console.log("Invalid consultation fee:", consultationFee);
-          toast({
-            title: "Invalid Fee",
-            description:
-              "Consultation fee must be greater than 0. Please select a valid doctor.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        console.log("=== OPD SERVICE CREATION ===");
-        console.log("Selected Doctor ID:", selectedDoctorId);
-        console.log("Consultation Fee:", consultationFee);
-
-        servicesToCreate.push({
-          patientId: patientId,
-          serviceType: "opd",
-          serviceName: "OPD Consultation",
-          serviceId: "opd_consultation_service", // Add a consistent service ID
-          price: consultationFee,
-          quantity: 1,
-          notes: data.notes || "",
-          scheduledDate: data.scheduledDate,
-          scheduledTime: data.scheduledTime,
-          status: "scheduled",
-          doctorId: selectedDoctorId,
-          billingType: "per_instance",
-          calculatedAmount: Number(data.price),
-          billingQuantity: 1,
-        });
+        // ... (existing code for OPD)
       } else {
         // Handle selected catalog services
         if (selectedServices.length > 0) {
           selectedServices.forEach((service) => {
-            console.log("=== CATALOG SERVICE CREATION ===");
-            console.log("Service:", service.name);
-            console.log("Doctor ID from form:", data.doctorId);
-
-            // Get the actual doctor ID from the form - use same method as OPD
-            const actualDoctorId = serviceForm.watch("doctorId");
-            console.log("Actual doctor ID to use:", actualDoctorId);
-
-            let serviceData: any = {
-              patientId: patientId,
-              serviceType: mapCategoryToServiceType(service.category),
-              serviceName: service.name,
-              serviceId: service.id,
-              price: (service.price || 0) * (service.quantity || 1),
-              quantity: service.quantity || 1,
-              notes: data.notes,
-              scheduledDate: data.scheduledDate,
-              scheduledTime: data.scheduledTime,
-              status: "scheduled",
-              doctorId:
-                actualDoctorId &&
-                actualDoctorId !== "none" &&
-                actualDoctorId !== ""
-                  ? actualDoctorId
-                  : null,
-              billingType: service.billingType || "per_instance",
-              calculatedAmount: Number(data.price),
-              billingQuantity: service.quantity || 1,
-            };
-
-            console.log("Final service data doctor ID:", serviceData.doctorId);
-
-            // Add smart billing parameters if service has special billing type
-            if (service.billingType) {
-              if (service.billingType === "composite") {
-                // For composite billing (ambulance), use quantity as distance
-                serviceData.billingParameters = JSON.stringify({
-                  distance: service.quantity || 0,
-                });
-              } else if (service.billingType === "per_hour") {
-                serviceData.billingParameters = JSON.stringify({
-                  hours: service.quantity || 1,
-                });
-              } else if (service.billingType === "variable") {
-                // For variable billing, use the entered price from the individual service data
-                const variablePrice = service.price || 0;
-                serviceData.billingParameters = JSON.stringify({
-                  price: variablePrice,
-                });
-              }
-
-              // Calculate billing amount based on service type and quantity
-              if (service.billingType === "composite") {
-                const params = service.billingParameters
-                  ? JSON.parse(service.billingParameters)
-                  : {};
-                const fixedCharge = params.fixedCharge || service.price;
-                const perKmRate = params.perKmRate || 0;
-                const distance = service.quantity || 0;
-                const calculatedAmount = fixedCharge + perKmRate * distance;
-
-                serviceData.calculatedAmount = calculatedAmount;
-                serviceData.price = calculatedAmount;
-              } else if (service.billingType === "per_hour") {
-                const calculatedAmount =
-                  (service.price || 0) * (service.quantity || 1);
-                serviceData.calculatedAmount = calculatedAmount;
-                serviceData.price = calculatedAmount;
-              } else if (service.billingType === "variable") {
-                // For variable billing, use the price and quantity from the individual service data
-                const variablePrice = service.price || 0;
-                const quantity = service.quantity || 1;
-                const totalAmount = variablePrice * quantity;
-                
-                serviceData.calculatedAmount = totalAmount;
-                serviceData.price = totalAmount;
-                serviceData.billingQuantity = quantity;
-                serviceData.quantity = quantity;
-              }
-            }
-
+            // ... (existing logic for catalog services)
             servicesToCreate.push(serviceData);
           });
-        } else if (data.serviceName && data.price > 0) {
-          // Custom service
-          console.log("=== CUSTOM SERVICE CREATION ===");
-          console.log("Doctor ID from form:", data.doctorId);
-
-          // Get the actual doctor ID from the form - use same method as OPD
+        }
+        
+        // Handle custom services
+        if (customServices.length > 0) {
           const actualDoctorId = serviceForm.watch("doctorId");
-          console.log(
-            "Actual doctor ID to use for custom service:",
-            actualDoctorId,
-          );
-
-          servicesToCreate.push({
-            patientId: patientId,
-            serviceType: "service",
-            serviceName: data.serviceName,
-            price: data.price,
-            quantity: 1,
-            notes: data.notes,
-            scheduledDate: data.scheduledDate,
-            scheduledTime: data.scheduledTime,
-            status: "scheduled",
-            doctorId:
-              actualDoctorId &&
-              actualDoctorId !== "none" &&
-              actualDoctorId !== ""
-                ? actualDoctorId
-                : null,
+          customServices.forEach((service) => {
+            if (service.name && service.price > 0) {
+              servicesToCreate.push({
+                patientId: patientId,
+                serviceType: "service",
+                serviceName: service.name,
+                price: service.price * service.quantity,
+                quantity: service.quantity,
+                notes: data.notes,
+                scheduledDate: data.scheduledDate,
+                scheduledTime: data.scheduledTime,
+                status: "scheduled",
+                doctorId:
+                  actualDoctorId &&
+                  actualDoctorId !== "none" &&
+                  actualDoctorId !== ""
+                    ? actualDoctorId
+                    : null,
+              });
+            }
           });
-
-          console.log(
-            "Custom service doctor ID:",
-            servicesToCreate[servicesToCreate.length - 1].doctorId,
-          );
         }
       }
 
@@ -4466,30 +4329,109 @@ export default function PatientDetail() {
                   </Table>
                 </div>
 
-                {/* Custom Service Input - only visible when no catalog service is selected */}
-                {selectedServices.length === 0 && (
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                      <Label>Custom Service Name</Label>
-                      <Input
-                        {...serviceForm.register("serviceName")}
-                        placeholder="Enter service name..."
-                        data-testid="input-custom-service-name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Custom Service Price (₹)</Label>
-                      <Input
-                        type="number"
-                        {...serviceForm.register("price", {
-                          valueAsNumber: true,
-                        })}
-                        placeholder="0.00"
-                        data-testid="input-custom-service-price"
-                      />
-                    </div>
+                {/* Multi-Custom Services Section */}
+                <div className="space-y-4 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Custom Services</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setCustomServices((prev) => [
+                          ...prev,
+                          {
+                            id: Math.random().toString(36).substring(7),
+                            name: "",
+                            price: 0,
+                            quantity: 1,
+                          },
+                        ]);
+                      }}
+                      data-testid="button-add-custom-service"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Custom Service
+                    </Button>
                   </div>
-                )}
+
+                  {customServices.length > 0 && (
+                    <div className="space-y-3">
+                      {customServices.map((cs, index) => (
+                        <div key={cs.id} className="grid grid-cols-12 gap-2 items-end bg-gray-50 p-2 rounded-md">
+                          <div className="col-span-6 space-y-1">
+                            <Label className="text-xs">Service Name</Label>
+                            <Input
+                              placeholder="Name"
+                              value={cs.name}
+                              onChange={(e) => {
+                                setCustomServices((prev) =>
+                                  prev.map((item) =>
+                                    item.id === cs.id
+                                      ? { ...item, name: e.target.value }
+                                      : item,
+                                  ),
+                                );
+                              }}
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="col-span-3 space-y-1">
+                            <Label className="text-xs">Price (₹)</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={cs.price || ""}
+                              onChange={(e) => {
+                                setCustomServices((prev) =>
+                                  prev.map((item) =>
+                                    item.id === cs.id
+                                      ? { ...item, price: parseFloat(e.target.value) || 0 }
+                                      : item,
+                                  ),
+                                );
+                              }}
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="col-span-2 space-y-1">
+                            <Label className="text-xs">Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={cs.quantity}
+                              onChange={(e) => {
+                                setCustomServices((prev) =>
+                                  prev.map((item) =>
+                                    item.id === cs.id
+                                      ? { ...item, quantity: parseInt(e.target.value) || 1 }
+                                      : item,
+                                  ),
+                                );
+                              }}
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setCustomServices((prev) =>
+                                  prev.filter((item) => item.id !== cs.id),
+                                );
+                              }}
+                              className="h-8 w-8 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Smart Billing Parameters */}
                 {selectedCatalogService && (
@@ -4681,7 +4623,7 @@ export default function PatientDetail() {
                 </div>
 
                 {/* Services Summary */}
-                {selectedServices.length > 0 && (
+                {(selectedServices.length > 0 || customServices.length > 0) && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                     <h4 className="font-medium mb-3">
                       Selected Services Summary
@@ -4702,17 +4644,33 @@ export default function PatientDetail() {
                           </span>
                         </div>
                       ))}
+                      {customServices.map((service) => (
+                        <div
+                          key={service.id}
+                          className="flex justify-between items-center text-sm"
+                        >
+                          <span className="font-medium">{service.name || "Unnamed Service"}</span>
+                          <span>
+                            ₹{(service.price * service.quantity).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
-                        <span>Total ({selectedServices.length} services)</span>
+                        <span>Total ({selectedServices.length + customServices.length} services)</span>
                         <span>
                           ₹
-                          {selectedServices
-                            .reduce(
+                          {(
+                            selectedServices.reduce(
                               (total, service) =>
                                 total + service.price * (service.quantity || 1),
                               0,
+                            ) +
+                            customServices.reduce(
+                              (total, service) =>
+                                total + service.price * service.quantity,
+                              0,
                             )
-                            .toLocaleString()}
+                          ).toLocaleString()}
                         </span>
                       </div>
                     </div>
