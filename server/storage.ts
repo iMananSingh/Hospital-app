@@ -4757,7 +4757,11 @@ export class SqliteStorage implements IStorage {
 
     admissions.forEach((admission) => {
       const itemValue = admission.admissionId;
-      const amount = admission.dailyCost || 0;
+      // Get system timezone for stay days calculation
+      const settings = this.getSystemSettingsSync();
+      const timezone = settings?.timezone || "UTC";
+      const stayDays = calculateStayDays(admission.admissionDate, admission.dischargeDate, timezone);
+      const amount = (admission.dailyCost || 0) * stayDays;
       const paidAmount = paidAmounts.get(`Admission - ${itemValue}`) || 0;
       const isFullyPaid = paidAmount >= amount;
 
