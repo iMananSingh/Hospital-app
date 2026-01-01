@@ -129,3 +129,24 @@
 - **Issue**: Workflow failed with "sh: 1: tsx: not found"
 - **Solution**: Installed tsx package via npm and restarted workflow
 - **Status**: Application running successfully on port 5000 ✓
+
+### Custom Services Feature Fix - January 1, 2026 at 6:42 PM
+[x] Fixed incomplete custom services implementation in Schedule Patient Service dialog
+- **Issue**: The custom services feature was partially implemented, causing "customServices is not defined" error
+- **Root Cause**: 
+  1. The `customServices` state variable was used but never defined
+  2. The `Trash2` icon was used but not imported
+  3. The loop for catalog services had incomplete code referencing undefined `serviceData`
+- **Solution Applied**:
+  1. Added `customServices` and `setCustomServices` state definition at line 155-157
+  2. Added `Trash2` import from lucide-react at line 68
+  3. Fixed incomplete loop for catalog services (lines 1294-1315) to properly create serviceData
+- **Files Modified**:
+  - `client/src/pages/patient-detail.tsx` (lines 155-157, 68, 1294-1315)
+- **Feature Functionality**:
+  - Users can now add custom services using the "Add Custom Service" button
+  - Each custom service has inputs for: Service Name, Price, and Quantity
+  - Custom services are displayed alongside catalog services in the summary
+  - Custom services are included in the total price calculation
+  - Custom services can be removed using the trash icon button
+- **Status**: Application running successfully, custom services feature now functional ✓

@@ -62,6 +62,7 @@ import {
   TicketX, // Import TicketX for refund button
   TicketCheck, // Import TicketCheck for record payment button
   TicketPercent, // Import TicketPercent for apply discount button
+  Trash2, // Import Trash2 for delete buttons
 } from "lucide-react";
 import {
   insertPatientServiceSchema,
@@ -149,6 +150,9 @@ export default function PatientDetail() {
     useState("");
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [customServices, setCustomServices] = useState<
+    Array<{ id: string; name: string; price: number; quantity: number }>
+  >([]);
 
   // For Comprehensive Bill
   const [isComprehensiveBillOpen, setIsComprehensiveBillOpen] = useState(false);
@@ -1285,8 +1289,25 @@ export default function PatientDetail() {
       } else {
         // Handle selected catalog services
         if (selectedServices.length > 0) {
-          selectedServices.forEach((service) => {
-            // ... (existing logic for catalog services)
+          const actualDoctorId = serviceForm.watch("doctorId");
+          selectedServices.forEach((service: Service) => {
+            const serviceData = {
+              patientId: patientId,
+              serviceType: service.category || "service",
+              serviceName: service.name,
+              price: (service.price || 0) * (service.quantity || 1),
+              quantity: service.quantity || 1,
+              notes: data.notes,
+              scheduledDate: data.scheduledDate,
+              scheduledTime: data.scheduledTime,
+              status: "scheduled",
+              doctorId:
+                actualDoctorId &&
+                actualDoctorId !== "none" &&
+                actualDoctorId !== ""
+                  ? actualDoctorId
+                  : null,
+            };
             servicesToCreate.push(serviceData);
           });
         }
