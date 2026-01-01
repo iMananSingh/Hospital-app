@@ -1195,7 +1195,63 @@ export const updatePatientSchema = insertPatientSchema.partial();
 export type UpdatePatient = z.infer<typeof updatePatientSchema>;
 
 /**
- * Calculate admission stay duration in days using consistent logic
+ * Calculate 24-hour periods for per_24_hours billing type
+ * Example: Jan 1 6pm to Jan 3 11am = 41 hours = ceil(41/24) = 2 periods
+ */
+export function calculate24HourPeriods(
+  admissionDate: string | Date,
+  endDate?: string | Date,
+): number {
+  let startDate: Date;
+
+  // Parse admission date
+  if (typeof admissionDate === "string") {
+    const dateStr = admissionDate;
+
+    // Detect SQL datetime format "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(dateStr)) {
+      const match = dateStr.match(
+        /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/,
+      );
+      if (match) {
+        const [, year, month, day, hour, minute, second = "0"] = match;
+        startDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day),
+          parseInt(hour),
+          parseInt(minute),
+          parseInt(second),
+        );
+      } else {
+        startDate = new Date(dateStr);
+      }
+    } else {
+      startDate = new Date(dateStr);
+    }
+  } else {
+    startDate = admissionDate;
+  }
+
+  const end = endDate ? new Date(endDate) : new Date();
+
+  // Guard against invalid dates
+  if (isNaN(startDate.getTime()) || isNaN(end.getTime())) {
+    return 1;
+  }
+
+  // Calculate actual hours elapsed
+  const hoursElapsed = (end.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+  
+  // Round up to nearest 24-hour period (minimum 1)
+  const periods = Math.ceil(hoursElapsed / 24);
+  
+  return Math.max(1, periods);
+}
+
+/**
+ * Calculate admission stay duration in calendar days for per_date billing type
+ * Example: Jan 1 6pm to Jan 3 11am = 3 days (1st, 2nd, 3rd - inclusive)
  * This ensures frontend and backend calculations always match
  */
 export function calculateStayDays(

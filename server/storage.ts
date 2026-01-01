@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "@shared/schema";
-import { calculateStayDays } from "@shared/schema";
+import { calculateStayDays, calculate24HourPeriods } from "@shared/schema";
 import type {
   User,
   InsertUser,
@@ -5109,22 +5109,25 @@ export class SqliteStorage implements IStorage {
         if (matchingAdmission) {
           const endDate =
             matchingAdmission.dischargeDate || new Date().toISOString();
-          const stayDuration = calculateStayDays(
-            matchingAdmission.admissionDate,
-            endDate,
-            timezone,
-          );
 
-          if (stayDuration > 0) {
-            // Calculate charges based on billing type
-            if (
-              service.billingType === "per_date" ||
-              service.billingType === "per_24_hours"
-            ) {
-              charge = (service.price || 0) * stayDuration;
-            }
-            // per_instance billing type uses the base price without multiplication
+          // Calculate charges based on billing type
+          if (service.billingType === "per_date") {
+            // per_date: count calendar dates (inclusive)
+            const calendarDays = calculateStayDays(
+              matchingAdmission.admissionDate,
+              endDate,
+              timezone,
+            );
+            charge = (service.price || 0) * Math.max(1, calendarDays);
+          } else if (service.billingType === "per_24_hours") {
+            // per_24_hours: count 24-hour periods (rounded up)
+            const hourPeriods = calculate24HourPeriods(
+              matchingAdmission.admissionDate,
+              endDate,
+            );
+            charge = (service.price || 0) * Math.max(1, hourPeriods);
           }
+          // per_instance billing type uses the base price without multiplication
         }
 
         totalCharges += charge;
@@ -7273,18 +7276,27 @@ export class SqliteStorage implements IStorage {
         if (matchingAdmission) {
           const endDate =
             matchingAdmission.dischargeDate || new Date().toISOString();
-          const stayDuration = calculateStayDays(
-            matchingAdmission.admissionDate,
-            endDate,
-            timezone
-          );
 
-          if (stayDuration > 0) {
-            // Calculate charges based on billing type
-            if (as.billingType === "per_date" || as.billingType === "per_24_hours") {
-              serviceQuantity = stayDuration;
-              serviceAmount = (as.price || 0) * serviceQuantity;
-            }
+          // Calculate charges based on billing type
+          if (as.billingType === "per_date") {
+            // per_date: count calendar dates (inclusive)
+            // Example: Jan 1 6pm to Jan 3 11am = 3 days (1st, 2nd, 3rd)
+            const calendarDays = calculateStayDays(
+              matchingAdmission.admissionDate,
+              endDate,
+              timezone
+            );
+            serviceQuantity = Math.max(1, calendarDays);
+            serviceAmount = (as.price || 0) * serviceQuantity;
+          } else if (as.billingType === "per_24_hours") {
+            // per_24_hours: count 24-hour periods (rounded up)
+            // Example: Jan 1 6pm to Jan 3 11am = 41 hours = ceil(41/24) = 2 periods
+            const hourPeriods = calculate24HourPeriods(
+              matchingAdmission.admissionDate,
+              endDate
+            );
+            serviceQuantity = Math.max(1, hourPeriods);
+            serviceAmount = (as.price || 0) * serviceQuantity;
           }
         }
 
