@@ -50,7 +50,7 @@ export class SmartCostingEngine {
         return this.calculateVariable(service, customParameters);
         
       case 'per_date':
-        return this.calculatePerDate(service, quantity);
+        return this.calculatePerDate(service, startDateTime, endDateTime);
         
       default:
         return this.calculatePerInstance(service, quantity);
@@ -206,21 +206,33 @@ export class SmartCostingEngine {
   /**
    * Per calendar date billing (different from 24-hour billing)
    */
-  private static calculatePerDate(service: any, quantity: number): BillingCalculationResult {
-    const startDate = new Date(startDateTime);
+  private static calculatePerDate(service: any, startDateTime?: string, endDateTime?: string): BillingCalculationResult {
+    const startDate = startDateTime ? new Date(startDateTime) : new Date();
     const endDate = endDateTime ? new Date(endDateTime) : new Date();
 
-    // Reset times to midnight for date comparison
+    // Reset times to midnight for date comparison to count calendar days
     const d1 = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
     const d2 = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
 
     // Calculate difference in calendar dates
-    // +1 because same day = 1 day (e.g., admitted 2nd, discharge 2nd = 1 day)
+    // +1 because same day = 1 day (e.g., Dec 1 to Dec 1 = 1 day, Dec 1 to Dec 2 = 2 days)
     const timeDiff = d2.getTime() - d1.getTime();
     const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
     const billingDays = Math.max(1, daysDiff);
 
     const totalAmount = service.price * billingDays;
+    
+    return {
+      totalAmount,
+      billingQuantity: billingDays,
+      breakdown: [{
+        unitPrice: service.price,
+        quantity: billingDays,
+        subtotal: totalAmount,
+        description: `${service.name} (${billingDays} calendar day${billingDays > 1 ? 's' : ''})`
+      }],
+      billingDetails: `Per calendar date: ₹${service.price} × ${billingDays} day${billingDays > 1 ? 's' : ''} = ₹${totalAmount}`
+    };
   }
 
   /**
