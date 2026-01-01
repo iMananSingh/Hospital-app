@@ -4758,8 +4758,16 @@ export class SqliteStorage implements IStorage {
     admissions.forEach((admission) => {
       const itemValue = admission.admissionId;
       // Get system timezone for stay days calculation
-      const settings = this.getSystemSettingsSync();
-      const timezone = settings?.timezone || "UTC";
+      let timezone = "UTC";
+      try {
+        const settings = db.select().from(schema.systemSettings).get();
+        if (settings) {
+          timezone = (settings as any).timezone || "UTC";
+        }
+      } catch (e) {
+        console.error("Error fetching timezone in getPatientBillableItems:", e);
+      }
+      
       const stayDays = calculateStayDays(admission.admissionDate, admission.dischargeDate, timezone);
       const amount = (admission.dailyCost || 0) * stayDays;
       const paidAmount = paidAmounts.get(`Admission - ${itemValue}`) || 0;
@@ -4773,6 +4781,11 @@ export class SqliteStorage implements IStorage {
         date: admission.admissionDate,
         amount,
         isFullyPaid,
+        details: {
+          admissionId: admission.admissionId,
+          stayDuration: stayDays,
+          dailyCost: admission.dailyCost,
+        }
       });
     });
 
