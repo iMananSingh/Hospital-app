@@ -4664,64 +4664,65 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     },
   );
 
+  // Financial Summary Route
   app.get(
     "/api/patients/:patientId/financial-summary",
     authenticateToken,
     async (req, res) => {
       try {
         const { patientId } = req.params;
-        console.log(`Generating financial summary for patient: ${patientId}`);
-        const summary = await storage.getPatientFinancialSummary(patientId);
-        console.log(
-          `Financial summary - Total charges: ${summary.totalCharges}, Total paid: ${summary.totalPaid}`,
-        );
+        const settings = await storage.getSystemSettings();
+        const timezone = settings?.timezone || "UTC";
+
+        console.log(`Generating financial summary for patient: ${patientId} (Timezone: ${timezone})`);
+        const summary = await storage.getPatientFinancialSummary(patientId, { timezone });
         res.json(summary);
       } catch (error) {
-        console.error("Error fetching patient financial summary:", error);
-        res.status(500).json({ message: "Failed to fetch financial summary" });
+        console.error("Error fetching financial summary:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
     },
   );
 
+  // Billable Items Route
   app.get(
     "/api/patients/:patientId/billable-items",
     authenticateToken,
     async (req, res) => {
       try {
         const { patientId } = req.params;
-        const billableItems = await storage.getPatientBillableItems(patientId);
-        res.json(billableItems);
+        const settings = await storage.getSystemSettings();
+        const timezone = settings?.timezone || "UTC";
+
+        const items = await storage.getPatientBillableItems(patientId, { timezone });
+        res.json(items);
       } catch (error) {
         console.error("Error fetching billable items:", error);
-        res.status(500).json({ message: "Failed to fetch billable items" });
+        res.status(500).json({ error: "Internal server error" });
       }
     },
   );
 
+  // Comprehensive Bill Route
   app.get(
     "/api/patients/:patientId/comprehensive-bill",
     authenticateToken,
     async (req, res) => {
       try {
         const { patientId } = req.params;
+        const settings = await storage.getSystemSettings();
+        const timezone = settings?.timezone || "UTC";
+
         // Disable caching to ensure fresh data
         res.set("Cache-Control", "no-cache, no-store, must-revalidate");
         res.set("Pragma", "no-cache");
         res.set("Expires", "0");
 
-        console.log(`Generating comprehensive bill for patient: ${patientId}`);
-        const comprehensiveBill =
-          await storage.generateComprehensiveBill(patientId);
-        console.log(
-          `Generated comprehensive bill with ${comprehensiveBill.billItems.length} items`,
-        );
-
+        const comprehensiveBill = await storage.generateComprehensiveBill(patientId, { timezone });
         res.json(comprehensiveBill);
       } catch (error) {
         console.error("Error generating comprehensive bill:", error);
-        res
-          .status(500)
-          .json({ message: "Failed to generate comprehensive bill" });
+        res.status(500).json({ error: "Internal server error" });
       }
     },
   );

@@ -4721,7 +4721,8 @@ export class SqliteStorage implements IStorage {
       .get();
   }
 
-  async getPatientBillableItems(patientId: string): Promise<any[]> {
+  async getPatientBillableItems(patientId: string, options?: { timezone?: string }): Promise<any[]> {
+    const timezone = options?.timezone || "UTC";
     const billableItems: any[] = [];
 
     // Get all payments for this patient to calculate paid amounts
@@ -4957,14 +4958,15 @@ export class SqliteStorage implements IStorage {
   }
 
   // Calculate patient financial summary
-  async getPatientFinancialSummary(patientId: string): Promise<{
+  async getPatientFinancialSummary(patientId: string, options?: { timezone?: string }): Promise<{
     totalCharges: number;
     totalPaid: number;
     totalDiscounts: number;
     balance: number;
   }> {
     try {
-      console.log(`Generating financial summary for patient: ${patientId}`);
+      const timezone = options?.timezone || "UTC";
+      console.log(`Generating financial summary for patient: ${patientId} (Timezone: ${timezone})`);
 
       // Calculate total charges from different sources
       let totalCharges = 0;
@@ -5083,6 +5085,7 @@ export class SqliteStorage implements IStorage {
           const stayDuration = calculateStayDays(
             matchingAdmission.admissionDate,
             endDate,
+            timezone
           );
 
           if (stayDuration > 0) {
@@ -5502,10 +5505,13 @@ export class SqliteStorage implements IStorage {
         }
 
         // Calculate total cost based on stay duration and daily cost
+        const settings = this.getSystemSettingsSync();
+        const timezone = settings?.timezone || "UTC";
         const admissionDate = new Date(admission.admissionDate);
         const stayDays = calculateStayDays(
           admissionDate,
           parsedDischargeDateTime,
+          timezone
         );
         const totalCost =
           stayDays * admission.dailyCost +
@@ -7030,7 +7036,7 @@ export class SqliteStorage implements IStorage {
   }
 
   // Comprehensive Bill Generation
-  async generateComprehensiveBill(patientId: string): Promise<{
+  async generateComprehensiveBill(patientId: string, options?: { timezone?: string }): Promise<{
     patient: any;
     billItems: Array<{
       type: "service" | "pathology" | "admission" | "payment" | "discount";
@@ -7052,6 +7058,7 @@ export class SqliteStorage implements IStorage {
     };
   }> {
     try {
+      const timezone = options?.timezone || "UTC";
       // Get patient details
       const patient = await this.getPatientById(patientId);
       if (!patient) {
