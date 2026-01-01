@@ -210,12 +210,20 @@ export class SmartCostingEngine {
     const startDate = startDateTime ? new Date(startDateTime) : new Date();
     const endDate = endDateTime ? new Date(endDateTime) : new Date();
 
-    // Reset times to midnight for date comparison to count calendar days
-    const d1 = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    const d2 = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    // Use IST (UTC+5:30) for calendar date calculations
+    const toIST = (date: Date) => {
+      const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+      return new Date(utc + (3600000 * 5.5));
+    };
+
+    const istStart = toIST(startDate);
+    const istEnd = toIST(endDate);
+
+    // Reset times to midnight IST for date comparison
+    const d1 = new Date(istStart.getFullYear(), istStart.getMonth(), istStart.getDate());
+    const d2 = new Date(istEnd.getFullYear(), istEnd.getMonth(), istEnd.getDate());
 
     // Calculate difference in calendar dates
-    // +1 because same day = 1 day (e.g., Dec 1 to Dec 1 = 1 day, Dec 1 to Dec 2 = 2 days)
     const timeDiff = d2.getTime() - d1.getTime();
     const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
     const billingDays = Math.max(1, daysDiff);
