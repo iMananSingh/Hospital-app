@@ -1348,7 +1348,7 @@ export default function PatientDetail() {
               serviceType: mapCategoryToServiceType(service.category),
               serviceName: service.name,
               serviceId: service.id,
-              price: service.price * (service.quantity || 1),
+              price: (service.price || 0) * (service.quantity || 1),
               quantity: service.quantity || 1,
               notes: data.notes,
               scheduledDate: data.scheduledDate,
@@ -1360,17 +1360,15 @@ export default function PatientDetail() {
                 actualDoctorId !== ""
                   ? actualDoctorId
                   : null,
-              billingType: "per_instance",
+              billingType: service.billingType || "per_instance",
               calculatedAmount: Number(data.price),
+              billingQuantity: service.quantity || 1,
             };
 
             console.log("Final service data doctor ID:", serviceData.doctorId);
 
             // Add smart billing parameters if service has special billing type
             if (service.billingType) {
-              serviceData.billingType = service.billingType;
-              serviceData.billingQuantity = service.quantity || 1;
-
               if (service.billingType === "composite") {
                 // For composite billing (ambulance), use quantity as distance
                 serviceData.billingParameters = JSON.stringify({
@@ -1381,8 +1379,8 @@ export default function PatientDetail() {
                   hours: service.quantity || 1,
                 });
               } else if (service.billingType === "variable") {
-                // For variable billing, use the entered price from form data
-                const variablePrice = data.price || service.price || 0;
+                // For variable billing, use the entered price from the individual service data
+                const variablePrice = service.price || 0;
                 serviceData.billingParameters = JSON.stringify({
                   price: variablePrice,
                 });
@@ -1402,15 +1400,19 @@ export default function PatientDetail() {
                 serviceData.price = calculatedAmount;
               } else if (service.billingType === "per_hour") {
                 const calculatedAmount =
-                  service.price * (service.quantity || 1);
+                  (service.price || 0) * (service.quantity || 1);
                 serviceData.calculatedAmount = calculatedAmount;
                 serviceData.price = calculatedAmount;
               } else if (service.billingType === "variable") {
-                // For variable billing, use the exact price entered from form (quantity is always 1)
-                const variablePrice = data.price || service.price || 0;
-                serviceData.calculatedAmount = variablePrice;
-                serviceData.price = variablePrice;
-                serviceData.billingQuantity = 1;
+                // For variable billing, use the price and quantity from the individual service data
+                const variablePrice = service.price || 0;
+                const quantity = service.quantity || 1;
+                const totalAmount = variablePrice * quantity;
+                
+                serviceData.calculatedAmount = totalAmount;
+                serviceData.price = totalAmount;
+                serviceData.billingQuantity = quantity;
+                serviceData.quantity = quantity;
               }
             }
 
