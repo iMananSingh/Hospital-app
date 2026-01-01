@@ -1418,7 +1418,7 @@ export default function ServiceManagement() {
                       <TableHead>Service Name</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Description</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Billing Type</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1442,17 +1442,8 @@ export default function ServiceManagement() {
                           )}
                         </TableCell>
                         <TableCell>{service.description || "N/A"}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={
-                              service.isActive
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }
-                            variant="secondary"
-                          >
-                            {service.isActive ? "Active" : "Inactive"}
-                          </Badge>
+                        <TableCell className="capitalize">
+                          {service.billingType ? service.billingType.replace("_", " ") : "Per Instance"}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
