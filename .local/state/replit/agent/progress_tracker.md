@@ -141,12 +141,14 @@
   1. Added `customServices` and `setCustomServices` state definition at line 155-157
   2. Added `Trash2` import from lucide-react at line 68
   3. Fixed incomplete loop for catalog services (lines 1294-1315) to properly create serviceData
+  4. Removed redundant single-entry custom service fields from the UI
+  5. Updated submit button text to reflect the total count of both catalog and custom services
 - **Files Modified**:
-  - `client/src/pages/patient-detail.tsx` (lines 155-157, 68, 1294-1315)
+  - `client/src/pages/patient-detail.tsx`
 - **Feature Functionality**:
   - Users can now add custom services using the "Add Custom Service" button
   - Each custom service has inputs for: Service Name, Price, and Quantity
   - Custom services are displayed alongside catalog services in the summary
   - Custom services are included in the total price calculation
   - Custom services can be removed using the trash icon button
-- **Status**: Application running successfully, custom services feature now functional ✓
+- **Status**: Application running successfully, custom services feature now fully functional ✓

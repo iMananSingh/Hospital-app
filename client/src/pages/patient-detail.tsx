@@ -4604,45 +4604,6 @@ export default function PatientDetail() {
                   </>
                 )}
 
-                {/* Custom Service Input */}
-                <div className="space-y-2">
-                  <Label>Custom Service Name</Label>
-                  <Input
-                    value={serviceForm.watch("serviceName")}
-                    onChange={(e) =>
-                      serviceForm.setValue("serviceName", e.target.value)
-                    }
-                    placeholder="Enter custom service name"
-                    disabled={!!serviceForm.watch("serviceType")}
-                    data-testid="input-custom-service-name"
-                  />
-                  <p className="text-sm text-gray-500">
-                    Only available when no catalog service is selected
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Price (₹) *</Label>
-                  <Input
-                    type="number"
-                    value={serviceForm.watch("price") || ""}
-                    onChange={(e) =>
-                      serviceForm.setValue(
-                        "price",
-                        parseFloat(e.target.value) || 0,
-                      )
-                    }
-                    placeholder="Enter price"
-                    disabled={!!billingPreview}
-                    data-testid="input-service-price"
-                  />
-                  {billingPreview && (
-                    <p className="text-sm text-green-600">
-                      Price calculated automatically based on billing parameters
-                    </p>
-                  )}
-                </div>
-
                 {/* Services Summary */}
                 {(selectedServices.length > 0 || customServices.length > 0) && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
@@ -4714,10 +4675,7 @@ export default function PatientDetail() {
             {/* Validation Helper Text */}
             {selectedServiceType !== "opd" &&
               selectedServices.length === 0 &&
-              (!serviceForm.watch("serviceName") ||
-                !serviceForm.watch("serviceName").trim() ||
-                !serviceForm.watch("price") ||
-                serviceForm.watch("price") <= 0) && (
+              customServices.length === 0 && (
                 <div
                   className="bg-amber-50 border border-amber-200 rounded-lg p-3"
                   data-testid="text-service-submit-help"
@@ -4725,19 +4683,9 @@ export default function PatientDetail() {
                   <div className="flex items-center gap-2 text-amber-800">
                     <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                     <span className="text-sm font-medium">
-                      To schedule services, please either:
+                      To schedule services, please select services from the catalog above by checking the boxes or add custom services below.
                     </span>
                   </div>
-                  <ul className="mt-2 text-sm text-amber-700 list-disc list-inside ml-4">
-                    <li>
-                      Select services from the catalog above by checking the
-                      boxes, OR
-                    </li>
-                    <li>
-                      Enter both service name and price (greater than ₹0) in the
-                      manual entry fields
-                    </li>
-                  </ul>
                 </div>
               )}
 
@@ -4815,8 +4763,8 @@ export default function PatientDetail() {
                   ? "Scheduling..."
                   : selectedServiceType === "opd"
                     ? "Schedule OPD"
-                    : selectedServices.length > 0
-                      ? `Schedule ${selectedServices.length} Service(s)`
+                    : selectedServices.length + customServices.length > 0
+                      ? `Schedule ${selectedServices.length + customServices.length} Service(s)`
                       : "Schedule Service"}
               </Button>
             </div>
