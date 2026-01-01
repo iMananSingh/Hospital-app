@@ -1201,6 +1201,7 @@ export type UpdatePatient = z.infer<typeof updatePatientSchema>;
 export function calculateStayDays(
   admissionDate: string | Date,
   endDate?: string | Date,
+  timezone: string = "UTC",
 ): number {
   let startDate: Date;
 
@@ -1242,7 +1243,45 @@ export function calculateStayDays(
     return 1; // Fallback to minimum 1 day for invalid dates
   }
 
-  // Use direct millisecond calculation to avoid floating-point precision issues
-  const timeDiff = end.getTime() - startDate.getTime();
-  return Math.max(1, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+  // Timezone-aware calendar day calculation
+  const getParts = (date: Date, tz: string) => {
+    try {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: tz,
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: false,
+      });
+      const parts: Record<string, number> = {};
+      formatter.formatToParts(date).forEach(({ type, value }) => {
+        if (type !== "literal") parts[type] = parseInt(value, 10);
+      });
+      return parts;
+    } catch (e) {
+      // Fallback to UTC if timezone is invalid
+      return {
+        year: date.getUTCFullYear(),
+        month: date.getUTCMonth() + 1,
+        day: date.getUTCDate(),
+      };
+    }
+  };
+
+  const p1 = getParts(startDate, timezone);
+  const p2 = getParts(end, timezone);
+
+  // Create dates at midnight in the respective timezone days
+  const d1 = new Date(Date.UTC(p1.year, p1.month - 1, p1.day));
+  const d2 = new Date(Date.UTC(p2.year, p2.month - 1, p2.day));
+
+  // Calculate difference in calendar dates
+  const timeDiff = d2.getTime() - d1.getTime();
+  const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+
+  // Minimum 1 day for any admission
+  return Math.max(1, daysDiff);
 }
