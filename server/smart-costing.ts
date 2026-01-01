@@ -207,19 +207,20 @@ export class SmartCostingEngine {
    * Per calendar date billing (different from 24-hour billing)
    */
   private static calculatePerDate(service: any, quantity: number): BillingCalculationResult {
-    const totalAmount = service.price * quantity;
-    
-    return {
-      totalAmount,
-      billingQuantity: quantity,
-      breakdown: [{
-        unitPrice: service.price,
-        quantity,
-        subtotal: totalAmount,
-        description: `${service.name} (${quantity} calendar day${quantity > 1 ? 's' : ''})`
-      }],
-      billingDetails: `Per calendar date: ₹${service.price} × ${quantity} day${quantity > 1 ? 's' : ''} = ₹${totalAmount}`
-    };
+    const startDate = new Date(startDateTime);
+    const endDate = endDateTime ? new Date(endDateTime) : new Date();
+
+    // Reset times to midnight for date comparison
+    const d1 = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const d2 = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    // Calculate difference in calendar dates
+    // +1 because same day = 1 day (e.g., admitted 2nd, discharge 2nd = 1 day)
+    const timeDiff = d2.getTime() - d1.getTime();
+    const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
+    const billingDays = Math.max(1, daysDiff);
+
+    const totalAmount = service.price * billingDays;
   }
 
   /**
