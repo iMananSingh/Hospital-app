@@ -5085,16 +5085,6 @@ export class SqliteStorage implements IStorage {
         totalCharges += roomTotal;
       });
 
-      // Add room charges from admissions
-      patientAdmissionsForServices.forEach((admission) => {
-        const admissionDate = admission.admissionDate;
-        const dischargeDate = admission.dischargeDate;
-        // Use timezone from options or fallback to system setting
-        const stayDays = calculateStayDays(admissionDate, dischargeDate, timezone);
-        const roomTotal = (admission.dailyCost || 0) * stayDays;
-        totalCharges += roomTotal;
-      });
-
       admissionServicesList.forEach((service) => {
         let charge = service.price || 0;
 
