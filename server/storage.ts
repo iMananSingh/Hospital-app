@@ -5075,12 +5075,32 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
+      // Add room charges from admissions
+      patientAdmissionsForServices.forEach((admission) => {
+        const admissionDate = admission.admissionDate;
+        const dischargeDate = admission.dischargeDate;
+        // Use timezone from options or fallback to system setting
+        const stayDays = calculateStayDays(admissionDate, dischargeDate, timezone);
+        const roomTotal = (admission.dailyCost || 0) * stayDays;
+        totalCharges += roomTotal;
+      });
+
+      // Add room charges from admissions
+      patientAdmissionsForServices.forEach((admission) => {
+        const admissionDate = admission.admissionDate;
+        const dischargeDate = admission.dischargeDate;
+        // Use timezone from options or fallback to system setting
+        const stayDays = calculateStayDays(admissionDate, dischargeDate, timezone);
+        const roomTotal = (admission.dailyCost || 0) * stayDays;
+        totalCharges += roomTotal;
+      });
+
       admissionServicesList.forEach((service) => {
         let charge = service.price || 0;
 
         // Find the matching admission for stay duration calculation
         const matchingAdmission = patientAdmissionsForServices.find(
-          (a) => a.id === service.admissionId
+          (a) => a.id === service.admissionId,
         );
 
         if (matchingAdmission) {
@@ -5089,12 +5109,15 @@ export class SqliteStorage implements IStorage {
           const stayDuration = calculateStayDays(
             matchingAdmission.admissionDate,
             endDate,
-            timezone
+            timezone,
           );
 
           if (stayDuration > 0) {
             // Calculate charges based on billing type
-            if (service.billingType === "per_date" || service.billingType === "per_24_hours") {
+            if (
+              service.billingType === "per_date" ||
+              service.billingType === "per_24_hours"
+            ) {
               charge = (service.price || 0) * stayDuration;
             }
             // per_instance billing type uses the base price without multiplication
@@ -5118,7 +5141,7 @@ export class SqliteStorage implements IStorage {
       });
 
       // 6. Include initial deposits and additional payments from admissions
-      const admissions = db
+      const admissionsForPayments = db
         .select({
           initialDeposit: schema.admissions.initialDeposit,
           additionalPayments: schema.admissions.additionalPayments,
@@ -5127,7 +5150,7 @@ export class SqliteStorage implements IStorage {
         .where(eq(schema.admissions.patientId, patientId))
         .all();
 
-      admissions.forEach((admission) => {
+      admissionsForPayments.forEach((admission) => {
         totalPaid += admission.initialDeposit || 0;
         totalPaid += admission.additionalPayments || 0;
       });
