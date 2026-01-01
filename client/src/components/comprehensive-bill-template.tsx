@@ -163,13 +163,15 @@ export function ComprehensiveBillTemplate({
       quantity = item.details.quantity;
       
       // For admission services, add appropriate suffix to description
-      if (item.type === 'service' && item.details?.serviceType === 'admission') {
+      if (item.type === 'admission_service' || (item.type === 'service' && item.details?.serviceType === 'admission')) {
         if (item.details.serviceName?.toLowerCase().includes('bed charges')) {
           description = `${item.details.serviceName} (${quantity} ${quantity === 1 ? 'day' : 'days'})`;
         } else if (
           item.details.serviceName?.toLowerCase().includes('doctor charges') ||
           item.details.serviceName?.toLowerCase().includes('nursing charges') ||
-          item.details.serviceName?.toLowerCase().includes('rmo charges')
+          item.details.serviceName?.toLowerCase().includes('rmo charges') ||
+          item.details.billingType === 'per_date' ||
+          item.details.billingType === 'per_24_hours'
         ) {
           description = `${item.details.serviceName} (${quantity} ${quantity === 1 ? 'day' : 'days'})`;
         }

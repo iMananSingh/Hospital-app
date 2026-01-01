@@ -7263,6 +7263,7 @@ export class SqliteStorage implements IStorage {
           const stayDuration = calculateStayDays(
             matchingAdmission.admissionDate,
             endDate,
+            timezone
           );
 
           if (stayDuration > 0) {
