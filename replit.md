@@ -10,6 +10,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**January 3, 2026** - Billing Timezone Bug Fix
+- **Fixed admission services billing calculation showing 31 days instead of 32 days**
+  - Root cause: Duplicate route definition for `/api/patients/:patientId/comprehensive-bill` 
+  - The first route was not passing timezone parameter to `generateComprehensiveBill`
+  - This caused calculations to use UTC instead of the configured Asia/Kolkata timezone
+  - When UTC shows Jan 2 but IST is already Jan 3, the calendar day count was off by 1
+  
+- **Fix Applied**:
+  - Updated the comprehensive-bill route to fetch system settings and pass timezone to billing calculations
+  - Removed duplicate route definition that was added later
+  - Now all billing calculations consistently use the configured timezone from system settings
+  
+- **Verification**:
+  - For Dec 3 to Jan 3 admission: now correctly shows 32 days (per_date billing)
+  - Timezone-aware calculation uses Intl.DateTimeFormat to extract calendar dates in user's timezone
+
 **December 3, 2025** - Admission Services Table Separation
 - **New admission_services Table**: Created dedicated table for admission-related services, separate from patient_services
   - Stores services linked to hospital admissions via admissionId

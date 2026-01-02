@@ -1330,9 +1330,6 @@ export function calculateStayDays(
   const p1 = getParts(startDate, timezone);
   const p2 = getParts(end, timezone);
 
-  console.log(`[calculateStayDays DEBUG] timezone=${timezone}, startDate=${startDate.toISOString()}, end=${end.toISOString()}`);
-  console.log(`[calculateStayDays DEBUG] p1=${JSON.stringify(p1)}, p2=${JSON.stringify(p2)}`);
-
   // Create dates at midnight in the respective timezone days
   const d1 = new Date(Date.UTC(p1.year, p1.month - 1, p1.day));
   const d2 = new Date(Date.UTC(p2.year, p2.month - 1, p2.day));
@@ -1340,8 +1337,6 @@ export function calculateStayDays(
   // Calculate difference in calendar dates
   const timeDiff = d2.getTime() - d1.getTime();
   const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24)) + 1;
-
-  console.log(`[calculateStayDays DEBUG] d1=${d1.toISOString()}, d2=${d2.toISOString()}, timeDiff=${timeDiff}, daysDiff=${daysDiff}`);
 
   // Minimum 1 day for any admission
   return Math.max(1, daysDiff);

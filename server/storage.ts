@@ -7286,7 +7286,6 @@ export class SqliteStorage implements IStorage {
               endDate,
               timezone
             );
-            console.log(`[BILLING DEBUG per_date] service=${as.serviceName}, admissionDate=${matchingAdmission.admissionDate}, endDate=${endDate}, timezone=${timezone}, calendarDays=${calendarDays}`);
             serviceQuantity = Math.max(1, calendarDays);
             serviceAmount = (as.price || 0) * serviceQuantity;
           } else if (as.billingType === "per_24_hours") {

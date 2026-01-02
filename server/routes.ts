@@ -4343,8 +4343,16 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     async (req, res) => {
       try {
         const { patientId } = req.params;
+        const settings = await storage.getSystemSettings();
+        const timezone = settings?.timezone || "UTC";
+        
+        // Disable caching to ensure fresh data
+        res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.set("Pragma", "no-cache");
+        res.set("Expires", "0");
+        
         const comprehensiveBill =
-          await storage.generateComprehensiveBill(patientId);
+          await storage.generateComprehensiveBill(patientId, { timezone });
         res.json(comprehensiveBill);
       } catch (error) {
         console.error("Error generating comprehensive bill:", error);
@@ -4698,30 +4706,6 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         res.json(items);
       } catch (error) {
         console.error("Error fetching billable items:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
-    },
-  );
-
-  // Comprehensive Bill Route
-  app.get(
-    "/api/patients/:patientId/comprehensive-bill",
-    authenticateToken,
-    async (req, res) => {
-      try {
-        const { patientId } = req.params;
-        const settings = await storage.getSystemSettings();
-        const timezone = settings?.timezone || "UTC";
-
-        // Disable caching to ensure fresh data
-        res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-        res.set("Pragma", "no-cache");
-        res.set("Expires", "0");
-
-        const comprehensiveBill = await storage.generateComprehensiveBill(patientId, { timezone });
-        res.json(comprehensiveBill);
-      } catch (error) {
-        console.error("Error generating comprehensive bill:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     },
