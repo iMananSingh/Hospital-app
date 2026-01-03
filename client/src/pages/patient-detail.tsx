@@ -5800,18 +5800,32 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="refundReason">Reason</Label>
+                <Input
+                  id="refundReason"
+                  type="text"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Enter refund reason (optional)"
+                  data-testid="input-refund-reason"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="refundBillableItem">Billable Item *</Label>
                 <Select
                   value={selectedRefundBillableItem}
                   onValueChange={(value) => {
                     setSelectedRefundBillableItem(value);
-                    // Auto-populate amount from selected billable item
+                    // Auto-populate with maxRefundable (net paid amount available for refund)
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
                         (item: any) => item.value === value,
                       );
-                      if (selectedItem && selectedItem.amount) {
-                        setRefundAmount(selectedItem.amount.toString());
+                      if (selectedItem && selectedItem.maxRefundable > 0) {
+                        setRefundAmount(selectedItem.maxRefundable.toString());
+                      } else if (selectedItem && selectedItem.netPaidAmount > 0) {
+                        setRefundAmount(selectedItem.netPaidAmount.toString());
                       }
                     }
                   }}
@@ -5822,18 +5836,18 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
-                        .filter((item: any) => item.isFullyPaid)
+                        .filter((item: any) => !item.isFullyRefunded && (item.maxRefundable > 0 || item.netPaidAmount > 0))
                         .map((item: any) => (
                         <SelectItem
                           key={item.id}
                           value={item.value}
                         >
-                          {formatBillableItemLabel(item)}
+                          {formatBillableItemLabel(item)} (Rs.{item.maxRefundable || item.netPaidAmount || 0} refundable)
                         </SelectItem>
                       ))
                     ) : (
                       <SelectItem value="none" disabled>
-                        No paid billable items available
+                        No refundable billable items available
                       </SelectItem>
                     )}
                   </SelectContent>
@@ -5865,19 +5879,33 @@ export default function PatientDetail() {
                 }
 
                 const amount = parseFloat(refundAmount);
+                const selectedItem = billableItems?.find(
+                  (item: any) => item.value === selectedRefundBillableItem,
+                );
+                const maxRefundable = selectedItem?.maxRefundable || selectedItem?.netPaidAmount || 0;
 
-                if (amount > 0) {
-                  addRefundMutation.mutate({
-                    amount: amount,
-                    reason: "Manual refund",
-                  });
-                } else {
+                if (amount <= 0) {
                   toast({
                     title: "Error",
                     description: "Please enter a valid refund amount.",
                     variant: "destructive",
                   });
+                  return;
                 }
+
+                if (amount > maxRefundable) {
+                  toast({
+                    title: "Error",
+                    description: `Refund cannot exceed Rs.${maxRefundable} (paid amount).`,
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
+                addRefundMutation.mutate({
+                  amount: amount,
+                  reason: refundReason || "Manual refund",
+                });
               }}
               disabled={
                 addRefundMutation.isPending ||
