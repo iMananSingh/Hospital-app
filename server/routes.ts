@@ -4718,7 +4718,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     async (req: any, res) => {
       try {
         const { patientId } = req.params;
-        const { amount, reason, discountType, discountDate } = req.body;
+        const { amount, reason, discountType, discountDate, billableItemType, billableItemId } = req.body;
 
         // Verify user ID exists
         if (!req.user?.id) {
@@ -4735,6 +4735,8 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             discountType: discountType || "manual",
             discountDate: discountDate || new Date().toISOString(),
             approvedBy: req.user.id,
+            billableItemType,
+            billableItemId,
           },
           req.user.id,
         );
