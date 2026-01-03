@@ -4787,6 +4787,85 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     },
   );
 
+  // Patient Refund Routes
+  app.post(
+    "/api/patients/:patientId/refunds",
+    authenticateToken,
+    async (req: any, res) => {
+      try {
+        const { patientId } = req.params;
+        const { amount, reason, refundDate, billableItemType, billableItemId } = req.body;
+
+        // Verify user ID exists
+        if (!req.user?.id) {
+          return res
+            .status(401)
+            .json({ message: "User authentication required" });
+        }
+
+        // Validate required fields
+        if (!billableItemType || !billableItemId) {
+          return res
+            .status(400)
+            .json({ message: "Billable item type and ID are required for refunds" });
+        }
+
+        const refund = await storage.createPatientRefund(
+          {
+            patientId,
+            amount,
+            reason,
+            refundDate: refundDate || new Date().toISOString(),
+            billableItemType,
+            billableItemId,
+            processedBy: req.user.id,
+          },
+          req.user.id,
+        );
+
+        // Create audit log
+        await storage.createAuditLog({
+          userId: req.user.id,
+          username: req.user.username,
+          action: "create",
+          tableName: "patient_refunds",
+          recordId: refund.id,
+          oldValues: null,
+          newValues: refund,
+          ipAddress: req.ip,
+          userAgent: req.get("user-agent"),
+        });
+
+        res.json(refund);
+      } catch (error: any) {
+        console.error("Error creating patient refund:", error);
+        if (error instanceof z.ZodError) {
+          return res
+            .status(400)
+            .json({ message: "Validation error", details: error.errors });
+        }
+        res
+          .status(500)
+          .json({ message: "Failed to create refund", error: error.message });
+      }
+    },
+  );
+
+  app.get(
+    "/api/patients/:patientId/refunds",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const { patientId } = req.params;
+        const refunds = await storage.getPatientRefunds(patientId);
+        res.json(refunds);
+      } catch (error) {
+        console.error("Error fetching patient refunds:", error);
+        res.status(500).json({ message: "Failed to fetch refunds" });
+      }
+    },
+  );
+
   // Bulk pending bills endpoint - optimized for performance
   app.get(
     "/api/patients/pending-bills/bulk",
