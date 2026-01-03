@@ -10,6 +10,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**January 3, 2026** - Payment Pending Amount Tracking
+- **Enhanced Payment Recording**:
+  - Backend now returns `paidAmount` and `pendingAmount` for all billable items (admissions, pathology, services, OPD)
+  - Payment dialog auto-populates with pending amount instead of full amount when selecting billable item
+  - Added validation preventing payment amounts from exceeding pending balance
+  - Dropdown labels now show "Rs.X pending of Rs.Y" format for clarity on partial payments
+
 **January 3, 2026** - Billing Timezone Bug Fix
 - **Fixed admission services billing calculation showing 31 days instead of 32 days**
   - Root cause: Duplicate route definition for `/api/patients/:patientId/comprehensive-bill` 
