@@ -699,6 +699,21 @@ export default function PatientDetail() {
     enabled: !!patientId,
   });
 
+  // Fetch patient refunds
+  const { data: patientRefunds = [] } = useQuery({
+    queryKey: ["/api/patients", patientId, "refunds"],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/${patientId}/refunds`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch refunds");
+      return response.json();
+    },
+    enabled: !!patientId,
+  });
+
   // Fetch billable items for payment dialog
   const { data: billableItems = [] } = useQuery({
     queryKey: ["/api/patients", patientId, "billable-items"],
@@ -1631,7 +1646,7 @@ export default function PatientDetail() {
   });
 
   const addRefundMutation = useMutation({
-    mutationFn: async (data: { amount: number; reason: string }) => {
+    mutationFn: async (data: { amount: number; reason: string; billableItemType: string; billableItemId: string }) => {
       const response = await fetch(`/api/patients/${patientId}/refunds`, {
         method: "POST",
         headers: {
@@ -1642,6 +1657,8 @@ export default function PatientDetail() {
           amount: data.amount,
           reason: data.reason,
           refundDate: new Date().toISOString(),
+          billableItemType: data.billableItemType,
+          billableItemId: data.billableItemId,
         }),
       });
 
@@ -1653,6 +1670,12 @@ export default function PatientDetail() {
         queryKey: ["/api/patients", patientId, "financial-summary"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "refunds"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "billable-items"],
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/doctors/all-earnings"],
@@ -1661,6 +1684,7 @@ export default function PatientDetail() {
       setIsRefundDialogOpen(false);
       setRefundAmount("");
       setRefundReason("");
+      setSelectedRefundBillableItem("");
       toast({
         title: "Refund processed successfully",
         description: "The refund has been applied.",
@@ -3291,6 +3315,25 @@ export default function PatientDetail() {
                       });
                     }
 
+                    // Add refunds
+                    if (patientRefunds && patientRefunds.length > 0) {
+                      patientRefunds.forEach((refund: any) => {
+                        const refundDateTime = new Date(
+                          refund.refundDate || refund.createdAt,
+                        );
+
+                        allEvents.push({
+                          type: "refund",
+                          data: {
+                            ...refund,
+                            sortTimestamp: refundDateTime.getTime(),
+                          },
+                          timestamp: refundDateTime,
+                          sortTimestamp: refundDateTime.getTime(),
+                        });
+                      });
+                    }
+
                     // Add admissions and related events
                     if (admissions && admissions.length > 0) {
                       admissions.forEach((admission: any) => {
@@ -3437,18 +3480,24 @@ export default function PatientDetail() {
                               bgColor: "bg-red-50",
                               iconColor: "text-red-600",
                             };
-                          // case "payment":
-                          //   return {
-                          //     borderColor: "border-l-green-500",
-                          //     bgColor: "bg-green-50",
-                          //     iconColor: "text-green-600",
-                          //   };
-                          // case "discount":
-                          //   return {
-                          //     borderColor: "border-l-orange-500",
-                          //     bgColor: "bg-orange-50",
-                          //     iconColor: "text-orange-600",
-                          //   };
+                          case "payment":
+                            return {
+                              borderColor: "border-l-emerald-500",
+                              bgColor: "bg-emerald-50",
+                              iconColor: "text-emerald-600",
+                            };
+                          case "discount":
+                            return {
+                              borderColor: "border-l-orange-500",
+                              bgColor: "bg-orange-50",
+                              iconColor: "text-orange-600",
+                            };
+                          case "refund":
+                            return {
+                              borderColor: "border-l-red-400",
+                              bgColor: "bg-red-50",
+                              iconColor: "text-red-500",
+                            };
                           default:
                             return {
                               borderColor: "border-l-gray-500",
@@ -3518,6 +3567,8 @@ export default function PatientDetail() {
                                       return `Payment Received - ${event.data.paymentMethod || "Cash"}`;
                                     case "discount":
                                       return `Discount Applied - ${event.data.discountType || "Manual"}`;
+                                    case "refund":
+                                      return `Refund Processed - ${event.data.refundId || ""}`;
                                     default:
                                       return "Timeline Event";
                                   }
@@ -3921,6 +3972,35 @@ export default function PatientDetail() {
                                           </span>{" "}
                                           {event.data.discountType || "Manual"}
                                         </div>
+                                        {event.data.reason && (
+                                          <div>
+                                            <span className="font-medium">
+                                              Reason:
+                                            </span>{" "}
+                                            {event.data.reason}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  case "refund":
+                                    return (
+                                      <div className="space-y-1">
+                                        <div>
+                                          <span className="font-medium">
+                                            Refund Amount:
+                                          </span>{" "}
+                                          <span className="text-red-600 font-semibold">
+                                            ₹{event.data.amount}
+                                          </span>
+                                        </div>
+                                        {event.data.billableItemType && (
+                                          <div>
+                                            <span className="font-medium">
+                                              For:
+                                            </span>{" "}
+                                            {event.data.billableItemType.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())} - {event.data.billableItemId}
+                                          </div>
+                                        )}
                                         {event.data.reason && (
                                           <div>
                                             <span className="font-medium">
@@ -5905,6 +5985,8 @@ export default function PatientDetail() {
                 addRefundMutation.mutate({
                   amount: amount,
                   reason: refundReason || "Manual refund",
+                  billableItemType: selectedItem?.type || "",
+                  billableItemId: selectedItem?.value || "",
                 });
               }}
               disabled={
