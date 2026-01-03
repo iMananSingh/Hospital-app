@@ -5336,6 +5336,8 @@ export class SqliteStorage implements IStorage {
     totalPaid: number;
     totalDiscounts: number;
     totalRefunds: number;
+    netCharges: number;
+    netPaid: number;
     balance: number;
   }> {
     try {
@@ -5545,15 +5547,18 @@ export class SqliteStorage implements IStorage {
         totalRefunds += refund.amount || 0;
       });
 
-      // Balance = Charges - Discounts - Payments
-      // Refunds are tracked separately for reporting purposes
-      // When a refund is processed, it equally reduces effective charges and effective payments
-      // so it cancels out in the balance calculation: (Charges - Refunds) - (Payments - Refunds) = Charges - Payments
-      // The balance represents what the patient still owes for services that haven't been refunded
-      const balance = totalCharges - totalDiscounts - totalPaid;
+      // Calculate net values after refunds
+      // Net Charges = Gross Charges - Refunds (refunds cancel charges)
+      // Net Paid = Gross Paid - Refunds (refunds return payments)
+      const netCharges = Math.max(0, totalCharges - totalRefunds);
+      const netPaid = Math.max(0, totalPaid - totalRefunds);
+      
+      // Balance = Net Charges - Discounts - Net Paid
+      // For a fully refunded item: netCharges = 0, netPaid = 0, so balance = 0
+      const balance = netCharges - totalDiscounts - netPaid;
 
       console.log(
-        `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total refunds: ${totalRefunds}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
+        `Financial summary - Gross charges: ${totalCharges}, Gross paid: ${totalPaid}, Total refunds: ${totalRefunds}, Net charges: ${netCharges}, Net paid: ${netPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
       );
 
       return {
@@ -5561,6 +5566,8 @@ export class SqliteStorage implements IStorage {
         totalPaid,
         totalDiscounts,
         totalRefunds,
+        netCharges,
+        netPaid,
         balance,
       };
     } catch (error) {
@@ -5570,6 +5577,8 @@ export class SqliteStorage implements IStorage {
         totalPaid: 0,
         totalDiscounts: 0,
         totalRefunds: 0,
+        netCharges: 0,
+        netPaid: 0,
         balance: 0,
       };
     }
