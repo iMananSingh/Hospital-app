@@ -4843,6 +4843,43 @@ export class SqliteStorage implements IStorage {
       }
     });
 
+    // Get all refunds for this patient to calculate refunded amounts per billable item
+    const refunds = db
+      .select()
+      .from(schema.patientRefunds)
+      .where(eq(schema.patientRefunds.patientId, patientId))
+      .all();
+
+    // Calculate total refunds per billable item (using billableItemType + billableItemId)
+    const refundAmounts = new Map<string, number>();
+    refunds.forEach((refund) => {
+      if (refund.billableItemType && refund.billableItemId) {
+        // Create a key that matches the payment reason format
+        let key = "";
+        switch (refund.billableItemType) {
+          case "admission":
+            key = `Admission - ${refund.billableItemId}`;
+            break;
+          case "pathology":
+            key = `Pathology - ${refund.billableItemId}`;
+            break;
+          case "service":
+            key = `Service - ${refund.billableItemId}`;
+            break;
+          case "opd_visit":
+            key = `OPD Visit - ${refund.billableItemId}`;
+            break;
+          case "admission_service":
+            key = `Admission Service - ${refund.billableItemId}`;
+            break;
+          default:
+            key = refund.billableItemId;
+        }
+        const current = refundAmounts.get(key) || 0;
+        refundAmounts.set(key, current + (refund.amount || 0));
+      }
+    });
+
     // 1. Get all admissions
     const admissions = db
       .select({
@@ -4875,11 +4912,18 @@ export class SqliteStorage implements IStorage {
       const amount = (admission.dailyCost || 0) * stayDays;
       const paidAmount = paidAmounts.get(itemKey) || 0;
       const discountAmount = discountAmounts.get(itemKey) || 0;
-      // Pending = Amount - Discount - Paid
-      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      const refundedAmount = refundAmounts.get(itemKey) || 0;
+      // Net paid = total payments - refunds
+      const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
+      // Pending = Amount - Discount - Net Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - netPaidAmount);
       // Max additional discount = Amount - existing discounts (can't discount more than original amount)
       const maxDiscountable = Math.max(0, amount - discountAmount);
-      const isFullyPaid = pendingAmount === 0;
+      // Max refundable = net paid amount (can't refund more than what's been paid after refunds)
+      const maxRefundable = netPaidAmount;
+      // Check if fully refunded (all payments have been refunded)
+      const isFullyRefunded = paidAmount > 0 && refundedAmount >= paidAmount;
+      const isFullyPaid = pendingAmount === 0 && !isFullyRefunded;
 
       billableItems.push({
         type: "admission",
@@ -4890,9 +4934,13 @@ export class SqliteStorage implements IStorage {
         amount,
         paidAmount,
         discountAmount,
+        refundedAmount,
+        netPaidAmount,
         pendingAmount,
         maxDiscountable,
+        maxRefundable,
         isFullyPaid,
+        isFullyRefunded,
         details: {
           admissionId: admission.admissionId,
           stayDuration: stayDays,
@@ -4922,13 +4970,20 @@ export class SqliteStorage implements IStorage {
       const amount = order.totalPrice || 0;
       const paidAmount = paidAmounts.get(itemKey) || 0;
       const discountAmount = discountAmounts.get(itemKey) || 0;
-      // Pending = Amount - Discount - Paid
-      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      const refundedAmount = refundAmounts.get(itemKey) || 0;
+      // Net paid = total payments - refunds
+      const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
+      // Pending = Amount - Discount - Net Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - netPaidAmount);
       // Max additional discount = Amount - existing discounts
       const maxDiscountable = Math.max(0, amount - discountAmount);
+      // Max refundable = net paid amount
+      const maxRefundable = netPaidAmount;
+      // Check if fully refunded
+      const isFullyRefunded = paidAmount > 0 && refundedAmount >= paidAmount;
       // CRITICAL: Check order.status === 'paid' FIRST - this is the authoritative source
       // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
-      const isFullyPaid = order.status === 'paid' || pendingAmount === 0;
+      const isFullyPaid = !isFullyRefunded && (order.status === 'paid' || pendingAmount === 0);
 
       billableItems.push({
         type: "pathology",
@@ -4939,9 +4994,13 @@ export class SqliteStorage implements IStorage {
         amount,
         paidAmount,
         discountAmount,
+        refundedAmount,
+        netPaidAmount,
         pendingAmount,
         maxDiscountable,
+        maxRefundable,
         isFullyPaid,
+        isFullyRefunded,
       });
     }
 
@@ -4980,11 +5039,18 @@ export class SqliteStorage implements IStorage {
       const amount = orderData.total;
       const paidAmount = paidAmounts.get(itemKey) || 0;
       const discountAmount = discountAmounts.get(itemKey) || 0;
-      // Pending = Amount - Discount - Paid
-      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      const refundedAmount = refundAmounts.get(itemKey) || 0;
+      // Net paid = total payments - refunds
+      const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
+      // Pending = Amount - Discount - Net Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - netPaidAmount);
       // Max additional discount = Amount - existing discounts
       const maxDiscountable = Math.max(0, amount - discountAmount);
-      const isFullyPaid = pendingAmount === 0;
+      // Max refundable = net paid amount
+      const maxRefundable = netPaidAmount;
+      // Check if fully refunded
+      const isFullyRefunded = paidAmount > 0 && refundedAmount >= paidAmount;
+      const isFullyPaid = pendingAmount === 0 && !isFullyRefunded;
 
       billableItems.push({
         type: "service",
@@ -4995,9 +5061,13 @@ export class SqliteStorage implements IStorage {
         amount,
         paidAmount,
         discountAmount,
+        refundedAmount,
+        netPaidAmount,
         pendingAmount,
         maxDiscountable,
+        maxRefundable,
         isFullyPaid,
+        isFullyRefunded,
       });
     });
 
@@ -5025,11 +5095,18 @@ export class SqliteStorage implements IStorage {
       const amount = visit.consultationFee || 0;
       const paidAmount = paidAmounts.get(itemKey) || 0;
       const discountAmount = discountAmounts.get(itemKey) || 0;
-      // Pending = Amount - Discount - Paid
-      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      const refundedAmount = refundAmounts.get(itemKey) || 0;
+      // Net paid = total payments - refunds
+      const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
+      // Pending = Amount - Discount - Net Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - netPaidAmount);
       // Max additional discount = Amount - existing discounts
       const maxDiscountable = Math.max(0, amount - discountAmount);
-      const isFullyPaid = pendingAmount === 0;
+      // Max refundable = net paid amount
+      const maxRefundable = netPaidAmount;
+      // Check if fully refunded
+      const isFullyRefunded = paidAmount > 0 && refundedAmount >= paidAmount;
+      const isFullyPaid = pendingAmount === 0 && !isFullyRefunded;
 
       billableItems.push({
         type: "opd_visit",
@@ -5040,9 +5117,13 @@ export class SqliteStorage implements IStorage {
         amount,
         paidAmount,
         discountAmount,
+        refundedAmount,
+        netPaidAmount,
         pendingAmount,
         maxDiscountable,
+        maxRefundable,
         isFullyPaid,
+        isFullyRefunded,
       });
     });
 
@@ -5069,11 +5150,18 @@ export class SqliteStorage implements IStorage {
       const amount = service.calculatedAmount || service.price || 0;
       const paidAmount = paidAmounts.get(itemKey) || 0;
       const discountAmount = discountAmounts.get(itemKey) || 0;
-      // Pending = Amount - Discount - Paid
-      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      const refundedAmount = refundAmounts.get(itemKey) || 0;
+      // Net paid = total payments - refunds
+      const netPaidAmount = Math.max(0, paidAmount - refundedAmount);
+      // Pending = Amount - Discount - Net Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - netPaidAmount);
       // Max additional discount = Amount - existing discounts
       const maxDiscountable = Math.max(0, amount - discountAmount);
-      const isFullyPaid = pendingAmount === 0;
+      // Max refundable = net paid amount
+      const maxRefundable = netPaidAmount;
+      // Check if fully refunded
+      const isFullyRefunded = paidAmount > 0 && refundedAmount >= paidAmount;
+      const isFullyPaid = pendingAmount === 0 && !isFullyRefunded;
 
       billableItems.push({
         type: "admission_service",
@@ -5084,9 +5172,13 @@ export class SqliteStorage implements IStorage {
         amount,
         paidAmount,
         discountAmount,
+        refundedAmount,
+        netPaidAmount,
         pendingAmount,
         maxDiscountable,
+        maxRefundable,
         isFullyPaid,
+        isFullyRefunded,
         details: {
           admissionId: service.admissionId,
           billingType: service.billingType,
