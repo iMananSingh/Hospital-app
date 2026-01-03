@@ -510,6 +510,8 @@ async function initializeDatabase() {
         discount_type TEXT NOT NULL DEFAULT 'manual',
         reason TEXT NOT NULL,
         discount_date TEXT NOT NULL,
+        billable_item_type TEXT,
+        billable_item_id TEXT,
         approved_by TEXT NOT NULL REFERENCES users(id),
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -948,6 +950,25 @@ async function initializeDatabase() {
         ALTER TABLE patient_payments ADD COLUMN billable_id TEXT;
       `);
       console.log("Added billable_id column to patient_payments table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Add billable_item_type and billable_item_id columns to patient_discounts table
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_discounts ADD COLUMN billable_item_type TEXT;
+      `);
+      console.log("Added billable_item_type column to patient_discounts table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_discounts ADD COLUMN billable_item_id TEXT;
+      `);
+      console.log("Added billable_item_id column to patient_discounts table");
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -4741,6 +4762,43 @@ export class SqliteStorage implements IStorage {
       }
     });
 
+    // Get all discounts for this patient to calculate discount amounts per billable item
+    const discounts = db
+      .select()
+      .from(schema.patientDiscounts)
+      .where(eq(schema.patientDiscounts.patientId, patientId))
+      .all();
+
+    // Calculate total discounts per billable item (using billableItemType + billableItemId)
+    const discountAmounts = new Map<string, number>();
+    discounts.forEach((discount) => {
+      if (discount.billableItemType && discount.billableItemId) {
+        // Create a key that matches the payment reason format
+        let key = "";
+        switch (discount.billableItemType) {
+          case "admission":
+            key = `Admission - ${discount.billableItemId}`;
+            break;
+          case "pathology":
+            key = `Pathology - ${discount.billableItemId}`;
+            break;
+          case "service":
+            key = `Service - ${discount.billableItemId}`;
+            break;
+          case "opd_visit":
+            key = `OPD Visit - ${discount.billableItemId}`;
+            break;
+          case "admission_service":
+            key = `Admission Service - ${discount.billableItemId}`;
+            break;
+          default:
+            key = discount.billableItemId;
+        }
+        const current = discountAmounts.get(key) || 0;
+        discountAmounts.set(key, current + (discount.amount || 0));
+      }
+    });
+
     // 1. Get all admissions
     const admissions = db
       .select({
@@ -4757,24 +4815,28 @@ export class SqliteStorage implements IStorage {
 
     admissions.forEach((admission) => {
       const itemValue = admission.admissionId;
+      const itemKey = `Admission - ${itemValue}`;
       // Get system timezone for stay days calculation
-      let timezone = "UTC";
+      let calcTimezone = "UTC";
       try {
         const settings = db.select().from(schema.systemSettings).get();
         if (settings) {
-          timezone = (settings as any).timezone || "UTC";
+          calcTimezone = (settings as any).timezone || "UTC";
         }
       } catch (e) {
         console.error("Error fetching timezone in getPatientBillableItems:", e);
       }
       
-      const stayDays = calculateStayDays(admission.admissionDate, admission.dischargeDate, timezone);
+      const stayDays = calculateStayDays(admission.admissionDate, admission.dischargeDate, calcTimezone);
       const amount = (admission.dailyCost || 0) * stayDays;
-      const paidAmount = paidAmounts.get(`Admission - ${itemValue}`) || 0;
-      const isFullyPaid = paidAmount >= amount;
+      const paidAmount = paidAmounts.get(itemKey) || 0;
+      const discountAmount = discountAmounts.get(itemKey) || 0;
+      // Pending = Amount - Discount - Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      // Max additional discount = Amount - existing discounts (can't discount more than original amount)
+      const maxDiscountable = Math.max(0, amount - discountAmount);
+      const isFullyPaid = pendingAmount === 0;
 
-      const pendingAmount = Math.max(0, amount - paidAmount);
-      
       billableItems.push({
         type: "admission",
         id: admission.id,
@@ -4783,7 +4845,9 @@ export class SqliteStorage implements IStorage {
         date: admission.admissionDate,
         amount,
         paidAmount,
+        discountAmount,
         pendingAmount,
+        maxDiscountable,
         isFullyPaid,
         details: {
           admissionId: admission.admissionId,
@@ -4810,14 +4874,18 @@ export class SqliteStorage implements IStorage {
 
     for (const order of pathologyOrders) {
       const itemValue = order.orderId;
+      const itemKey = `Pathology - ${itemValue}`;
       const amount = order.totalPrice || 0;
-      const paidAmount = paidAmounts.get(`Pathology - ${itemValue}`) || 0;
+      const paidAmount = paidAmounts.get(itemKey) || 0;
+      const discountAmount = discountAmounts.get(itemKey) || 0;
+      // Pending = Amount - Discount - Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      // Max additional discount = Amount - existing discounts
+      const maxDiscountable = Math.max(0, amount - discountAmount);
       // CRITICAL: Check order.status === 'paid' FIRST - this is the authoritative source
       // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
-      const isFullyPaid = order.status === 'paid' || (paidAmount >= amount && amount > 0);
+      const isFullyPaid = order.status === 'paid' || pendingAmount === 0;
 
-      const pendingAmount = Math.max(0, amount - paidAmount);
-      
       billableItems.push({
         type: "pathology",
         id: order.id,
@@ -4826,7 +4894,9 @@ export class SqliteStorage implements IStorage {
         date: order.orderedDate,
         amount,
         paidAmount,
+        discountAmount,
         pendingAmount,
+        maxDiscountable,
         isFullyPaid,
       });
     }
@@ -4862,10 +4932,15 @@ export class SqliteStorage implements IStorage {
 
     serviceOrderMap.forEach((orderData, orderId) => {
       const itemValue = orderId;
+      const itemKey = `Service - ${itemValue}`;
       const amount = orderData.total;
-      const paidAmount = paidAmounts.get(`Service - ${itemValue}`) || 0;
-      const isFullyPaid = paidAmount >= amount;
-      const pendingAmount = Math.max(0, amount - paidAmount);
+      const paidAmount = paidAmounts.get(itemKey) || 0;
+      const discountAmount = discountAmounts.get(itemKey) || 0;
+      // Pending = Amount - Discount - Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      // Max additional discount = Amount - existing discounts
+      const maxDiscountable = Math.max(0, amount - discountAmount);
+      const isFullyPaid = pendingAmount === 0;
 
       billableItems.push({
         type: "service",
@@ -4875,7 +4950,9 @@ export class SqliteStorage implements IStorage {
         date: orderData.date,
         amount,
         paidAmount,
+        discountAmount,
         pendingAmount,
+        maxDiscountable,
         isFullyPaid,
       });
     });
@@ -4899,22 +4976,78 @@ export class SqliteStorage implements IStorage {
       .all();
 
     opdVisits.forEach((visit) => {
-      const itemValue = `OPD Visit - ${visit.visitId}`;
+      const itemValue = visit.visitId;
+      const itemKey = `OPD Visit - ${visit.visitId}`;
       const amount = visit.consultationFee || 0;
-      const paidAmount = paidAmounts.get(itemValue) || 0;
-      const isFullyPaid = paidAmount >= amount;
-      const pendingAmount = Math.max(0, amount - paidAmount);
+      const paidAmount = paidAmounts.get(itemKey) || 0;
+      const discountAmount = discountAmounts.get(itemKey) || 0;
+      // Pending = Amount - Discount - Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      // Max additional discount = Amount - existing discounts
+      const maxDiscountable = Math.max(0, amount - discountAmount);
+      const isFullyPaid = pendingAmount === 0;
 
       billableItems.push({
-        type: "opd",
+        type: "opd_visit",
         id: visit.id,
         label: `OPD Visit - ${visit.visitId}`,
         value: itemValue,
         date: visit.scheduledDate,
         amount,
         paidAmount,
+        discountAmount,
         pendingAmount,
+        maxDiscountable,
         isFullyPaid,
+      });
+    });
+
+    // 5. Get all admission services
+    const admissionServicesList = db
+      .select({
+        id: schema.admissionServices.id,
+        admissionId: schema.admissionServices.admissionId,
+        serviceName: schema.admissionServices.serviceName,
+        scheduledDate: schema.admissionServices.scheduledDate,
+        price: schema.admissionServices.price,
+        calculatedAmount: schema.admissionServices.calculatedAmount,
+        billingType: schema.admissionServices.billingType,
+        billingQuantity: schema.admissionServices.billingQuantity,
+      })
+      .from(schema.admissionServices)
+      .where(eq(schema.admissionServices.patientId, patientId))
+      .orderBy(desc(schema.admissionServices.scheduledDate))
+      .all();
+
+    admissionServicesList.forEach((service) => {
+      const itemValue = service.id;
+      const itemKey = `Admission Service - ${itemValue}`;
+      const amount = service.calculatedAmount || service.price || 0;
+      const paidAmount = paidAmounts.get(itemKey) || 0;
+      const discountAmount = discountAmounts.get(itemKey) || 0;
+      // Pending = Amount - Discount - Paid
+      const pendingAmount = Math.max(0, amount - discountAmount - paidAmount);
+      // Max additional discount = Amount - existing discounts
+      const maxDiscountable = Math.max(0, amount - discountAmount);
+      const isFullyPaid = pendingAmount === 0;
+
+      billableItems.push({
+        type: "admission_service",
+        id: service.id,
+        label: service.serviceName,
+        value: itemValue,
+        date: service.scheduledDate || new Date().toISOString().split('T')[0],
+        amount,
+        paidAmount,
+        discountAmount,
+        pendingAmount,
+        maxDiscountable,
+        isFullyPaid,
+        details: {
+          admissionId: service.admissionId,
+          billingType: service.billingType,
+          billingQuantity: service.billingQuantity,
+        }
       });
     });
 

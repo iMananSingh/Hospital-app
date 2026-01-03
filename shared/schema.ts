@@ -607,6 +607,8 @@ export const patientDiscounts = sqliteTable("patient_discounts", {
   discountType: text("discount_type").notNull().default("manual"), // manual, insurance, senior_citizen, employee
   reason: text("reason").notNull(),
   discountDate: text("discount_date").notNull(),
+  billableItemType: text("billable_item_type"), // opd_visit, admission, service, pathology, admission_service
+  billableItemId: text("billable_item_id"), // Reference to the specific billable item
   approvedBy: text("approved_by")
     .notNull()
     .references(() => users.id),
@@ -1004,6 +1006,8 @@ export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts)
     ),
     reason: z.string().min(1, "Discount reason is required"),
     discountDate: z.string().min(1, "Discount date is required"),
+    billableItemType: z.enum(["opd_visit", "admission", "service", "pathology", "admission_service"]).optional(),
+    billableItemId: z.string().optional(),
     approvedBy: z.string().min(1, "Approved by user ID is required"),
   });
 

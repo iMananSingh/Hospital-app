@@ -1680,6 +1680,8 @@ export default function PatientDetail() {
       amount: number;
       reason: string;
       discountType?: string;
+      billableItemType?: string;
+      billableItemId?: string;
     }) => {
       const response = await fetch(`/api/patients/${patientId}/discounts`, {
         method: "POST",
@@ -1692,6 +1694,8 @@ export default function PatientDetail() {
           reason: data.reason,
           discountType: data.discountType || "manual",
           discountDate: new Date().toISOString(),
+          billableItemType: data.billableItemType,
+          billableItemId: data.billableItemId,
         }),
       });
 
@@ -1712,9 +1716,14 @@ export default function PatientDetail() {
         queryKey: ["/api/doctors/all-earnings"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors/payments"] });
+      // Invalidate billable items to update pending amounts
+      queryClient.invalidateQueries({
+        queryKey: ["/api/patients", patientId, "billable-items"],
+      });
       setIsDiscountDialogOpen(false);
       setDiscountAmount("");
       setDiscountReason("");
+      setSelectedDiscountBillableItem("");
       toast({
         title: "Discount added successfully",
         description: "The discount has been applied.",
@@ -5983,11 +5992,30 @@ export default function PatientDetail() {
 
                 const amount = parseFloat(discountAmount);
 
+                // Find the selected billable item to get its type and validate amount
+                const selectedItem = billableItems?.find(
+                  (item: any) => item.value === selectedDiscountBillableItem,
+                );
+
                 if (amount > 0) {
+                  // Use backend-provided maxDiscountable (amount - existing discounts)
+                  const maxDiscountable = selectedItem?.maxDiscountable ?? 0;
+                  
+                  if (amount > maxDiscountable) {
+                    toast({
+                      title: "Discount Too High",
+                      description: `Maximum discountable amount is Rs.${maxDiscountable.toFixed(2)}`,
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  
                   addDiscountMutation.mutate({
                     amount: amount,
                     reason: discountReason.trim() || "Manual discount",
                     discountType: "manual",
+                    billableItemType: selectedItem?.type,
+                    billableItemId: selectedDiscountBillableItem,
                   });
                 } else {
                   toast({
