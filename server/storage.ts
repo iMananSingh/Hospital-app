@@ -42,6 +42,8 @@ import type {
   InsertPatientPayment,
   PatientDiscount,
   InsertPatientDiscount,
+  PatientRefund,
+  InsertPatientRefund,
   ServiceCategory,
   InsertServiceCategory,
   DoctorServiceRate,
@@ -2019,6 +2021,48 @@ export class SqliteStorage implements IStorage {
       console.error("Error querying patient_discounts table:", error);
       const timestamp = Date.now().toString().slice(-6);
       return `DISC-${yearMonth}-${timestamp}`;
+    }
+  }
+
+  private generateRefundId(): string {
+    const now = new Date();
+    const yy = now.getFullYear().toString().slice(-2);
+    const mm = (now.getMonth() + 1).toString().padStart(2, "0");
+    const yearMonth = `${yy}${mm}`;
+
+    try {
+      // Count refunds from current month only
+      const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1,
+      ).toISOString();
+      const endOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+      ).toISOString();
+
+      const monthlyRefunds = db
+        .select()
+        .from(schema.patientRefunds)
+        .where(
+          and(
+            gte(schema.patientRefunds.createdAt, startOfMonth),
+            lte(schema.patientRefunds.createdAt, endOfMonth),
+          ),
+        )
+        .all();
+
+      const count = monthlyRefunds.length + 1;
+      return `REF-${yearMonth}-${count.toString().padStart(5, "0")}`;
+    } catch (error) {
+      console.error("Error querying patient_refunds table:", error);
+      const timestamp = Date.now().toString().slice(-6);
+      return `REF-${yearMonth}-${timestamp}`;
     }
   }
 
@@ -5118,6 +5162,65 @@ export class SqliteStorage implements IStorage {
       .select()
       .from(schema.patientDiscounts)
       .where(eq(schema.patientDiscounts.id, id))
+      .get();
+  }
+
+  // Patient Refund Methods
+  async createPatientRefund(
+    refundData: InsertPatientRefund,
+    userId: string,
+  ): Promise<PatientRefund> {
+    const refundId = this.generateRefundId();
+
+    const created = db
+      .insert(schema.patientRefunds)
+      .values({
+        ...refundData,
+        refundId,
+        processedBy: userId,
+      })
+      .returning()
+      .get();
+
+    // Log activity
+    const patient = db
+      .select()
+      .from(schema.patients)
+      .where(eq(schema.patients.id, refundData.patientId))
+      .get();
+    this.logActivity(
+      userId,
+      "refund_processed",
+      "Refund Processed",
+      `₹${refundData.amount} refund for ${patient?.name || "Unknown Patient"}`,
+      created.id,
+      "patient_refund",
+      {
+        amount: refundData.amount,
+        reason: refundData.reason,
+        billableItemType: refundData.billableItemType,
+        billableItemId: refundData.billableItemId,
+        patientName: patient?.name,
+      },
+    );
+
+    return created;
+  }
+
+  async getPatientRefunds(patientId: string): Promise<PatientRefund[]> {
+    return db
+      .select()
+      .from(schema.patientRefunds)
+      .where(eq(schema.patientRefunds.patientId, patientId))
+      .orderBy(desc(schema.patientRefunds.refundDate))
+      .all();
+  }
+
+  async getPatientRefundById(id: string): Promise<PatientRefund | undefined> {
+    return db
+      .select()
+      .from(schema.patientRefunds)
+      .where(eq(schema.patientRefunds.id, id))
       .get();
   }
 
