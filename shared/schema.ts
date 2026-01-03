@@ -620,6 +620,31 @@ export const patientDiscounts = sqliteTable("patient_discounts", {
     .default(sql`(datetime('now'))`),
 });
 
+// Patient Refunds - For refunding paid amounts on billable items
+export const patientRefunds = sqliteTable("patient_refunds", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`(lower(hex(randomblob(16))))`),
+  refundId: text("refund_id").notNull().unique(), // REF-2024-001 format
+  patientId: text("patient_id")
+    .notNull()
+    .references(() => patients.id),
+  amount: real("amount").notNull(),
+  reason: text("reason").notNull(),
+  refundDate: text("refund_date").notNull(),
+  billableItemType: text("billable_item_type").notNull(), // opd_visit, admission, service, pathology, admission_service
+  billableItemId: text("billable_item_id").notNull(), // Reference to the specific billable item
+  processedBy: text("processed_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
 // Activities table for tracking user actions
 export const activities = sqliteTable("activities", {
   id: text("id")
@@ -1011,6 +1036,27 @@ export const insertPatientDiscountSchema = createInsertSchema(patientDiscounts)
     approvedBy: z.string().min(1, "Approved by user ID is required"),
   });
 
+export const insertPatientRefundSchema = createInsertSchema(patientRefunds)
+  .omit({
+    id: true,
+    refundId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    patientId: z.string().min(1, "Patient ID is required"),
+    amount: z.number().min(0.01, "Refund amount must be greater than 0"),
+    reason: z.string().min(1, "Refund reason is required"),
+    refundDate: z.string().min(1, "Refund date is required"),
+    billableItemType: z.enum(["opd_visit", "admission", "service", "pathology", "admission_service"], {
+      errorMap: () => ({
+        message: "Billable item type is required",
+      }),
+    }),
+    billableItemId: z.string().min(1, "Billable item ID is required"),
+    processedBy: z.string().min(1, "Processed by user ID is required"),
+  });
+
 export const insertRoomTypeSchema = createInsertSchema(roomTypes).omit({
   id: true,
   createdAt: true,
@@ -1162,6 +1208,8 @@ export type PatientPayment = typeof patientPayments.$inferSelect;
 export type InsertPatientPayment = z.infer<typeof insertPatientPaymentSchema>;
 export type PatientDiscount = typeof patientDiscounts.$inferSelect;
 export type InsertPatientDiscount = z.infer<typeof insertPatientDiscountSchema>;
+export type PatientRefund = typeof patientRefunds.$inferSelect;
+export type InsertPatientRefund = z.infer<typeof insertPatientRefundSchema>;
 export type InsertBackupLog = z.infer<typeof insertBackupLogSchema>;
 export type PathologyCategory = typeof pathologyCategories.$inferSelect;
 export type InsertPathologyCategory = z.infer<
