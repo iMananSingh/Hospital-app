@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**January 3, 2026** - Discount-to-Billable-Item Mapping
+- **Discounts Now Linked to Specific Billable Items**:
+  - Added `billableItemType` and `billableItemId` columns to `patient_discounts` table
+  - Discount dialog now requires selecting a specific billable item (admission, pathology, service, OPD visit, or admission service)
+  - Pending amount calculation: `pendingAmount = amount - discountAmount - paidAmount`
+  - Added `maxDiscountable` field to all billable items (remaining amount that can be discounted)
+  - Frontend validation prevents discounts from exceeding `maxDiscountable`
+  - Admission services now included in billable items dropdown
+  - Supported billable item types: `admission`, `pathology`, `service`, `opd_visit`, `admission_service`
+
 **January 3, 2026** - Payment Pending Amount Tracking
 - **Enhanced Payment Recording**:
   - Backend now returns `paidAmount` and `pendingAmount` for all billable items (admissions, pathology, services, OPD)
