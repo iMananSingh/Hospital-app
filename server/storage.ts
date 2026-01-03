@@ -519,6 +519,20 @@ async function initializeDatabase() {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS patient_refunds (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        refund_id TEXT NOT NULL UNIQUE,
+        patient_id TEXT NOT NULL REFERENCES patients(id),
+        amount REAL NOT NULL,
+        reason TEXT NOT NULL,
+        refund_date TEXT NOT NULL,
+        billable_item_type TEXT NOT NULL,
+        billable_item_id TEXT NOT NULL,
+        processed_by TEXT NOT NULL REFERENCES users(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
       CREATE TABLE IF NOT EXISTS schedule_events (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
         title TEXT NOT NULL,
