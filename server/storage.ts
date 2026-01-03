@@ -5321,6 +5321,7 @@ export class SqliteStorage implements IStorage {
     totalCharges: number;
     totalPaid: number;
     totalDiscounts: number;
+    totalRefunds: number;
     balance: number;
   }> {
     try {
@@ -5331,6 +5332,7 @@ export class SqliteStorage implements IStorage {
       let totalCharges = 0;
       let totalPaid = 0;
       let totalDiscounts = 0;
+      let totalRefunds = 0;
 
       // 1. OPD Consultation charges from patient_visits table
       const opdVisits = db
@@ -5516,16 +5518,33 @@ export class SqliteStorage implements IStorage {
         totalDiscounts += discount.amount || 0;
       });
 
-      const balance = totalCharges - totalPaid - totalDiscounts;
+      // 8. Get all refunds for this patient
+      const refunds = db
+        .select({
+          amount: schema.patientRefunds.amount,
+        })
+        .from(schema.patientRefunds)
+        .where(eq(schema.patientRefunds.patientId, patientId))
+        .all();
+
+      refunds.forEach((refund) => {
+        totalRefunds += refund.amount || 0;
+      });
+
+      // Balance = Charges - Discounts - (Payments - Refunds)
+      // Refunds reduce the net paid amount, so they increase the balance
+      const netPaid = totalPaid - totalRefunds;
+      const balance = totalCharges - totalDiscounts - netPaid;
 
       console.log(
-        `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
+        `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total refunds: ${totalRefunds}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
       );
 
       return {
         totalCharges,
         totalPaid,
         totalDiscounts,
+        totalRefunds,
         balance,
       };
     } catch (error) {
@@ -5534,6 +5553,7 @@ export class SqliteStorage implements IStorage {
         totalCharges: 0,
         totalPaid: 0,
         totalDiscounts: 0,
+        totalRefunds: 0,
         balance: 0,
       };
     }
