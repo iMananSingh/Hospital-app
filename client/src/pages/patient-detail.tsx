@@ -5663,7 +5663,7 @@ export default function PatientDetail() {
                             item.isFullyPaid ? "opacity-50 text-gray-400" : ""
                           }
                         >
-                          {formatBillableItemDropdownLabel(item)}
+                          {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
                     ) : (
@@ -5945,7 +5945,7 @@ export default function PatientDetail() {
                             item.isFullyPaid ? "opacity-50 text-gray-400" : ""
                           }
                         >
-                          {formatBillableItemDropdownLabel(item)}
+                          {formatBillableItemLabel(item)}
                         </SelectItem>
                       ))
                     ) : (
