@@ -1991,7 +1991,7 @@ export default function PatientDetail() {
     }
   };
 
-  // Helper function to format billable item labels
+  // Helper function to format billable item labels (for payment reason)
   const formatBillableItemLabel = (item: any) => {
     switch (item.type) {
       case "admission":
@@ -2007,6 +2007,23 @@ export default function PatientDetail() {
       default:
         return item.value; // Fallback to the raw value
     }
+  };
+
+  // Helper function to format billable item labels for dropdown (shows pending amount)
+  const formatBillableItemDropdownLabel = (item: any) => {
+    const baseLabel = formatBillableItemLabel(item);
+    const pendingAmount = item.pendingAmount ?? item.amount;
+    const totalAmount = item.amount ?? 0;
+    
+    if (item.isFullyPaid) {
+      return `${baseLabel} - Rs.${totalAmount.toFixed(2)} (Paid)`;
+    }
+    
+    if (pendingAmount < totalAmount && pendingAmount > 0) {
+      return `${baseLabel} - Rs.${pendingAmount.toFixed(2)} pending of Rs.${totalAmount.toFixed(2)}`;
+    }
+    
+    return `${baseLabel} - Rs.${totalAmount.toFixed(2)}`;
   };
 
   // Handler to open the payment dialog
@@ -5618,12 +5635,15 @@ export default function PatientDetail() {
                   value={selectedBillableItem}
                   onValueChange={(value) => {
                     setSelectedBillableItem(value);
-                    // Auto-populate amount from selected billable item
+                    // Auto-populate pending amount (not full amount) from selected billable item
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
                         (item: any) => item.value === value,
                       );
-                      if (selectedItem && selectedItem.amount) {
+                      if (selectedItem && selectedItem.pendingAmount !== undefined) {
+                        setPaymentAmount(selectedItem.pendingAmount.toString());
+                      } else if (selectedItem && selectedItem.amount) {
+                        // Fallback to full amount if pendingAmount not available
                         setPaymentAmount(selectedItem.amount.toString());
                       }
                     }
@@ -5643,7 +5663,7 @@ export default function PatientDetail() {
                             item.isFullyPaid ? "opacity-50 text-gray-400" : ""
                           }
                         >
-                          {formatBillableItemLabel(item)}
+                          {formatBillableItemDropdownLabel(item)}
                         </SelectItem>
                       ))
                     ) : (
@@ -5685,11 +5705,24 @@ export default function PatientDetail() {
                   return;
                 }
 
-                // Format reason based on selected billable item
-                let reason = "Payment";
+                // Validate payment doesn't exceed pending amount
                 const selectedItem = billableItems?.find(
                   (item: any) => item.value === selectedBillableItem,
                 );
+                if (selectedItem) {
+                  const pendingAmount = selectedItem.pendingAmount ?? selectedItem.amount;
+                  if (parseFloat(paymentAmount) > pendingAmount) {
+                    toast({
+                      title: "Amount Exceeds Pending",
+                      description: `Payment cannot exceed pending amount of Rs.${pendingAmount.toFixed(2)}`,
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                }
+
+                // Format reason based on selected billable item
+                let reason = "Payment";
                 if (selectedItem) {
                   reason = formatBillableItemLabel(selectedItem);
                 }
@@ -5912,7 +5945,7 @@ export default function PatientDetail() {
                             item.isFullyPaid ? "opacity-50 text-gray-400" : ""
                           }
                         >
-                          {formatBillableItemLabel(item)}
+                          {formatBillableItemDropdownLabel(item)}
                         </SelectItem>
                       ))
                     ) : (

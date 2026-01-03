@@ -4773,6 +4773,8 @@ export class SqliteStorage implements IStorage {
       const paidAmount = paidAmounts.get(`Admission - ${itemValue}`) || 0;
       const isFullyPaid = paidAmount >= amount;
 
+      const pendingAmount = Math.max(0, amount - paidAmount);
+      
       billableItems.push({
         type: "admission",
         id: admission.id,
@@ -4780,6 +4782,8 @@ export class SqliteStorage implements IStorage {
         value: itemValue,
         date: admission.admissionDate,
         amount,
+        paidAmount,
+        pendingAmount,
         isFullyPaid,
         details: {
           admissionId: admission.admissionId,
@@ -4812,6 +4816,8 @@ export class SqliteStorage implements IStorage {
       // When a pathology payment is made, the order status is updated to 'paid' in routes.ts
       const isFullyPaid = order.status === 'paid' || (paidAmount >= amount && amount > 0);
 
+      const pendingAmount = Math.max(0, amount - paidAmount);
+      
       billableItems.push({
         type: "pathology",
         id: order.id,
@@ -4819,6 +4825,8 @@ export class SqliteStorage implements IStorage {
         value: itemValue,
         date: order.orderedDate,
         amount,
+        paidAmount,
+        pendingAmount,
         isFullyPaid,
       });
     }
@@ -4857,6 +4865,7 @@ export class SqliteStorage implements IStorage {
       const amount = orderData.total;
       const paidAmount = paidAmounts.get(`Service - ${itemValue}`) || 0;
       const isFullyPaid = paidAmount >= amount;
+      const pendingAmount = Math.max(0, amount - paidAmount);
 
       billableItems.push({
         type: "service",
@@ -4865,6 +4874,8 @@ export class SqliteStorage implements IStorage {
         value: itemValue,
         date: orderData.date,
         amount,
+        paidAmount,
+        pendingAmount,
         isFullyPaid,
       });
     });
@@ -4892,6 +4903,7 @@ export class SqliteStorage implements IStorage {
       const amount = visit.consultationFee || 0;
       const paidAmount = paidAmounts.get(itemValue) || 0;
       const isFullyPaid = paidAmount >= amount;
+      const pendingAmount = Math.max(0, amount - paidAmount);
 
       billableItems.push({
         type: "opd",
@@ -4900,6 +4912,8 @@ export class SqliteStorage implements IStorage {
         value: itemValue,
         date: visit.scheduledDate,
         amount,
+        paidAmount,
+        pendingAmount,
         isFullyPaid,
       });
     });
