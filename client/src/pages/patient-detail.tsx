@@ -5986,7 +5986,7 @@ export default function PatientDetail() {
                   amount: amount,
                   reason: refundReason || "Manual refund",
                   billableItemType: selectedItem?.type || "",
-                  billableItemId: selectedItem?.value || "",
+                  billableItemId: selectedItem?.id || "",
                 });
               }}
               disabled={

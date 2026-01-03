@@ -10,6 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**January 3, 2026** - Patient Refund System Implementation
+- **New patient_refunds Table**:
+  - Stores refunds linked to specific billable items via `billableItemType` and `billableItemId`
+  - Auto-generated refund IDs in format REF-YYMM-XXXXX (monthly sequence)
+  - Tracks refund amount, reason, and refund date
+  - Supported billable item types: `admission`, `pathology`, `service`, `opd_visit`, `admission_service`
+
+- **Refund Logic**:
+  - Refund amounts cannot exceed `maxRefundable` (netPaidAmount = paidAmount - existingRefunds)
+  - Refunds reduce paid amounts without affecting pending amounts
+  - Fully refunded items tracked with `isFullyRefunded` flag and excluded from refundable dropdown
+  - Financial summary includes `totalRefunds` and balance calculation: Charges - Discounts - (Payments - Refunds)
+
+- **Frontend Updates**:
+  - Refund dialog auto-populates with maxRefundable amount
+  - Validation prevents refund exceeding paid amount
+  - Refund timeline cards in patient history with red styling
+  - Proper cache invalidation for refunds, billable-items, and financial-summary queries
+
 **January 3, 2026** - Discount-to-Billable-Item Mapping
 - **Discounts Now Linked to Specific Billable Items**:
   - Added `billableItemType` and `billableItemId` columns to `patient_discounts` table
