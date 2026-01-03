@@ -5545,10 +5545,12 @@ export class SqliteStorage implements IStorage {
         totalRefunds += refund.amount || 0;
       });
 
-      // Balance = Charges - Discounts - (Payments - Refunds)
-      // Refunds reduce the net paid amount, so they increase the balance
-      const netPaid = totalPaid - totalRefunds;
-      const balance = totalCharges - totalDiscounts - netPaid;
+      // Balance = Charges - Discounts - Payments
+      // Refunds are tracked separately for reporting purposes
+      // When a refund is processed, it equally reduces effective charges and effective payments
+      // so it cancels out in the balance calculation: (Charges - Refunds) - (Payments - Refunds) = Charges - Payments
+      // The balance represents what the patient still owes for services that haven't been refunded
+      const balance = totalCharges - totalDiscounts - totalPaid;
 
       console.log(
         `Financial summary - Total charges: ${totalCharges}, Total paid: ${totalPaid}, Total refunds: ${totalRefunds}, Total discounts: ${totalDiscounts}, Balance: ${balance}`,
