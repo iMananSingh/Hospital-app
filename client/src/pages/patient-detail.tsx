@@ -2124,7 +2124,6 @@ export default function PatientDetail() {
           </Button>
         }
       />
-
       <div className="px-6 pb-6 pt-4">
         {/* Patient Info Header */}
         <Card className="mb-6">
@@ -3572,7 +3571,6 @@ export default function PatientDetail() {
                           {index < allEvents.length - 1 && (
                             <div className="absolute left-6 top-full h-6 w-0.5 bg-gray-300 z-0"></div>
                           )}
-
                           {/* Event icon circle */}
                           <div
                             className={`absolute -left-3 top-4 w-6 h-6 rounded-full ${eventColors.bgColor} border-2 ${eventColors.borderColor.replace("border-l-", "border-")} flex items-center justify-center`}
@@ -3581,7 +3579,6 @@ export default function PatientDetail() {
                               className={`w-2 h-2 rounded-full ${eventColors.iconColor.replace("text-", "bg-")}`}
                             ></div>
                           </div>
-
                           <div className="p-4 pl-8">
                             <div className="flex items-center justify-between mb-3">
                               <h3
@@ -4001,9 +3998,7 @@ export default function PatientDetail() {
                                         </div>
                                         {event.data.reason && (
                                           <div>
-                                            <span className="font-medium">
-                                              Reason:
-                                            </span>{" "}
+                                            <span className="font-medium">For:</span>{" "}
                                             {event.data.reason}
                                           </div>
                                         )}
@@ -4109,7 +4104,6 @@ export default function PatientDetail() {
           </TabsContent>
         </Tabs>
       </div>
-
       {/* Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -4931,7 +4925,6 @@ export default function PatientDetail() {
           </form>
         </DialogContent>
       </Dialog>
-
       {/* Admission Dialog */}
       <Dialog
         open={isAdmissionDialogOpen}
@@ -5441,7 +5434,6 @@ export default function PatientDetail() {
           </Form>
         </DialogContent>
       </Dialog>
-
       {/* Discharge Dialog */}
       <Dialog
         open={isDischargeDialogOpen}
@@ -5595,7 +5587,6 @@ export default function PatientDetail() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Room Update Dialog */}
       <Dialog
         open={isRoomUpdateDialogOpen}
@@ -5729,7 +5720,6 @@ export default function PatientDetail() {
           </form>
         </DialogContent>
       </Dialog>
-
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent data-testid="dialog-add-payment">
@@ -5900,7 +5890,6 @@ export default function PatientDetail() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Refund Dialog */}
       <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
         <DialogContent>
@@ -6114,7 +6103,6 @@ export default function PatientDetail() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Discount Dialog */}
       <Dialog
         open={isDiscountDialogOpen}
@@ -6269,7 +6257,6 @@ export default function PatientDetail() {
           </div>
         </DialogContent>
       </Dialog>
-
       {/* Comprehensive Bill Dialog */}
       {isComprehensiveBillOpen && comprehensiveBillData && (
         <ComprehensiveBillTemplate
@@ -6282,7 +6269,6 @@ export default function PatientDetail() {
           }}
         />
       )}
-
       {/* OPD Visit Dialog */}
       <Dialog
         open={isOpdVisitDialogOpen}
