@@ -6081,9 +6081,15 @@ export default function PatientDetail() {
                   return;
                 }
 
+                const allocationReasons: Record<string, string> = {
+                  hospital: "Hospital bears full refund",
+                  doctor: "Doctor bears full refund",
+                  salary_rate: "Split as per salary rate",
+                  equal: "Split equally",
+                };
                 addRefundMutation.mutate({
                   amount: amount,
-                  reason: refundReason || "Manual refund",
+                  reason: allocationReasons[refundAllocation] || "Manual refund",
                   billableItemType: selectedItem?.type || "",
                   billableItemId: selectedItem?.value || "",
                   allocation: refundAllocation,
