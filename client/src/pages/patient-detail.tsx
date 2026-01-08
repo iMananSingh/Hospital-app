@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   User,
   Calendar,
@@ -144,6 +145,7 @@ export default function PatientDetail() {
   const [refundAmount, setRefundAmount] = useState("");
   const [refundReason, setRefundReason] = useState("");
   const [refundMethod, setRefundMethod] = useState("cash");
+  const [refundAllocation, setRefundAllocation] = useState("salary_rate");
   const [selectedRefundBillableItem, setSelectedRefundBillableItem] =
     useState("");
   const [selectedDiscountBillableItem, setSelectedDiscountBillableItem] =
@@ -1646,7 +1648,7 @@ export default function PatientDetail() {
   });
 
   const addRefundMutation = useMutation({
-    mutationFn: async (data: { amount: number; reason: string; billableItemType: string; billableItemId: string }) => {
+    mutationFn: async (data: { amount: number; reason: string; billableItemType: string; billableItemId: string; allocation: string }) => {
       const response = await fetch(`/api/patients/${patientId}/refunds`, {
         method: "POST",
         headers: {
@@ -1659,6 +1661,7 @@ export default function PatientDetail() {
           refundDate: new Date().toISOString(),
           billableItemType: data.billableItemType,
           billableItemId: data.billableItemId,
+          allocation: data.allocation,
         }),
       });
 
@@ -1686,6 +1689,7 @@ export default function PatientDetail() {
       setIsRefundDialogOpen(false);
       setRefundAmount("");
       setRefundReason("");
+      setRefundAllocation("salary_rate");
       setSelectedRefundBillableItem("");
       toast({
         title: "Refund processed successfully",
@@ -2390,6 +2394,8 @@ export default function PatientDetail() {
                       onClick={() => {
                         setRefundAmount("");
                         setRefundReason("");
+                        setRefundAllocation("salary_rate");
+                        setSelectedRefundBillableItem("");
                         setIsRefundDialogOpen(true);
                       }}
                       className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
@@ -5937,15 +5943,38 @@ export default function PatientDetail() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="refundReason">Reason</Label>
-                <Input
-                  id="refundReason"
-                  type="text"
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  placeholder="Enter refund reason (optional)"
-                  data-testid="input-refund-reason"
-                />
+                <Label>Refund Allocation *</Label>
+                <RadioGroup
+                  value={refundAllocation}
+                  onValueChange={setRefundAllocation}
+                  className="grid grid-cols-2 gap-2"
+                  data-testid="radio-refund-allocation"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="hospital" id="allocation-hospital" data-testid="radio-allocation-hospital" />
+                    <Label htmlFor="allocation-hospital" className="cursor-pointer font-normal">
+                      Hospital
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="doctor" id="allocation-doctor" data-testid="radio-allocation-doctor" />
+                    <Label htmlFor="allocation-doctor" className="cursor-pointer font-normal">
+                      Doctor
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="salary_rate" id="allocation-salary-rate" data-testid="radio-allocation-salary-rate" />
+                    <Label htmlFor="allocation-salary-rate" className="cursor-pointer font-normal">
+                      Split as per salary rate
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="equal" id="allocation-equal" data-testid="radio-allocation-equal" />
+                    <Label htmlFor="allocation-equal" className="cursor-pointer font-normal">
+                      Split equally
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
 
               <div className="space-y-2">
@@ -6068,6 +6097,7 @@ export default function PatientDetail() {
                   reason: refundReason || "Manual refund",
                   billableItemType: selectedItem?.type || "",
                   billableItemId: selectedItem?.value || "",
+                  allocation: refundAllocation,
                 });
               }}
               disabled={
