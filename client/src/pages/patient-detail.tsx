@@ -5944,12 +5944,17 @@ export default function PatientDetail() {
                 <Select
                   value={selectedRefundBillableItem}
                   onValueChange={(value) => {
-                    setSelectedRefundBillableItem(value);
-                    // Auto-populate with maxRefundable (net paid amount available for refund)
                     if (value && value !== "none") {
                       const selectedItem = billableItems?.find(
                         (item: any) => item.value === value,
                       );
+                      // Guard: don't allow selection of fully refunded items
+                      if (selectedItem?.isFullyRefunded || 
+                          (selectedItem?.maxRefundable <= 0 && selectedItem?.netPaidAmount <= 0)) {
+                        return; // Don't update state for disabled items
+                      }
+                      setSelectedRefundBillableItem(value);
+                      // Auto-populate with maxRefundable (net paid amount available for refund)
                       if (selectedItem && selectedItem.maxRefundable > 0) {
                         setRefundAmount(selectedItem.maxRefundable.toString());
                       } else if (selectedItem && selectedItem.netPaidAmount > 0) {
