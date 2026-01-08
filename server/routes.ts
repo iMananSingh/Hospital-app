@@ -3238,7 +3238,31 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       }
 
       const opdVisits = await storage.getOpdVisits(filters);
-      res.json(opdVisits);
+      
+      // Add refund status to each visit
+      const refunds = await storage.getAllRefunds();
+      const refundsByVisit = new Map<string, number>();
+      
+      for (const refund of refunds) {
+        if (refund.billableItemType === "opd_visit" && refund.billableItemId) {
+          const current = refundsByVisit.get(refund.billableItemId) || 0;
+          refundsByVisit.set(refund.billableItemId, current + (refund.amount || 0));
+        }
+      }
+      
+      // Add isFullyRefunded flag to each visit
+      const visitsWithRefundStatus = opdVisits.map((visit: any) => {
+        const refundedAmount = refundsByVisit.get(visit.visitId) || 0;
+        const consultationFee = visit.consultationFee || 0;
+        const isFullyRefunded = consultationFee > 0 && refundedAmount >= consultationFee;
+        return {
+          ...visit,
+          refundedAmount,
+          isFullyRefunded,
+        };
+      });
+      
+      res.json(visitsWithRefundStatus);
     } catch (error) {
       console.error("Error fetching OPD visits:", error);
       res.status(500).json({ error: "Internal server error" });

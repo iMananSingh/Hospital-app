@@ -1676,6 +1676,8 @@ export default function PatientDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/patients", patientId, "billable-items"],
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/opd-visits", patientId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/opd-visits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/doctors"] });
       queryClient.invalidateQueries({
         queryKey: ["/api/doctors/all-earnings"],
@@ -1820,22 +1822,39 @@ export default function PatientDetail() {
     updateRoomMutation.mutate(data);
   };
 
+  // Helper function to check if an OPD visit is fully refunded
+  const isOpdVisitFullyRefunded = (visitId: string) => {
+    if (!billableItems || billableItems.length === 0) return false;
+    const billableItem = billableItems.find(
+      (item: any) => item.type === "opd_visit" && item.value === visitId
+    );
+    return billableItem?.isFullyRefunded === true;
+  };
+
+  // Get effective status for OPD visit (shows "cancelled" if fully refunded)
+  const getOpdVisitEffectiveStatus = (visit: any) => {
+    if (isOpdVisitFullyRefunded(visit.visitId)) {
+      return "cancelled";
+    }
+    return visit.status;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "paid":
-        return "bg-blue-50 text-blue-800";
+        return "bg-blue-50 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "scheduled":
-        return "bg-orange-50 text-orange-800";
+        return "bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
       case "referred":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       case "admitted":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -2602,9 +2621,17 @@ export default function PatientDetail() {
                                 })()}
                               </TableCell>
                               <TableCell>
-                                <Badge className={getStatusColor(visit.status)}>
-                                  {visit.status}
-                                </Badge>
+                                {(() => {
+                                  const effectiveStatus = getOpdVisitEffectiveStatus(visit);
+                                  return (
+                                    <Badge className={getStatusColor(effectiveStatus)}>
+                                      {effectiveStatus}
+                                      {effectiveStatus === "cancelled" && visit.status !== "cancelled" && (
+                                        <span className="ml-1">(refunded)</span>
+                                      )}
+                                    </Badge>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell>
                                 {visit.symptoms || "No symptoms noted"}

@@ -5322,6 +5322,14 @@ export class SqliteStorage implements IStorage {
       .all();
   }
 
+  async getAllRefunds(): Promise<PatientRefund[]> {
+    return db
+      .select()
+      .from(schema.patientRefunds)
+      .orderBy(desc(schema.patientRefunds.refundDate))
+      .all();
+  }
+
   async getPatientRefundById(id: string): Promise<PatientRefund | undefined> {
     return db
       .select()

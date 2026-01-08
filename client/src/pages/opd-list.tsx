@@ -176,22 +176,30 @@ export default function OpdList() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "in-progress":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "paid":
-        return "bg-blue-50 text-blue-800";
+        return "bg-blue-50 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
       case "scheduled":
-        return "bg-[#FFEDD5] text-orange-800";
+        return "bg-[#FFEDD5] text-orange-800 dark:bg-orange-900 dark:text-orange-200";
       case "referred":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       case "admitted":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
     }
+  };
+
+  // Get effective status for display (shows "cancelled" if fully refunded)
+  const getEffectiveStatus = (visit: any) => {
+    if (visit.isFullyRefunded) {
+      return "cancelled";
+    }
+    return visit.status;
   };
 
   const totalOpdCount = opdServices.length;
@@ -392,13 +400,21 @@ export default function OpdList() {
                                   </td>
                                   <td className="pl-4 pr-0 py-3 text-sm whitespace-nowrap">{visit.patientPhone || 'N/A'}</td>
                                   <td className="py-3 text-sm whitespace-nowrap text-center pl-[0px] pr-[0px]">
-                                    <Badge 
-                                      className={`${getStatusColor(visit.status)}`}
-                                      variant="secondary"
-                                      data-testid={`status-${visit.id}`}
-                                    >
-                                      {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
-                                    </Badge>
+                                    {(() => {
+                                      const effectiveStatus = getEffectiveStatus(visit);
+                                      return (
+                                        <Badge 
+                                          className={`${getStatusColor(effectiveStatus)}`}
+                                          variant="secondary"
+                                          data-testid={`status-${visit.id}`}
+                                        >
+                                          {effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
+                                          {visit.isFullyRefunded && visit.status !== "cancelled" && (
+                                            <span className="ml-1">(refunded)</span>
+                                          )}
+                                        </Badge>
+                                      );
+                                    })()}
                                   </td>
                                   <td className="py-3 text-sm text-right whitespace-nowrap pl-[24px] pr-[24px]">
                                     ₹{visit.consultationFee ?? visit.doctorConsultationFee ?? 0}
