@@ -4839,9 +4839,9 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
         const timezone = settings?.timezone || "UTC";
         const billableItems = await storage.getPatientBillableItems(patientId, { timezone });
         
-        // Find the specific billable item
+        // Find the specific billable item by type and value (human-readable ID like VIS-2026-000018)
         const targetItem = billableItems.find((item: any) => 
-          item.type === billableItemType && item.id === billableItemId
+          item.type === billableItemType && item.value === billableItemId
         );
         
         if (!targetItem) {
