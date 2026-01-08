@@ -3615,7 +3615,7 @@ export default function PatientDetail() {
                                     case "discharge":
                                       return "Patient Discharged";
                                     case "payment":
-                                      return `Payment Received - ${event.data.paymentMethod || "Cash"}`;
+                                      return `Payment Received - ${event.data.paymentId || ""}`;
                                     case "discount":
                                       return `Discount Applied - ${event.data.discountType || "Manual"}`;
                                     case "refund":
