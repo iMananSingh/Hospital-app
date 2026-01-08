@@ -6127,18 +6127,27 @@ export default function PatientDetail() {
                   </SelectTrigger>
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
-                      billableItems.map((item: any) => (
-                        <SelectItem
-                          key={item.id}
-                          value={item.value}
-                          disabled={item.isFullyPaid}
-                          className={
-                            item.isFullyPaid ? "opacity-50 text-gray-400" : ""
-                          }
-                        >
-                          {formatBillableItemLabel(item)}
-                        </SelectItem>
-                      ))
+                      billableItems.map((item: any) => {
+                        const isDisabled = item.isFullyPaid || item.isFullyRefunded;
+                        const isRefunded = item.isFullyRefunded;
+                        return (
+                          <SelectItem
+                            key={item.id}
+                            value={item.value}
+                            disabled={isDisabled}
+                            className={
+                              isRefunded 
+                                ? "opacity-50 text-gray-400 line-through" 
+                                : item.isFullyPaid 
+                                  ? "opacity-50 text-gray-400" 
+                                  : ""
+                            }
+                          >
+                            {formatBillableItemLabel(item)}
+                            {isRefunded && " (Fully Refunded)"}
+                          </SelectItem>
+                        );
+                      })
                     ) : (
                       <SelectItem value="none" disabled>
                         No billable items available
