@@ -4834,6 +4834,41 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             .json({ message: "Billable item type and ID are required for refunds" });
         }
 
+        // Validate that the item has refundable amount remaining
+        const settings = await storage.getSystemSettings();
+        const timezone = settings?.timezone || "UTC";
+        const billableItems = await storage.getPatientBillableItems(patientId, { timezone });
+        
+        // Find the specific billable item
+        const targetItem = billableItems.find((item: any) => 
+          item.type === billableItemType && item.id === billableItemId
+        );
+        
+        if (!targetItem) {
+          return res
+            .status(400)
+            .json({ message: "Billable item not found" });
+        }
+        
+        if (targetItem.isFullyRefunded) {
+          return res
+            .status(400)
+            .json({ message: "This item has already been fully refunded and cannot be refunded again" });
+        }
+        
+        const maxRefundable = targetItem.maxRefundable || targetItem.netPaidAmount || 0;
+        if (maxRefundable <= 0) {
+          return res
+            .status(400)
+            .json({ message: "This item has no refundable amount remaining" });
+        }
+        
+        if (amount > maxRefundable) {
+          return res
+            .status(400)
+            .json({ message: `Refund amount (Rs.${amount}) exceeds maximum refundable amount (Rs.${maxRefundable})` });
+        }
+
         const refund = await storage.createPatientRefund(
           {
             patientId,

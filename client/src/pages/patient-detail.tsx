@@ -5964,15 +5964,24 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
-                        .filter((item: any) => !item.isFullyRefunded && (item.maxRefundable > 0 || item.netPaidAmount > 0))
-                        .map((item: any) => (
-                        <SelectItem
-                          key={item.id}
-                          value={item.value}
-                        >
-                          {formatBillableItemLabel(item)} (Rs.{item.maxRefundable || item.netPaidAmount || 0} refundable)
-                        </SelectItem>
-                      ))
+                        .filter((item: any) => item.paidAmount > 0 || item.maxRefundable > 0 || item.netPaidAmount > 0)
+                        .map((item: any) => {
+                          const isDisabled = item.isFullyRefunded || (item.maxRefundable <= 0 && item.netPaidAmount <= 0);
+                          return (
+                            <SelectItem
+                              key={item.id}
+                              value={item.value}
+                              disabled={isDisabled}
+                              className={isDisabled ? "opacity-50 cursor-not-allowed line-through" : ""}
+                            >
+                              {formatBillableItemLabel(item)} 
+                              {isDisabled 
+                                ? " (Already Refunded)" 
+                                : ` (Rs.${item.maxRefundable || item.netPaidAmount || 0} refundable)`
+                              }
+                            </SelectItem>
+                          );
+                        })
                     ) : (
                       <SelectItem value="none" disabled>
                         No refundable billable items available
@@ -6011,6 +6020,16 @@ export default function PatientDetail() {
                   (item: any) => item.value === selectedRefundBillableItem,
                 );
                 const maxRefundable = selectedItem?.maxRefundable || selectedItem?.netPaidAmount || 0;
+
+                // Block if item is already fully refunded
+                if (selectedItem?.isFullyRefunded || maxRefundable <= 0) {
+                  toast({
+                    title: "Already Refunded",
+                    description: "This item has already been fully refunded.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
 
                 if (amount <= 0) {
                   toast({
