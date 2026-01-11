@@ -10,6 +10,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**January 11, 2026** - Service-Level Refund Allocation
+- **Service Line Selection for Multi-Line Service Orders**:
+  - Added `serviceLineId` column to `patient_refunds` table to track which specific service line a refund applies to
+  - Billable-items API now returns `serviceLines` array for service orders containing {id, serviceName, price, doctorId}
+  - Refund dialog displays a service line selector when a service order has multiple lines
+  - Users must select specific service line to ensure doctor earnings deductions target the correct record
+
+- **Enhanced Doctor Earnings Matching**:
+  - Updated `findDoctorEarningByBillableItem` to use `serviceLineId` for precise patient_service lookup
+  - Falls back to first service in order for legacy refunds or single-line orders
+  - Supports all four refund allocation types: Hospital (100%), Doctor (100%), Salary Rate %, Equal (50/50)
+
+- **Frontend Updates**:
+  - Service line selector appears conditionally for orders with 2+ services
+  - Validation requires service line selection before processing refund
+  - Proper state reset when dialog closes or billable item changes
+
 **January 3, 2026** - Patient Refund System Implementation
 - **New patient_refunds Table**:
   - Stores refunds linked to specific billable items via `billableItemType` and `billableItemId`
