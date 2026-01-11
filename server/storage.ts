@@ -599,8 +599,13 @@ async function initializeDatabase() {
         earning_id TEXT NOT NULL UNIQUE,
         doctor_id TEXT NOT NULL REFERENCES doctors(id),
         patient_id TEXT NOT NULL REFERENCES patients(id),
-        service_id TEXT NOT NULL REFERENCES services(id),
+        service_id TEXT REFERENCES services(id),
         patient_service_id TEXT REFERENCES patient_services(id),
+        visit_id TEXT,
+        pathology_order_id TEXT,
+        admission_id TEXT,
+        admission_service_id TEXT,
+        refund_id TEXT,
         service_name TEXT NOT NULL,
         service_category TEXT NOT NULL,
         service_date TEXT NOT NULL,
@@ -608,6 +613,8 @@ async function initializeDatabase() {
         rate_amount REAL NOT NULL,
         service_price REAL NOT NULL,
         earned_amount REAL NOT NULL,
+        refunded_amount REAL NOT NULL DEFAULT 0,
+        deducted_amount REAL NOT NULL DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'pending',
         notes TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -1093,6 +1100,34 @@ async function initializeDatabase() {
         ALTER TABLE doctor_earnings ADD COLUMN admission_service_id TEXT;
       `);
       console.log("Added admission_service_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Migration: Add refund-related columns to doctor_earnings
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN refund_id TEXT;
+      `);
+      console.log("Added refund_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN refunded_amount REAL NOT NULL DEFAULT 0;
+      `);
+      console.log("Added refunded_amount column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN deducted_amount REAL NOT NULL DEFAULT 0;
+      `);
+      console.log("Added deducted_amount column to doctor_earnings table");
     } catch (error) {
       // Column already exists, ignore error
     }
@@ -2676,6 +2711,12 @@ export class SqliteStorage implements IStorage {
       console.log(
         `✓ Created service order earning for doctor ${firstService.doctorId} amount ₹${earnedAmount}`,
       );
+
+      // Update status of all services in the order to "paid"
+      await this.updatePatientServicesStatusByOrderId(serviceOrderId, "paid");
+      console.log(
+        `✓ Updated status to "paid" for all services in order ${serviceOrderId}`,
+      );
     } catch (error) {
       console.error("Error calculating service order earning:", error);
     }
@@ -3564,6 +3605,19 @@ export class SqliteStorage implements IStorage {
       .returning()
       .get();
     return updated;
+  }
+
+  async updatePatientServicesStatusByOrderId(
+    orderId: string,
+    status: string,
+  ): Promise<void> {
+    db.update(schema.patientServices)
+      .set({
+        status,
+        updatedAt: sql`(datetime('now'))`,
+      })
+      .where(eq(schema.patientServices.orderId, orderId))
+      .run();
   }
 
   async createService(
@@ -8280,7 +8334,7 @@ export class SqliteStorage implements IStorage {
       return earnings;
     } catch (error) {
       console.error("Error fetching doctor earnings:", error);
-      return [];
+      throw error;
     }
   }
 

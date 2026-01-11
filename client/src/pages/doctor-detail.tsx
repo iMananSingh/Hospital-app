@@ -100,6 +100,18 @@ export default function DoctorDetail() {
   // Fetch doctor details
   const { data: doctor, isLoading: isDoctorLoading } = useQuery({
     queryKey: ["/api/doctors", doctorId],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
@@ -110,12 +122,36 @@ export default function DoctorDetail() {
     refetch: refetchEarnings,
   } = useQuery({
     queryKey: ["/api/doctors", doctorId, "earnings"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/earnings`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
   // Fetch doctor salary rates
   const { data: salaryRates = [], isLoading: isRatesLoading } = useQuery({
     queryKey: ["/api/doctors", doctorId, "salary-rates"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/salary-rates`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
@@ -124,12 +160,36 @@ export default function DoctorDetail() {
     DoctorPayment[]
   >({
     queryKey: ["/api/doctors", doctorId, "payments"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/payments`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
   // Fetch doctor salary history
   const { data: salaryHistory = {} } = useQuery({
     queryKey: ["/api/doctors", doctorId, "salary-history"],
+    queryFn: async () => {
+      const response = await fetch(`/api/doctors/${doctorId}/salary-history`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    },
     enabled: !!doctorId,
   });
 
