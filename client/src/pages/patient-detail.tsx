@@ -146,6 +146,7 @@ export default function PatientDetail() {
   const [refundReason, setRefundReason] = useState("");
   const [refundMethod, setRefundMethod] = useState("cash");
   const [refundAllocation, setRefundAllocation] = useState("salary_rate");
+  const [selectedServiceLineId, setSelectedServiceLineId] = useState("");
   const [selectedRefundBillableItem, setSelectedRefundBillableItem] =
     useState("");
   const [selectedDiscountBillableItem, setSelectedDiscountBillableItem] =
@@ -1648,7 +1649,7 @@ export default function PatientDetail() {
   });
 
   const addRefundMutation = useMutation({
-    mutationFn: async (data: { amount: number; reason: string; billableItemType: string; billableItemId: string; allocation: string }) => {
+    mutationFn: async (data: { amount: number; reason: string; billableItemType: string; billableItemId: string; serviceLineId?: string; allocation: string }) => {
       const response = await fetch(`/api/patients/${patientId}/refunds`, {
         method: "POST",
         headers: {
@@ -1661,6 +1662,7 @@ export default function PatientDetail() {
           refundDate: new Date().toISOString(),
           billableItemType: data.billableItemType,
           billableItemId: data.billableItemId,
+          serviceLineId: data.serviceLineId || undefined,
           allocation: data.allocation,
         }),
       });
@@ -1691,6 +1693,7 @@ export default function PatientDetail() {
       setRefundReason("");
       setRefundAllocation("salary_rate");
       setSelectedRefundBillableItem("");
+      setSelectedServiceLineId("");
       toast({
         title: "Refund processed successfully",
         description: "The refund has been applied.",
@@ -5981,6 +5984,7 @@ export default function PatientDetail() {
                         return; // Don't update state for disabled items
                       }
                       setSelectedRefundBillableItem(value);
+                      setSelectedServiceLineId(""); // Reset service line when billable item changes
                       // Auto-populate with maxRefundable (net paid amount available for refund)
                       if (selectedItem && selectedItem.maxRefundable > 0) {
                         setRefundAmount(selectedItem.maxRefundable.toString());
@@ -6022,6 +6026,39 @@ export default function PatientDetail() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Service Line Selector - Only show for service orders with multiple lines */}
+              {(() => {
+                const selectedItem = billableItems?.find(
+                  (item: any) => item.value === selectedRefundBillableItem,
+                );
+                if (selectedItem?.type === "service" && selectedItem?.serviceLines && selectedItem.serviceLines.length > 1) {
+                  return (
+                    <div className="space-y-2">
+                      <Label htmlFor="serviceLine">Service Line *</Label>
+                      <Select
+                        value={selectedServiceLineId}
+                        onValueChange={setSelectedServiceLineId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select service line to refund *" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedItem.serviceLines.map((line: any) => (
+                            <SelectItem key={line.id} value={line.id}>
+                              {line.serviceName} - Rs.{line.price}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        This order has multiple services. Select which service line the refund applies to.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
 
@@ -6081,6 +6118,18 @@ export default function PatientDetail() {
                   return;
                 }
 
+                // For service orders with multiple lines, require service line selection
+                const hasMultipleServiceLines = selectedItem?.type === "service" && 
+                  selectedItem?.serviceLines && selectedItem.serviceLines.length > 1;
+                if (hasMultipleServiceLines && !selectedServiceLineId) {
+                  toast({
+                    title: "Missing Selection",
+                    description: "Please select which service line to refund",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+
                 const allocationReasons: Record<string, string> = {
                   hospital: "Hospital bears full refund",
                   doctor: "Doctor bears full refund",
@@ -6092,6 +6141,7 @@ export default function PatientDetail() {
                   reason: allocationReasons[refundAllocation] || "Manual refund",
                   billableItemType: selectedItem?.type || "",
                   billableItemId: selectedItem?.value || "",
+                  serviceLineId: hasMultipleServiceLines ? selectedServiceLineId : undefined,
                   allocation: refundAllocation,
                 });
               }}

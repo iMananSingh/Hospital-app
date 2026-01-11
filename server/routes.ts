@@ -4818,7 +4818,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     async (req: any, res) => {
       try {
         const { patientId } = req.params;
-        const { amount, reason, refundDate, billableItemType, billableItemId } = req.body;
+        const { amount, reason, refundDate, billableItemType, billableItemId, serviceLineId, allocation = "hospital" } = req.body;
 
         // Verify user ID exists
         if (!req.user?.id) {
@@ -4832,6 +4832,14 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           return res
             .status(400)
             .json({ message: "Billable item type and ID are required for refunds" });
+        }
+
+        // Validate allocation type
+        const validAllocations = ["hospital", "doctor", "salary_rate", "equal"];
+        if (!validAllocations.includes(allocation)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid allocation type" });
         }
 
         // Validate that the item has refundable amount remaining
@@ -4869,6 +4877,50 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             .json({ message: `Refund amount (Rs.${amount}) exceeds maximum refundable amount (Rs.${maxRefundable})` });
         }
 
+        // First, find earning info and calculate deduction before creating refund
+        let deductedFromDoctor = 0;
+        let doctorId: string | null = null;
+        let earningResult: any = null;
+        let hasEarningRecord = false;
+        let sourceDoctorId: string | null = null;
+
+        // Find existing doctor earnings for this billable item (if any)
+        if (allocation !== "hospital") {
+          earningResult = await storage.findDoctorEarningByBillableItem(billableItemType, billableItemId, serviceLineId);
+          hasEarningRecord = earningResult && earningResult.id;
+          sourceDoctorId = earningResult?.sourceDoctorId || null;
+          
+          if (hasEarningRecord && earningResult) {
+            doctorId = earningResult.doctorId;
+            
+            // Calculate deduction based on allocation type
+            switch (allocation) {
+              case "doctor":
+                deductedFromDoctor = amount;
+                break;
+              case "salary_rate":
+                if (earningResult.rateType === "percentage") {
+                  deductedFromDoctor = amount * (earningResult.rateAmount / 100);
+                } else {
+                  const proportion = earningResult.servicePrice > 0 
+                    ? earningResult.earnedAmount / earningResult.servicePrice 
+                    : 0;
+                  deductedFromDoctor = amount * proportion;
+                }
+                break;
+              case "equal":
+                deductedFromDoctor = amount * 0.5;
+                break;
+            }
+            deductedFromDoctor = Math.round(deductedFromDoctor * 100) / 100;
+          } else if ((allocation === "doctor" || allocation === "equal") && sourceDoctorId) {
+            doctorId = sourceDoctorId;
+            deductedFromDoctor = allocation === "doctor" ? amount : amount * 0.5;
+            deductedFromDoctor = Math.round(deductedFromDoctor * 100) / 100;
+          }
+        }
+
+        // Create the refund first so we have refundId for earnings update
         const refund = await storage.createPatientRefund(
           {
             patientId,
@@ -4877,10 +4929,70 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             refundDate: refundDate || new Date().toISOString(),
             billableItemType,
             billableItemId,
+            serviceLineId, // For service refunds: specific patient_service.id
+            allocation,
+            deductedFromDoctor,
+            doctorId,
             processedBy: req.user.id,
           },
           req.user.id,
         );
+
+        // Now update or create earnings with the refundId
+        if (allocation !== "hospital" && deductedFromDoctor > 0) {
+          if (hasEarningRecord && earningResult) {
+            // Update existing earning with deduction and refundId
+            await storage.updateDoctorEarningForRefund(earningResult.id, {
+              refundedAmount: (earningResult.refundedAmount || 0) + amount,
+              deductedAmount: (earningResult.deductedAmount || 0) + deductedFromDoctor,
+              refundId: refund.refundId, // Link to refund
+            });
+          } else if (sourceDoctorId) {
+            // No existing earning - create negative entry linked to refund
+            const categoryMap: Record<string, string> = {
+              "opd_visit": "opd",
+              "service": "services",
+              "pathology": "pathology",
+              "admission": "admission",
+              "admission_service": "admission",
+            };
+            const serviceCategory = categoryMap[billableItemType] || billableItemType;
+            
+            // Prepare foreign key references based on billable type
+            const sourceRecordId = earningResult?.sourceRecordId;
+            const fkRefs: Record<string, any> = {};
+            if (sourceRecordId) {
+              switch (billableItemType) {
+                case "opd_visit": fkRefs.visitId = sourceRecordId; break;
+                case "service": fkRefs.patientServiceId = sourceRecordId; break;
+                case "pathology": fkRefs.pathologyOrderId = sourceRecordId; break;
+                case "admission": fkRefs.admissionId = sourceRecordId; break;
+                case "admission_service": fkRefs.admissionServiceId = sourceRecordId; break;
+              }
+            }
+            
+            await storage.createDoctorEarning({
+              doctorId: sourceDoctorId,
+              patientId,
+              serviceId: null as any,
+              patientServiceId: fkRefs.patientServiceId || null,
+              refundId: refund.refundId, // Link to refund
+              serviceName: "Refund Adjustment",
+              serviceCategory,
+              serviceDate: new Date().toISOString().split("T")[0],
+              rateType: "amount",
+              rateAmount: deductedFromDoctor,
+              servicePrice: amount,
+              earnedAmount: -deductedFromDoctor,
+              refundedAmount: amount,
+              deductedAmount: deductedFromDoctor,
+              status: "pending",
+              notes: `Refund deduction for ${billableItemId}: ${reason}`,
+              // Add additional FK refs
+              ...fkRefs,
+            }, req.user.id);
+          }
+        }
 
         // Create audit log
         await storage.createAuditLog({

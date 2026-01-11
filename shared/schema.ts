@@ -634,6 +634,10 @@ export const patientRefunds = sqliteTable("patient_refunds", {
   refundDate: text("refund_date").notNull(),
   billableItemType: text("billable_item_type").notNull(), // opd_visit, admission, service, pathology, admission_service
   billableItemId: text("billable_item_id").notNull(), // Reference to the specific billable item
+  serviceLineId: text("service_line_id"), // For service refunds: specific patient_service.id
+  allocation: text("allocation").notNull().default("hospital"), // hospital, doctor, salary_rate, equal
+  deductedFromDoctor: real("deducted_from_doctor").notNull().default(0), // Amount deducted from doctor earnings
+  doctorId: text("doctor_id"), // Doctor affected by refund (nullable if hospital bears all)
   processedBy: text("processed_by")
     .notNull()
     .references(() => users.id),
@@ -700,12 +704,15 @@ export const doctorEarnings = sqliteTable("doctor_earnings", {
   patientId: text("patient_id")
     .notNull()
     .references(() => patients.id),
-  serviceId: text("service_id")
-    .notNull()
-    .references(() => services.id),
+  serviceId: text("service_id").references(() => services.id), // Nullable for refund adjustments
   patientServiceId: text("patient_service_id").references(
     () => patientServices.id,
   ), // Link to actual service performed
+  visitId: text("visit_id"), // Link to OPD visit for OPD earnings
+  pathologyOrderId: text("pathology_order_id"), // Link to pathology order
+  admissionId: text("admission_id"), // Link to admission
+  admissionServiceId: text("admission_service_id"), // Link to admission service
+  refundId: text("refund_id"), // Link to refund if this is a deduction entry
   serviceName: text("service_name").notNull(),
   serviceCategory: text("service_category").notNull(),
   serviceDate: text("service_date").notNull(),
@@ -713,6 +720,8 @@ export const doctorEarnings = sqliteTable("doctor_earnings", {
   rateAmount: real("rate_amount").notNull(), // The rate applied
   servicePrice: real("service_price").notNull(), // Original service price
   earnedAmount: real("earned_amount").notNull(), // Calculated earning amount
+  refundedAmount: real("refunded_amount").notNull().default(0), // Amount refunded from this earning
+  deductedAmount: real("deducted_amount").notNull().default(0), // Amount deducted from doctor due to refund
   status: text("status").notNull().default("pending"), // pending, paid
   notes: text("notes"),
   createdAt: text("created_at")
@@ -1054,6 +1063,10 @@ export const insertPatientRefundSchema = createInsertSchema(patientRefunds)
       }),
     }),
     billableItemId: z.string().min(1, "Billable item ID is required"),
+    serviceLineId: z.string().optional(), // For service refunds: specific patient_service.id
+    allocation: z.enum(["hospital", "doctor", "salary_rate", "equal"]).optional(),
+    deductedFromDoctor: z.number().optional(),
+    doctorId: z.string().nullable().optional(),
     processedBy: z.string().min(1, "Processed by user ID is required"),
   });
 
@@ -1132,14 +1145,17 @@ export const insertDoctorEarningSchema = createInsertSchema(doctorEarnings)
   .extend({
     doctorId: z.string().min(1, "Doctor ID is required"),
     patientId: z.string().min(1, "Patient ID is required"),
-    serviceId: z.string().min(1, "Service ID is required"),
+    serviceId: z.string().nullable().optional(), // Nullable for refund adjustments
+    refundId: z.string().nullable().optional(), // Link to refund if deduction entry
     serviceName: z.string().min(1, "Service name is required"),
     serviceCategory: z.string().min(1, "Service category is required"),
     serviceDate: z.string().min(1, "Service date is required"),
     rateType: z.enum(["amount", "percentage", "fixed_daily"]),
-    rateAmount: z.number().min(0, "Rate amount must be non-negative"),
+    rateAmount: z.number(),
     servicePrice: z.number().min(0, "Service price must be non-negative"),
-    earnedAmount: z.number().min(0, "Earned amount must be non-negative"),
+    earnedAmount: z.number(), // Can be negative for refund adjustments
+    refundedAmount: z.number().optional(),
+    deductedAmount: z.number().optional(),
   });
 
 export const insertDoctorPaymentSchema = createInsertSchema(doctorPayments)

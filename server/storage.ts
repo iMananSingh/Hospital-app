@@ -1038,6 +1038,53 @@ async function initializeDatabase() {
       // Don't throw - allow app to continue even if migration fails
     }
 
+    // Migration: Add FK columns to doctor_earnings for precise refund matching
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN visit_id TEXT;
+      `);
+      console.log("Added visit_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN pathology_order_id TEXT;
+      `);
+      console.log("Added pathology_order_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN admission_id TEXT;
+      `);
+      console.log("Added admission_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    try {
+      db.$client.exec(`
+        ALTER TABLE doctor_earnings ADD COLUMN admission_service_id TEXT;
+      `);
+      console.log("Added admission_service_id column to doctor_earnings table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
+    // Migration: Add serviceLineId column to patient_refunds for service-level refund tracking
+    try {
+      db.$client.exec(`
+        ALTER TABLE patient_refunds ADD COLUMN service_line_id TEXT;
+      `);
+      console.log("Added service_line_id column to patient_refunds table");
+    } catch (error) {
+      // Column already exists, ignore error
+    }
+
     // Create indexes for audit_log table for better query performance
     try {
       db.$client.exec(`
@@ -1852,6 +1899,15 @@ export interface IStorage {
   calculateDoctorEarningForVisit(
     visitId: string,
   ): Promise<DoctorEarning | null>;
+  findDoctorEarningByBillableItem(
+    billableItemType: string,
+    billableItemId: string,
+    serviceLineId?: string, // For service refunds: specific patient_service.id
+  ): Promise<(DoctorEarning & { sourceDoctorId?: string | null; sourceRecordId?: string }) | null>;
+  updateDoctorEarningForRefund(
+    earningId: string,
+    updates: { refundedAmount: number; deductedAmount: number; refundId?: string },
+  ): Promise<DoctorEarning | undefined>;
 
   // Doctor Payment Management
   getAllDoctorPayments(): Promise<DoctorPayment[]>;
@@ -5018,13 +5074,16 @@ export class SqliteStorage implements IStorage {
       });
     }
 
-    // 3. Get all service orders (grouped by orderId)
+    // 3. Get all service orders (grouped by orderId) with line details for refund allocation
     const serviceOrders = db
       .select({
+        id: schema.patientServices.id,
         orderId: schema.patientServices.orderId,
         receiptNumber: schema.patientServices.receiptNumber,
         scheduledDate: schema.patientServices.scheduledDate,
         price: schema.patientServices.price,
+        serviceName: schema.patientServices.serviceName,
+        doctorId: schema.patientServices.doctorId,
       })
       .from(schema.patientServices)
       .where(
@@ -5036,14 +5095,31 @@ export class SqliteStorage implements IStorage {
       .orderBy(desc(schema.patientServices.scheduledDate))
       .all();
 
-    const serviceOrderMap = new Map<string, { total: number; receipt?: string; date?: string }>();
+    // Group services by orderId and collect line details
+    const serviceOrderMap = new Map<string, { 
+      total: number; 
+      receipt?: string; 
+      date?: string;
+      lines: Array<{ id: string; serviceName: string; price: number; doctorId: string | null }>;
+    }>();
     serviceOrders.forEach((order) => {
       if (order.orderId) {
         if (!serviceOrderMap.has(order.orderId)) {
-          serviceOrderMap.set(order.orderId, { total: 0, receipt: order.receiptNumber, date: order.scheduledDate });
+          serviceOrderMap.set(order.orderId, { 
+            total: 0, 
+            receipt: order.receiptNumber, 
+            date: order.scheduledDate,
+            lines: [],
+          });
         }
         const current = serviceOrderMap.get(order.orderId)!;
         current.total += order.price || 0;
+        current.lines.push({
+          id: order.id,
+          serviceName: order.serviceName,
+          price: order.price || 0,
+          doctorId: order.doctorId,
+        });
       }
     });
 
@@ -5082,6 +5158,9 @@ export class SqliteStorage implements IStorage {
         maxRefundable,
         isFullyPaid,
         isFullyRefunded,
+        // Include line details for service-level refund selection
+        serviceLines: orderData.lines,
+        hasMultipleLines: orderData.lines.length > 1,
       });
     });
 
@@ -8243,6 +8322,231 @@ export class SqliteStorage implements IStorage {
       return updated;
     } catch (error) {
       console.error("Error updating doctor earning status:", error);
+      throw error;
+    }
+  }
+
+  // Find doctor earning by billable item (OPD visit, service, pathology, admission)
+  // Returns the earning record AND the doctorId from the source record
+  // Now uses direct foreign key columns for precise matching
+  async findDoctorEarningByBillableItem(
+    billableItemType: string,
+    billableItemId: string,
+    serviceLineId?: string, // For service refunds: specific patient_service.id
+  ): Promise<(DoctorEarning & { sourceDoctorId?: string | null; sourceRecordId?: string }) | null> {
+    try {
+      // billableItemId is the human-readable ID like VIS-2026-000018, SRV-2026-00001, etc.
+      
+      if (billableItemType === "opd_visit") {
+        // For OPD visits, find by visitId (direct FK lookup)
+        const visit = db
+          .select()
+          .from(schema.opdVisits)
+          .where(eq(schema.opdVisits.visitId, billableItemId))
+          .get();
+        
+        if (visit) {
+          // Try to find earning by visitId first (if column exists and has data)
+          let earning = db
+            .select()
+            .from(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.visitId, visit.id))
+            .get();
+          
+          // Fallback: match by patient, doctor, category, date for legacy data
+          if (!earning) {
+            const visitDate = visit.visitDate?.split("T")[0] || visit.visitDate;
+            earning = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, visit.patientId),
+                  eq(schema.doctorEarnings.doctorId, visit.doctorId),
+                  eq(schema.doctorEarnings.serviceCategory, "opd"),
+                  eq(schema.doctorEarnings.serviceDate, visitDate)
+                )
+              )
+              .get();
+          }
+          
+          if (earning) {
+            return { ...earning, sourceDoctorId: visit.doctorId, sourceRecordId: visit.id };
+          }
+          return { sourceDoctorId: visit.doctorId, sourceRecordId: visit.id } as any;
+        }
+      } else if (billableItemType === "service") {
+        // For services, use serviceLineId if provided for precise lookup
+        let service;
+        if (serviceLineId) {
+          // Use specific service line ID for precise matching
+          service = db
+            .select()
+            .from(schema.patientServices)
+            .where(eq(schema.patientServices.id, serviceLineId))
+            .get();
+        } else {
+          // Fallback: get first service for order (legacy behavior)
+          const services = db
+            .select()
+            .from(schema.patientServices)
+            .where(eq(schema.patientServices.orderId, billableItemId))
+            .all();
+          service = services[0];
+        }
+        
+        if (service) {
+          const earning = db
+            .select()
+            .from(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.patientServiceId, service.id))
+            .get();
+          if (earning) {
+            return { ...earning, sourceDoctorId: service.doctorId, sourceRecordId: service.id };
+          }
+          return { sourceDoctorId: service.doctorId, sourceRecordId: service.id } as any;
+        }
+      } else if (billableItemType === "pathology") {
+        // For pathology, find by pathologyOrderId (direct FK lookup)
+        const order = db
+          .select()
+          .from(schema.pathologyOrders)
+          .where(eq(schema.pathologyOrders.orderId, billableItemId))
+          .get();
+        
+        if (order) {
+          // Try to find earning by pathologyOrderId first
+          let earning = db
+            .select()
+            .from(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.pathologyOrderId, order.id))
+            .get();
+          
+          // Fallback for legacy data
+          if (!earning) {
+            const orderDate = order.orderDate?.split("T")[0] || order.orderDate;
+            earning = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, order.patientId),
+                  eq(schema.doctorEarnings.serviceCategory, "pathology"),
+                  eq(schema.doctorEarnings.serviceDate, orderDate)
+                )
+              )
+              .get();
+          }
+          
+          if (earning) {
+            return { ...earning, sourceDoctorId: order.doctorId, sourceRecordId: order.id };
+          }
+          return { sourceDoctorId: order.doctorId, sourceRecordId: order.id } as any;
+        }
+      } else if (billableItemType === "admission") {
+        // For admissions, find by admissionId (direct FK lookup)
+        const admission = db
+          .select()
+          .from(schema.admissions)
+          .where(eq(schema.admissions.admissionId, billableItemId))
+          .get();
+        
+        if (admission) {
+          // Try to find earning by admissionId first
+          let earning = db
+            .select()
+            .from(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.admissionId, admission.id))
+            .get();
+          
+          // Fallback for legacy data
+          if (!earning) {
+            const admissionDate = admission.admissionDate?.split("T")[0] || admission.admissionDate;
+            earning = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, admission.patientId),
+                  eq(schema.doctorEarnings.serviceCategory, "admission"),
+                  eq(schema.doctorEarnings.serviceDate, admissionDate)
+                )
+              )
+              .get();
+          }
+          
+          if (earning) {
+            return { ...earning, sourceDoctorId: admission.doctorId, sourceRecordId: admission.id };
+          }
+          return { sourceDoctorId: admission.doctorId, sourceRecordId: admission.id } as any;
+        }
+      } else if (billableItemType === "admission_service") {
+        // For admission services, find by admissionServiceId
+        const admissionService = db
+          .select()
+          .from(schema.admissionServices)
+          .where(eq(schema.admissionServices.id, billableItemId))
+          .get();
+        
+        if (admissionService) {
+          // Try to find earning by admissionServiceId first
+          let earning = db
+            .select()
+            .from(schema.doctorEarnings)
+            .where(eq(schema.doctorEarnings.admissionServiceId, admissionService.id))
+            .get();
+          
+          // Get the admission to find the doctorId
+          const admission = db
+            .select()
+            .from(schema.admissions)
+            .where(eq(schema.admissions.id, admissionService.admissionId))
+            .get();
+          
+          const doctorId = admission?.doctorId;
+          
+          if (earning) {
+            return { ...earning, sourceDoctorId: doctorId, sourceRecordId: admissionService.id };
+          }
+          return { sourceDoctorId: doctorId, sourceRecordId: admissionService.id } as any;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error finding doctor earning by billable item:", error);
+      return null;
+    }
+  }
+
+  // Update doctor earning for refund (add refunded and deducted amounts)
+  async updateDoctorEarningForRefund(
+    earningId: string,
+    updates: { refundedAmount: number; deductedAmount: number; refundId?: string },
+  ): Promise<DoctorEarning | undefined> {
+    try {
+      const setData: any = {
+        refundedAmount: updates.refundedAmount,
+        deductedAmount: updates.deductedAmount,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Only set refundId if provided
+      if (updates.refundId) {
+        setData.refundId = updates.refundId;
+      }
+      
+      const updated = db
+        .update(schema.doctorEarnings)
+        .set(setData)
+        .where(eq(schema.doctorEarnings.id, earningId))
+        .returning()
+        .get();
+
+      console.log(`Updated doctor earning ${earningId} for refund: refunded=${updates.refundedAmount}, deducted=${updates.deductedAmount}, refundId=${updates.refundId || 'not set'}`);
+      return updated;
+    } catch (error) {
+      console.error("Error updating doctor earning for refund:", error);
       throw error;
     }
   }
