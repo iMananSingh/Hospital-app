@@ -6034,7 +6034,12 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
-                        .filter((item: any) => item.paidAmount > 0 || item.maxRefundable > 0 || item.netPaidAmount > 0)
+                        .filter((item: any) => {
+                          // Only include items where pendingAmount is 0 (fully paid)
+                          // and avoid items that are fully refunded
+                          const pendingAmount = item.pendingAmount ?? (item.amount - (item.paidAmount || 0));
+                          return pendingAmount === 0 && !item.isFullyRefunded;
+                        })
                         .map((item: any) => {
                           const isDisabled = item.isFullyRefunded || (item.maxRefundable <= 0 && item.netPaidAmount <= 0);
                           return (
