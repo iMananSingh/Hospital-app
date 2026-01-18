@@ -6250,7 +6250,7 @@ export default function PatientDetail() {
                         return (
                           <SelectItem
                             key={item.id}
-                            value={`${item.type}-${item.value}`}
+                            value={item.value}
                             disabled={isDisabled}
                             className={
                               isRefunded 
