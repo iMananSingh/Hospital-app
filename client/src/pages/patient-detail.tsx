@@ -5826,14 +5826,15 @@ export default function PatientDetail() {
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => {
                         const isRefunded = item.isFullyRefunded;
-                        const isDisabled = item.isFullyPaid || isRefunded;
+                        const isPartiallyRefunded = (item.refundedAmount || 0) > 0 && !item.isFullyRefunded;
+                        const isDisabled = item.isFullyPaid || isRefunded || isPartiallyRefunded;
                         return (
                           <SelectItem
                             key={item.id}
                             value={item.value}
                             disabled={isDisabled}
                             className={
-                              isRefunded
+                              isRefunded || isPartiallyRefunded
                                 ? "opacity-50 text-gray-400 line-through"
                                 : item.isFullyPaid
                                   ? "opacity-50 text-gray-400"
@@ -5841,7 +5842,7 @@ export default function PatientDetail() {
                             }
                           >
                             {formatBillableItemLabel(item)}
-                            {isRefunded && " (Cancelled)"}
+                            {isRefunded ? " (Cancelled)" : isPartiallyRefunded ? " (Partially Refunded)" : ""}
                           </SelectItem>
                         );
                       })
@@ -6035,13 +6036,13 @@ export default function PatientDetail() {
                     {billableItems && billableItems.length > 0 ? (
                       billableItems
                         .filter((item: any) => {
-                          // Only include items where pendingAmount is 0 (fully paid)
+                          // Include items that have ANY paid amount (refundable)
                           // OR items that are already fully refunded (to show them as greyed out)
-                          const pendingAmount = item.pendingAmount ?? (item.amount - (item.paidAmount || 0));
-                          return pendingAmount === 0 || item.isFullyRefunded;
+                          return (item.paidAmount > 0) || item.isFullyRefunded;
                         })
                         .map((item: any) => {
-                          const isDisabled = item.isFullyRefunded || (item.maxRefundable <= 0 && item.netPaidAmount <= 0);
+                          const isDisabled = item.isFullyRefunded;
+                          const isPartiallyRefunded = (item.refundedAmount || 0) > 0 && !item.isFullyRefunded;
                           return (
                             <SelectItem
                               key={item.id}
@@ -6051,8 +6052,10 @@ export default function PatientDetail() {
                             >
                               {formatBillableItemLabel(item)} 
                               {isDisabled 
-                                ? " (Already Refunded)" 
-                                : ` (Rs.${item.maxRefundable || item.netPaidAmount || 0} refundable)`
+                                ? " (Fully Refunded)" 
+                                : isPartiallyRefunded
+                                  ? ` (Partially Refunded: Rs.${item.maxRefundable || item.netPaidAmount || 0} remaining)`
+                                  : ` (Rs.${item.maxRefundable || item.netPaidAmount || 0} refundable)`
                               }
                             </SelectItem>
                           );
@@ -6250,23 +6253,24 @@ export default function PatientDetail() {
                   <SelectContent>
                     {billableItems && billableItems.length > 0 ? (
                       billableItems.map((item: any) => {
-                        const isDisabled = item.isFullyPaid || item.isFullyRefunded;
                         const isRefunded = item.isFullyRefunded;
+                        const isPartiallyRefunded = (item.refundedAmount || 0) > 0 && !item.isFullyRefunded;
+                        const isDisabled = item.isFullyPaid || isRefunded || isPartiallyRefunded;
                         return (
                           <SelectItem
                             key={item.id}
                             value={item.value}
                             disabled={isDisabled}
                             className={
-                              isRefunded 
-                                ? "opacity-50 text-gray-400 line-through" 
-                                : item.isFullyPaid 
-                                  ? "opacity-50 text-gray-400" 
+                              isRefunded || isPartiallyRefunded
+                                ? "opacity-50 text-gray-400 line-through"
+                                : item.isFullyPaid
+                                  ? "opacity-50 text-gray-400"
                                   : ""
                             }
                           >
                             {formatBillableItemLabel(item)}
-                            {isRefunded && " (Fully Refunded)"}
+                            {isRefunded ? " (Fully Refunded)" : isPartiallyRefunded ? " (Partially Refunded)" : ""}
                           </SelectItem>
                         );
                       })
