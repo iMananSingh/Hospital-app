@@ -6306,13 +6306,13 @@ export default function PatientDetail() {
                 );
 
                 if (amount > 0) {
-                  // Use backend-provided maxDiscountable (amount - existing discounts)
-                  const maxDiscountable = selectedItem?.maxDiscountable ?? 0;
+                  // Use backend-provided pendingAmount as the maximum discountable limit
+                  const maxDiscountable = selectedItem?.pendingAmount ?? 0;
                   
                   if (amount > maxDiscountable) {
                     toast({
                       title: "Discount Too High",
-                      description: `Maximum discountable amount is Rs.${maxDiscountable.toFixed(2)}`,
+                      description: `Maximum discountable amount is Rs.${maxDiscountable.toFixed(2)} (pending balance)`,
                       variant: "destructive",
                     });
                     return;
