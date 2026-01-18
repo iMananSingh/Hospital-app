@@ -750,7 +750,7 @@ export default function PatientDetail() {
     if (isDiscountDialogOpen && selectedDiscountBillableItem && billableItems) {
       const selectedItem = billableItems.find(
         (item: any) =>
-          `${item.type}-${item.value}` === selectedDiscountBillableItem,
+          item.value === selectedDiscountBillableItem,
       );
       if (selectedItem && selectedItem.pendingAmount !== undefined) {
         setDiscountAmount(selectedItem.pendingAmount.toString());
