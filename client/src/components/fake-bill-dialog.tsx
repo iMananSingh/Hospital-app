@@ -852,11 +852,16 @@ export function FakeBillDialog({ isOpen, onClose }: FakeBillDialogProps) {
                       min="0"
                       step="0.01"
                       value={discount}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const newDiscount = parseFloat(e.target.value) || 0;
+                        const maxAllowedDiscount = Math.max(
+                          0,
+                          totalCharges - paid,
+                        ); // Ensure it's not negative
                         setDiscount(
-                          Math.max(0, parseFloat(e.target.value) || 0),
-                        )
-                      }
+                          Math.min(maxAllowedDiscount, Math.max(0, newDiscount)),
+                        );
+                      }}
                       className="mt-1"
                       data-testid="input-discount"
                     />

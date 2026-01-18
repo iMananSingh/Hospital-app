@@ -23,9 +23,10 @@ interface ReceiptTemplateProps {
     logo?: string;
   };
   onPrint?: () => void;
+  trigger?: React.ReactNode;
 }
 
-export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptTemplateProps) {
+export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint, trigger }: ReceiptTemplateProps) {
   const getReceiptTitle = (type: string, details?: Record<string, any>) => {
     switch (type) {
       case 'pathology':
@@ -135,7 +136,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     }
 
     // For OPD visits, check the raw visit data and event data
-    if (receiptData.type === "service" || receiptData.type === "opd_visit") {
+    if (receiptData.type === "service") {
       // Check rawData.visit
       receiptNum = checkBothCases(receiptData.details?.rawData?.visit, 'receiptNumber');
       if (receiptNum) {
@@ -166,7 +167,7 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
     }
 
     // For admission events, try to get from admission event data
-    if (receiptData.type === "admission_event") {
+    if (receiptData.type === "admission") {
       receiptNum = checkBothCases(receiptData.details?.rawData?.event, 'receiptNumber');
       if (receiptNum) {
         console.log('Found receipt number in rawData.event:', receiptNum);
@@ -199,7 +200,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Receipt - ${getReceiptTitle(receiptData.type, receiptData.details)}</title>
+          <meta charset="UTF-8">
+          <title>Receipt</title>
           <style>
             * {
               margin: 0;
@@ -400,14 +402,14 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
             }
 
             @page {
-              margin: 1.5in 1in 1in 1in;
-              size: A4;
+              margin: 0.3in 0.5in;
+              size: auto;
             }
 
             @media print {
               @page {
-                margin: 0;
-                size: A4;
+                margin: 0.3in 0.5in;
+                size: auto;
               }
             }
 
@@ -422,12 +424,13 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 padding: 0 !important;
                 height: auto !important;
                 background: white !important;
+                width: 100% !important;
               }
 
               /* Hide browser default headers and footers */
               @page {
-                margin: 0;
-                size: A4;
+                margin: 0.3in 0.5in;
+                size: auto;
               }
 
               html {
@@ -532,7 +535,14 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                 <span class="age-section">Age: ${getPatientAge()} yrs</span>
                 <span class="sex-section">Sex: ${getPatientGender()}</span>
                 <span class="date-section">Date: ${(() => {
-                  const date = new Date(receiptData.date);
+                  const dateStr = receiptData.date || receiptData.details?.scheduledDate || receiptData.details?.orderedDate;
+                  if (!dateStr) {
+                    return 'N/A';
+                  }
+                  const date = new Date(dateStr);
+                  if (isNaN(date.getTime())) {
+                    return 'Invalid Date';
+                  }
                   return date.toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
@@ -580,8 +590,9 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
               <table class="bill-table">
                 <thead>
                   <tr>
-                    <th style="width: 80%;">${receiptData.type === 'pathology' ? 'Tests' : 'Description'}</th>
-                    <th style="width: 20%; text-align: right !important;">Amount (₹)</th>
+                    <th style="width: 60%;">${receiptData.type === 'pathology' ? 'Tests' : 'Description'}</th>
+                    <th style="width: 15%; text-align: center !important;">Qty</th>
+                    <th style="width: 25%; text-align: right !important;">Amount (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -619,13 +630,15 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       console.log('Final tests to use:', tests);
 
                       if (tests && tests.length > 0) {
-                        return tests.map((test, index) => {
+                        return tests.map((test: any, index: number) => {
                           const testName = test.testName || test.test_name || test.name || `Lab Test ${index + 1}`;
                           const testPrice = test.price || 0;
+                          const testQty = test.quantity || 1;
                           console.log(`Test ${index + 1}: ${testName} - ₹${testPrice}`);
                           return `
                             <tr>
                               <td>${testName}</td>
+                              <td style="text-align: center !important;">${testQty}</td>
                               <td class="amount-cell" style="text-align: right !important;">₹${testPrice.toLocaleString()}</td>
                             </tr>
                           `;
@@ -633,10 +646,11 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       } else {
                         console.log('No tests found, falling back to order display');
                         // Fallback: show the pathology order as a single line item
-                        const orderName = receiptData.title || `Pathology Order ${receiptData.details?.orderId || receiptData.id}`;
+                        const orderName = receiptData.title || `Pathology Order ${(receiptData.details as any)?.orderId || receiptData.id}`;
                         return `
                           <tr>
                             <td>${orderName}</td>
+                            <td style="text-align: center !important;">1</td>
                             <td class="amount-cell" style="text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                           </tr>
                         `;
@@ -646,14 +660,21 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     // For service receipts, show individual services if available
                     if (receiptData.type === 'service' && receiptData.details?.services && Array.isArray(receiptData.details.services)) {
                       const services = receiptData.details.services;
+                      console.log('=== SERVICE RECEIPT DEBUG ===');
+                      console.log('Services array:', services);
+                      console.log('First service:', services[0]);
+                      console.log('billingQuantity values:', services.map((s: any) => ({ name: s.serviceName, billingQuantity: s.billingQuantity })));
 
                       if (services.length > 0) {
                         return services.map((service, index) => {
                           const serviceName = service.serviceName || service.name || `Service ${index + 1}`;
                           const serviceAmount = service.calculatedAmount || service.price || service.amount || 0;
+                          const serviceQty = service.billingQuantity || service.quantity || 1;
+                          console.log(`Service ${index}: ${serviceName} - quantity: ${service.quantity}, billingQuantity: ${service.billingQuantity}, using: ${serviceQty}`);
                           return `
                             <tr>
                               <td>${serviceName}</td>
+                              <td style="text-align: center !important;">${serviceQty}</td>
                               <td class="amount-cell" style="text-align: right !important;">₹${serviceAmount.toLocaleString()}</td>
                             </tr>
                           `;
@@ -664,6 +685,8 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                     // For other types or if no services available, use the title as usual
                     // Check if this is an OPD consultation and format accordingly
                     let serviceDescription = receiptData.title;
+                    let serviceQty = 1; // Default qty
+                    
                     if (receiptData.details?.category === 'OPD Consultation' ||
                         receiptData.details?.serviceType === 'opd' ||
                         receiptData.details?.serviceName === 'OPD Consultation' ||
@@ -675,30 +698,30 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
                       // For OPD consultations, show "OPD Consultation - Doctor Name"
                       const doctorName = getDoctorName();
                       serviceDescription = `OPD Consultation - ${doctorName}`;
+                    } else if (receiptData.details?.billingQuantity || receiptData.details?.quantity) {
+                      // For other services, use the billingQuantity or quantity if available
+                      serviceQty = receiptData.details.billingQuantity || receiptData.details.quantity;
                     }
 
                     return `
                       <tr>
                         <td>${serviceDescription}</td>
+                        <td style="text-align: center !important;">${serviceQty}</td>
                         <td class="amount-cell" style="text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
                       </tr>
                     `;
                   })()}
-                  <tr class="total-row">
-                    <td style="text-align: right; font-weight: bold;">Total Amount:</td>
-                    <td class="amount-cell" style="font-weight: bold; text-align: right !important;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</td>
-                  </tr>
                 </tbody>
               </table>
-            </div>
-
-            <!-- Description Section (if applicable) -->
-            ${receiptData.description && !receiptData.details?.services ? `
-              <div class="description-section">
-                <div class="description-title">Additional Information:</div>
-                <div>${receiptData.description}</div>
+              
+              <!-- Total Amount Outside Table -->
+              <div style="margin-top: 8px; display: flex; justify-content: flex-end; padding-right: 8px;">
+                <div style="display: flex; gap: 20px; align-items: center;">
+                  <span style="font-weight: bold; font-size: 16px;">Total Amount:</span>
+                  <span style="font-weight: bold; font-size: 16px; min-width: 80px; text-align: right;">₹${receiptData.amount ? receiptData.amount.toLocaleString() : '0'}</span>
+                </div>
               </div>
-            ` : ''}
+            </div>
 
             <!-- Signature Section -->
             <div class="signature-section">
@@ -727,11 +750,21 @@ export function ReceiptTemplate({ receiptData, hospitalInfo, onPrint }: ReceiptT
 
     setTimeout(() => {
       printWindow.print();
-      printWindow.close();
+      setTimeout(() => {
+        printWindow.close();
+      }, 100);
     }, 250);
 
     onPrint?.();
   };
+
+  if (trigger) {
+    return (
+      <div onClick={handlePrint}>
+        {trigger}
+      </div>
+    );
+  }
 
   return (
     <Button

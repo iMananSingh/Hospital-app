@@ -51,6 +51,8 @@ interface DoctorEarning {
   serviceCategory: string;
   serviceDate: string;
   earnedAmount: number;
+  deductedAmount: number;
+  refundedAmount: number;
   status: string;
   patientId: string;
   servicePrice: number;
@@ -384,7 +386,7 @@ export default function DoctorDetail() {
           "Total Pending Earnings",
           earnings
             .filter((e: DoctorEarning) => e.status === "pending")
-            .reduce((sum: number, e: DoctorEarning) => sum + e.earnedAmount, 0),
+            .reduce((sum: number, e: DoctorEarning) => sum + (e.earnedAmount - e.deductedAmount), 0),
         ],
         ["Total Services", earnings.length],
         [""],
@@ -495,7 +497,7 @@ export default function DoctorDetail() {
   console.log("Pending earnings:", pendingEarnings);
 
   const totalPendingEarnings = pendingEarnings.reduce(
-    (sum: number, e: DoctorEarning) => sum + e.earnedAmount,
+    (sum: number, e: DoctorEarning) => sum + (e.earnedAmount - e.deductedAmount),
     0,
   );
   console.log("Total pending amount:", totalPendingEarnings);
@@ -650,7 +652,7 @@ export default function DoctorDetail() {
                             earningDate.getFullYear() === today.getFullYear()
                           );
                         })
-                        .reduce((sum: number, earning: DoctorEarning) => sum + earning.earnedAmount, 0)
+                        .reduce((sum: number, earning: DoctorEarning) => sum + (earning.earnedAmount - earning.deductedAmount), 0)
                     )}
                   </p>
                 </div>
@@ -824,7 +826,7 @@ export default function DoctorDetail() {
                                   : formatCurrency(earning.rateAmount)}
                               </TableCell>
                               <TableCell className="font-medium text-green-600">
-                                {formatCurrency(earning.earnedAmount)}
+                                {formatCurrency(earning.earnedAmount - earning.deductedAmount)}
                               </TableCell>
                               <TableCell>
                                 <Badge

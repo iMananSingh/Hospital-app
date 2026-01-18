@@ -10,7 +10,7 @@ import {
   TestTube,
   Phone,
   Calendar,
-  Eye,
+  Printer,
   Filter,
   ChevronDown,
   ChevronRight,
@@ -18,6 +18,7 @@ import {
 import { Link } from "wouter";
 import type { PathologyOrder, Patient, Doctor } from "@shared/schema";
 import TopBar from "@/components/layout/topbar";
+import { ReceiptTemplate } from "@/components/receipt-template";
 
 export default function LabTests() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -124,10 +125,59 @@ export default function LabTests() {
     return grouped;
   }, [pathologyOrders, searchQuery, selectedDoctor, selectedStatus, selectedFromDate, selectedToDate]);
 
+  // Fetch hospital settings for logo
+  const { data: hospitalSettings } = useQuery({
+    queryKey: ["/api/settings/hospital"],
+  });
+
   const getDoctorName = (doctorId: string | null) => {
     if (!doctorId) return "External Patient";
     const doctor = doctors.find(d => d.id === doctorId);
     return doctor ? doctor.name : "Unknown Doctor";
+  };
+
+  const hospitalInfo = {
+    name: hospitalSettings?.name || 'Health Care Hospital and Diagnostic Center',
+    address: hospitalSettings?.address || 'In front of Mahabaleshwar Garden, Birthiya, Jabalpur Road, Mandla, Madhya Pradesh - 482001',
+    phone: hospitalSettings?.phone || '8886762101, 9823523698',
+    email: hospitalSettings?.email || 'hospital@healthcare.in',
+    registrationNumber: hospitalSettings?.registrationNumber || 'NH2613/JD:AL-2021',
+    logo: hospitalSettings?.logoPath || undefined,
+  };
+
+  const generateReceiptData = (orderData: any) => {
+    const order = orderData.order || orderData;
+    const tests = orderData.tests || [];
+    const patient = orderData.patient;
+    
+    console.log('=== GENERATE RECEIPT DATA DEBUG ===');
+    console.log('orderData:', orderData);
+    console.log('orderData.tests:', orderData.tests);
+    console.log('tests array:', tests);
+    console.log('tests length:', tests.length);
+    
+    return {
+      type: 'pathology' as const,
+      id: order.id,
+      title: 'Pathology Order',
+      date: order.orderedDate,
+      amount: order.totalPrice,
+      description: '',
+      patientName: patient?.name || 'Unknown',
+      patientId: patient?.patientId || '',
+      details: {
+        ...order,
+        tests: tests,
+        testName: tests.map((test: any) => test.testName).join(", "),
+        orderId: order.orderId || order.id,
+        totalPrice: order.totalPrice,
+        receiptNumber: order.receiptNumber,
+        doctorName: getDoctorName(order.doctorId),
+        patientAge: patient?.age,
+        patientGender: patient?.gender,
+        sortTimestamp: new Date(order.orderedDate).getTime(),
+      }
+    };
   };
 
   const formatDate = (dateString: string) => {
@@ -375,11 +425,19 @@ export default function LabTests() {
                                           ₹{orderData.order.totalPrice}
                                         </td>
                                         <td className="py-3 text-center whitespace-nowrap pl-[16px] pr-[16px] border-l-2" style={{ borderLeftColor: '#D6E7FE' }}>
-                                          <Link href={`/pathology`}>
-                                            <Button variant="ghost" size="icon" data-testid={`view-order-${orderData.order.id}`}>
-                                              <Eye className="w-4 h-4" />
-                                            </Button>
-                                          </Link>
+                                          <ReceiptTemplate
+                                            receiptData={generateReceiptData(orderData)}
+                                            hospitalInfo={hospitalInfo}
+                                            trigger={
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-8 w-8 p-0 flex items-center justify-center hover:bg-white border rounded"
+                                              >
+                                                <Printer className="w-4 h-4" />
+                                              </Button>
+                                            }
+                                          />
                                         </td>
                                       </tr>
                                     ))}

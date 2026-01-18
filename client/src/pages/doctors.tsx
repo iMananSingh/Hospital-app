@@ -217,7 +217,7 @@ export default function Doctors() {
               doctorName: doctor.name,
               earnings: earnings,
               totalPending: earnings.reduce(
-                (sum: number, earning: any) => sum + earning.earnedAmount,
+                (sum: number, earning: any) => sum + (earning.earnedAmount - earning.deductedAmount),
                 0,
               ),
               servicesCount: earnings.length,

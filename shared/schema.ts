@@ -704,7 +704,10 @@ export const doctorEarnings = sqliteTable("doctor_earnings", {
   patientId: text("patient_id")
     .notNull()
     .references(() => patients.id),
-  serviceId: text("service_id").references(() => services.id), // Nullable for refund adjustments
+  serviceId: text("service_id")
+    .references(() => services.id)
+    .notNull()
+    .default("REFUND"), // Default placeholder for refund adjustments
   patientServiceId: text("patient_service_id").references(
     () => patientServices.id,
   ), // Link to actual service performed

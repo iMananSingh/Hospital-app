@@ -886,7 +886,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           salaryByYearMonth[year][month] = 0;
         }
         
-        salaryByYearMonth[year][month] += earning.earnedAmount;
+        salaryByYearMonth[year][month] += earning.earnedAmount - earning.deductedAmount;
       });
       
       res.json(salaryByYearMonth);
@@ -2289,6 +2289,11 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
         const serviceData = req.body;
 
+        // Map quantity to billingQuantity if needed
+        if (serviceData.quantity && !serviceData.billingQuantity) {
+          serviceData.billingQuantity = serviceData.quantity;
+        }
+
         console.log(
           "Creating patient service with data:",
           JSON.stringify(serviceData, null, 2),
@@ -2492,6 +2497,7 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
           ...service,
           receiptNumber: receiptNumber,
           orderId: orderId, // All services in this batch share the same order ID
+          billingQuantity: service.billingQuantity || service.quantity || 1,
         }));
 
         console.log(
@@ -4817,8 +4823,11 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req: any, res) => {
       try {
+        console.log(`[REFUND-START] Refund request received: `, req.body);
         const { patientId } = req.params;
         const { amount, reason, refundDate, billableItemType, billableItemId, serviceLineId, allocation = "hospital" } = req.body;
+
+        console.log(`[REFUND] Processing for patient ${patientId}, allocation=${allocation}, amount=${amount}`);
 
         // Verify user ID exists
         if (!req.user?.id) {
@@ -4877,50 +4886,20 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             .json({ message: `Refund amount (Rs.${amount}) exceeds maximum refundable amount (Rs.${maxRefundable})` });
         }
 
-        // First, find earning info and calculate deduction before creating refund
-        let deductedFromDoctor = 0;
+        // For non-hospital allocations, find the doctor associated with the billable item
         let doctorId: string | null = null;
+        let sourceRecordId: string | null = null;
         let earningResult: any = null;
-        let hasEarningRecord = false;
-        let sourceDoctorId: string | null = null;
-
-        // Find existing doctor earnings for this billable item (if any)
+        
         if (allocation !== "hospital") {
+          console.log(`[REFUND] Looking for doctor associated with ${billableItemType}:${billableItemId}`);
           earningResult = await storage.findDoctorEarningByBillableItem(billableItemType, billableItemId, serviceLineId);
-          hasEarningRecord = earningResult && earningResult.id;
-          sourceDoctorId = earningResult?.sourceDoctorId || null;
-          
-          if (hasEarningRecord && earningResult) {
-            doctorId = earningResult.doctorId;
-            
-            // Calculate deduction based on allocation type
-            switch (allocation) {
-              case "doctor":
-                deductedFromDoctor = amount;
-                break;
-              case "salary_rate":
-                if (earningResult.rateType === "percentage") {
-                  deductedFromDoctor = amount * (earningResult.rateAmount / 100);
-                } else {
-                  const proportion = earningResult.servicePrice > 0 
-                    ? earningResult.earnedAmount / earningResult.servicePrice 
-                    : 0;
-                  deductedFromDoctor = amount * proportion;
-                }
-                break;
-              case "equal":
-                deductedFromDoctor = amount * 0.5;
-                break;
-            }
-            deductedFromDoctor = Math.round(deductedFromDoctor * 100) / 100;
-          } else if ((allocation === "doctor" || allocation === "equal") && sourceDoctorId) {
-            doctorId = sourceDoctorId;
-            deductedFromDoctor = allocation === "doctor" ? amount : amount * 0.5;
-            deductedFromDoctor = Math.round(deductedFromDoctor * 100) / 100;
-          }
+          doctorId = earningResult?.sourceDoctorId || earningResult?.doctorId || null;
+          sourceRecordId = earningResult?.sourceRecordId || null;
+          console.log(`[REFUND] Found doctorId: ${doctorId}, sourceRecordId: ${sourceRecordId}`);
         }
 
-        // Create the refund first so we have refundId for earnings update
+        // Create the refund record
         const refund = await storage.createPatientRefund(
           {
             patientId,
@@ -4929,26 +4908,67 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             refundDate: refundDate || new Date().toISOString(),
             billableItemType,
             billableItemId,
-            serviceLineId, // For service refunds: specific patient_service.id
+            serviceLineId,
             allocation,
-            deductedFromDoctor,
+            deductedFromDoctor: allocation === "doctor" ? amount : 0,
             doctorId,
             processedBy: req.user.id,
           },
           req.user.id,
         );
 
-        // Now update or create earnings with the refundId
-        if (allocation !== "hospital" && deductedFromDoctor > 0) {
-          if (hasEarningRecord && earningResult) {
-            // Update existing earning with deduction and refundId
-            await storage.updateDoctorEarningForRefund(earningResult.id, {
-              refundedAmount: (earningResult.refundedAmount || 0) + amount,
-              deductedAmount: (earningResult.deductedAmount || 0) + deductedFromDoctor,
-              refundId: refund.refundId, // Link to refund
-            });
-          } else if (sourceDoctorId) {
-            // No existing earning - create negative entry linked to refund
+        console.log(`[REFUND] Created refund ${refund.refundId}, allocation: ${allocation}, doctorId: ${doctorId}`);
+
+        // For "doctor", "equal", and "salary_rate" allocations: create a NEW negative earning entry
+        let negativeAmount = 0;
+        if (allocation === "doctor") {
+          negativeAmount = amount;
+          console.log(`[REFUND] Doctor allocation: full amount deducted from doctor`);
+        } else if (allocation === "equal") {
+          negativeAmount = amount * 0.5;
+          console.log(`[REFUND] Equal allocation: 50% deducted from doctor (${negativeAmount})`);
+        } else if (allocation === "salary_rate" && doctorId && earningResult) {
+          // salary_rate: deduction based on doctor's earning percentage
+          // Uses rate data from existing earning record - NO additional database calls
+          
+          if (earningResult.rateType === "percentage") {
+            // Direct percentage rate
+            negativeAmount = (amount * earningResult.rateAmount) / 100;
+            console.log(
+              `[REFUND] Salary rate allocation (percentage): ${earningResult.rateAmount}% of ₹${amount} = ₹${negativeAmount}`
+            );
+          } else if (earningResult.rateType === "amount") {
+            // Amount-based rate: calculate implicit percentage from earning ratio
+            const earnedAmount = earningResult.earnedAmount || 0;
+            const servicePrice = earningResult.servicePrice || 0;
+            
+            if (servicePrice > 0 && earnedAmount > 0) {
+              const earningPercentage = (earnedAmount / servicePrice) * 100;
+              negativeAmount = (amount * earningPercentage) / 100;
+              console.log(
+                `[REFUND] Salary rate allocation (amount-based): earned ₹${earnedAmount} of ₹${servicePrice} = ${earningPercentage}%, ` +
+                `refund deduction: ${earningPercentage}% of ₹${amount} = ₹${negativeAmount}`
+              );
+            } else {
+              console.log(
+                `[REFUND] Salary rate allocation: invalid servicePrice (${servicePrice}) or earnedAmount (${earnedAmount}), falling back to hospital allocation`
+              );
+            }
+          } else {
+            console.log(
+              `[REFUND] Salary rate allocation: unsupported rateType "${earningResult.rateType}", falling back to hospital allocation`
+            );
+          }
+        } else if (allocation === "salary_rate") {
+          console.log(
+            `[REFUND] Salary rate allocation: no earning data available, falling back to hospital allocation`
+          );
+        }
+
+        if (negativeAmount > 0 && doctorId) {
+          try {
+            console.log(`[REFUND] ✓ ENTERING negative earning creation block`);
+            
             const categoryMap: Record<string, string> = {
               "opd_visit": "opd",
               "service": "services",
@@ -4958,39 +4978,68 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
             };
             const serviceCategory = categoryMap[billableItemType] || billableItemType;
             
-            // Prepare foreign key references based on billable type
-            const sourceRecordId = earningResult?.sourceRecordId;
+            // Build FK references based on billable type and sourceRecordId
             const fkRefs: Record<string, any> = {};
             if (sourceRecordId) {
               switch (billableItemType) {
-                case "opd_visit": fkRefs.visitId = sourceRecordId; break;
-                case "service": fkRefs.patientServiceId = sourceRecordId; break;
-                case "pathology": fkRefs.pathologyOrderId = sourceRecordId; break;
-                case "admission": fkRefs.admissionId = sourceRecordId; break;
-                case "admission_service": fkRefs.admissionServiceId = sourceRecordId; break;
+                case "opd_visit": 
+                  fkRefs.visitId = sourceRecordId; 
+                  break;
+                case "service": 
+                  fkRefs.patientServiceId = sourceRecordId; 
+                  break;
+                case "pathology": 
+                  fkRefs.pathologyOrderId = sourceRecordId; 
+                  break;
+                case "admission": 
+                  fkRefs.admissionId = sourceRecordId; 
+                  break;
+                case "admission_service": 
+                  fkRefs.admissionServiceId = sourceRecordId; 
+                  break;
               }
             }
             
-            await storage.createDoctorEarning({
-              doctorId: sourceDoctorId,
+            console.log(`[REFUND] FK references for ${billableItemType}:`, fkRefs);
+            
+            // Get first service to use as placeholder for refund entries
+            const allServices = await storage.getServices();
+            const placeholderService = allServices?.[0];
+            const serviceId = placeholderService?.id || null;
+            
+            console.log(`[REFUND] Using serviceId: ${serviceId}`);
+            
+            // Create new negative earning entry
+            const negativeEarning = await storage.createDoctorEarning({
+              doctorId,
               patientId,
-              serviceId: null as any,
+              serviceId: serviceId as any,
               patientServiceId: fkRefs.patientServiceId || null,
-              refundId: refund.refundId, // Link to refund
-              serviceName: "Refund Adjustment",
+              visitId: fkRefs.visitId || null,
+              pathologyOrderId: fkRefs.pathologyOrderId || null,
+              admissionId: fkRefs.admissionId || null,
+              admissionServiceId: fkRefs.admissionServiceId || null,
+              refundId: refund.refundId,
+              serviceName: "Refund - Negative Adjustment",
               serviceCategory,
               serviceDate: new Date().toISOString().split("T")[0],
               rateType: "amount",
-              rateAmount: deductedFromDoctor,
+              rateAmount: negativeAmount,
               servicePrice: amount,
-              earnedAmount: -deductedFromDoctor,
+              earnedAmount: -negativeAmount,  // NEGATIVE - this is the net deduction
               refundedAmount: amount,
-              deductedAmount: deductedFromDoctor,
+              deductedAmount: 0,  // Deduction is already in earnedAmount, so don't double-count
               status: "pending",
               notes: `Refund deduction for ${billableItemId}: ${reason}`,
-              // Add additional FK refs
-              ...fkRefs,
-            }, req.user.id);
+            });
+            
+            console.log(`[REFUND] ✓ Created negative earning entry with earnedAmount: -${negativeAmount}, earningId: ${negativeEarning.earningId}`);
+          } catch (earningError: any) {
+            console.error(`[REFUND] ✗ Error creating negative earning:`, earningError);
+            console.error(`[REFUND] Error message:`, earningError.message);
+            console.error(`[REFUND] Error stack:`, earningError.stack);
+            // Don't fail the refund if earning creation fails - log and continue
+            console.error(`[REFUND] Refund was created (${refund.refundId}) but earning creation failed`);
           }
         }
 

@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import { sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { calculateStayDays, calculate24HourPeriods } from "@shared/schema";
 import type {
@@ -2432,6 +2433,7 @@ export class SqliteStorage implements IStorage {
         patientId: patientVisit.patientId,
         serviceId: "opd-consultation",
         patientServiceId: null,
+        visitId: patientVisit.id, // Add visitId for proper linking
         serviceName: "OPD Consultation",
         serviceCategory: "opd",
         serviceDate: patientVisit.scheduledDate || patientVisit.visitDate,
@@ -4006,7 +4008,31 @@ export class SqliteStorage implements IStorage {
         );
       }
 
-      return query.orderBy(desc(schema.pathologyOrders.createdAt)).all();
+      const results = query.orderBy(desc(schema.pathologyOrders.createdAt)).all();
+
+      // For each order, fetch its tests separately
+      const ordersWithTests = results.map((item: any) => {
+        try {
+          const tests = db
+            .select()
+            .from(schema.pathologyTests)
+            .where(eq(schema.pathologyTests.orderId, item.order.id))
+            .all();
+
+          return {
+            ...item,
+            tests: tests || [],
+          };
+        } catch (err) {
+          console.error(`Error fetching tests for order ${item.order.id}:`, err);
+          return {
+            ...item,
+            tests: [],
+          };
+        }
+      });
+
+      return ordersWithTests;
     } catch (error) {
       console.error("Error in getPathologyOrders:", error);
       throw error;
@@ -7270,18 +7296,20 @@ export class SqliteStorage implements IStorage {
             )
             .get(`${dateStr}%`)?.count || 0;
       } else if (serviceType === "service") {
-        count =
-          db.$client
-            .prepare(
+        // Count DISTINCT receipt numbers instead of total services
+        // This ensures each service order gets a unique receipt number, not each service
+        const result = db.$client
+          .prepare(
               `
-            SELECT COUNT(*) as count FROM patient_services
+            SELECT COUNT(DISTINCT receipt_number) as count FROM patient_services
             WHERE DATE(scheduled_date) = DATE(?)
             AND receipt_number IS NOT NULL
           `,
             )
-            .get(dateStr)?.count || 0;
+            .get(dateStr);
+        count = result?.count || 0;
         console.log(
-          `[SERVICE COUNT] Found ${count} existing service orders for ${dateStr}`,
+          `[SERVICE COUNT] Found ${count} existing distinct service orders for ${dateStr}`,
         );
       } else {
         // Default case or other service types
@@ -8411,17 +8439,21 @@ export class SqliteStorage implements IStorage {
     serviceLineId?: string, // For service refunds: specific patient_service.id
   ): Promise<(DoctorEarning & { sourceDoctorId?: string | null; sourceRecordId?: string }) | null> {
     try {
+      console.log(`[EARNING LOOKUP] Looking up ${billableItemType}:${billableItemId}, serviceLineId: ${serviceLineId}`);
       // billableItemId is the human-readable ID like VIS-2026-000018, SRV-2026-00001, etc.
       
       if (billableItemType === "opd_visit") {
         // For OPD visits, find by visitId (direct FK lookup)
         const visit = db
           .select()
-          .from(schema.opdVisits)
-          .where(eq(schema.opdVisits.visitId, billableItemId))
+          .from(schema.patientVisits)
+          .where(eq(schema.patientVisits.visitId, billableItemId))
           .get();
         
+        console.log(`[EARNING LOOKUP] OPD visit lookup for ${billableItemId}: found=${!!visit}`);
+        
         if (visit) {
+          console.log(`[EARNING LOOKUP] OPD visit found: ${visit.id}, doctorId: ${visit.doctorId}`);
           // Try to find earning by visitId first (if column exists and has data)
           let earning = db
             .select()
@@ -8429,9 +8461,12 @@ export class SqliteStorage implements IStorage {
             .where(eq(schema.doctorEarnings.visitId, visit.id))
             .get();
           
+          console.log(`[EARNING LOOKUP] Direct visitId lookup: found=${!!earning}`);
+          
           // Fallback: match by patient, doctor, category, date for legacy data
           if (!earning) {
             const visitDate = visit.visitDate?.split("T")[0] || visit.visitDate;
+            console.log(`[EARNING LOOKUP] Trying date-based lookup: patientId=${visit.patientId}, doctorId=${visit.doctorId}, date=${visitDate}`);
             earning = db
               .select()
               .from(schema.doctorEarnings)
@@ -8444,13 +8479,38 @@ export class SqliteStorage implements IStorage {
                 )
               )
               .get();
+            console.log(`[EARNING LOOKUP] Date-based lookup: found=${!!earning}`);
+          }
+          
+          // Additional fallback: match by notes containing the visitId
+          if (!earning) {
+            console.log(`[EARNING LOOKUP] Trying notes-based lookup with pattern: %Visit ${billableItemId}%`);
+            const earnings = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, visit.patientId),
+                  eq(schema.doctorEarnings.doctorId, visit.doctorId),
+                  eq(schema.doctorEarnings.serviceCategory, "opd")
+                )
+              )
+              .all();
+            console.log(`[EARNING LOOKUP] Found ${earnings.length} OPD earnings for this patient/doctor, using first match`);
+            if (earnings.length > 0) {
+              earning = earnings[0];
+              console.log(`[EARNING LOOKUP] Using first OPD earning found: ${earning.id}`);
+            }
           }
           
           if (earning) {
+            console.log(`[EARNING LOOKUP] ✓ Found earning: id=${earning.id}, earnedAmount=${earning.earnedAmount}, deductedAmount=${earning.deductedAmount}`);
             return { ...earning, sourceDoctorId: visit.doctorId, sourceRecordId: visit.id };
           }
+          console.log(`[EARNING LOOKUP] ✗ No earning found, returning sourceDoctorId=${visit.doctorId}`);
           return { sourceDoctorId: visit.doctorId, sourceRecordId: visit.id } as any;
         }
+        console.log(`[EARNING LOOKUP] ✗ Visit not found for ${billableItemId}`);
       } else if (billableItemType === "service") {
         // For services, use serviceLineId if provided for precise lookup
         let service;
@@ -8514,6 +8574,26 @@ export class SqliteStorage implements IStorage {
               .get();
           }
           
+          // Additional fallback: find any pathology earning for this patient
+          if (!earning) {
+            console.log(`[EARNING LOOKUP] Trying all-earnings fallback for pathology: patientId=${order.patientId}`);
+            const earnings = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, order.patientId),
+                  eq(schema.doctorEarnings.serviceCategory, "pathology")
+                )
+              )
+              .all();
+            console.log(`[EARNING LOOKUP] Found ${earnings.length} pathology earnings for this patient`);
+            if (earnings.length > 0) {
+              earning = earnings[0];
+              console.log(`[EARNING LOOKUP] Using first pathology earning found: ${earning.id}`);
+            }
+          }
+          
           if (earning) {
             return { ...earning, sourceDoctorId: order.doctorId, sourceRecordId: order.id };
           }
@@ -8549,6 +8629,26 @@ export class SqliteStorage implements IStorage {
                 )
               )
               .get();
+          }
+          
+          // Additional fallback: find any admission earning for this patient
+          if (!earning) {
+            console.log(`[EARNING LOOKUP] Trying all-earnings fallback for admission: patientId=${admission.patientId}`);
+            const earnings = db
+              .select()
+              .from(schema.doctorEarnings)
+              .where(
+                and(
+                  eq(schema.doctorEarnings.patientId, admission.patientId),
+                  eq(schema.doctorEarnings.serviceCategory, "admission")
+                )
+              )
+              .all();
+            console.log(`[EARNING LOOKUP] Found ${earnings.length} admission earnings for this patient`);
+            if (earnings.length > 0) {
+              earning = earnings[0];
+              console.log(`[EARNING LOOKUP] Using first admission earning found: ${earning.id}`);
+            }
           }
           
           if (earning) {

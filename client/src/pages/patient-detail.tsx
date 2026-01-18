@@ -104,7 +104,7 @@ interface Service {
   isActive?: boolean;
   billingType?: string;
   billingParameters?: string;
-  quantity?: number; // Added quantity property
+  billingQuantity?: number; // Added quantity property
 }
 
 export default function PatientDetail() {
@@ -154,7 +154,7 @@ export default function PatientDetail() {
   const [dischargeDateTime, setDischargeDateTime] = useState("");
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [customServices, setCustomServices] = useState<
-    Array<{ id: string; name: string; price: number; quantity: number }>
+    Array<{ id: string; name: string; price: number; billingQuantity: number }>
   >([]);
 
   // For Comprehensive Bill
@@ -408,6 +408,8 @@ export default function PatientDetail() {
           doctorName: event.doctorName || getDoctorName(),
           orderId: event.orderId,
           receiptNumber: event.receiptNumber,
+          // Ensure billingQuantity is passed for batch services
+          billingQuantity: event.services.reduce((sum: number, s: any) => sum + (s.billingQuantity || 1), 0),
         },
       };
     }
@@ -537,6 +539,7 @@ export default function PatientDetail() {
         doctorName: getDoctorName(),
         receiptNumber: getReceiptNumber(),
         consultationFee: eventAmount, // Ensure consultation fee is in details
+        billingQuantity: event.billingQuantity || 1, // Add billingQuantity for single service
         // For OPD visits, add explicit identifiers for receipt title detection
         ...(eventType === "opd_visit"
           ? {
@@ -559,6 +562,13 @@ export default function PatientDetail() {
             : undefined,
       },
     };
+
+    // For single services, ensure it's wrapped in a `services` array for consistency
+    if (eventType === "service") {
+      if (!baseReceiptData.details.services) {
+        baseReceiptData.details.services = [event];
+      }
+    }
 
     return baseReceiptData;
   };
@@ -735,6 +745,30 @@ export default function PatientDetail() {
     enabled: !!patientId,
   });
 
+  // Effect to populate discount amount when a billable item is selected
+  useEffect(() => {
+    if (isDiscountDialogOpen && selectedDiscountBillableItem && billableItems) {
+      const selectedItem = billableItems.find(
+        (item: any) =>
+          `${item.type}-${item.value}` === selectedDiscountBillableItem,
+      );
+      if (selectedItem && selectedItem.pendingAmount !== undefined) {
+        setDiscountAmount(selectedItem.pendingAmount.toString());
+      } else {
+        setDiscountAmount(""); // Clear if no item selected or no pending amount
+      }
+    } else if (!isDiscountDialogOpen) {
+      setDiscountAmount(""); // Clear discount amount when dialog closes
+      setDiscountReason(""); // Clear discount reason when dialog closes
+      setSelectedDiscountBillableItem(""); // Clear selected billable item when dialog closes
+    }
+  }, [
+    selectedDiscountBillableItem,
+    billableItems,
+    isDiscountDialogOpen,
+    setDiscountAmount,
+  ]);
+
   // Fetch admission events for detailed history
   const { data: admissionEventsMap = {} } = useQuery({
     queryKey: ["/api/admission-events", patientId],
@@ -810,7 +844,7 @@ export default function PatientDetail() {
       serviceName: "",
       doctorId: "",
       price: 0,
-      quantity: 1,
+      billingQuantity: 1,
       hours: 1,
       distance: 0,
       notes: "",
@@ -1041,7 +1075,7 @@ export default function PatientDetail() {
     }
   }, [
     selectedServiceType,
-    watchedServiceValues.quantity,
+    watchedServiceValues.billingQuantity,
     watchedServiceValues.hours,
     watchedServiceValues.distance,
     watchedServiceValues.price,
@@ -1053,25 +1087,25 @@ export default function PatientDetail() {
 
     let totalAmount = 0;
     let breakdown = "";
-    let quantity = 1;
+    let billingQuantity = 1;
 
     switch (selectedCatalogService.billingType) {
       case "per_instance":
-        quantity = watchedServiceValues.quantity || 1;
-        totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} instance${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
+        billingQuantity = watchedServiceValues.billingQuantity || 1;
+        totalAmount = selectedCatalogService.price * billingQuantity;
+        breakdown = `₹${selectedCatalogService.price} × ${billingQuantity} instance${billingQuantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "per_24_hours":
-        quantity = watchedServiceValues.quantity || 1;
-        totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} day${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
+        billingQuantity = watchedServiceValues.billingQuantity || 1;
+        totalAmount = selectedCatalogService.price * billingQuantity;
+        breakdown = `₹${selectedCatalogService.price} × ${billingQuantity} day${billingQuantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "per_hour":
-        quantity = watchedServiceValues.hours || 1;
-        totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} hour${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
+        billingQuantity = watchedServiceValues.hours || 1;
+        totalAmount = selectedCatalogService.price * billingQuantity;
+        breakdown = `₹${selectedCatalogService.price} × ${billingQuantity} hour${billingQuantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       case "composite":
@@ -1085,30 +1119,30 @@ export default function PatientDetail() {
         const distanceCharge = perKmRate * distance;
         totalAmount = fixedCharge + distanceCharge;
         breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ""} = ₹${totalAmount}`;
-        quantity = 1;
+        billingQuantity = 1;
         break;
 
       case "variable":
-        quantity = 1;
+        billingQuantity = 1;
         totalAmount = watchedServiceValues.price || 0; // Use the entered price from the form
         breakdown = `Variable price: ₹${totalAmount}`;
         break;
 
       case "per_date":
-        quantity = watchedServiceValues.quantity || 1;
-        totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} date${quantity > 1 ? "s" : ""} = ₹${totalAmount}`;
+        billingQuantity = watchedServiceValues.billingQuantity || 1;
+        totalAmount = selectedCatalogService.price * billingQuantity;
+        breakdown = `₹${selectedCatalogService.price} × ${billingQuantity} date${billingQuantity > 1 ? "s" : ""} = ₹${totalAmount}`;
         break;
 
       default:
-        quantity = watchedServiceValues.quantity || 1;
-        totalAmount = selectedCatalogService.price * quantity;
-        breakdown = `₹${selectedCatalogService.price} × ${quantity} = ₹${totalAmount}`;
+        billingQuantity = watchedServiceValues.billingQuantity || 1;
+        totalAmount = selectedCatalogService.price * billingQuantity;
+        breakdown = `₹${selectedCatalogService.price} × ${billingQuantity} = ₹${totalAmount}`;
     }
 
     setBillingPreview({
       totalAmount,
-      quantity,
+      billingQuantity,
       breakdown,
       billingType: selectedCatalogService.billingType,
     });
@@ -1174,6 +1208,8 @@ export default function PatientDetail() {
         receiptNumber: receiptNumber,
         // Include doctorId for all service types
         doctorId: service.doctorId,
+        // Ensure billingQuantity is passed
+        billingQuantity: service.billingQuantity || 1,
       }));
 
       const response = await fetch("/api/patient-services/batch", {
@@ -1208,7 +1244,7 @@ export default function PatientDetail() {
         serviceId: "", // Reset serviceId
         notes: "",
         price: 0,
-        quantity: 1,
+        billingQuantity: 1,
         hours: 1,
         distance: 0,
       });
@@ -1313,8 +1349,8 @@ export default function PatientDetail() {
               patientId: patientId,
               serviceType: service.category || "service",
               serviceName: service.name,
-              price: (service.price || 0) * (service.quantity || 1),
-              quantity: service.quantity || 1,
+              price: (service.price || 0) * (service.billingQuantity || 1), // Use billingQuantity
+              billingQuantity: service.billingQuantity || 1, // Use billingQuantity
               notes: data.notes,
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
@@ -1339,8 +1375,8 @@ export default function PatientDetail() {
                 patientId: patientId,
                 serviceType: "service",
                 serviceName: service.name,
-                price: service.price * service.quantity,
-                quantity: service.quantity,
+                price: service.price * service.billingQuantity,
+                billingQuantity: service.billingQuantity,
                 notes: data.notes,
                 scheduledDate: data.scheduledDate,
                 scheduledTime: data.scheduledTime,
@@ -1949,21 +1985,20 @@ export default function PatientDetail() {
     // Reset form but preserve doctor selection if it exists
     const currentDoctorId = serviceForm.getValues("doctorId");
 
-    serviceForm.reset({
-      patientId: patientId || "",
-      serviceType: serviceType,
-      serviceName: serviceType === "opd" ? "OPD Consultation" : "", // Default to OPD Consultation for OPD
-      scheduledDate: currentDate,
-      scheduledTime: timeString,
-      doctorId: currentDoctorId || "", // Preserve existing doctor selection
-      serviceId: "",
-      notes: "",
-      price: 0,
-      quantity: 1,
-      hours: 1,
-      distance: 0,
-    });
-
+          serviceForm.reset({
+            patientId: patientId || "",
+            serviceType: serviceType,
+            serviceName: serviceType === "opd" ? "OPD Consultation" : "", // Default to OPD Consultation for OPD
+            scheduledDate: currentDate,
+            scheduledTime: timeString,
+            doctorId: currentDoctorId || "", // Preserve existing doctor selection
+            serviceId: "",
+            notes: "",
+            price: 0,
+            billingQuantity: 1,
+            hours: 1,
+            distance: 0,
+          });
     // Use setTimeout to ensure state is cleared before opening
     setTimeout(() => {
       setIsServiceDialogOpen(true);
@@ -4875,21 +4910,20 @@ export default function PatientDetail() {
                   setSelectedServiceSearchQuery(""); // Clear search query on close
                   setSelectedCatalogService(null); // Reset selected service
                   setBillingPreview(null); // Reset billing preview
-                  serviceForm.reset({
-                    patientId: patientId || "",
-                    serviceType: "",
-                    serviceName: "",
-                    scheduledDate: "",
-                    scheduledTime: "",
-                    doctorId: "",
-                    serviceId: "", // Reset serviceId
-                    notes: "",
-                    price: 0,
-                    quantity: 1,
-                    hours: 1,
-                    distance: 0,
-                  });
-                }}
+                        serviceForm.reset({
+                          patientId: patientId || "",
+                          serviceType: "",
+                          serviceName: "",
+                          scheduledDate: "",
+                          scheduledTime: "",
+                          doctorId: "",
+                          serviceId: "", // Reset serviceId
+                          notes: "",
+                          price: 0,
+                          billingQuantity: 1,
+                          hours: 1,
+                          distance: 0,
+                        });                }}
                 data-testid="button-cancel-service"
               >
                 Cancel
@@ -6216,7 +6250,7 @@ export default function PatientDetail() {
                         return (
                           <SelectItem
                             key={item.id}
-                            value={item.value}
+                            value={`${item.type}-${item.value}`}
                             disabled={isDisabled}
                             className={
                               isRefunded 
