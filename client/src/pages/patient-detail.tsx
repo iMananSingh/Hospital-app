@@ -6036,9 +6036,9 @@ export default function PatientDetail() {
                       billableItems
                         .filter((item: any) => {
                           // Only include items where pendingAmount is 0 (fully paid)
-                          // and avoid items that are fully refunded
+                          // OR items that are already fully refunded (to show them as greyed out)
                           const pendingAmount = item.pendingAmount ?? (item.amount - (item.paidAmount || 0));
-                          return pendingAmount === 0 && !item.isFullyRefunded;
+                          return pendingAmount === 0 || item.isFullyRefunded;
                         })
                         .map((item: any) => {
                           const isDisabled = item.isFullyRefunded || (item.maxRefundable <= 0 && item.netPaidAmount <= 0);
