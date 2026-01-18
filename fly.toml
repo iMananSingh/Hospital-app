@@ -1,50 +1,23 @@
-# fly.toml app configuration file
+# fly.toml app configuration file generated for hospital-app-dev on 2026-01-18T21:11:25Z
+#
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = 'hmsync-newhch-mandla'
-primary_region = 'bom'
+app = 'hospital-app-dev'
+primary_region = 'ams'
 
 [build]
-
-[env]
-  NODE_ENV = 'production'
-  PORT = '8080'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
   processes = ['app']
 
-  [http_service.concurrency]
-    type = 'connections'
-    hard_limit = 250
-    soft_limit = 200
-
-[processes]
-  app = 'node dist/index.js'
-
 [[vm]]
-  size = 'shared-cpu-1x'
-  memory = '256mb'
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-
-[[mounts]]
-  source = 'data'
-  destination = '/data'
-  auto_extend_size_threshold = 80
-  auto_extend_size_increment = '1GB'
-  auto_extend_size_limit = '10GB'
-
-# Health check to ensure app is running
-[[checks]]
-  name = 'http'
-  grace_period = '30s'
-  interval = '30s'
-  method = 'GET'
-  path = '/'
-  port = 8080
-  timeout = '10s'
-  type = 'http'
+  memory_mb = 256
