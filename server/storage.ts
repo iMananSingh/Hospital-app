@@ -287,24 +287,6 @@ async function initializeDatabase() {
       console.log("Added order_id column to patient_services table");
     }
 
-    const refundColumns = sqlite.prepare("PRAGMA table_info(patient_refunds)").all();
-    const hasAllocation = refundColumns.some((col: any) => col.name === "allocation");
-    const hasDeductedFromDoctor = refundColumns.some((col: any) => col.name === "deducted_from_doctor");
-    const hasDoctorIdRefund = refundColumns.some((col: any) => col.name === "doctor_id");
-
-    if (!hasAllocation) {
-      sqlite.exec("ALTER TABLE patient_refunds ADD COLUMN allocation TEXT NOT NULL DEFAULT 'hospital';");
-      console.log("Added allocation column to patient_refunds table");
-    }
-    if (!hasDeductedFromDoctor) {
-      sqlite.exec("ALTER TABLE patient_refunds ADD COLUMN deducted_from_doctor REAL NOT NULL DEFAULT 0;");
-      console.log("Added deducted_from_doctor column to patient_refunds table");
-    }
-    if (!hasDoctorIdRefund) {
-      sqlite.exec("ALTER TABLE patient_refunds ADD COLUMN doctor_id TEXT;");
-      console.log("Added doctor_id column to patient_refunds table");
-    }
-
     sqlite.exec(`
 
       CREATE TABLE IF NOT EXISTS admissions (

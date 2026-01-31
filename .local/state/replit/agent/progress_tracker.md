@@ -176,3 +176,16 @@
 - **Issue**: Workflow failed with "sh: 1: cross-env: not found"
 - **Solution**: Installed cross-env and tsx packages via npm and restarted workflow
 - **Status**: Application running successfully on port 5000 ✓
+
+### Session Recovery - January 31, 2026 at 3:40 PM
+[x] Recovered from cross-env not found error and fixed database initialization
+- **Issue 1**: Workflow failed with "sh: 1: cross-env: not found"
+- **Issue 2**: Database initialization error - "no such table: patient_refunds"
+- **Root Cause**: Migration code for patient_refunds table was running BEFORE the table was created
+- **Solution Applied**:
+  1. Installed cross-env and tsx packages via npm
+  2. Removed premature migration code (lines 290-306 in storage.ts) that tried to ALTER patient_refunds before CREATE
+  3. Deleted old database to allow fresh creation with correct schema
+- **Files Modified**:
+  - `server/storage.ts` (removed premature patient_refunds migration block)
+- **Status**: Application running successfully on port 5000, database initialized correctly ✓
