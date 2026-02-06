@@ -108,9 +108,14 @@ if (!fs.existsSync(dbDir)) {
 
 let sqlite = new Database(dbPath);
 let db = drizzle(sqlite, { schema });
+let hasInitializedDatabase = false;
 
 // Initialize database with tables
 async function initializeDatabase() {
+  if (hasInitializedDatabase) {
+    return;
+  }
+  hasInitializedDatabase = true;
   try {
     // Create tables if they don't exist
     sqlite.exec(`
@@ -1394,6 +1399,9 @@ async function ensureRootUserSuperRole() {
 // Demo data creation function
 async function createDemoData() {
   try {
+    const isFirstInitialization =
+      db.select().from(schema.users).all().length <= 1; // Allow for root user existence
+
     // Check and create demo users (only create if they've never existed before)
     const demoUserData = [
       {
@@ -1454,38 +1462,40 @@ async function createDemoData() {
       }
     }
 
-    // Check and create demo doctor profile
-    const existingDoctor = db
-      .select()
-      .from(schema.doctors)
-      .where(eq(schema.doctors.id, "doctor-profile-id"))
-      .get();
-    if (!existingDoctor) {
-      // Ensure the doctor user exists first
-      const doctorUser = db
+    // Check and create demo doctor profile only on first initialization
+    if (isFirstInitialization) {
+      const existingDoctor = db
         .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, "doctor-user-id"))
+        .from(schema.doctors)
+        .where(eq(schema.doctors.id, "doctor-profile-id"))
         .get();
-      if (doctorUser) {
-        db.insert(schema.doctors)
-          .values({
-            id: "doctor-profile-id",
-            userId: "doctor-user-id",
-            name: "Dr. John Smith",
-            specialization: "General Medicine",
-            qualification: "MBBS, MD",
-            consultationFee: 500,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          })
-          .run();
-        console.log("Created demo doctor profile");
-      } else {
-        console.log(
-          "Skipping demo doctor profile creation - doctor user not found",
-        );
+      if (!existingDoctor) {
+        // Ensure the doctor user exists first
+        const doctorUser = db
+          .select()
+          .from(schema.users)
+          .where(eq(schema.users.id, "doctor-user-id"))
+          .get();
+        if (doctorUser) {
+          db.insert(schema.doctors)
+            .values({
+              id: "doctor-profile-id",
+              userId: "doctor-user-id",
+              name: "Dr. John Smith",
+              specialization: "General Medicine",
+              qualification: "MBBS, MD",
+              consultationFee: 500,
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })
+            .run();
+          console.log("Created demo doctor profile");
+        } else {
+          console.log(
+            "Skipping demo doctor profile creation - doctor user not found",
+          );
+        }
       }
     }
 

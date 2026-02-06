@@ -4,3 +4,9 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# SQLite databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
