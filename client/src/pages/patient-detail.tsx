@@ -105,7 +105,158 @@ interface Service {
   billingType?: string;
   billingParameters?: string;
   billingQuantity?: number; // Added quantity property
+  componentQuantities?: Record<number, number>;
+  componentSelections?: Record<number, boolean>;
+  componentOverrides?: Record<number, number>;
 }
+
+type CompositeComponent = {
+  id?: string;
+  label: string;
+  pricingType: "fixed" | "variable";
+  amount?: number;
+  unit?: string;
+  required: boolean;
+  defaultSelected: boolean;
+  description?: string;
+};
+
+const parseCompositeComponents = (
+  billingParameters: string | undefined,
+  fallbackPrice: number,
+): CompositeComponent[] => {
+  if (!billingParameters) {
+    return [
+      {
+        label: "Base Charge",
+        pricingType: "fixed",
+        amount: fallbackPrice,
+        required: true,
+        defaultSelected: true,
+      },
+      {
+        label: "Distance",
+        pricingType: "variable",
+        unit: "km",
+        amount: 0,
+        required: true,
+        defaultSelected: true,
+      },
+    ];
+  }
+
+  try {
+    const parsed = JSON.parse(billingParameters);
+    if (Array.isArray(parsed?.components)) {
+      return parsed.components.map((component: any) => {
+        const pricingType =
+          component.pricingType ?? component.type ?? "fixed";
+        const required =
+          component.required !== undefined ? component.required : true;
+        const defaultSelected =
+          component.defaultSelected !== undefined
+            ? component.defaultSelected
+            : required;
+        return {
+          id: component.id,
+          label: component.label || "Component",
+          pricingType,
+          amount:
+            component.amount ??
+            component.rate ??
+            (pricingType === "fixed" ? fallbackPrice : 0),
+          unit: component.unit,
+          required,
+          defaultSelected: required ? true : defaultSelected,
+          description: component.description,
+        } as CompositeComponent;
+      });
+    }
+    if (parsed?.fixedCharge !== undefined || parsed?.perKmRate !== undefined) {
+      return [
+        {
+          label: "Base Charge",
+          pricingType: "fixed",
+          amount: parsed.fixedCharge ?? fallbackPrice,
+          required: true,
+          defaultSelected: true,
+        },
+        {
+          label: "Distance",
+          pricingType: "variable",
+          unit: "km",
+          amount: parsed.perKmRate ?? 0,
+          required: true,
+          defaultSelected: true,
+        },
+      ];
+    }
+  } catch (error) {
+    console.warn("Invalid composite billing parameters:", error);
+  }
+
+  return [
+    {
+      label: "Base Charge",
+      pricingType: "fixed",
+      amount: fallbackPrice,
+      required: true,
+      defaultSelected: true,
+    },
+    {
+      label: "Distance",
+      pricingType: "variable",
+      unit: "km",
+      amount: 0,
+      required: true,
+      defaultSelected: true,
+    },
+  ];
+};
+
+const calculateCompositeTotal = (
+  components: CompositeComponent[],
+  quantities: Record<number, number>,
+  selections: Record<number, boolean>,
+  overrides: Record<number, number>,
+) => {
+  let total = 0;
+  const parts: string[] = [];
+
+  components.forEach((component, index) => {
+    const selectionValue = selections[index];
+    const isSelected =
+      component.required ||
+      (selectionValue !== undefined
+        ? selectionValue
+        : component.defaultSelected);
+    if (!isSelected) {
+      return;
+    }
+
+    if (component.pricingType === "fixed") {
+      const configured = Number(component.amount) || 0;
+      const override = Number(overrides[index]) || 0;
+      const amount = configured === 0 ? override : configured;
+      total += amount;
+      parts.push(`${component.label}: â‚¹${amount}`);
+      return;
+    }
+
+    const configuredRate = Number(component.amount) || 0;
+    const overrideRate = Number(overrides[index]) || 0;
+    const rate = configuredRate === 0 ? overrideRate : configuredRate;
+    const quantity = Number(quantities[index]) || 0;
+    const subtotal = rate * quantity;
+    total += subtotal;
+    const unit = component.unit ? `${component.unit}` : "";
+    parts.push(
+      `${component.label}: â‚¹${rate} Ã— ${quantity}${unit ? ` ${unit}` : ""} = â‚¹${subtotal}`,
+    );
+  });
+
+  return { total, parts };
+};
 
 export default function PatientDetail() {
   const params = useParams();
@@ -128,6 +279,16 @@ export default function PatientDetail() {
   ] = useState(""); // Added for filtering services by category name
   const [selectedCatalogService, setSelectedCatalogService] =
     useState<any>(null);
+  const [compositeQuantities, setCompositeQuantities] = useState<
+    Record<number, number>
+  >({});
+  const [compositeSelections, setCompositeSelections] = useState<
+    Record<number, boolean>
+  >({});
+  const [compositeOverrides, setCompositeOverrides] = useState<
+    Record<number, number>
+  >({});
+  const [isCompositeDetailsOpen, setIsCompositeDetailsOpen] = useState(false);
   const [billingPreview, setBillingPreview] = useState<any>(null);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [isDischargeDialogOpen, setIsDischargeDialogOpen] = useState(false);
@@ -163,12 +324,20 @@ export default function PatientDetail() {
   const [isLoadingBill, setIsLoadingBill] = useState(false);
   const [isOpdVisitDialogOpen, setIsOpdVisitDialogOpen] = useState(false);
 
-  // Check user roles for billing staff restrictions
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isBillingStaff =
-    currentUserRoles.includes("billing_staff") &&
-    !currentUserRoles.includes("admin") &&
-    !currentUserRoles.includes("super_user");
+  // Role helpers for additive permissions
+  const userRoles = user?.roles || (user?.role ? [user.role] : []); // Backward compatibility
+  const hasAnyRole = (allowedRoles: string[]) =>
+    allowedRoles.some((role) => userRoles.includes(role));
+  const canManagePatients = hasAnyRole([
+    "receptionist",
+    "admin",
+    "super_user",
+  ]);
+  const canHandleBilling = hasAnyRole([
+    "billing_staff",
+    "admin",
+    "super_user",
+  ]);
 
   // Fetch hospital settings for receipts and other uses with proper error handling
   const {
@@ -883,14 +1052,14 @@ export default function PatientDetail() {
     queryKey: ["/api/settings/system"],
   });
 
-  // Update OPD form date/time when system settings load or timezone changes
+  // Update OPD form date/time when system settings load or dialog opens
   React.useEffect(() => {
-    if (systemSettings?.timezone && isOpdVisitDialogOpen) {
-      const timezone = systemSettings.timezone;
-      const now = new Date();
+    if (!isOpdVisitDialogOpen) return;
 
+    const now = new Date();
+    if (systemSettings?.timezone) {
       const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: timezone,
+        timeZone: systemSettings.timezone,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -911,7 +1080,13 @@ export default function PatientDetail() {
 
       opdVisitForm.setValue("scheduledDate", currentDate);
       opdVisitForm.setValue("scheduledTime", currentTime);
+      return;
     }
+
+    const currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    opdVisitForm.setValue("scheduledDate", currentDate);
+    opdVisitForm.setValue("scheduledTime", currentTime);
   }, [systemSettings?.timezone, isOpdVisitDialogOpen]);
 
   // Update service form date/time when system settings load or timezone changes
@@ -1059,6 +1234,37 @@ export default function PatientDetail() {
 
   const watchedServiceValues = serviceForm.watch();
 
+  useEffect(() => {
+    if (!selectedCatalogService || selectedCatalogService.billingType !== "composite") {
+      setCompositeQuantities({});
+      setCompositeSelections({});
+      setCompositeOverrides({});
+      setIsCompositeDetailsOpen(false);
+      return;
+    }
+
+    const components = parseCompositeComponents(
+      selectedCatalogService.billingParameters,
+      selectedCatalogService.price || 0,
+    );
+    const next: Record<number, number> = {};
+    const nextSelections: Record<number, boolean> = {};
+    const nextOverrides: Record<number, number> = {};
+    components.forEach((component, index) => {
+      if (component.pricingType === "variable") {
+        next[index] = 0;
+      }
+      nextSelections[index] =
+        component.required || component.defaultSelected || false;
+      if ((Number(component.amount) || 0) === 0) {
+        nextOverrides[index] = 0;
+      }
+    });
+    setCompositeQuantities(next);
+    setCompositeSelections(nextSelections);
+    setCompositeOverrides(nextOverrides);
+  }, [selectedCatalogService]);
+
   // Sync form fields with component state
   useEffect(() => {
     serviceForm.setValue("serviceType", selectedServiceType);
@@ -1080,6 +1286,9 @@ export default function PatientDetail() {
     watchedServiceValues.distance,
     watchedServiceValues.price,
     selectedCatalogService,
+    compositeQuantities,
+    compositeSelections,
+    compositeOverrides,
   ]);
 
   const calculateBillingPreview = () => {
@@ -1109,19 +1318,20 @@ export default function PatientDetail() {
         break;
 
       case "composite":
-        const params = selectedCatalogService.billingParameters
-          ? JSON.parse(selectedCatalogService.billingParameters)
-          : {};
-        const fixedCharge = params.fixedCharge || selectedCatalogService.price;
-        const perKmRate = params.perKmRate || 0;
-        const distance = watchedServiceValues.distance || 0;
-
-        const distanceCharge = perKmRate * distance;
-        totalAmount = fixedCharge + distanceCharge;
-        breakdown = `Fixed: ₹${fixedCharge}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceCharge}` : ""} = ₹${totalAmount}`;
+        const components = parseCompositeComponents(
+          selectedCatalogService.billingParameters,
+          selectedCatalogService.price || 0,
+        );
+        const compositeResult = calculateCompositeTotal(
+          components,
+          compositeQuantities,
+          compositeSelections,
+          compositeOverrides,
+        );
+        totalAmount = compositeResult.total;
+        breakdown = compositeResult.parts.join(" + ") || `₹${totalAmount}`;
         billingQuantity = 1;
         break;
-
       case "variable":
         billingQuantity = 1;
         totalAmount = watchedServiceValues.price || 0; // Use the entered price from the form
@@ -1344,13 +1554,67 @@ export default function PatientDetail() {
         // Handle selected catalog services
         if (selectedServices.length > 0) {
           const actualDoctorId = serviceForm.watch("doctorId");
-          selectedServices.forEach((service: Service) => {
+          for (const service of selectedServices) {
+            const isComposite = service.billingType === "composite";
+            const compositeComponents = isComposite
+              ? parseCompositeComponents(service.billingParameters, service.price || 0)
+              : [];
+            const componentQuantities = service.componentQuantities || {};
+            const componentSelections = service.componentSelections || {};
+            const componentOverrides = service.componentOverrides || {};
+            if (isComposite) {
+              const hasMissingOverride = compositeComponents.some(
+                (component, index) => {
+                  const selectionValue = componentSelections[index];
+                  const isSelected =
+                    component.required ||
+                    (selectionValue !== undefined
+                      ? selectionValue
+                      : component.defaultSelected);
+                  if (!isSelected) {
+                    return false;
+                  }
+                  const configured = Number(component.amount) || 0;
+                  if (configured !== 0) {
+                    return false;
+                  }
+                  const override = Number(componentOverrides[index]) || 0;
+                  return override <= 0;
+                },
+              );
+              if (hasMissingOverride) {
+                toast({
+                  title: "Missing component price",
+                  description:
+                    "Enter pricing for all selected components with zero configured amount.",
+                  variant: "destructive",
+                });
+                return;
+              }
+            }
+            const compositeTotal = isComposite
+              ? calculateCompositeTotal(
+                  compositeComponents,
+                  componentQuantities,
+                  componentSelections,
+                  componentOverrides,
+                ).total
+              : 0;
             const serviceData = {
               patientId: patientId,
               serviceType: service.category || "service",
               serviceName: service.name,
-              price: (service.price || 0) * (service.billingQuantity || 1), // Use billingQuantity
-              billingQuantity: service.billingQuantity || 1, // Use billingQuantity
+              price: isComposite
+                ? compositeTotal
+                : (service.price || 0) * (service.billingQuantity || 1), // Use billingQuantity
+              billingQuantity: isComposite ? 1 : service.billingQuantity || 1, // Use billingQuantity
+              billingParameters: isComposite
+                ? JSON.stringify({
+                    quantities: componentQuantities,
+                    selectedComponents: componentSelections,
+                    componentOverrides,
+                  })
+                : undefined,
               notes: data.notes,
               scheduledDate: data.scheduledDate,
               scheduledTime: data.scheduledTime,
@@ -1363,7 +1627,7 @@ export default function PatientDetail() {
                   : null,
             };
             servicesToCreate.push(serviceData);
-          });
+          }
         }
         
         // Handle custom services
@@ -2232,8 +2496,8 @@ export default function PatientDetail() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions - Hidden for billing staff */}
-        {!isBillingStaff && (
+        {/* Quick Actions - Hidden for users without patient-management access */}
+        {canManagePatients && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
@@ -2418,13 +2682,8 @@ export default function PatientDetail() {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">Financial Summary</div>
               <div className="flex items-center gap-2">
-                {/* Hide payment and discount buttons for receptionist users */}
-                {(() => {
-                  // Get user roles with fallback to single role for backward compatibility
-                  const userRoles =
-                    user?.roles || (user?.role ? [user.role] : []);
-                  return !userRoles.includes("receptionist");
-                })() && (
+                {/* Hide payment and discount buttons without billing access */}
+                {canHandleBilling && (
                   <>
                     <Button
                       size="sm"
@@ -2464,8 +2723,8 @@ export default function PatientDetail() {
                       Record Payment
                     </Button>
                   </>
-                )}
-              </div>
+                 )}
+                                        </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -2485,8 +2744,8 @@ export default function PatientDetail() {
                   <p className="text-xs text-muted-foreground mt-1">
                     (Gross: ₹{(financialSummary?.totalCharges || 0).toLocaleString()})
                   </p>
-                )}
-              </div>
+                 )}
+                                        </div>
 
               <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Net Paid</p>
@@ -2501,8 +2760,8 @@ export default function PatientDetail() {
                   <p className="text-xs text-muted-foreground mt-1">
                     (Gross: ₹{(financialSummary?.totalPaid || 0).toLocaleString()})
                   </p>
-                )}
-              </div>
+                 )}
+                                        </div>
 
               <div className="text-center p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Discounts</p>
@@ -2543,8 +2802,8 @@ export default function PatientDetail() {
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                     Hospital owes patient
                   </p>
-                )}
-              </div>
+                 )}
+                                        </div>
             </div>
           </CardContent>
         </Card>
@@ -2636,16 +2895,6 @@ export default function PatientDetail() {
                               </TableCell>
                               <TableCell>
                                 {(() => {
-                                  // Format date and time using configured timezone
-                                  if (!visit.scheduledDate) return "N/A";
-
-                                  // The scheduledDate and scheduledTime are already in UTC from the database
-                                  // We just need to display them in the configured timezone
-                                  if (!visit.scheduledTime) {
-                                    return formatDate(visit.scheduledDate);
-                                  }
-
-                                  // Combine date and time for display
                                   const dateDisplay = formatDate(
                                     visit.scheduledDate,
                                   );
@@ -2665,13 +2914,15 @@ export default function PatientDetail() {
                               </TableCell>
                               <TableCell>
                                 {(() => {
-                                  const effectiveStatus = getOpdVisitEffectiveStatus(visit);
+                                  const effectiveStatus =
+                                    getOpdVisitEffectiveStatus(visit);
                                   return (
                                     <Badge className={getStatusColor(effectiveStatus)}>
                                       {effectiveStatus}
-                                      {effectiveStatus === "cancelled" && visit.status !== "cancelled" && (
-                                        <span className="ml-1">(refunded)</span>
-                                      )}
+                                      {effectiveStatus === "cancelled" &&
+                                        visit.status !== "cancelled" && (
+                                          <span className="ml-1">(refunded)</span>
+                                        )}
                                     </Badge>
                                   );
                                 })()}
@@ -2916,7 +3167,7 @@ export default function PatientDetail() {
                             <div className="w-2 h-2 bg-green-500 rounded-full" />
                             Admitted - Room {currentAdmission.currentRoomNumber}
                           </div>
-                          {!isBillingStaff && (
+                          {canManagePatients && (
                             <Button
                               onClick={() => setIsDischargeDialogOpen(true)}
                               size="sm"
@@ -2928,7 +3179,7 @@ export default function PatientDetail() {
                               Discharge Patient
                             </Button>
                           )}
-                          {!isBillingStaff && (
+                          {canManagePatients && (
                             <Button
                               onClick={() => setIsRoomUpdateDialogOpen(true)}
                               variant="outline"
@@ -2945,7 +3196,7 @@ export default function PatientDetail() {
                     } else {
                       // Patient is not admitted - show admit button
                       return (
-                        !isBillingStaff && (
+                        canManagePatients && (
                           <Button
                             onClick={() => {
                               // Reset form to fresh state
@@ -2994,7 +3245,7 @@ export default function PatientDetail() {
                       );
                     }
                   })()}
-                </div>
+                                        </div>
               </CardHeader>
               <CardContent>
                 {admissions && admissions.length > 0 ? (
@@ -3071,7 +3322,7 @@ export default function PatientDetail() {
                                     hour12: true,
                                   }).format(date);
                                 })()}
-                              </div>
+                                        </div>
                             </div>
                             <div>
                               <span className="text-muted-foreground">
@@ -3082,8 +3333,8 @@ export default function PatientDetail() {
                               <div className="font-medium">
                                 {admission.dischargeDate
                                   ? formatDateTime(admission.dischargeDate)
-                                  : calcStayDays(admission.admissionDate)}
-                              </div>
+                                  : calcStayDays(admission.admissionDate )}
+                                        </div>
                             </div>
                           </div>
 
@@ -3124,17 +3375,17 @@ export default function PatientDetail() {
                                         <div className="text-muted-foreground text-xs mt-1">
                                           {event.notes}
                                         </div>
-                                      )}
-                                    </div>
+                                       )}
+                                        </div>
                                   </div>
-                                ))}
-                              </div>
+                                ) )}
+                                        </div>
                             </div>
-                          )}
-                        </div>
+                           )}
+                                        </div>
                       );
-                    })}
-                  </div>
+                    } )}
+                                        </div>
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-sm text-muted-foreground">
@@ -3667,8 +3918,8 @@ export default function PatientDetail() {
                                 <div className="text-sm text-gray-500 font-medium bg-white px-2 py-1 rounded border">
                                   {formatDateTime(
                                     event.timestamp.toISOString(),
-                                  )}
-                                </div>
+                                   )}
+                                        </div>
                                 {/* Receipt/Print button for applicable events */}
                                 {(event.type === "service" ||
                                   event.type === "service_batch" ||
@@ -3692,8 +3943,8 @@ export default function PatientDetail() {
                                       </Button>
                                     }
                                   />
-                                )}
-                              </div>
+                                 )}
+                                        </div>
                             </div>
 
                             <div className="text-sm text-gray-700 bg-white/50 rounded-md p-3 border border-gray-200">
@@ -3723,8 +3974,8 @@ export default function PatientDetail() {
                                             </span>{" "}
                                             {event.data.diagnosis}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   case "service_batch":
                                     return (
@@ -3749,7 +4000,7 @@ export default function PatientDetail() {
                                                 </span>
                                               </div>
                                             ),
-                                          )}
+                                           )}
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
@@ -3790,7 +4041,7 @@ export default function PatientDetail() {
                                             </div>
                                           ) : null;
                                         })()}
-                                      </div>
+                                        </div>
                                     );
                                   case "service":
                                     return (
@@ -3810,8 +4061,8 @@ export default function PatientDetail() {
                                             </span>{" "}
                                             {event.data.notes}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   case "pathology":
                                     return (
@@ -3844,7 +4095,7 @@ export default function PatientDetail() {
                                                 ₹{event.data.totalPrice || 0}
                                               </span>
                                             </div>
-                                          )}
+                                           )}
                                         </div>
                                         <div className="flex justify-between items-center font-medium mt-3 pt-2 border-t border-gray-300 text-gray-800">
                                           <span>Total Cost:</span>
@@ -3892,8 +4143,8 @@ export default function PatientDetail() {
                                             </span>{" "}
                                             {event.data.remarks}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   case "admission":
                                     const admissionContent = (
@@ -3939,8 +4190,8 @@ export default function PatientDetail() {
                                               ₹{event.data.initialDeposit}
                                             </span>
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                     return admissionContent;
                                   case "admission_event":
@@ -3993,8 +4244,8 @@ export default function PatientDetail() {
                                               </span>{" "}
                                               {event.data.notes}
                                             </div>
-                                          )}
-                                      </div>
+                                           )}
+                                        </div>
                                     );
                                   case "discharge":
                                     return (
@@ -4039,8 +4290,8 @@ export default function PatientDetail() {
                                             <span className="font-medium">For:</span>{" "}
                                             {event.data.reason}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   case "discount":
                                     return (
@@ -4066,8 +4317,8 @@ export default function PatientDetail() {
                                             </span>{" "}
                                             {event.data.reason}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   case "refund":
                                     return (
@@ -4095,8 +4346,8 @@ export default function PatientDetail() {
                                             </span>{" "}
                                             {event.data.reason}
                                           </div>
-                                        )}
-                                      </div>
+                                         )}
+                                        </div>
                                     );
                                   default:
                                     return (
@@ -4104,7 +4355,7 @@ export default function PatientDetail() {
                                     );
                                 }
                               })()}
-                            </div>
+                                        </div>
 
                             {/* Doctor information outside details section for admission events */}
                             {event.type === "admission" &&
@@ -4131,12 +4382,12 @@ export default function PatientDetail() {
                                   </div>
                                 ) : null;
                               })()}
-                          </div>
+                                        </div>
                         </div>
                       );
                     });
                   })()}
-                </div>
+                                        </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -4144,7 +4395,7 @@ export default function PatientDetail() {
       </div>
       {/* Service Dialog */}
       <Dialog open={isServiceDialogOpen} onOpenChange={setIsServiceDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[96vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedServiceType === "opd"
@@ -4201,7 +4452,7 @@ export default function PatientDetail() {
                     </p>
                   );
                 })()}
-              </div>
+                                        </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -4275,8 +4526,8 @@ export default function PatientDetail() {
                   <p className="text-sm text-red-600">
                     {serviceForm.formState.errors.doctorId.message}
                   </p>
-                )}
-              </div>
+                 )}
+                                        </div>
 
               <div className="space-y-2">
                 <Label>Scheduled Date & Time *</Label>
@@ -4307,8 +4558,8 @@ export default function PatientDetail() {
                   <p className="text-sm text-red-600">
                     {serviceForm.formState.errors.scheduledTime.message}
                   </p>
-                )}
-              </div>
+                 )}
+                                        </div>
             </div>
 
             {selectedServiceType !== "opd" && (
@@ -4374,6 +4625,7 @@ export default function PatientDetail() {
                 <div className="border rounded-lg max-h-64 overflow-y-auto">
                   <Table
                     key={`service-table-${selectedServiceType}-${isServiceDialogOpen}`}
+                    className="w-full"
                   >
                     <TableHeader>
                       <TableRow>
@@ -4381,7 +4633,7 @@ export default function PatientDetail() {
                         <TableHead>Service Name</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead className="text-right">Price (₹)</TableHead>
-                        <TableHead className="text-right w-24">
+                        <TableHead className="text-right w-48">
                           Quantity
                         </TableHead>
                       </TableRow>
@@ -4404,8 +4656,23 @@ export default function PatientDetail() {
                             const isSelected = selectedServices.some(
                               (s) => s.id === service.id,
                             );
-                            const isAmbulanceService =
+                            const isCompositeService =
                               service.billingType === "composite";
+                            const compositeComponents = isCompositeService
+                              ? parseCompositeComponents(
+                                  service.billingParameters,
+                                  service.price || 0,
+                                )
+                              : [];
+                            const variableComponents = compositeComponents
+                              .map((component, index) => ({
+                                ...component,
+                                index,
+                              }))
+                              .filter(
+                                (component) =>
+                                  component.pricingType === "variable",
+                              );
                             return (
                               <TableRow
                                 key={service.id}
@@ -4417,13 +4684,51 @@ export default function PatientDetail() {
                                     data-testid={`checkbox-service-${service.id}`}
                                     onCheckedChange={(checked) => {
                                       if (checked) {
+                                        const componentQuantities: Record<
+                                          number,
+                                          number
+                                        > = {};
+                                        const componentSelections: Record<
+                                          number,
+                                          boolean
+                                        > = {};
+                                        const componentOverrides: Record<
+                                          number,
+                                          number
+                                        > = {};
+                                        variableComponents.forEach(
+                                          (component) => {
+                                            componentQuantities[component.index] = 0;
+                                          },
+                                        );
+                                        compositeComponents.forEach(
+                                          (component, index) => {
+                                            componentSelections[index] =
+                                              component.required ||
+                                              component.defaultSelected ||
+                                              false;
+                                            if ((Number(component.amount) || 0) === 0) {
+                                              componentOverrides[index] = 0;
+                                            }
+                                          },
+                                        );
+                                        const compositeTotal = isCompositeService
+                                          ? calculateCompositeTotal(
+                                              compositeComponents,
+                                              componentQuantities,
+                                              componentSelections,
+                                              componentOverrides,
+                                            ).total
+                                          : service.price;
                                         setSelectedServices([
                                           ...selectedServices,
                                           {
                                             ...service,
-                                            quantity: isAmbulanceService
-                                              ? 0
-                                              : 1,
+                                            price: compositeTotal,
+                                            quantity: isCompositeService ? 1 : 1,
+                                            componentQuantities,
+                                            componentSelections,
+                                            componentOverrides,
                                           },
                                         ]);
                                       } else {
@@ -4446,9 +4751,9 @@ export default function PatientDetail() {
                                     )?.label || service.category}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right w-48">
                                   {isSelected ? (
-                                    <div className="flex flex-col gap-2 items-end">
+                                    <div className="flex flex-col gap-3 items-end w-full pr-2">
                                       {service.price === 0 ? (
                                         <Input
                                           type="number"
@@ -4463,19 +4768,21 @@ export default function PatientDetail() {
                                           onChange={(e) => {
                                             const price =
                                               parseFloat(e.target.value) || 0;
-                                            setSelectedServices(prev => 
+                                            setSelectedServices((prev) =>
                                               prev.map((s) =>
                                                 s.id === service.id
                                                   ? { ...s, price }
                                                   : s,
-                                              )
+                                              ),
                                             );
                                           }}
                                           className="w-24 h-8"
                                           data-testid={`input-service-price-${service.id}`}
                                         />
                                       ) : (
-                                        <span className="text-sm font-medium">₹{service.price}</span>
+                                        <span className="text-sm font-medium">
+                                          ₹{service.price}
+                                        </span>
                                       )}
                                     </div>
                                   ) : (
@@ -4488,52 +4795,265 @@ export default function PatientDetail() {
                                     </div>
                                   )}
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right w-56">
                                   {isSelected ? (
-                                    <div className="flex flex-col gap-2 items-end">
-                                      <Input
-                                        type="number"
-                                        min={isAmbulanceService ? "0" : "1"}
-                                        step={
-                                          service.billingType === "per_hour"
-                                            ? "0.5"
-                                            : isAmbulanceService
-                                              ? "0.1"
+                                    <div className="flex flex-col gap-3 items-end min-w-[260px] pr-2">
+                                      {isCompositeService ? (
+                                        <div className="flex flex-col gap-2 items-end">
+                                          {compositeComponents.length === 0 ? (
+                                            <span className="text-xs text-gray-500">
+                                              No components configured
+                                            </span>
+                                          ) : (
+                                            compositeComponents.map((component, index) => {
+                                              const selectedService =
+                                                selectedServices.find(
+                                                  (s) => s.id === service.id,
+                                                );
+                                              const currentQuantities =
+                                                selectedService
+                                                  ?.componentQuantities || {};
+                                              const currentSelections =
+                                                selectedService
+                                                  ?.componentSelections || {};
+                                              const currentOverrides =
+                                                selectedService
+                                                  ?.componentOverrides || {};
+                                              const selectionValue =
+                                                currentSelections[index];
+                                              const isSelectedComponent =
+                                                component.required ||
+                                                (selectionValue !== undefined
+                                                  ? selectionValue
+                                                  : component.defaultSelected);
+                                              const configuredAmount =
+                                                Number(component.amount) || 0;
+
+                                              return (
+                                                <div
+                                                  key={`${component.label}-${index}`}
+                                                  className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 w-full"
+                                                >
+                                                  <Checkbox
+                                                    checked={isSelectedComponent}
+                                                    disabled={component.required}
+                                                    onCheckedChange={(checked) => {
+                                                      const nextSelected = Boolean(checked);
+                                                      setSelectedServices((prev) =>
+                                                        prev.map((s) => {
+                                                          if (s.id !== service.id) {
+                                                            return s;
+                                                          }
+                                                          const nextSelections = {
+                                                            ...(s.componentSelections || {}),
+                                                            [index]: component.required
+                                                              ? true
+                                                              : nextSelected,
+                                                          };
+                                                          const nextTotal =
+                                                            calculateCompositeTotal(
+                                                              compositeComponents,
+                                                              s.componentQuantities || {},
+                                                              nextSelections,
+                                                              s.componentOverrides || {},
+                                                            ).total;
+                                                          return {
+                                                            ...s,
+                                                            price: nextTotal,
+                                                            componentSelections: nextSelections,
+                                                          };
+                                                        }),
+                                                      );
+                                                    }}
+                                                  />
+                                                  <span className="text-xs text-gray-600">
+                                                    {component.label}
+                                                  </span>
+                                                  {component.pricingType === "fixed" ? (
+                                                    configuredAmount === 0 ? (
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        value={
+                                                          currentOverrides[index] ?? 0
+                                                        }
+                                                        onChange={(e) => {
+                                                          const override =
+                                                            parseFloat(
+                                                              e.target.value,
+                                                            ) || 0;
+                                                          setSelectedServices((prev) =>
+                                                            prev.map((s) => {
+                                                              if (s.id !== service.id) {
+                                                                return s;
+                                                              }
+                                                              const nextOverrides =
+                                                                {
+                                                                  ...(s.componentOverrides ||
+                                                                    {}),
+                                                                  [index]: override,
+                                                                };
+                                                              const nextTotal =
+                                                                calculateCompositeTotal(
+                                                                  compositeComponents,
+                                                                  s.componentQuantities || {},
+                                                                  s.componentSelections || {},
+                                                                  nextOverrides,
+                                                                ).total;
+                                                              return {
+                                                                ...s,
+                                                                price: nextTotal,
+                                                                componentOverrides: nextOverrides,
+                                                              };
+                                                            }),
+                                                          );
+                                                        }}
+                                                        className="w-24 h-8"
+                                                        placeholder="Price"
+                                                        disabled={!isSelectedComponent}
+                                                      />
+                                                    ) : (
+                                                      <span className="text-xs text-gray-500">
+                                                        ₹{configuredAmount}
+                                                      </span>
+                                                    )
+                                                  ) : (
+                                                    <>
+                                                      {configuredAmount === 0 && (
+                                                        <Input
+                                                          type="number"
+                                                          min="0"
+                                                          step="0.01"
+                                                          value={
+                                                            currentOverrides[index] ?? 0
+                                                          }
+                                                          onChange={(e) => {
+                                                            const override =
+                                                              parseFloat(
+                                                                e.target.value,
+                                                              ) || 0;
+                                                            setSelectedServices((prev) =>
+                                                              prev.map((s) => {
+                                                                if (s.id !== service.id) {
+                                                                  return s;
+                                                                }
+                                                                const nextOverrides =
+                                                                  {
+                                                                    ...(s.componentOverrides ||
+                                                                      {}),
+                                                                    [index]: override,
+                                                                  };
+                                                                const nextTotal =
+                                                                  calculateCompositeTotal(
+                                                                    compositeComponents,
+                                                                    s.componentQuantities || {},
+                                                                    s.componentSelections || {},
+                                                                    nextOverrides,
+                                                                  ).total;
+                                                                return {
+                                                                  ...s,
+                                                                  price: nextTotal,
+                                                                  componentOverrides: nextOverrides,
+                                                                };
+                                                              }),
+                                                            );
+                                                          }}
+                                                          className="w-20 h-8"
+                                                          placeholder="Rate"
+                                                          disabled={!isSelectedComponent}
+                                                        />
+                                                      )}
+                                                      <Input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.1"
+                                                        value={
+                                                          currentQuantities[index] ?? 0
+                                                        }
+                                                        onChange={(e) => {
+                                                          const quantity =
+                                                            parseFloat(
+                                                              e.target.value,
+                                                            ) || 0;
+                                                          setSelectedServices((prev) =>
+                                                            prev.map((s) => {
+                                                              if (s.id !== service.id) {
+                                                                return s;
+                                                              }
+                                                              const nextQuantities =
+                                                                {
+                                                                  ...(s.componentQuantities ||
+                                                                    {}),
+                                                                  [index]: quantity,
+                                                                };
+                                                              const nextTotal =
+                                                                calculateCompositeTotal(
+                                                                  compositeComponents,
+                                                                  nextQuantities,
+                                                                  s.componentSelections || {},
+                                                                  s.componentOverrides || {},
+                                                                ).total;
+                                                              return {
+                                                                ...s,
+                                                                price: nextTotal,
+                                                                componentQuantities: nextQuantities,
+                                                              };
+                                                            }),
+                                                          );
+                                                        }}
+                                                        className="w-20 h-8"
+                                                        placeholder={
+                                                          component.unit ||
+                                                          "qty"
+                                                        }
+                                                        disabled={!isSelectedComponent}
+                                                      />
+                                                      <span className="text-xs text-gray-500">
+                                                        {component.unit || "qty"}
+                                                      </span>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              );
+                                            })
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <Input
+                                          type="number"
+                                          min="1"
+                                          step={
+                                            service.billingType === "per_hour"
+                                              ? "0.5"
                                               : "1"
-                                        }
-                                        value={
-                                          selectedServices.find(
-                                            (s) => s.id === service.id,
-                                          )?.quantity ?? 1
-                                        }
-                                        onChange={(e) => {
-                                          const quantity =
-                                            parseFloat(e.target.value) || 1;
-                                          
-                                          setSelectedServices(prev =>
-                                            prev.map((s) =>
-                                              s.id === service.id
-                                                ? { ...s, quantity }
-                                                : s,
-                                            )
-                                          );
-                                        }}
-                                        className="w-20 h-8"
-                                        placeholder={
-                                          isAmbulanceService ? "km" : "qty"
-                                        }
-                                      />
-                                      {isAmbulanceService && (
-                                        <span className="text-xs text-gray-500 mt-1">
-                                          km
-                                        </span>
+                                          }
+                                          value={
+                                            selectedServices.find(
+                                              (s) => s.id === service.id,
+                                            )?.quantity ?? 1
+                                          }
+                                          onChange={(e) => {
+                                            const quantity =
+                                              parseFloat(e.target.value) || 1;
+                                            setSelectedServices((prev) =>
+                                              prev.map((s) =>
+                                                s.id === service.id
+                                                  ? { ...s, quantity }
+                                                  : s,
+                                              ),
+                                            );
+                                          }}
+                                          className="w-20 h-8"
+                                          placeholder="qty"
+                                          data-testid={`input-service-quantity-${service.id}`}
+                                        />
                                       )}
                                     </div>
                                   ) : (
                                     <span className="text-gray-400">-</span>
                                   )}
-                                </TableCell>
-                              </TableRow>
+                                </TableCell></TableRow>
                             );
                           },
                         )
@@ -4644,7 +5164,6 @@ export default function PatientDetail() {
                       ))}
                     </div>
                   )}
-                </div>
 
                 {/* Smart Billing Parameters */}
                 {selectedCatalogService && (
@@ -4716,33 +5235,236 @@ export default function PatientDetail() {
 
                     {/* Composite Billing */}
                     {selectedCatalogService.billingType === "composite" && (
-                      <div className="space-y-2">
-                        <Label>Distance (km)</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          value={serviceForm.watch("distance") || 0}
-                          onChange={(e) =>
-                            serviceForm.setValue(
-                              "distance",
-                              parseFloat(e.target.value) || 0,
-                            )
-                          }
-                          placeholder="Enter distance in kilometers"
-                          data-testid="input-distance"
-                        />
-                        <p className="text-sm text-gray-500">
-                          {(() => {
-                            const params =
-                              selectedCatalogService.billingParameters
-                                ? JSON.parse(
-                                    selectedCatalogService.billingParameters,
-                                  )
-                                : {};
-                            return `Fixed charge: ₹${params.fixedCharge || selectedCatalogService.price}, Per km: ₹${params.perKmRate || 0}`;
-                          })()}
-                        </p>
+                      <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+                        <div className="flex items-center justify-between">
+                          <Label>Billing Components</Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setIsCompositeDetailsOpen((prev) => !prev)
+                            }
+                          >
+                            {isCompositeDetailsOpen ? "Hide Details" : "Edit"}
+                          </Button>
+                        </div>
+                        {(() => {
+                          const components = parseCompositeComponents(
+                            selectedCatalogService.billingParameters,
+                            selectedCatalogService.price || 0,
+                          );
+                          return (
+                            <div className="space-y-3">
+                              {!isCompositeDetailsOpen && (
+                                <div className="space-y-2">
+                                  {components.map((component, index) => (
+                                    <div
+                                      key={`${component.label}-${index}`}
+                                      className="flex items-center justify-between text-sm"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">
+                                          {component.label}
+                                        </span>
+                                        {!component.required && (
+                                          <span className="text-xs text-gray-500">
+                                            (optional)
+                                          </span>
+                                        )}
+                                        <span
+                                          className={`rounded-full px-2 py-0.5 text-xs ${
+                                            component.pricingType === "fixed"
+                                              ? "bg-emerald-100 text-emerald-700"
+                                              : "bg-amber-100 text-amber-700"
+                                          }`}
+                                        >
+                                          {component.pricingType === "fixed"
+                                            ? "Fixed"
+                                            : "Variable"}
+                                        </span>
+                                      </div>
+                                      <span className="text-gray-600">
+                                        {component.pricingType === "fixed"
+                                          ? `₹${Number(component.amount) || 0}`
+                                          : `₹${Number(component.amount) || 0}${
+                                              component.unit
+                                                ? ` / ${component.unit}`
+                                                : ""
+                                            }`}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {isCompositeDetailsOpen && (
+                                <div className="space-y-3">
+                                  {components.length === 0 ? (
+                                    <p className="text-sm text-amber-700">
+                                      No components configured.
+                                    </p>
+                                  ) : (
+                                    components.map((component, index) => {
+                                      const selectionValue =
+                                        compositeSelections[index];
+                                      const isSelected =
+                                        component.required ||
+                                        (selectionValue !== undefined
+                                          ? selectionValue
+                                          : component.defaultSelected);
+                                      return (
+                                        <div
+                                          key={`${component.label}-${index}`}
+                                          className="grid grid-cols-1 md:grid-cols-[auto_2fr_1fr_1.1fr_1.2fr] gap-2 items-end"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <Checkbox
+                                              checked={isSelected}
+                                              disabled={component.required}
+                                              onCheckedChange={(checked) => {
+                                                const nextSelected =
+                                                  Boolean(checked);
+                                                setCompositeSelections(
+                                                  (prev) => ({
+                                                    ...prev,
+                                                    [index]: component.required
+                                                      ? true
+                                                      : nextSelected,
+                                                  }),
+                                                );
+                                              }}
+                                            />
+                                            <div className="flex flex-col">
+                                              <span className="text-sm font-medium">
+                                                {component.label}
+                                              </span>
+                                              {!component.required && (
+                                                <span className="text-xs text-gray-500">
+                                                  Optional
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center">
+                                            <span
+                                              className={`rounded-full px-2 py-0.5 text-xs ${
+                                                component.pricingType === "fixed"
+                                                  ? "bg-emerald-100 text-emerald-700"
+                                                  : "bg-amber-100 text-amber-700"
+                                              }`}
+                                            >
+                                              {component.pricingType === "fixed"
+                                                ? "Fixed"
+                                                : "Variable"}
+                                            </span>
+                                          </div>
+                                          {component.pricingType === "fixed" ? (
+                                            (Number(component.amount) || 0) === 0 ? (
+                                              <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={
+                                                  compositeOverrides[index] ?? 0
+                                                }
+                                                onChange={(e) => {
+                                                  const override =
+                                                    parseFloat(
+                                                      e.target.value,
+                                                    ) || 0;
+                                                  setCompositeOverrides(
+                                                    (prev) => ({
+                                                      ...prev,
+                                                      [index]: override,
+                                                    }),
+                                                  );
+                                                }}
+                                                placeholder="Enter price"
+                                                data-testid={`input-composite-price-${index}`}
+                                                disabled={!isSelected}
+                                              />
+                                            ) : (
+                                              <>
+                                                <div className="text-sm text-gray-600">
+                                                  ₹{Number(component.amount) || 0}
+                                                </div>
+                                                <div />
+                                              </>
+                                            )
+                                          ) : (
+                                            <>
+                                              {(Number(component.amount) || 0) === 0 && (
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.01"
+                                                  value={
+                                                    compositeOverrides[index] ?? 0
+                                                  }
+                                                  onChange={(e) => {
+                                                    const override =
+                                                      parseFloat(
+                                                        e.target.value,
+                                                      ) || 0;
+                                                    setCompositeOverrides(
+                                                      (prev) => ({
+                                                        ...prev,
+                                                        [index]: override,
+                                                      }),
+                                                    );
+                                                  }}
+                                                  placeholder="Enter rate"
+                                                  data-testid={`input-composite-rate-${index}`}
+                                                  disabled={!isSelected}
+                                                />
+                                              )}
+                                              <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.1"
+                                                value={
+                                                  compositeQuantities[index] ?? 0
+                                                }
+                                                onChange={(e) => {
+                                                  const quantity =
+                                                    parseFloat(
+                                                      e.target.value,
+                                                    ) || 0;
+                                                  setCompositeQuantities(
+                                                    (prev) => ({
+                                                      ...prev,
+                                                      [index]: quantity,
+                                                    }),
+                                                  );
+                                                }}
+                                                placeholder={
+                                                  component.unit
+                                                    ? `Enter ${component.unit}`
+                                                    : "Enter quantity"
+                                                }
+                                                data-testid={`input-composite-${index}`}
+                                                disabled={!isSelected}
+                                              />
+                                              <div className="text-xs text-amber-700">
+                                                Rate: ₹
+                                                {(Number(component.amount) || 0) === 0
+                                                  ? Number(compositeOverrides[index]) || 0
+                                                  : Number(component.amount) || 0}
+                                                {component.unit
+                                                  ? ` / ${component.unit}`
+                                                  : ""}
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
@@ -4851,6 +5573,7 @@ export default function PatientDetail() {
                   </div>
                 )}
 
+                </div>
                 {/* Form Fields */}
               </div>
             )}
@@ -4910,20 +5633,21 @@ export default function PatientDetail() {
                   setSelectedServiceSearchQuery(""); // Clear search query on close
                   setSelectedCatalogService(null); // Reset selected service
                   setBillingPreview(null); // Reset billing preview
-                        serviceForm.reset({
-                          patientId: patientId || "",
-                          serviceType: "",
-                          serviceName: "",
-                          scheduledDate: "",
-                          scheduledTime: "",
-                          doctorId: "",
-                          serviceId: "", // Reset serviceId
-                          notes: "",
-                          price: 0,
-                          billingQuantity: 1,
-                          hours: 1,
-                          distance: 0,
-                        });                }}
+                  serviceForm.reset({
+                    patientId: patientId || "",
+                    serviceType: "",
+                    serviceName: "",
+                    scheduledDate: "",
+                    scheduledTime: "",
+                    doctorId: "",
+                    serviceId: "", // Reset serviceId
+                    notes: "",
+                    price: 0,
+                    billingQuantity: 1,
+                    hours: 1,
+                    distance: 0,
+                  });
+                }}
                 data-testid="button-cancel-service"
               >
                 Cancel
@@ -5434,8 +6158,8 @@ export default function PatientDetail() {
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
+                 )}
+                                        </div>
 
               <div className="space-y-2">
                 <Label>Reason for Admission</Label>
@@ -6101,7 +6825,7 @@ export default function PatientDetail() {
                 }
                 return null;
               })()}
-            </div>
+                                        </div>
           </div>
 
           <div className="flex justify-end gap-2">
@@ -6621,3 +7345,33 @@ export default function PatientDetail() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -111,6 +111,10 @@ export default function Dashboard() {
     useState(false);
   const [isAccessDeniedLabTestOpen, setIsAccessDeniedLabTestOpen] =
     useState(false);
+  const [isAccessDeniedServiceOpen, setIsAccessDeniedServiceOpen] =
+    useState(false);
+  const [isAccessDeniedAdmissionOpen, setIsAccessDeniedAdmissionOpen] =
+    useState(false);
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [isAdmissionDialogOpen, setIsAdmissionDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -140,6 +144,14 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const userRoles = user?.roles || (user?.role ? [user.role] : []);
+  const hasAnyRole = (allowedRoles: string[]) =>
+    allowedRoles.some((role) => userRoles.includes(role));
+  const canManagePatients = hasAnyRole([
+    "receptionist",
+    "admin",
+    "super_user",
+  ]);
 
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -395,14 +407,14 @@ export default function Dashboard() {
     queryKey: ["/api/settings/system"],
   });
 
-  // Update pathology form date/time when system settings load or timezone changes
+  // Update pathology form date/time when system settings load or dialog opens
   React.useEffect(() => {
-    if (systemSettings?.timezone && isPathologyOrderOpen) {
-      const timezone = systemSettings.timezone;
-      const now = new Date();
+    if (!isPathologyOrderOpen) return;
 
+    const now = new Date();
+    if (systemSettings?.timezone) {
       const formatter = new Intl.DateTimeFormat("en-US", {
-        timeZone: timezone,
+        timeZone: systemSettings.timezone,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -419,9 +431,12 @@ export default function Dashboard() {
       const minute = parts.find((p) => p.type === "minute")?.value;
 
       const currentDateTime = `${year}-${month}-${day}T${hour}:${minute}`;
-
       pathologyForm.setValue("orderedDate", currentDateTime);
+      return;
     }
+
+    const localDateTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    pathologyForm.setValue("orderedDate", localDateTime);
   }, [systemSettings?.timezone, isPathologyOrderOpen]);
 
   const onSubmit = (data: any) => {
@@ -1481,13 +1496,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-3 gap-4 h-full content-start">
                 <button
                   onClick={() => {
-                    const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff =
-                      userRoles.includes("billing_staff") &&
-                      !userRoles.includes("admin") &&
-                      !userRoles.includes("super_user");
-
-                    if (isBillingStaff) {
+                    if (!canManagePatients) {
                       setIsAccessDeniedPatientOpen(true);
                     } else {
                       setIsNewPatientOpen(true);
@@ -1504,13 +1513,7 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => {
-                    const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff =
-                      userRoles.includes("billing_staff") &&
-                      !userRoles.includes("admin") &&
-                      !userRoles.includes("super_user");
-
-                    if (isBillingStaff) {
+                    if (!canManagePatients) {
                       setIsAccessDeniedLabTestOpen(true);
                     } else {
                       setIsPathologyOrderOpen(true);
@@ -1527,19 +1530,8 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => {
-                    const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff =
-                      userRoles.includes("billing_staff") &&
-                      !userRoles.includes("admin") &&
-                      !userRoles.includes("super_user");
-
-                    if (isBillingStaff) {
-                      toast({
-                        title: "Access Restricted",
-                        description:
-                          "Only administrators and super users can add services.",
-                        variant: "destructive",
-                      });
+                    if (!canManagePatients) {
+                      setIsAccessDeniedServiceOpen(true);
                     } else {
                       setSelectedPatientForService("");
                       setIsServiceDialogOpen(true);
@@ -1567,19 +1559,8 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => {
-                    const userRoles = user?.roles || [user?.role];
-                    const isBillingStaff =
-                      userRoles.includes("billing_staff") &&
-                      !userRoles.includes("admin") &&
-                      !userRoles.includes("super_user");
-
-                    if (isBillingStaff) {
-                      toast({
-                        title: "Access Restricted",
-                        description:
-                          "Only administrators and super users can admit patients.",
-                        variant: "destructive",
-                      });
+                    if (!canManagePatients) {
+                      setIsAccessDeniedAdmissionOpen(true);
                     } else {
                       setSelectedPatientForAdmission("");
                       setIsAdmissionDialogOpen(true);
@@ -1990,7 +1971,7 @@ export default function Dashboard() {
           <div className="p-4">
             <AccessRestricted
               title="Patient Registration Restricted"
-              description="Only administrators and super users can register new patients."
+              description="Only receptionists can register new patients."
             />
           </div>
         </DialogContent>
@@ -2007,7 +1988,41 @@ export default function Dashboard() {
           <div className="p-4">
             <AccessRestricted
               title="Lab Test Ordering Restricted"
-              description="Only administrators and super users can order lab tests."
+              description="Only receptionists can order lab tests."
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isAccessDeniedServiceOpen}
+        onOpenChange={setIsAccessDeniedServiceOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Access Restricted</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <AccessRestricted
+              title="Service Scheduling Restricted"
+              description="Only receptionists can schedule services."
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isAccessDeniedAdmissionOpen}
+        onOpenChange={setIsAccessDeniedAdmissionOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Access Restricted</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <AccessRestricted
+              title="Admission Restricted"
+              description="Only receptionists can admit patients."
             />
           </div>
         </DialogContent>

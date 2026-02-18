@@ -333,12 +333,15 @@ export default function Patients() {
     createPatientMutation.mutate(data);
   };
 
-  // Check user roles for billing staff restrictions
-  const currentUserRoles = user?.roles || [user?.role]; // Backward compatibility
-  const isBillingStaff =
-    currentUserRoles.includes("billing_staff") &&
-    !currentUserRoles.includes("admin") &&
-    !currentUserRoles.includes("super_user");
+  // Role helpers for additive permissions
+  const userRoles = user?.roles || (user?.role ? [user.role] : []);
+  const hasAnyRole = (allowedRoles: string[]) =>
+    allowedRoles.some((role) => userRoles.includes(role));
+  const canManagePatients = hasAnyRole([
+    "receptionist",
+    "admin",
+    "super_user",
+  ]);
 
   const filteredPatients = patients.filter(
     (patient: Patient) =>
@@ -353,10 +356,8 @@ export default function Patients() {
         title="Patient Registration"
         searchPlaceholder="Search patients by name, ID, or phone..."
         onSearch={setSearchQuery}
-        onNewAction={
-          isBillingStaff ? undefined : () => setIsNewPatientOpen(true)
-        }
-        newActionLabel={isBillingStaff ? undefined : "New Patient"}
+        onNewAction={canManagePatients ? () => setIsNewPatientOpen(true) : undefined}
+        newActionLabel={canManagePatients ? "New Patient" : undefined}
       />
 
       <div className="px-6 pb-6 pt-4">
@@ -378,7 +379,7 @@ export default function Patients() {
             ) : filteredPatients.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No patients found</p>
-                {!isBillingStaff && (
+                {canManagePatients && (
                   <Button
                     onClick={() => setIsNewPatientOpen(true)}
                     className="mt-4"
@@ -449,7 +450,7 @@ export default function Patients() {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          {!isBillingStaff && (
+                          {canManagePatients && (
                             <Button
                               variant="ghost"
                               size="sm"

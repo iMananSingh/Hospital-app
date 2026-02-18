@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import TopBar from "@/components/layout/topbar";
@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ import {
   Shield,
   Download,
   Upload,
+  XCircle,
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +62,17 @@ import type {
   ServiceCategory,
 } from "@shared/schema";
 import AccessRestricted from "@/components/access-restricted";
+
+type CompositeComponent = {
+  id?: string;
+  label: string;
+  pricingType: "fixed" | "variable";
+  amount?: number;
+  unit?: string;
+  required: boolean;
+  defaultSelected: boolean;
+  description?: string;
+};
 
 export default function ServiceManagement() {
   const { toast } = useToast();
@@ -96,6 +109,26 @@ export default function ServiceManagement() {
   const [serviceDoctors, setServiceDoctors] = useState<
     { id: string; share: number }[]
   >([]);
+  const [compositeComponents, setCompositeComponents] = useState<
+    CompositeComponent[]
+  >([
+    {
+      label: "Base Charge",
+      pricingType: "fixed",
+      amount: 0,
+      required: true,
+      defaultSelected: true,
+    },
+    {
+      label: "Distance",
+      pricingType: "variable",
+      amount: 0,
+      unit: "km",
+      required: true,
+      defaultSelected: true,
+    },
+  ]);
+  const [isCompositeEditorOpen, setIsCompositeEditorOpen] = useState(false);
 
   // Pathology states
   const [pathologySubTab, setPathologySubTab] = useState("categories");
@@ -212,6 +245,131 @@ export default function ServiceManagement() {
       billingParameters: null, // For composite billing
     },
   });
+
+  const buildDefaultCompositeComponents = (baseAmount: number) => [
+    {
+      label: "Base Charge",
+      pricingType: "fixed",
+      amount: baseAmount,
+      required: true,
+      defaultSelected: true,
+    },
+    {
+      label: "Distance",
+      pricingType: "variable",
+      amount: 0,
+      unit: "km",
+      required: true,
+      defaultSelected: true,
+    },
+  ];
+
+  const parseCompositeComponents = (
+    billingParameters: string | null | undefined,
+    fallbackPrice: number,
+  ): CompositeComponent[] => {
+    if (!billingParameters) {
+      return buildDefaultCompositeComponents(fallbackPrice);
+    }
+
+    try {
+      const parsed = JSON.parse(billingParameters);
+      if (Array.isArray(parsed?.components)) {
+        return parsed.components.map((component: any) => {
+          const pricingType =
+            component.pricingType || component.type || "fixed";
+          const required =
+            component.required !== undefined ? component.required : true;
+          const defaultSelected =
+            component.defaultSelected !== undefined
+              ? component.defaultSelected
+              : required;
+          return {
+            id: component.id,
+            label: component.label || "Component",
+            pricingType,
+            amount:
+              component.amount ??
+              component.rate ??
+              (pricingType === "fixed" ? fallbackPrice : 0),
+            unit: component.unit,
+            required,
+            defaultSelected: required ? true : defaultSelected,
+            description: component.description,
+          } as CompositeComponent;
+        });
+      }
+
+      if (parsed?.fixedCharge !== undefined || parsed?.perKmRate !== undefined) {
+        return [
+          {
+            label: "Base Charge",
+            pricingType: "fixed",
+            amount: parsed.fixedCharge ?? fallbackPrice,
+            required: true,
+            defaultSelected: true,
+          },
+          {
+            label: "Distance",
+            pricingType: "variable",
+            unit: "km",
+            amount: parsed.perKmRate ?? 0,
+            required: true,
+            defaultSelected: true,
+          },
+        ];
+      }
+    } catch (error) {
+      console.warn("Invalid composite billing parameters:", error);
+    }
+
+    return buildDefaultCompositeComponents(fallbackPrice);
+  };
+
+  const updateCompositeComponent = (
+    index: number,
+    patch: Partial<CompositeComponent>,
+  ) => {
+    setCompositeComponents((prev) => {
+      const next = [...prev];
+      const updated = { ...next[index], ...patch };
+      if (updated.required) {
+        updated.defaultSelected = true;
+      }
+      if (updated.defaultSelected === undefined) {
+        updated.defaultSelected = false;
+      }
+      next[index] = updated;
+      return next;
+    });
+  };
+
+  const addCompositeComponent = () => {
+    setCompositeComponents((prev) => [
+      ...prev,
+      {
+        label: "Component",
+        pricingType: "fixed",
+        amount: 0,
+        required: false,
+        defaultSelected: false,
+      },
+    ]);
+  };
+
+  const removeCompositeComponent = (index: number) => {
+    setCompositeComponents((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const watchedBillingType = serviceForm.watch("billingType");
+
+  useEffect(() => {
+    if (watchedBillingType !== "composite") return;
+    serviceForm.setValue(
+      "billingParameters",
+      JSON.stringify({ components: compositeComponents }),
+    );
+  }, [watchedBillingType, compositeComponents, serviceForm]);
 
   const categoryForm = useForm({
     defaultValues: {
@@ -889,6 +1047,10 @@ export default function ServiceManagement() {
         billingType: service.billingType || "per_instance",
         billingParameters: service.billingParameters || null,
       });
+      setCompositeComponents(
+        parseCompositeComponents(service.billingParameters, service.price || 0),
+      );
+      setIsCompositeEditorOpen(false);
       // Reset doctors when editing (service.doctors doesn't exist in schema)
       setServiceDoctors([]);
     } else {
@@ -903,6 +1065,8 @@ export default function ServiceManagement() {
         billingType: "per_instance",
         billingParameters: null,
       });
+      setCompositeComponents(buildDefaultCompositeComponents(0));
+      setIsCompositeEditorOpen(false);
       setServiceDoctors([]);
     }
     setIsServiceDialogOpen(true);
@@ -2188,17 +2352,215 @@ export default function ServiceManagement() {
 
               {/* Billing Parameters for Composite Type */}
               {serviceForm.watch("billingType") === "composite" && (
-                <div className="space-y-2">
-                  <Label>Billing Parameters (JSON)</Label>
-                  <Textarea
-                    {...serviceForm.register("billingParameters")}
-                    placeholder='{"fixedCharge": 500, "perKmRate": 15}'
-                    data-testid="textarea-billing-parameters"
-                  />
-                  <p className="text-sm text-gray-500">
-                    For ambulance: fixedCharge (base fee) + perKmRate (per km
-                    charge)
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Billing Components</Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setIsCompositeEditorOpen((prev) => !prev)
+                        }
+                      >
+                        {isCompositeEditorOpen ? "Save" : "Edit"}
+                      </Button>
+                      {isCompositeEditorOpen && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addCompositeComponent}
+                        >
+                          Add Component
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+                  {!isCompositeEditorOpen && (
+                    <div className="space-y-2">
+                      {compositeComponents.map((component, index) => (
+                        <div
+                          key={`${component.label}-${index}`}
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {component.label}
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs ${
+                                component.pricingType === "fixed"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {component.pricingType === "fixed"
+                                ? "Fixed"
+                                : "Variable"}
+                            </span>
+                            {!component.required && (
+                              <span className="text-xs text-gray-400">
+                                Optional
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-gray-600">
+                            {component.pricingType === "fixed"
+                              ? `₹${Number(component.amount) || 0}`
+                              : `₹${Number(component.amount) || 0}${
+                                  component.unit ? ` / ${component.unit}` : ""
+                                }`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {isCompositeEditorOpen && (
+                    <>
+                      <div className="space-y-4">
+                        {compositeComponents.map((component, index) => (
+                          <div
+                            key={`component-${index}`}
+                            className="grid grid-cols-1 md:grid-cols-[2fr_1.2fr_1fr_1fr_1.4fr_auto] gap-2 items-start"
+                          >
+                            <div className="space-y-1">
+                              <Label>Label</Label>
+                              <Input
+                                value={component.label}
+                                onChange={(e) =>
+                                  updateCompositeComponent(index, {
+                                    label: e.target.value,
+                                  })
+                                }
+                                placeholder="Component label"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Type</Label>
+                            <Select
+                              value={component.pricingType}
+                              onValueChange={(value) =>
+                                updateCompositeComponent(index, {
+                                  pricingType: value as "fixed" | "variable",
+                                })
+                              }
+                            >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="fixed">Fixed</SelectItem>
+                                  <SelectItem value="variable">Variable</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {component.pricingType === "fixed" ? (
+                              <>
+                                <div className="space-y-1">
+                                  <Label>Amount</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={component.amount ?? 0}
+                                    onChange={(e) =>
+                                      updateCompositeComponent(index, {
+                                        amount: parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                    placeholder="Amount"
+                                  />
+                                </div>
+                                <div className="hidden md:block" />
+                              </>
+                            ) : (
+                              <>
+                                <div className="space-y-1">
+                                  <Label>Rate</Label>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={component.amount ?? 0}
+                                    onChange={(e) =>
+                                      updateCompositeComponent(index, {
+                                        amount: parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                    placeholder="Rate"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="inline-flex items-center gap-1 whitespace-nowrap leading-none">
+                                    <span>Unit</span>
+                                    <span className="text-xs text-gray-500">
+                                      (optional)
+                                    </span>
+                                  </Label>
+                                  <Input
+                                    value={component.unit || ""}
+                                    onChange={(e) =>
+                                      updateCompositeComponent(index, {
+                                        unit: e.target.value || undefined,
+                                      })
+                                    }
+                                    placeholder="e.g. km"
+                                  />
+                                </div>
+                              </>
+                            )}
+                            <div className="flex items-center gap-3">
+                              <label className="flex items-center gap-2 text-xs text-gray-600">
+                                <Checkbox
+                                  checked={component.required}
+                                  onCheckedChange={(checked) =>
+                                    updateCompositeComponent(index, {
+                                      required: Boolean(checked),
+                                    })
+                                  }
+                                />
+                                Required
+                              </label>
+                              <label className="flex items-center gap-2 text-xs text-gray-600">
+                                <Checkbox
+                                  checked={component.defaultSelected}
+                                  disabled={component.required}
+                                  onCheckedChange={(checked) =>
+                                    updateCompositeComponent(index, {
+                                      defaultSelected: Boolean(checked),
+                                    })
+                                  }
+                                />
+                                Include by default
+                              </label>
+                            </div>
+                          <div className="flex items-center justify-end self-start mt-7">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                                size="icon"
+                                className="text-red-600 hover:text-red-700"
+                                onClick={() => removeCompositeComponent(index)}
+                                aria-label="Remove component"
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Fixed components add automatically. Variable components
+                        require a quantity during billing.
+                      </p>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 

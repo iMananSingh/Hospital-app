@@ -151,40 +151,136 @@ export class SmartCostingEngine {
       console.error('Error parsing billing parameters:', e);
     }
 
-    const fixedCharge = billingParams.fixedCharge || service.price;
-    const perKmRate = billingParams.perKmRate || 0;
-    const distance = customParameters.distance || 0;
-    
-    const fixedAmount = fixedCharge;
-    const distanceAmount = perKmRate * distance;
-    const totalAmount = fixedAmount + distanceAmount;
-    
-    const breakdown = [
-      {
-        unitPrice: fixedCharge,
-        quantity: 1,
-        subtotal: fixedAmount,
-        description: `${service.name} - Fixed charge`
-      }
-    ];
+    const components = Array.isArray(billingParams.components)
+      ? billingParams.components
+      : [
+          {
+            label: "Base Charge",
+            pricingType: "fixed",
+            amount: billingParams.fixedCharge ?? service.price ?? 0,
+            required: true,
+            defaultSelected: true,
+          },
+          {
+            label: "Distance",
+            pricingType: "variable",
+            unit: "km",
+            amount: billingParams.perKmRate ?? 0,
+            required: true,
+            defaultSelected: true,
+          },
+        ];
 
-    if (distance > 0) {
-      breakdown.push({
-        unitPrice: perKmRate,
-        quantity: distance,
-        subtotal: distanceAmount,
-        description: `Distance charge (${distance} km)`
-      });
-    }
+    const quantities = customParameters.quantities || {};
+    const selectedComponents =
+      customParameters.selectedComponents ||
+      customParameters.componentSelections ||
+      {};
+    const componentOverrides =
+      customParameters.componentOverrides ||
+      customParameters.overrideAmounts ||
+      {};
+    const breakdown: BillingCalculationResult["breakdown"] = [];
+    let totalAmount = 0;
+
+    components.forEach((component: any, index: number) => {
+      const pricingType = component.pricingType ?? component.type ?? "fixed";
+      const required = component.required === true;
+      const defaultSelected =
+        component.defaultSelected !== undefined
+          ? component.defaultSelected
+          : required;
+      const selectedValue = Array.isArray(selectedComponents)
+        ? selectedComponents[index]
+        : selectedComponents && typeof selectedComponents === "object"
+          ? (selectedComponents[index] ??
+              (component.label
+                ? selectedComponents[component.label]
+                : undefined))
+          : undefined;
+      const isSelected =
+        required ||
+        (selectedValue !== undefined ? Boolean(selectedValue) : defaultSelected);
+
+      if (!isSelected) {
+        return;
+      }
+
+      if (pricingType === "fixed") {
+        const configured = Number(component.amount ?? component.rate) || 0;
+        const overrideValue = Array.isArray(componentOverrides)
+          ? componentOverrides[index]
+          : componentOverrides && typeof componentOverrides === "object"
+            ? (componentOverrides[index] ??
+                (component.label
+                  ? componentOverrides[component.label]
+                  : undefined))
+            : undefined;
+        const amount =
+          configured === 0 ? Number(overrideValue) || 0 : configured;
+        totalAmount += amount;
+        breakdown.push({
+          unitPrice: amount,
+          quantity: 1,
+          subtotal: amount,
+          description: `${service.name} - ${component.label || "Fixed"}`
+        });
+        return;
+      }
+
+      if (pricingType === "variable") {
+        const configuredRate = Number(component.amount ?? component.rate) || 0;
+        const overrideValue = Array.isArray(componentOverrides)
+          ? componentOverrides[index]
+          : componentOverrides && typeof componentOverrides === "object"
+            ? (componentOverrides[index] ??
+                (component.label
+                  ? componentOverrides[component.label]
+                  : undefined))
+            : undefined;
+        const rate =
+          configuredRate === 0
+            ? Number(overrideValue) || 0
+            : configuredRate;
+        let quantity = 0;
+
+        if (Array.isArray(quantities)) {
+          quantity = Number(quantities[index]) || 0;
+        } else if (quantities && typeof quantities === "object") {
+          if (quantities[index] !== undefined) {
+            quantity = Number(quantities[index]) || 0;
+          } else if (component.label && quantities[component.label] !== undefined) {
+            quantity = Number(quantities[component.label]) || 0;
+          }
+        }
+
+        if (!quantity && customParameters.distance && index === 0) {
+          quantity = Number(customParameters.distance) || 0;
+        }
+
+        const subtotal = rate * quantity;
+        totalAmount += subtotal;
+
+        breakdown.push({
+          unitPrice: rate,
+          quantity,
+          subtotal,
+          description: `${component.label || "Variable"}${component.unit ? ` (${quantity} ${component.unit})` : ` (${quantity})`}`
+        });
+      }
+    });
+
+    const billingDetails = breakdown
+      .map((item) => `${item.description}: ₹${item.subtotal}`)
+      .join(" + ");
 
     return {
       totalAmount,
       billingQuantity: 1,
       breakdown,
-      billingDetails: `Fixed: ₹${fixedAmount}${distance > 0 ? ` + Distance: ₹${perKmRate} × ${distance}km = ₹${distanceAmount}` : ''} = ₹${totalAmount}`
+      billingDetails: billingDetails ? `${billingDetails} = ₹${totalAmount}` : `₹${totalAmount}`
     };
   }
-
   /**
    * Variable billing (user-defined price at time of service)
    */

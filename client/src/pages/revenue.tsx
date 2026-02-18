@@ -23,7 +23,7 @@ export default function RevenuePage() {
         <div className="flex-1 px-6 pb-6 pt-4">
           <AccessRestricted
             title="Access Restricted"
-            description="Only administrators, billing staff, and super users can access revenue & payments."
+            description="Only billing staff users can access revenue & payments."
           />
         </div>
       </div>

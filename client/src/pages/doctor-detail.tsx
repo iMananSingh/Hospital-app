@@ -6,6 +6,15 @@ import TopBar from "@/components/layout/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -31,6 +40,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import * as XLSX from "xlsx";
 
 interface Doctor {
@@ -88,16 +98,53 @@ interface DoctorPayment {
   updatedAt: string;
 }
 
+interface DoctorAvailability {
+  id: string;
+  doctorId: string;
+  weekday: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function DoctorDetail() {
   const { doctorId } = useParams<{ doctorId: string }>();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [doctorAvailability, setDoctorAvailability] = useState<
+    DoctorAvailability[]
+  >([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(
+    null,
+  );
+  const [availabilityWeekday, setAvailabilityWeekday] = useState(0);
+  const [availabilityStartTime, setAvailabilityStartTime] =
+    useState("09:00");
+  const [availabilityEndTime, setAvailabilityEndTime] = useState("17:00");
+
+  const weekdayLabels = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const currentUserRoles = user?.roles || [user?.role];
+  const canManageAvailability =
+    currentUserRoles.includes("admin") ||
+    currentUserRoles.includes("super_user");
 
   // Fetch doctor details
   const { data: doctor, isLoading: isDoctorLoading } = useQuery({
@@ -201,6 +248,135 @@ export default function DoctorDetail() {
       setPreviewImage(doctor.profilePicture);
     }
   }, [doctor]);
+
+  useEffect(() => {
+    if (canManageAvailability) {
+      fetchDoctorAvailability();
+    } else {
+      setDoctorAvailability([]);
+      setAvailabilityError(null);
+    }
+  }, [doctorId, canManageAvailability]);
+
+  const fetchDoctorAvailability = async () => {
+    if (!doctorId || !canManageAvailability) {
+      return;
+    }
+    setAvailabilityLoading(true);
+    setAvailabilityError(null);
+    try {
+      const response = await fetch(`/api/doctors/${doctorId}/availability`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            "Failed to fetch availability",
+        );
+      }
+      const data = await response.json();
+      setDoctorAvailability(data);
+    } catch (error: any) {
+      setAvailabilityError(error.message || "Failed to fetch availability");
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
+  const handleAddAvailability = async () => {
+    if (!doctorId || !canManageAvailability) {
+      return;
+    }
+    if (!availabilityStartTime || !availabilityEndTime) {
+      toast({
+        title: "Error",
+        description: "Start and end time are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (availabilityStartTime >= availabilityEndTime) {
+      toast({
+        title: "Error",
+        description: "Start time must be before end time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/doctors/${doctorId}/availability`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+        body: JSON.stringify({
+          weekday: availabilityWeekday,
+          startTime: availabilityStartTime,
+          endTime: availabilityEndTime,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || errorData.message || "Failed to add availability",
+        );
+      }
+
+      await fetchDoctorAvailability();
+      toast({
+        title: "Success",
+        description: "Working hours added",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add availability",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAvailability = async (id: string) => {
+    if (!canManageAvailability) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/doctor-availability/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("hospital_token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            "Failed to delete availability",
+        );
+      }
+
+      await fetchDoctorAvailability();
+      toast({
+        title: "Success",
+        description: "Working hours deleted",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete availability",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Mutation for updating profile picture
   const updateProfilePictureMutation = useMutation({
@@ -680,6 +856,9 @@ export default function DoctorDetail() {
         {/* Detailed Information Tabs */}
         <Tabs defaultValue="salary-rates" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="availability" data-testid="tab-availability">
+              Availability
+            </TabsTrigger>
             <TabsTrigger value="salary-rates" data-testid="tab-salary-rates">
               Salary Rates
             </TabsTrigger>
@@ -693,6 +872,125 @@ export default function DoctorDetail() {
               Salary History
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="availability">
+            <Card>
+              <CardHeader>
+                <CardTitle>Working Hours</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!canManageAvailability && (
+                  <p className="text-sm text-muted-foreground">
+                    Only administrators and super users can manage availability.
+                  </p>
+                )}
+                {canManageAvailability && (
+                  <div className="space-y-4">
+                    {availabilityLoading && (
+                      <p className="text-sm text-muted-foreground">Loading...</p>
+                    )}
+                    {!availabilityLoading && availabilityError && (
+                      <p className="text-sm text-destructive">
+                        {availabilityError}
+                      </p>
+                    )}
+                    {!availabilityLoading && !availabilityError && (
+                      <div className="space-y-4">
+                        {weekdayLabels.map((label, weekdayIndex) => {
+                          const dayEntries = doctorAvailability.filter(
+                            (entry) => entry.weekday === weekdayIndex,
+                          );
+                          return (
+                            <div key={label} className="space-y-2">
+                              <div className="text-sm font-medium">{label}</div>
+                              {dayEntries.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                  No hours
+                                </p>
+                              ) : (
+                                <div className="space-y-2">
+                                  {dayEntries.map((entry) => (
+                                    <div
+                                      key={entry.id}
+                                      className="flex items-center justify-between"
+                                    >
+                                      <span className="text-sm">
+                                        {entry.startTime} – {entry.endTime}
+                                      </span>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive hover:text-destructive"
+                                        onClick={() =>
+                                          handleDeleteAvailability(entry.id)
+                                        }
+                                      >
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label>Weekday</Label>
+                        <Select
+                          value={String(availabilityWeekday)}
+                          onValueChange={(value) =>
+                            setAvailabilityWeekday(Number(value))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select day" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {weekdayLabels.map((label, index) => (
+                              <SelectItem key={label} value={String(index)}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Start Time</Label>
+                        <Input
+                          type="time"
+                          value={availabilityStartTime}
+                          onChange={(e) =>
+                            setAvailabilityStartTime(e.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>End Time</Label>
+                        <Input
+                          type="time"
+                          value={availabilityEndTime}
+                          onChange={(e) =>
+                            setAvailabilityEndTime(e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button type="button" onClick={handleAddAvailability}>
+                        Add Working Hours
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="salary-rates">
             <Card>

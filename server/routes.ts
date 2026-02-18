@@ -26,6 +26,7 @@ import {
   insertPatientVisitSchema,
   insertPatientServiceSchema,
   insertAdmissionServiceSchema,
+  insertAppointmentSchema,
   insertRoomSchema, // Import Room schema
 } from "@shared/schema";
 import { updatePatientSchema } from "../shared/schema";
@@ -58,6 +59,14 @@ const authenticateToken = (req: any, res: any, next: any) => {
 
 // Alias for authenticateToken to match the change snippet
 const requireAuth = authenticateToken;
+
+const getUserRoles = (user: any): string[] =>
+  user?.roles || (user?.role ? [user.role] : []);
+
+const hasAnyRole = (user: any, allowedRoles: string[]): boolean => {
+  const userRoles = getUserRoles(user);
+  return allowedRoles.some((role) => userRoles.includes(role));
+};
 
 export async function registerRoutes(app: Express, upload?: any): Promise<Server> {
   // Authentication routes
@@ -501,14 +510,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
   app.post("/api/patients", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has billing staff role and restrict access
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      const isBillingStaff =
-        userRoles.includes("billing_staff") &&
-        !userRoles.includes("admin") &&
-        !userRoles.includes("super_user");
-
-      if (isBillingStaff) {
+      const canManagePatients = hasAnyRole(req.user, [
+        "receptionist",
+        "admin",
+        "super_user",
+      ]);
+      if (!canManagePatients) {
         return res.status(403).json({
           message: "Access denied. Billing staff cannot create patients.",
         });
@@ -559,14 +566,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
   app.patch("/api/patients/:id", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has billing staff role and restrict access
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      const isBillingStaff =
-        userRoles.includes("billing_staff") &&
-        !userRoles.includes("admin") &&
-        !userRoles.includes("super_user");
-
-      if (isBillingStaff) {
+      const canManagePatients = hasAnyRole(req.user, [
+        "receptionist",
+        "admin",
+        "super_user",
+      ]);
+      if (!canManagePatients) {
         return res.status(403).json({
           message:
             "Access denied. Billing staff cannot update patient information.",
@@ -784,6 +789,87 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       res.status(500).json({ message: "Failed to get doctor" });
     }
   });
+
+  app.get(
+    "/api/doctors/:id/availability",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const canManage = hasAnyRole(req.user, ["admin", "super_user"]);
+        if (!canManage) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const availability = await storage.getDoctorAvailability(req.params.id);
+        res.json(availability);
+      } catch (error) {
+        console.error("Error fetching doctor availability:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/doctors/:id/availability",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const canManage = hasAnyRole(req.user, ["admin", "super_user"]);
+        if (!canManage) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const { weekday, startTime, endTime, isActive } = req.body;
+
+        if (typeof weekday !== "number" || weekday < 0 || weekday > 6) {
+          return res.status(400).json({ error: "Invalid weekday" });
+        }
+
+        if (!startTime || !endTime || startTime >= endTime) {
+          return res.status(400).json({ error: "Invalid time range" });
+        }
+
+        const availability = await storage.upsertDoctorAvailability({
+          doctorId: req.params.id,
+          weekday,
+          startTime,
+          endTime,
+          isActive: typeof isActive === "boolean" ? isActive : true,
+        });
+
+        res.status(200).json(availability);
+      } catch (error: any) {
+        if (
+          error instanceof Error &&
+          error.message === "Availability time overlaps with existing range"
+        ) {
+          return res.status(409).json({ error: error.message });
+        }
+
+        console.error("Error upserting doctor availability:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/doctor-availability/:id",
+    requireAuth,
+    async (req, res) => {
+      try {
+        const canManage = hasAnyRole(req.user, ["admin", "super_user"]);
+        if (!canManage) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        await storage.deleteDoctorAvailability(req.params.id);
+        res.json({ message: "Availability deleted" });
+      } catch (error) {
+        console.error("Error deleting doctor availability:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+  );
 
   app.put("/api/doctors/:id/profile-picture", authenticateToken, async (req: any, res) => {
     try {
@@ -2017,14 +2103,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
   app.post("/api/pathology", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has billing staff role and restrict access
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      const isBillingStaff =
-        userRoles.includes("billing_staff") &&
-        !userRoles.includes("admin") &&
-        !userRoles.includes("super_user");
-
-      if (isBillingStaff) {
+      const canManagePatients = hasAnyRole(req.user, [
+        "receptionist",
+        "admin",
+        "super_user",
+      ]);
+      if (!canManagePatients) {
         return res.status(403).json({
           message:
             "Access denied. Billing staff cannot create pathology orders.",
@@ -2273,14 +2357,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req: any, res) => {
       try {
-        // Check if user has billing staff role and restrict access
-        const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-        const isBillingStaff =
-          userRoles.includes("billing_staff") &&
-          !userRoles.includes("admin") &&
-          !userRoles.includes("super_user");
-
-        if (isBillingStaff) {
+        const canManagePatients = hasAnyRole(req.user, [
+          "receptionist",
+          "admin",
+          "super_user",
+        ]);
+        if (!canManagePatients) {
           return res.status(403).json({
             message:
               "Access denied. Billing staff cannot create patient services.",
@@ -2418,14 +2500,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req: any, res) => {
       try {
-        // Check if user has billing staff role and restrict access
-        const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-        const isBillingStaff =
-          userRoles.includes("billing_staff") &&
-          !userRoles.includes("admin") &&
-          !userRoles.includes("super_user");
-
-        if (isBillingStaff) {
+        const canManagePatients = hasAnyRole(req.user, [
+          "receptionist",
+          "admin",
+          "super_user",
+        ]);
+        if (!canManagePatients) {
           return res.status(403).json({
             message:
               "Access denied. Billing staff cannot create patient services.",
@@ -2682,14 +2762,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req: any, res) => {
       try {
-        // Check if user has billing staff role and restrict access
-        const userRoles = req.user.roles || [req.user.role];
-        const isBillingStaff =
-          userRoles.includes("billing_staff") &&
-          !userRoles.includes("admin") &&
-          !userRoles.includes("super_user");
-
-        if (isBillingStaff) {
+        const canManagePatients = hasAnyRole(req.user, [
+          "receptionist",
+          "admin",
+          "super_user",
+        ]);
+        if (!canManagePatients) {
           return res.status(403).json({
             message:
               "Access denied. Billing staff cannot create admission services.",
@@ -2739,14 +2817,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
     authenticateToken,
     async (req: any, res) => {
       try {
-        // Check if user has billing staff role and restrict access
-        const userRoles = req.user.roles || [req.user.role];
-        const isBillingStaff =
-          userRoles.includes("billing_staff") &&
-          !userRoles.includes("admin") &&
-          !userRoles.includes("super_user");
-
-        if (isBillingStaff) {
+        const canManagePatients = hasAnyRole(req.user, [
+          "receptionist",
+          "admin",
+          "super_user",
+        ]);
+        if (!canManagePatients) {
           return res.status(403).json({
             message:
               "Access denied. Billing staff cannot create admission services.",
@@ -2884,14 +2960,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
 
   app.post("/api/admissions", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has billing staff role and restrict access
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      const isBillingStaff =
-        userRoles.includes("billing_staff") &&
-        !userRoles.includes("admin") &&
-        !userRoles.includes("super_user");
-
-      if (isBillingStaff) {
+      const canManagePatients = hasAnyRole(req.user, [
+        "receptionist",
+        "admin",
+        "super_user",
+      ]);
+      if (!canManagePatients) {
         return res.status(403).json({
           message: "Access denied. Billing staff cannot create admissions.",
         });
@@ -3278,14 +3352,12 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
   // Create new OPD visit
   app.post("/api/opd-visits", authenticateToken, async (req: any, res) => {
     try {
-      // Check if user has billing staff role and restrict access
-      const userRoles = req.user.roles || [req.user.role]; // Backward compatibility
-      const isBillingStaff =
-        userRoles.includes("billing_staff") &&
-        !userRoles.includes("admin") &&
-        !userRoles.includes("super_user");
-
-      if (isBillingStaff) {
+      const canManagePatients = hasAnyRole(req.user, [
+        "receptionist",
+        "admin",
+        "super_user",
+      ]);
+      if (!canManagePatients) {
         return res.status(403).json({
           message: "Access denied. Billing staff cannot create OPD visits.",
         });
@@ -3393,6 +3465,32 @@ export async function registerRoutes(app: Express, upload?: any): Promise<Server
       res.json(updated);
     } catch (error) {
       console.error("Error updating OPD visit status:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Appointments
+  app.post("/api/appointments", requireAuth, async (req, res) => {
+    try {
+      const appointmentData = insertAppointmentSchema.parse(req.body);
+      const appointment = await storage.createAppointment(appointmentData);
+      res.status(201).json(appointment);
+    } catch (error: any) {
+      if (
+        error instanceof Error &&
+        (error.message ===
+          "Doctor already has an appointment in this time range" ||
+          error.message ===
+            "Patient already has an appointment in this time range")
+      ) {
+        return res.status(409).json({ error: error.message });
+      }
+
+      if (error?.issues) {
+        return res.status(400).json({ error: "Invalid appointment data" });
+      }
+
+      console.error("Error creating appointment:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });

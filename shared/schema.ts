@@ -5,6 +5,7 @@ import {
   integer,
   real,
   check,
+  unique,
 } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -96,6 +97,94 @@ export const patientVisits = sqliteTable("patient_visits", {
   admissionDate: text("admission_date"), // for inpatients
   dischargeDate: text("discharge_date"), // for inpatients
   roomNumber: text("room_number"), // for inpatients
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// Centralized appointments (OPD, services, admissions, general)
+export const appointments = sqliteTable(
+  "appointments",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`(lower(hex(randomblob(16))))`),
+    doctorId: text("doctor_id").references(() => doctors.id),
+    patientId: text("patient_id")
+      .notNull()
+      .references(() => patients.id),
+    startDatetime: text("start_datetime").notNull(),
+    endDatetime: text("end_datetime").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    sourceType: text("source_type").notNull(), // OPD | SERVICE | ADMISSION | GENERAL
+    sourceId: text("source_id"),
+    status: text("status").notNull().default("scheduled"), // scheduled | completed | cancelled
+    notes: text("notes"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    validTimeRange: check(
+      "appointments_start_before_end",
+      sql`${table.startDatetime} < ${table.endDatetime}`,
+    ),
+    validSourceType: check(
+      "appointments_source_type_check",
+      sql`${table.sourceType} IN ('OPD','PATHOLOGY','SERVICE','ADMISSION')`,
+    ),
+    validStatus: check(
+      "appointments_status_check",
+      sql`${table.status} IN ('scheduled','completed','cancelled')`,
+    ),
+  }),
+);
+
+export const doctorServiceDurations = sqliteTable(
+  "doctor_service_durations",
+  {
+    id: text("id")
+      .primaryKey()
+      .default(sql`(lower(hex(randomblob(16))))`),
+    doctorId: text("doctor_id")
+      .notNull()
+      .references(() => doctors.id),
+    serviceType: text("service_type").notNull(),
+    durationMinutes: integer("duration_minutes").notNull(),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    validServiceType: check(
+      "doctor_service_durations_service_type_check",
+      sql`${table.serviceType} IN ('OPD','PATHOLOGY','SERVICE','ADMISSION')`,
+    ),
+    doctorServiceUnique: unique(
+      "doctor_service_durations_doctor_service_unique",
+    ).on(table.doctorId, table.serviceType),
+  }),
+);
+
+export const doctorAvailability = sqliteTable("doctor_availability", {
+  id: text("id").primaryKey(),
+  doctorId: text("doctor_id")
+    .notNull()
+    .references(() => doctors.id),
+  weekday: integer("weekday").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),
@@ -836,6 +925,17 @@ export const insertPatientVisitSchema = createInsertSchema(patientVisits).omit({
   updatedAt: true,
 });
 
+export const insertAppointmentSchema = createInsertSchema(appointments)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    endDatetime: true,
+  })
+  .extend({
+    durationMinutes: z.number().int().positive(),
+  });
+
 export const insertServiceSchema = createInsertSchema(services)
   .omit({
     id: true,
@@ -1194,6 +1294,8 @@ export type Patient = typeof patients.$inferSelect;
 export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type PatientVisit = typeof patientVisits.$inferSelect;
 export type InsertPatientVisit = z.infer<typeof insertPatientVisitSchema>;
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 export type Service = typeof services.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;
 export type Bill = typeof bills.$inferSelect;
